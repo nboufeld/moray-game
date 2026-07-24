@@ -63,7 +63,7 @@ export class FocusScanner {
 
   update(sample: FocusSample, dt: number): FocusState {
     if (this.completed) {
-      return { progress: 1, aligned: true, justCompleted: false, completed: true };
+      return COMPLETED_STATE;
     }
 
     this.toTarget.subVectors(sample.targetPosition, sample.cameraPosition);
@@ -75,6 +75,18 @@ export class FocusScanner {
       aligned = dot >= this.params.minViewDot;
     }
 
+    return this.accumulate(aligned, dt);
+  }
+
+  /**
+   * Applies a misaligned step for a target that was not scanned at all, so
+   * partial progress cannot be banked while the player looks elsewhere.
+   */
+  decay(dt: number): FocusState {
+    return this.completed ? COMPLETED_STATE : this.accumulate(false, dt);
+  }
+
+  private accumulate(aligned: boolean, dt: number): FocusState {
     if (aligned) {
       this.progress += dt / this.params.focusDuration;
     } else {
@@ -91,3 +103,10 @@ export class FocusScanner {
     return { progress: this.progress, aligned, justCompleted, completed: this.completed };
   }
 }
+
+const COMPLETED_STATE: FocusState = {
+  progress: 1,
+  aligned: true,
+  justCompleted: false,
+  completed: true,
+};

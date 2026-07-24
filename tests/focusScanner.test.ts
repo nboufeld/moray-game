@@ -77,6 +77,30 @@ describe("FocusScanner", () => {
     expect(after).toBeLessThan(before);
   });
 
+  it("decays progress for a step in which it was not scanned at all", () => {
+    const scanner = new FocusScanner();
+    for (let i = 0; i < 30; i++) {
+      scanner.update({ cameraPosition: camera, forward, targetPosition: target, obstructed: false }, 1 / 60);
+    }
+    const before = scanner.decay(0).progress;
+    const after = scanner.decay(0.5).progress;
+    expect(before).toBeGreaterThan(0);
+    expect(after).toBeLessThan(before);
+    expect(after).toBeGreaterThanOrEqual(0);
+  });
+
+  it("leaves a completed scanner completed when it decays", () => {
+    const scanner = new FocusScanner();
+    for (let i = 0; i < 200; i++) {
+      scanner.update({ cameraPosition: camera, forward, targetPosition: target, obstructed: false }, 1 / 60);
+    }
+    expect(scanner.isCompleted()).toBe(true);
+
+    const state = scanner.decay(5);
+    expect(state.completed).toBe(true);
+    expect(state.progress).toBe(1);
+  });
+
   it("rejects targets beyond max distance", () => {
     const scanner = new FocusScanner();
     const farTarget = new Vector3(0, 0, -(DEFAULT_FOCUS_PARAMS.maxDistance + 5));

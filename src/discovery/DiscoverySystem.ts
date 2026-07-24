@@ -93,6 +93,15 @@ export class DiscoverySystem {
       throw new Error(`Missing focus scanner for ${best.speciesId}`);
     }
 
+    // Every other undiscovered moray keeps decaying, otherwise a half-focused
+    // one would hold its progress until the player happens to look back.
+    for (const target of this.targets) {
+      if (target === best || this.discovered.has(target.speciesId)) {
+        continue;
+      }
+      this.scanners.get(target.speciesId)?.decay(dt);
+    }
+
     const state = scanner.update(
       {
         cameraPosition: probe.cameraPosition,

@@ -19,7 +19,9 @@ export class CausticsSystem {
   private readonly material: MeshBasicMaterial;
   private time = 0;
 
-  constructor(size = 60, seabedY = -0.02) {
+  // `height` must clear the opaque seabed at y = 0: the overlay is depth
+  // tested like anything else, so a plane at or below the sand never draws.
+  constructor(size = 60, height = 0.05) {
     this.texture = new CanvasTexture(CausticsSystem.createPattern());
     this.texture.wrapS = RepeatWrapping;
     this.texture.wrapT = RepeatWrapping;
@@ -36,7 +38,7 @@ export class CausticsSystem {
     const geometry = new PlaneGeometry(size, size);
     this.mesh = new Mesh(geometry, this.material);
     this.mesh.rotation.x = -Math.PI / 2;
-    this.mesh.position.y = seabedY;
+    this.mesh.position.y = height;
     this.mesh.renderOrder = 1;
   }
 
