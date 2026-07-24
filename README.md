@@ -5,15 +5,21 @@ lovingly modeled collection of moray eels. There is no combat and no oxygen time
 challenge is quiet observation: read the reef, notice a peeking eye or a breathing jaw,
 approach without startling the moray, focus on it, and add it to your illustrated Codex.
 
-This repository is the **Phase 1 prototype** from the project blueprint. It proves the
-core loop with one polished mechanic rather than a fleet of assets:
+This repository is the **vertical slice** from the project blueprint. It proves the
+complete emotional and technical loop rather than a fleet of assets:
 
-- A greybox **Sunlit Coral Garden** reef with underwater fog, caustics and soft lighting.
+- A greybox **Sunlit Coral Garden** reef with underwater fog, caustics, soft lighting and
+  an instanced supporting **fish school**.
 - Comfortable **kinematic swimming** with configurable camera comfort (bob, roll, auto-level).
-- One hidden **hero moray** (the snowflake moray, _Echidna nebulosa_), built procedurally
-  from a data-driven species config.
-- A **focus-based discovery** system, an escalating **hint ladder**, and an illustrated **Codex**.
-- An **accessibility settings** scaffold including a one-switch **Calm Mode** preset.
+- **Four distinct hidden morays** — snowflake (_Echidna nebulosa_), ribbon
+  (_Rhinomuraena quaesita_), zebra (_Gymnomuraena zebra_) and dragon (_Enchelycore pardalis_) —
+  built procedurally from data-driven species configs (shared runtime, individual data).
+- A **focus-based discovery** system, an escalating **nearest-target hint ladder**, and an
+  illustrated **Codex**.
+- The **Dream Sanctuary** (press `V`): a calm aquarium where discovered morays drift gently,
+  each with a species card.
+- A versioned **save system** that persists discoveries and comfort settings.
+- A **Comfort & Accessibility** panel (press `O`) with a one-switch **Calm Mode** preset.
 
 ## Tech stack
 
@@ -29,9 +35,11 @@ npm run dev        # http://localhost:5173
 ## Controls
 
 - `W` `A` `S` `D` — swim, `Space` / `Shift` — ascend / descend
-- Mouse (after clicking the canvas) — look around
+- Mouse (after clicking the canvas) or `←` `→` — look around
 - Center the reticle on a moray and hold to focus and discover it
-- `H` — request a hint · `C` — open/close the Codex
+- `H` — hint · `C` — Codex · `V` — Dream Sanctuary · `O` — Comfort & Accessibility
+
+Append `?reset=1` to the URL to start a completely fresh dive (clears the save).
 
 ## Scripts
 

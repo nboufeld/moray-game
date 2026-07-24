@@ -334,11 +334,13 @@ export class Game {
       this.mode = "sanctuary";
       this.sanctuary.setSpecies(this.discoveredConfigs());
       this.sanctuaryOverlay.show(this.discoveredConfigs());
+      this.hud.setDiveVisible(false);
       document.exitPointerLock?.();
       this.handleResize();
     } else {
       this.mode = "reef";
       this.sanctuaryOverlay.hide();
+      this.hud.setDiveVisible(true);
       this.lastTime = performance.now();
     }
   }

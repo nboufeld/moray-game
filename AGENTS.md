@@ -1,9 +1,10 @@
 # moray-game — The Reef Between Seas
 
 A calm 3D moray-eel diving and discovery game built with TypeScript, Vite and Three.js.
-This repository currently contains the **Phase 1 vertical prototype** from the design
-blueprint: a greybox "Sunlit Coral Garden" reef, comfort-aware swimming, and a single
-discoverable hero moray (the snowflake moray) that is recorded into the Codex.
+This repository contains the **vertical slice** from the design blueprint: a greybox
+"Sunlit Coral Garden" reef with a supporting fish school, comfort-aware swimming, four
+distinct discoverable morays recorded into the Codex, a versioned save system, a
+comfort/accessibility settings panel with Calm Mode, and the Dream Sanctuary aquarium.
 
 ## Layout
 
@@ -11,12 +12,15 @@ discoverable hero moray (the snowflake moray) that is recorded into the Codex.
 - `src/player/` — `DiveController` (pure physics), `CameraRig` (comfort options), `InputController`.
 - `src/world/` — `Reef` greybox + `CollisionField`.
 - `src/creatures/morays/` — data-driven `MoraySpeciesConfig`, `MorayRegistry`, procedural `Moray`.
+- `src/creatures/fish/` — `FishSchoolSystem` (instanced ambient fish).
 - `src/discovery/` — `FocusScanner`, `DiscoverySystem`, `HintSystem` (all pure/testable).
 - `src/rendering/` — fog, lighting, caustics, particles.
-- `src/ui/` — `Hud`, `Codex`.
+- `src/sanctuary/` — `SanctuaryScene` (separate scene rendered when in sanctuary mode).
+- `src/save/` — `SaveSystem` + `SaveMigration` (versioned localStorage).
+- `src/ui/` — `Hud`, `Codex`, `SettingsPanel`, `SanctuaryOverlay`.
 - `src/accessibility/` — comfort settings + Calm Mode preset.
 - `tests/` — Vitest unit tests (pure gameplay logic, no WebGL).
-- `tests-e2e/` — Playwright smoke + discovery tests.
+- `tests-e2e/` — Playwright tests (render, codex, discovery, sanctuary, calm mode, save).
 
 ## Commands
 
@@ -44,5 +48,18 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
   lock jitter and tilting push the (roughly level) moray out of the focus cone. Just press
   `W`, then hold. Focus tuning lives in `DEFAULT_FOCUS_PARAMS` (`src/discovery/FocusScanner.ts`);
   spawn/crevice placement lives in `Game` and `Reef`.
+- **Save persistence gotcha**: discoveries and comfort settings persist in `localStorage`
+  (key `reef-between-seas.save.v1`), so on a returning profile the reef may already show
+  discovered morays. Load `http://localhost:5173/?reset=1` to force a fresh dive when
+  demoing or manually testing discovery. `Game` is constructed with `{ resetSave }` from
+  that URL flag (see `src/main.ts`).
+- **Keys**: `C` Codex, `H` hint, `V` toggle Dream Sanctuary, `O` toggle settings. The
+  sanctuary is a separate scene/camera; while it is open the reef simulation is paused and
+  the dive HUD is hidden. Opening the settings panel also pauses the reef simulation.
+- **Finding the darker morays**: only the snowflake moray sits straight ahead of spawn. The
+  ribbon (left), zebra (right) and dragon (deeper, forward-left) require turning and are
+  intentionally harder to spot — the zebra/dragon heads are dark against their caves. Use
+  the `H` hint ladder (it targets the nearest undiscovered moray). All four are verified
+  discoverable; placement/facing live in `SPOT_PLACEMENTS` in `src/world/Reef.ts`.
 - The Vite build prints a >500 kB chunk warning (Three.js in one bundle). This is expected
-  for the prototype and is not an error.
+  and is not an error.

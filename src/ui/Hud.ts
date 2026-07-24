@@ -3,6 +3,7 @@
  * hint line, the focus reticle and the discovery toast.
  */
 export class Hud {
+  private readonly container: HTMLElement;
   private readonly objectiveText: HTMLElement;
   private readonly foundCount: HTMLElement;
   private readonly totalCount: HTMLElement;
@@ -16,6 +17,7 @@ export class Hud {
   private readonly circumference = 2 * Math.PI * 20;
 
   constructor(root: Document = document) {
+    this.container = requireEl(root, "hud");
     this.objectiveText = requireEl(root, "objective-text");
     this.foundCount = requireEl(root, "found-count");
     this.totalCount = requireEl(root, "total-count");
@@ -57,6 +59,13 @@ export class Hud {
 
   fadeControlsHelp(): void {
     this.controlsHelp.style.opacity = "0.25";
+  }
+
+  /** Hides the dive HUD (used while inside the sanctuary). */
+  setDiveVisible(visible: boolean): void {
+    this.container.hidden = !visible;
+    this.reticle.hidden = !visible;
+    this.controlsHelp.hidden = !visible;
   }
 
   update(dt: number): void {
