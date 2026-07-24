@@ -16,8 +16,8 @@ export interface FocusParams {
 export const DEFAULT_FOCUS_PARAMS: FocusParams = {
   minDistance: 1.2,
   maxDistance: 14,
-  minViewDot: 0.965, // ~15 degree half-angle
-  focusDuration: 1.6,
+  minViewDot: 0.95, // ~18 degree half-angle
+  focusDuration: 1.5,
   decayRate: 1.4,
 };
 

@@ -72,10 +72,11 @@ export class Game {
     const species = this.registry.require("snowflake-moray");
     this.moray = new Moray(species);
     this.moray.asset.root.position.copy(this.reef.crevicePosition);
+    this.moray.asset.root.scale.setScalar(1.5);
     this.scene.add(this.moray.asset.root);
 
     // Player + camera.
-    this.dive = new DiveController({ startPosition: new Vector3(0, 2.2, 15) });
+    this.dive = new DiveController({ startPosition: new Vector3(0, 2, 22) });
     this.rig = new CameraRig(this.camera);
     this.input = new InputController(canvas);
 
@@ -192,6 +193,11 @@ export class Game {
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
   };
+
+  /** Number of morays discovered so far (exposed for lightweight e2e checks). */
+  get discoveredCount(): number {
+    return this.discovery.discoveredCount;
+  }
 
   dispose(): void {
     this.running = false;

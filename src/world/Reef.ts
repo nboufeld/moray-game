@@ -36,7 +36,7 @@ export class Reef {
   };
 
   /** World position where the hidden moray's head peeks from the crevice. */
-  readonly crevicePosition = new Vector3(0, 1.15, -1.6);
+  readonly crevicePosition = new Vector3(0, 1.4, 1.5);
 
   constructor() {
     this.buildSeabed();
@@ -125,26 +125,27 @@ export class Reef {
       flatShading: true,
     });
 
-    // A broad coral shelf the moray hides beneath.
-    const shelf = new Mesh(new DodecahedronGeometry(3.2, 0), rockMaterial);
-    shelf.position.set(0, 1.9, -3.4);
-    shelf.scale.set(1.3, 0.7, 1.1);
-    shelf.castShadow = true;
-    shelf.receiveShadow = true;
-    this.group.add(shelf);
-    this.obstructionMeshes.push(shelf);
-    this.colliders.push({ center: new Vector3(0, 1.4, -3.9), radius: 2.6 });
+    // A coral mound the moray's body recedes into. It sits BEHIND the head so
+    // the peeking head stays in clear line of sight from an open-water approach.
+    const mound = new Mesh(new DodecahedronGeometry(3.0, 0), rockMaterial);
+    mound.position.set(0, 2.4, -2.4);
+    mound.scale.set(1.5, 0.8, 1.2);
+    mound.castShadow = true;
+    mound.receiveShadow = true;
+    this.group.add(mound);
+    this.obstructionMeshes.push(mound);
+    this.colliders.push({ center: new Vector3(0, 1.7, -2.4), radius: 3.0 });
 
-    // A dark opening so the eye is drawn to the crevice mouth.
-    const cave = new Mesh(new CircleGeometry(0.95, 24), new MeshStandardMaterial({ color: 0x04141a }));
-    cave.position.set(0, 1.2, -2.35);
+    // A dark opening framing the crevice mouth, so the eye is drawn to it.
+    const cave = new Mesh(new CircleGeometry(1.05, 24), new MeshStandardMaterial({ color: 0x04141a }));
+    cave.position.set(0, 1.35, 0.55);
     this.group.add(cave);
 
-    // Side blocks framing the crevice mouth (also gives cleaner-shrimp perch feel).
-    const flankGeometry = new BoxGeometry(1.1, 1.6, 1.4);
+    // Side blocks framing the crevice mouth (a natural cleaner-shrimp perch).
+    const flankGeometry = new BoxGeometry(1.1, 1.7, 1.5);
     for (const sign of [-1, 1]) {
       const flank = new Mesh(flankGeometry, rockMaterial);
-      flank.position.set(sign * 1.7, 1.0, -2.6);
+      flank.position.set(sign * 1.9, 1.05, -0.4);
       flank.castShadow = true;
       flank.receiveShadow = true;
       this.group.add(flank);
@@ -167,7 +168,7 @@ export class Reef {
     for (let i = 0; i < count; i++) {
       const x = (Math.random() - 0.5) * 52;
       const z = (Math.random() - 0.5) * 52;
-      if (Math.abs(x) < 3 && Math.abs(z + 3) < 4) {
+      if (Math.abs(x) < 3.5 && z > -4 && z < 4) {
         // Keep the crevice mouth clear.
         continue;
       }
