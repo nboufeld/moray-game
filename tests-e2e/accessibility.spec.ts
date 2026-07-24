@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { swimToFirstDiscovery } from "./helpers";
 
 test("the comfort panel is operable from the keyboard", async ({ page }) => {
   await page.goto("/?reset=1");
@@ -45,10 +46,34 @@ test("the dive still responds to the keyboard after using the comfort panel", as
   await page.keyboard.press("KeyO");
   await expect(page.getByTestId("settings-panel")).toBeHidden();
 
-  await page.keyboard.down("KeyW");
-  await page.waitForTimeout(1200);
-  await page.keyboard.up("KeyW");
-  await expect(page.locator("#found-count")).toHaveText("1", { timeout: 6000 });
+  await swimToFirstDiscovery(page);
+});
+
+test("browser and OS shortcuts are not hijacked by the dive keys", async ({ page }) => {
+  await page.goto("/?reset=1");
+
+  // Copy is Ctrl+C on Linux/Windows and Cmd+C on macOS; neither is the Codex.
+  await page.keyboard.press("Control+KeyC");
+  await page.keyboard.press("Meta+KeyC");
+  await expect(page.getByTestId("codex")).toBeHidden();
+
+  // The unmodified key still works.
+  await page.keyboard.press("KeyC");
+  await expect(page.getByTestId("codex")).toBeVisible();
+});
+
+test("look sensitivity is adjustable and survives a reload", async ({ page }) => {
+  await page.goto("/?reset=1");
+  await page.keyboard.press("KeyO");
+
+  const sensitivity = page.locator("#opt-sensitivity");
+  await expect(sensitivity).toHaveValue("1");
+  await sensitivity.fill("1.5");
+  await expect(page.locator("#opt-sensitivity-value")).toHaveText("1.5");
+
+  await page.goto("/");
+  await page.keyboard.press("KeyO");
+  await expect(page.locator("#opt-sensitivity")).toHaveValue("1.5");
 });
 
 test("holding a shortcut key toggles its panel only once", async ({ page }) => {

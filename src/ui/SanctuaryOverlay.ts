@@ -1,4 +1,5 @@
 import type { MoraySpeciesConfig } from "../creatures/morays/MoraySpeciesConfig";
+import { requireElement } from "./dom";
 
 /**
  * DOM overlay shown while inside the sanctuary: a species card per discovered
@@ -9,8 +10,8 @@ export class SanctuaryOverlay {
   private readonly cards: HTMLElement;
 
   constructor(root: Document = document) {
-    this.overlay = requireEl(root, "sanctuary-overlay");
-    this.cards = requireEl(root, "sanctuary-cards");
+    this.overlay = requireElement(root, "sanctuary-overlay");
+    this.cards = requireElement(root, "sanctuary-cards");
   }
 
   get isOpen(): boolean {
@@ -43,12 +44,4 @@ export class SanctuaryOverlay {
   hide(): void {
     this.overlay.hidden = true;
   }
-}
-
-function requireEl(root: Document, id: string): HTMLElement {
-  const element = root.getElementById(id);
-  if (!element) {
-    throw new Error(`Missing sanctuary element #${id}`);
-  }
-  return element;
 }

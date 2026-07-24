@@ -1,3 +1,5 @@
+import { requireElement } from "./dom";
+
 /**
  * Thin DOM controller for the heads-up display: objective, progress count,
  * hint line, the focus reticle and the discovery toast.
@@ -17,15 +19,15 @@ export class Hud {
   private readonly circumference = 2 * Math.PI * 20;
 
   constructor(root: Document = document) {
-    this.container = requireEl(root, "hud");
-    this.objectiveText = requireEl(root, "objective-text");
-    this.foundCount = requireEl(root, "found-count");
-    this.totalCount = requireEl(root, "total-count");
-    this.hintText = requireEl(root, "hint-text");
-    this.reticle = requireEl(root, "reticle");
-    this.reticleFill = requireEl(root, "reticle-fill") as unknown as SVGCircleElement;
-    this.toast = requireEl(root, "discovery-toast");
-    this.controlsHelp = requireEl(root, "controls-help");
+    this.container = requireElement(root, "hud");
+    this.objectiveText = requireElement(root, "objective-text");
+    this.foundCount = requireElement(root, "found-count");
+    this.totalCount = requireElement(root, "total-count");
+    this.hintText = requireElement(root, "hint-text");
+    this.reticle = requireElement(root, "reticle");
+    this.reticleFill = requireElement(root, "reticle-fill") as unknown as SVGCircleElement;
+    this.toast = requireElement(root, "discovery-toast");
+    this.controlsHelp = requireElement(root, "controls-help");
   }
 
   setTotal(total: number): void {
@@ -76,12 +78,4 @@ export class Hud {
       }
     }
   }
-}
-
-function requireEl(root: Document, id: string): HTMLElement {
-  const element = root.getElementById(id);
-  if (!element) {
-    throw new Error(`Missing HUD element #${id}`);
-  }
-  return element;
 }

@@ -85,6 +85,12 @@ export class InputController {
   };
 
   private readonly handleKeyDown = (event: KeyboardEvent): void => {
+    // Chorded keys belong to the browser and the OS: Cmd/Ctrl+C is a copy, not
+    // the Codex, and Ctrl+W must stay a close-tab rather than a swim stroke.
+    if (event.ctrlKey || event.metaKey || event.altKey) {
+      return;
+    }
+
     const code = event.code.toLowerCase();
 
     const listeners = this.listenersFor(code);

@@ -50,6 +50,24 @@ describe("migrate", () => {
     expect(result.discovered).toEqual(["ok"]);
     expect(result.settings).toEqual({});
   });
+
+  it("drops wrong-typed settings fields but keeps the valid ones", () => {
+    // fieldOfView reaches camera.fov directly, so a string there would render
+    // a NaN projection matrix the player cannot recover from in-game.
+    const result = migrate({
+      version: 2,
+      discovered: [],
+      settings: {
+        fieldOfView: "wide",
+        lookSensitivity: Number.NaN,
+        cameraBob: "yes",
+        reducedMotion: true,
+        unknownOption: 5,
+      },
+    });
+
+    expect(result.settings).toEqual({ reducedMotion: true });
+  });
 });
 
 describe("SaveSystem", () => {

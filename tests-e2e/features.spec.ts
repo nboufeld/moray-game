@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { swimToFirstDiscovery } from "./helpers";
 
 test("the sanctuary can be entered and exited with the V key", async ({ page }) => {
   await page.goto("/?reset=1");
@@ -33,10 +34,7 @@ test("discoveries and settings persist across a reload (save system)", async ({ 
   // Fresh dive, discover the straight-ahead moray.
   await page.goto("/?reset=1");
   await page.locator("#reef-canvas").click();
-  await page.keyboard.down("KeyW");
-  await page.waitForTimeout(1200);
-  await page.keyboard.up("KeyW");
-  await expect(page.locator("#found-count")).toHaveText("1", { timeout: 6000 });
+  await swimToFirstDiscovery(page);
 
   // Change a comfort setting so we can verify it persists too.
   await page.keyboard.press("KeyO");

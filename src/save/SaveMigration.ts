@@ -38,7 +38,7 @@ export function migrate(raw: unknown): SaveData {
 
   const record = raw as Record<string, unknown>;
   const discovered = sanitizeIds(record.discovered);
-  const settings = isPlainObject(record.settings) ? (record.settings as Partial<ComfortSettings>) : {};
+  const settings = isPlainObject(record.settings) ? sanitizeSettings(record.settings) : {};
   const version = typeof record.version === "number" ? record.version : 0;
 
   switch (version) {
@@ -51,6 +51,31 @@ export function migrate(raw: unknown): SaveData {
       // Newer-than-known or corrupt version: keep the data we can read.
       return { version: CURRENT_SAVE_VERSION, discovered, settings };
   }
+}
+
+const BOOLEAN_SETTINGS = ["cameraBob", "cameraRoll", "autoLevel", "reducedMotion"] as const;
+const NUMERIC_SETTINGS = ["fieldOfView", "lookSensitivity"] as const;
+
+/**
+ * Keeps only known fields of the expected type. `fieldOfView` reaches
+ * `camera.fov` directly, so a corrupt save carrying a string there would
+ * produce a NaN projection matrix and a blank screen the player cannot escape.
+ */
+function sanitizeSettings(raw: Record<string, unknown>): Partial<ComfortSettings> {
+  const settings: Partial<ComfortSettings> = {};
+  for (const key of BOOLEAN_SETTINGS) {
+    const value = raw[key];
+    if (typeof value === "boolean") {
+      settings[key] = value;
+    }
+  }
+  for (const key of NUMERIC_SETTINGS) {
+    const value = raw[key];
+    if (typeof value === "number" && Number.isFinite(value)) {
+      settings[key] = value;
+    }
+  }
+  return settings;
 }
 
 function sanitizeIds(value: unknown): string[] {

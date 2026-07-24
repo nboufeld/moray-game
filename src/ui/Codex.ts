@@ -1,4 +1,5 @@
 import type { MoraySpeciesConfig } from "../creatures/morays/MoraySpeciesConfig";
+import { requireElement } from "./dom";
 
 /**
  * The illustrated Moray Codex. Discovered species are appended as cards; the
@@ -12,10 +13,10 @@ export class Codex {
   private readonly recorded = new Set<string>();
 
   constructor(root: Document = document) {
-    this.panel = requireEl(root, "codex");
-    this.entries = requireEl(root, "codex-entries");
+    this.panel = requireElement(root, "codex");
+    this.entries = requireElement(root, "codex-entries");
     this.emptyState = this.entries.querySelector(".codex__empty");
-    this.closeButton = requireEl(root, "codex-close");
+    this.closeButton = requireElement(root, "codex-close");
     this.closeButton.addEventListener("click", () => this.close());
   }
 
@@ -56,12 +57,4 @@ export class Codex {
     `;
     this.entries.appendChild(entry);
   }
-}
-
-function requireEl(root: Document, id: string): HTMLElement {
-  const element = root.getElementById(id);
-  if (!element) {
-    throw new Error(`Missing codex element #${id}`);
-  }
-  return element;
 }

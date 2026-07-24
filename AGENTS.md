@@ -43,8 +43,9 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
 - **Manual/scripted testing gotcha (discovery)**: the hero moray sits *nearly straight
   ahead of the spawn point, only slightly below center*, and its head deliberately peeks
   out in front of the coral mound (line of sight must be clear, or `DiscoverySystem`
-  treats it as obstructed). To discover it, swim forward with `W` for ~1–1.5s from spawn,
-  then hold still with the view centered for ~1.5s while the reticle ring fills. When
+  treats it as obstructed). To discover it, swim forward with `W` for ~1.5s from spawn
+  (that coasts to a stop around 7.5m out, mid-way through the 1.2m–14m focus band), then
+  hold still with the view centered for ~1.5s while the reticle ring fills. When
   driving the browser programmatically, do **not** use mouse-look or arrow keys — pointer
   lock jitter and tilting push the (roughly level) moray out of the focus cone. Just press
   `W`, then hold. Focus tuning lives in `DEFAULT_FOCUS_PARAMS` (`src/discovery/FocusScanner.ts`);

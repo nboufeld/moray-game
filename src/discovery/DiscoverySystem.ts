@@ -31,10 +31,11 @@ export interface DiscoveryUpdate {
 export class DiscoverySystem {
   private readonly scanners = new Map<string, FocusScanner>();
   private readonly discovered = new Set<string>();
+  private readonly toTarget = new Vector3();
 
   constructor(
     private readonly targets: readonly DiscoveryTarget[],
-    params: FocusParams = DEFAULT_FOCUS_PARAMS,
+    private readonly params: FocusParams = DEFAULT_FOCUS_PARAMS,
   ) {
     for (const target of targets) {
       this.scanners.set(target.speciesId, new FocusScanner(params));
@@ -64,24 +65,15 @@ export class DiscoverySystem {
   }
 
   update(probe: DiscoveryProbe, dt: number): DiscoveryUpdate {
-    let best: DiscoveryTarget | null = null;
-    let bestDot = -Infinity;
-    const dir = new Vector3();
+    const best = this.pickCandidate(probe);
 
+    // Every other undiscovered moray keeps decaying, otherwise a half-focused
+    // one would hold its progress until the player happens to look back.
     for (const target of this.targets) {
-      if (this.discovered.has(target.speciesId)) {
+      if (target === best || this.discovered.has(target.speciesId)) {
         continue;
       }
-      dir.subVectors(target.position, probe.cameraPosition);
-      const distance = dir.length();
-      if (distance === 0) {
-        continue;
-      }
-      const dot = dir.dot(probe.forward) / distance;
-      if (dot > bestDot) {
-        bestDot = dot;
-        best = target;
-      }
+      this.scanners.get(target.speciesId)?.decay(dt);
     }
 
     if (!best) {
@@ -91,15 +83,6 @@ export class DiscoverySystem {
     const scanner = this.scanners.get(best.speciesId);
     if (!scanner) {
       throw new Error(`Missing focus scanner for ${best.speciesId}`);
-    }
-
-    // Every other undiscovered moray keeps decaying, otherwise a half-focused
-    // one would hold its progress until the player happens to look back.
-    for (const target of this.targets) {
-      if (target === best || this.discovered.has(target.speciesId)) {
-        continue;
-      }
-      this.scanners.get(target.speciesId)?.decay(dt);
     }
 
     const state = scanner.update(
@@ -119,5 +102,34 @@ export class DiscoverySystem {
     }
 
     return { focused: best, progress: state.progress, newlyDiscovered };
+  }
+
+  /**
+   * The most closely centred moray that is actually within focus range, so a
+   * distant one lining up behind it cannot sit in the focus slot and starve it.
+   * Obstruction is left to the scanner: testing it here would cost a raycast
+   * per moray per step for a case the range check already covers in practice.
+   */
+  private pickCandidate(probe: DiscoveryProbe): DiscoveryTarget | null {
+    let best: DiscoveryTarget | null = null;
+    let bestDot = -Infinity;
+
+    for (const target of this.targets) {
+      if (this.discovered.has(target.speciesId)) {
+        continue;
+      }
+      this.toTarget.subVectors(target.position, probe.cameraPosition);
+      const distance = this.toTarget.length();
+      if (distance < this.params.minDistance || distance > this.params.maxDistance) {
+        continue;
+      }
+      const dot = this.toTarget.dot(probe.forward) / distance;
+      if (dot > bestDot) {
+        bestDot = dot;
+        best = target;
+      }
+    }
+
+    return best;
   }
 }

@@ -49,6 +49,42 @@ describe("DiscoverySystem", () => {
     expect(system.totalCount).toBe(1);
   });
 
+  it("gives the focus slot to a moray in range over a better-aligned distant one", () => {
+    // The far moray is dead ahead (dot 1.0) but well beyond focus range, while
+    // the near one is slightly off-centre yet inside the cone.
+    const near: DiscoveryTarget = { speciesId: "near-moray", position: new Vector3(1, 0, -5) };
+    const far: DiscoveryTarget = { speciesId: "far-moray", position: new Vector3(0, 0, -40) };
+    const system = new DiscoverySystem([near, far]);
+    const probe = {
+      cameraPosition: new Vector3(0, 0, 0),
+      forward: new Vector3(0, 0, -1),
+      isObstructed: () => false,
+    };
+
+    expect(system.update(probe, 1 / 60).focused?.speciesId).toBe("near-moray");
+
+    for (let i = 0; i < 200; i++) {
+      system.update(probe, 1 / 60);
+    }
+    expect(system.isDiscovered("near-moray")).toBe(true);
+  });
+
+  it("focuses nothing while every moray is out of range", () => {
+    const far: DiscoveryTarget = { speciesId: "far-moray", position: new Vector3(0, 0, -40) };
+    const system = new DiscoverySystem([far]);
+    const result = system.update(
+      {
+        cameraPosition: new Vector3(0, 0, 0),
+        forward: new Vector3(0, 0, -1),
+        isObstructed: () => false,
+      },
+      1 / 60,
+    );
+
+    expect(result.focused).toBeNull();
+    expect(result.progress).toBe(0);
+  });
+
   it("decays a part-focused moray while the player studies another one", () => {
     const ahead: DiscoveryTarget = { speciesId: "ahead-moray", position: new Vector3(0, 0, -5) };
     const behind: DiscoveryTarget = { speciesId: "behind-moray", position: new Vector3(0, 0, 5) };

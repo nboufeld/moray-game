@@ -32,11 +32,22 @@ describe("DiveController", () => {
   });
 
   it("ascends and descends independently of heading", () => {
-    const dive = new DiveController({ startPosition: new Vector3(0, 2, 0) });
+    const yaw = 1.23; // an arbitrary heading the vertical axis must ignore
+    const up = new DiveController({ startPosition: new Vector3(0, 2, 0) });
     for (let i = 0; i < 20; i++) {
-      dive.update(1 / 60, { ...NO_INPUT, ascend: true }, 1.23);
+      up.update(1 / 60, { ...NO_INPUT, ascend: true }, yaw);
     }
-    expect(dive.position.y).toBeGreaterThan(2);
+    expect(up.position.y).toBeGreaterThan(2);
+    expect(Math.abs(up.position.x)).toBeLessThan(1e-6);
+    expect(Math.abs(up.position.z)).toBeLessThan(1e-6);
+
+    const down = new DiveController({ startPosition: new Vector3(0, 2, 0) });
+    for (let i = 0; i < 20; i++) {
+      down.update(1 / 60, { ...NO_INPUT, descend: true }, yaw);
+    }
+    expect(down.position.y).toBeLessThan(2);
+    expect(Math.abs(down.position.x)).toBeLessThan(1e-6);
+    expect(Math.abs(down.position.z)).toBeLessThan(1e-6);
   });
 
   it("drags to a near stop when input is released", () => {

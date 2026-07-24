@@ -1,4 +1,5 @@
 import type { ComfortSettings } from "../accessibility/AccessibilitySettings";
+import { requireElement } from "./dom";
 
 export interface SettingsPanelCallbacks {
   onChange: (partial: Partial<ComfortSettings>) => void;
@@ -19,19 +20,23 @@ export class SettingsPanel {
   private readonly reduced: HTMLInputElement;
   private readonly fov: HTMLInputElement;
   private readonly fovValue: HTMLElement;
+  private readonly sensitivity: HTMLInputElement;
+  private readonly sensitivityValue: HTMLElement;
 
   constructor(
     private readonly callbacks: SettingsPanelCallbacks,
     root: Document = document,
   ) {
-    this.panel = requireEl(root, "settings-panel");
-    this.calmButton = requireEl(root, "settings-calm") as HTMLButtonElement;
-    this.bob = requireEl(root, "opt-bob") as HTMLInputElement;
-    this.roll = requireEl(root, "opt-roll") as HTMLInputElement;
-    this.autoLevel = requireEl(root, "opt-autolevel") as HTMLInputElement;
-    this.reduced = requireEl(root, "opt-reduced") as HTMLInputElement;
-    this.fov = requireEl(root, "opt-fov") as HTMLInputElement;
-    this.fovValue = requireEl(root, "opt-fov-value");
+    this.panel = requireElement(root, "settings-panel");
+    this.calmButton = requireElement(root, "settings-calm") as HTMLButtonElement;
+    this.bob = requireElement(root, "opt-bob") as HTMLInputElement;
+    this.roll = requireElement(root, "opt-roll") as HTMLInputElement;
+    this.autoLevel = requireElement(root, "opt-autolevel") as HTMLInputElement;
+    this.reduced = requireElement(root, "opt-reduced") as HTMLInputElement;
+    this.fov = requireElement(root, "opt-fov") as HTMLInputElement;
+    this.fovValue = requireElement(root, "opt-fov-value");
+    this.sensitivity = requireElement(root, "opt-sensitivity") as HTMLInputElement;
+    this.sensitivityValue = requireElement(root, "opt-sensitivity-value");
 
     this.calmButton.addEventListener("click", () => this.callbacks.onCalmMode());
     this.bob.addEventListener("change", () => this.callbacks.onChange({ cameraBob: this.bob.checked }));
@@ -47,8 +52,13 @@ export class SettingsPanel {
       this.fovValue.textContent = String(value);
       this.callbacks.onChange({ fieldOfView: value });
     });
+    this.sensitivity.addEventListener("input", () => {
+      const value = Number(this.sensitivity.value);
+      this.sensitivityValue.textContent = formatSensitivity(value);
+      this.callbacks.onChange({ lookSensitivity: value });
+    });
 
-    requireEl(root, "settings-close").addEventListener("click", () => this.close());
+    requireElement(root, "settings-close").addEventListener("click", () => this.close());
   }
 
   get isOpen(): boolean {
@@ -79,15 +89,13 @@ export class SettingsPanel {
     this.reduced.checked = settings.reducedMotion;
     this.fov.value = String(settings.fieldOfView);
     this.fovValue.textContent = String(settings.fieldOfView);
+    this.sensitivity.value = String(settings.lookSensitivity);
+    this.sensitivityValue.textContent = formatSensitivity(settings.lookSensitivity);
     this.calmButton.classList.toggle("is-active", calmActive);
     this.calmButton.textContent = calmActive ? "Calm Mode on" : "Enable Calm Mode";
   }
 }
 
-function requireEl(root: Document, id: string): HTMLElement {
-  const element = root.getElementById(id);
-  if (!element) {
-    throw new Error(`Missing settings element #${id}`);
-  }
-  return element;
+function formatSensitivity(value: number): string {
+  return value.toFixed(2).replace(/\.?0+$/, "");
 }
