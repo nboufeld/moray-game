@@ -16,8 +16,9 @@ test("the reef boots and renders a canvas", async ({ page }) => {
   expect(size.width).toBeGreaterThan(0);
   expect(size.height).toBeGreaterThan(0);
 
-  await expect(page.getByTestId("objective")).toContainText("Find the hidden moray");
-  await expect(page.getByTestId("progress")).toContainText("0");
+  await expect(page.getByTestId("objective")).toContainText("Find the morays");
+  await expect(page.locator("#found-count")).toHaveText("0");
+  await expect(page.locator("#total-count")).toHaveText("4");
 
   // The game instance is exposed for lightweight assertions.
   const hasGame = await page.evaluate(() => "__reef" in window);

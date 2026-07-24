@@ -53,6 +53,12 @@ export class DiscoverySystem {
     return this.discovered.has(speciesId);
   }
 
+  /** Marks a species discovered without focusing (e.g. when loading a save). */
+  markDiscovered(speciesId: string): void {
+    this.discovered.add(speciesId);
+    this.scanners.get(speciesId)?.reset();
+  }
+
   discoveredIds(): string[] {
     return [...this.discovered];
   }

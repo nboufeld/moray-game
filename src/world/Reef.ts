@@ -17,37 +17,66 @@ import {
 } from "three";
 import type { ReefBounds, SphereCollider } from "./CollisionField";
 
+export interface HidingSpot {
+  readonly speciesId: string;
+  /** World position where the moray's head peeks into open water. */
+  readonly position: Vector3;
+  /** Yaw (radians) the head faces — its open, approachable side. */
+  readonly facing: number;
+}
+
+interface SpotPlacement {
+  readonly speciesId: string;
+  readonly position: Vector3;
+  readonly facing: number;
+}
+
+const SPOT_PLACEMENTS: readonly SpotPlacement[] = [
+  { speciesId: "snowflake-moray", position: new Vector3(0, 1.4, 1.5), facing: 0 },
+  { speciesId: "ribbon-moray", position: new Vector3(-13, 1.6, 6), facing: Math.PI / 2 },
+  { speciesId: "zebra-moray", position: new Vector3(13, 1.4, 6), facing: -Math.PI / 2 },
+  { speciesId: "dragon-moray", position: new Vector3(-6, 1.6, -9), facing: 0 },
+];
+
 /**
  * A hand-placed greybox of the Sunlit Coral Garden: seabed, rounded rocks,
- * a few coral clusters, instanced sea grass and one hero crevice that hides
- * the first moray. Deliberately low-poly and readable.
+ * coral clusters, instanced sea grass and several hero crevices — one per
+ * moray. Each crevice's coral mound sits behind the peeking head so the line
+ * of sight stays clear from the head's open side.
  */
 export class Reef {
   readonly group = new Group();
   readonly colliders: SphereCollider[] = [];
   readonly obstructionMeshes: Mesh[] = [];
+  readonly hidingSpots: HidingSpot[] = [];
   readonly bounds: ReefBounds = {
-    minX: -28,
-    maxX: 28,
+    minX: -30,
+    maxX: 30,
     minY: 0.6,
-    maxY: 11,
-    minZ: -28,
-    maxZ: 26,
+    maxY: 12,
+    minZ: -30,
+    maxZ: 30,
   };
 
-  /** World position where the hidden moray's head peeks from the crevice. */
-  readonly crevicePosition = new Vector3(0, 1.4, 1.5);
+  private readonly rockMaterial = new MeshStandardMaterial({
+    color: 0x6a7a6c,
+    roughness: 0.95,
+    metalness: 0,
+    flatShading: true,
+  });
 
   constructor() {
     this.buildSeabed();
     this.buildRockField();
     this.buildCoral();
-    this.buildCrevice();
+    for (const placement of SPOT_PLACEMENTS) {
+      this.addHidingSpot(placement);
+    }
     this.buildSeaGrass();
   }
 
   private buildSeabed(): void {
-    const geometry = new PlaneGeometry(70, 70, 1, 1);
+    const geometry = new PlaneGeometry(80, 80, 1, 1);
     const material = new MeshStandardMaterial({ color: 0xd8c69a, roughness: 1, metalness: 0 });
     const seabed = new Mesh(geometry, material);
     seabed.rotation.x = -Math.PI / 2;
@@ -64,12 +93,12 @@ export class Reef {
     });
 
     const placements: Array<{ x: number; z: number; scale: number }> = [
-      { x: -8, z: 2, scale: 2.4 },
-      { x: 9, z: -4, scale: 3.1 },
-      { x: -12, z: -10, scale: 2.0 },
-      { x: 6, z: 8, scale: 1.6 },
-      { x: 14, z: 4, scale: 2.2 },
-      { x: -4, z: -14, scale: 2.8 },
+      { x: -20, z: -2, scale: 2.4 },
+      { x: 20, z: -3, scale: 3.1 },
+      { x: -12, z: -18, scale: 2.0 },
+      { x: 8, z: 16, scale: 1.6 },
+      { x: 22, z: 14, scale: 2.2 },
+      { x: -3, z: -20, scale: 2.8 },
     ];
 
     for (const p of placements) {
@@ -89,7 +118,7 @@ export class Reef {
     const palette = [0xff9e7a, 0xb98cff, 0xffd27a, 0x7ad0c0];
     const dummy = new Object3D();
 
-    for (let cluster = 0; cluster < 4; cluster++) {
+    for (let cluster = 0; cluster < 5; cluster++) {
       const color = palette[cluster % palette.length] ?? 0xff9e7a;
       const material = new MeshStandardMaterial({
         color: new Color(color),
@@ -100,12 +129,12 @@ export class Reef {
       const branches = new InstancedMesh(new ConeGeometry(0.32, 1.6, 6), material, 7);
       branches.castShadow = true;
 
-      const base = new Vector3(-14 + cluster * 9, 0, 10 - cluster * 7);
+      const base = new Vector3(-16 + cluster * 8, 0, 14 - cluster * 6);
       for (let i = 0; i < 7; i++) {
         dummy.position.set(
-          base.x + (Math.random() - 0.5) * 2.2,
+          base.x + (Math.random() - 0.5) * 2.4,
           0.8 + Math.random() * 0.5,
-          base.z + (Math.random() - 0.5) * 2.2,
+          base.z + (Math.random() - 0.5) * 2.4,
         );
         dummy.rotation.set((Math.random() - 0.5) * 0.5, Math.random() * Math.PI, (Math.random() - 0.5) * 0.5);
         dummy.scale.setScalar(0.7 + Math.random() * 0.8);
@@ -117,39 +146,48 @@ export class Reef {
     }
   }
 
-  private buildCrevice(): void {
-    const rockMaterial = new MeshStandardMaterial({
-      color: 0x6a7a6c,
-      roughness: 0.95,
-      metalness: 0,
-      flatShading: true,
-    });
+  private addHidingSpot(placement: SpotPlacement): void {
+    const { position, facing } = placement;
+    const forward = new Vector3(Math.sin(facing), 0, Math.cos(facing));
+    const back = forward.clone().negate();
+    const right = new Vector3(forward.z, 0, -forward.x);
 
-    // A coral mound the moray's body recedes into. It sits BEHIND the head so
-    // the peeking head stays in clear line of sight from an open-water approach.
-    const mound = new Mesh(new DodecahedronGeometry(3.0, 0), rockMaterial);
-    mound.position.set(0, 2.4, -2.4);
+    // Coral mound behind the head (along the body/deeper direction).
+    const mound = new Mesh(new DodecahedronGeometry(3.0, 0), this.rockMaterial);
+    mound.position.copy(position).addScaledVector(back, 3.9);
+    mound.position.y = position.y + 1.0;
     mound.scale.set(1.5, 0.8, 1.2);
+    mound.rotation.y = facing;
     mound.castShadow = true;
     mound.receiveShadow = true;
     this.group.add(mound);
     this.obstructionMeshes.push(mound);
-    this.colliders.push({ center: new Vector3(0, 1.7, -2.4), radius: 3.0 });
+    this.colliders.push({
+      center: position.clone().addScaledVector(back, 3.9).setY(position.y + 0.3),
+      radius: 3.0,
+    });
 
-    // A dark opening framing the crevice mouth, so the eye is drawn to it.
+    // Dark cave mouth framing the crevice, facing the head's open side.
     const cave = new Mesh(new CircleGeometry(1.05, 24), new MeshStandardMaterial({ color: 0x04141a }));
-    cave.position.set(0, 1.35, 0.55);
+    cave.position.copy(position).addScaledVector(back, 0.95).setY(position.y - 0.05);
+    cave.rotation.y = facing;
     this.group.add(cave);
 
-    // Side blocks framing the crevice mouth (a natural cleaner-shrimp perch).
+    // Flank blocks framing the mouth (a natural cleaner-shrimp perch).
     const flankGeometry = new BoxGeometry(1.1, 1.7, 1.5);
     for (const sign of [-1, 1]) {
-      const flank = new Mesh(flankGeometry, rockMaterial);
-      flank.position.set(sign * 1.9, 1.05, -0.4);
+      const flank = new Mesh(flankGeometry, this.rockMaterial);
+      flank.position
+        .copy(position)
+        .addScaledVector(back, 1.9)
+        .addScaledVector(right, sign * 1.9)
+        .setY(position.y - 0.3);
       flank.castShadow = true;
       flank.receiveShadow = true;
       this.group.add(flank);
     }
+
+    this.hidingSpots.push({ speciesId: placement.speciesId, position: position.clone(), facing });
   }
 
   private buildSeaGrass(): void {
@@ -159,26 +197,41 @@ export class Reef {
       metalness: 0,
       flatShading: true,
     });
-    const count = 160;
+    const count = 220;
     const grass = new InstancedMesh(new ConeGeometry(0.08, 1.1, 4), material, count);
     const dummy = new Object3D();
     const rotation = new Quaternion();
     const matrix = new Matrix4();
+    const up = new Vector3(0, 1, 0);
 
+    let placed = 0;
     for (let i = 0; i < count; i++) {
-      const x = (Math.random() - 0.5) * 52;
-      const z = (Math.random() - 0.5) * 52;
-      if (Math.abs(x) < 3.5 && z > -4 && z < 4) {
-        // Keep the crevice mouth clear.
+      const x = (Math.random() - 0.5) * 58;
+      const z = (Math.random() - 0.5) * 58;
+      // Keep every crevice mouth clear.
+      const nearSpot = this.hidingSpots.some((spot) => {
+        const dx = x - spot.position.x;
+        const dz = z - spot.position.z;
+        return dx * dx + dz * dz < 16;
+      });
+      if (nearSpot) {
         continue;
       }
       dummy.position.set(x, 0.5 + Math.random() * 0.3, z);
-      rotation.setFromAxisAngle(new Vector3(0, 1, 0), Math.random() * Math.PI);
+      rotation.setFromAxisAngle(up, Math.random() * Math.PI);
       dummy.quaternion.copy(rotation);
       dummy.scale.set(1, 0.7 + Math.random() * 0.9, 1);
       dummy.updateMatrix();
       matrix.copy(dummy.matrix);
-      grass.setMatrixAt(i, matrix);
+      grass.setMatrixAt(placed, matrix);
+      placed++;
+    }
+    // Hide any unused instances beyond `placed`.
+    for (let i = placed; i < count; i++) {
+      dummy.position.set(0, -100, 0);
+      dummy.scale.setScalar(0.0001);
+      dummy.updateMatrix();
+      grass.setMatrixAt(i, dummy.matrix);
     }
     grass.instanceMatrix.needsUpdate = true;
     grass.receiveShadow = true;

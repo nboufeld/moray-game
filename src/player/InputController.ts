@@ -18,6 +18,8 @@ export class InputController {
 
   readonly onToggleCodex: (() => void)[] = [];
   readonly onRequestHint: (() => void)[] = [];
+  readonly onToggleSanctuary: (() => void)[] = [];
+  readonly onToggleSettings: (() => void)[] = [];
 
   private readonly keyTurnRate = 1.8; // radians / second
   private readonly mouseSensitivity = 0.0022;
@@ -93,6 +95,14 @@ export class InputController {
     }
     if (code === "keyh") {
       this.onRequestHint.forEach((fn) => fn());
+      return;
+    }
+    if (code === "keyv") {
+      this.onToggleSanctuary.forEach((fn) => fn());
+      return;
+    }
+    if (code === "keyo") {
+      this.onToggleSettings.forEach((fn) => fn());
       return;
     }
     this.keys.add(code);

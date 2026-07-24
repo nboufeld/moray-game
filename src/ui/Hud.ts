@@ -30,11 +30,8 @@ export class Hud {
     this.totalCount.textContent = String(total);
   }
 
-  setProgress(found: number, total: number): void {
+  setProgress(found: number, _total: number): void {
     this.foundCount.textContent = String(found);
-    if (found >= total) {
-      this.objectiveText.textContent = "Every moray found — linger a while";
-    }
   }
 
   setObjective(text: string): void {

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test("the moray is discovered by swimming toward it and holding focus", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/?reset=1");
 
   // Give focus to the game (also requests pointer lock; harmless in tests).
   await page.locator("#reef-canvas").click();
