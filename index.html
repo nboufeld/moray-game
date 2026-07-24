@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>The Reef Between Seas</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="reef-canvas"></canvas>
+
+      <div id="hud" class="hud">
+        <div class="hud__objective" data-testid="objective">
+          Objective: <span id="objective-text">Find the hidden moray</span>
+        </div>
+        <div class="hud__progress" data-testid="progress">
+          Morays found: <span id="found-count">0</span> / <span id="total-count">1</span>
+        </div>
+        <div class="hud__hint" id="hint-text"></div>
+      </div>
+
+      <div class="reticle" id="reticle" data-testid="reticle">
+        <div class="reticle__ring" id="reticle-ring"></div>
+        <svg class="reticle__progress" viewBox="0 0 48 48" aria-hidden="true">
+          <circle class="reticle__track" cx="24" cy="24" r="20" />
+          <circle class="reticle__fill" id="reticle-fill" cx="24" cy="24" r="20" />
+        </svg>
+      </div>
+
+      <div class="controls-help" id="controls-help">
+        <strong>Dive controls</strong>
+        <ul>
+          <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> swim</li>
+          <li><kbd>Space</kbd> ascend · <kbd>Shift</kbd> descend</li>
+          <li>Move the mouse to look around</li>
+          <li>Center the reticle on a moray and hold to focus</li>
+          <li><kbd>H</kbd> request a hint · <kbd>C</kbd> open the codex</li>
+        </ul>
+      </div>
+
+      <div class="codex" id="codex" data-testid="codex" hidden>
+        <div class="codex__panel">
+          <h2>Moray Codex</h2>
+          <div class="codex__entries" id="codex-entries">
+            <p class="codex__empty">No morays discovered yet. Dive in and look closely.</p>
+          </div>
+          <button class="codex__close" id="codex-close" type="button">Close (C)</button>
+        </div>
+      </div>
+
+      <div class="discovery-toast" id="discovery-toast" data-testid="discovery-toast" hidden></div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

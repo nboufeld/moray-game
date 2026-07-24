@@ -1,0 +1,260 @@
+:root {
+  --amber: #ffca7a;
+  --turquoise: #9fe7e0;
+  --deep: #0a2a3a;
+  --ink: #06202b;
+  --panel: rgba(8, 34, 46, 0.82);
+  --panel-edge: rgba(159, 231, 224, 0.35);
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--ink);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  color: #eaf7f5;
+}
+
+#app {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+#reef-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: crosshair;
+}
+
+.hud {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  padding: 14px 18px;
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 14px;
+  font-size: 15px;
+  line-height: 1.7;
+  letter-spacing: 0.2px;
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+  max-width: 320px;
+}
+
+.hud__objective span {
+  color: var(--amber);
+  font-weight: 600;
+}
+
+.hud__progress span {
+  color: var(--turquoise);
+  font-weight: 600;
+}
+
+.hud__hint {
+  margin-top: 6px;
+  min-height: 1.2em;
+  color: #ffe6b8;
+  font-style: italic;
+  font-size: 14px;
+}
+
+.reticle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 48px;
+  height: 48px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.reticle__ring {
+  position: absolute;
+  inset: 18px;
+  border: 2px solid rgba(234, 247, 245, 0.55);
+  border-radius: 50%;
+  transition: inset 160ms ease, border-color 160ms ease;
+}
+
+.reticle.is-focusing .reticle__ring {
+  inset: 12px;
+  border-color: var(--amber);
+}
+
+.reticle.is-found .reticle__ring {
+  inset: 8px;
+  border-color: var(--turquoise);
+}
+
+.reticle__progress {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+}
+
+.reticle__track {
+  fill: none;
+  stroke: rgba(234, 247, 245, 0.16);
+  stroke-width: 3;
+}
+
+.reticle__fill {
+  fill: none;
+  stroke: var(--amber);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 125.6;
+  stroke-dashoffset: 125.6;
+  transition: stroke-dashoffset 90ms linear;
+}
+
+.controls-help {
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  padding: 12px 16px;
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 280px;
+  backdrop-filter: blur(6px);
+  transition: opacity 400ms ease;
+}
+
+.controls-help ul {
+  margin: 8px 0 0;
+  padding-left: 16px;
+}
+
+kbd {
+  display: inline-block;
+  min-width: 18px;
+  padding: 1px 5px;
+  margin: 0 1px;
+  text-align: center;
+  background: rgba(159, 231, 224, 0.14);
+  border: 1px solid var(--panel-edge);
+  border-radius: 5px;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.codex {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(3, 16, 22, 0.72);
+  backdrop-filter: blur(4px);
+  z-index: 10;
+}
+
+.codex[hidden] {
+  display: none;
+}
+
+.codex__panel {
+  width: min(560px, 90vw);
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 24px 28px;
+  background: linear-gradient(160deg, #0d3547, #071f2a);
+  border: 1px solid var(--panel-edge);
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+
+.codex__panel h2 {
+  margin-top: 0;
+  color: var(--amber);
+  font-weight: 600;
+}
+
+.codex__empty {
+  color: #9fb8c0;
+  font-style: italic;
+}
+
+.codex__entry {
+  padding: 14px 0;
+  border-top: 1px solid rgba(159, 231, 224, 0.18);
+}
+
+.codex__entry h3 {
+  margin: 0;
+  color: var(--turquoise);
+}
+
+.codex__entry .sci {
+  font-style: italic;
+  color: #bfe9e3;
+  font-size: 14px;
+}
+
+.codex__entry p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #dff2ef;
+}
+
+.codex__close {
+  margin-top: 18px;
+  padding: 8px 18px;
+  background: var(--amber);
+  color: var(--ink);
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.discovery-toast {
+  position: absolute;
+  top: 22%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 16px 26px;
+  background: var(--panel);
+  border: 1px solid var(--amber);
+  border-radius: 14px;
+  text-align: center;
+  font-size: 18px;
+  color: #fff3df;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  animation: toast-in 420ms ease;
+}
+
+.discovery-toast[hidden] {
+  display: none;
+}
+
+.discovery-toast strong {
+  color: var(--amber);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
