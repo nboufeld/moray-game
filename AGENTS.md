@@ -20,7 +20,8 @@ comfort/accessibility settings panel with Calm Mode, and the Dream Sanctuary aqu
 - `src/ui/` — `Hud`, `Codex`, `SettingsPanel`, `SanctuaryOverlay`.
 - `src/accessibility/` — comfort settings + Calm Mode preset.
 - `tests/` — Vitest unit tests (pure gameplay logic, no WebGL).
-- `tests-e2e/` — Playwright tests (render, codex, discovery, sanctuary, calm mode, save).
+- `tests-e2e/` — Playwright tests (render, codex, discovery, sanctuary, calm mode, save,
+  comfort-panel keyboard access).
 
 ## Commands
 
@@ -56,6 +57,16 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
 - **Keys**: `C` Codex, `H` hint, `V` toggle Dream Sanctuary, `O` toggle settings. The
   sanctuary is a separate scene/camera; while it is open the reef simulation is paused and
   the dive HUD is hidden. Opening the settings panel also pauses the reef simulation.
+- **Input ownership gotcha**: the dive claims Space and the arrow keys, so
+  `InputController` steps aside (no `preventDefault`, no key tracking) whenever the event
+  target is a form control — otherwise the comfort panel's checkboxes and field-of-view
+  slider cannot be operated from the keyboard. The `C`/`H`/`V`/`O` shortcuts stay global
+  (so `O` always closes the panel) and ignore `event.repeat` so holding a key toggles once.
+- **Sanctuary rebuild gotcha**: `SanctuaryScene.setSpecies` runs on every discovery and
+  every time the sanctuary opens. It disposes the previous residents' geometries and
+  materials; drop that and the GPU copies accumulate for the rest of the session. Reef and
+  sanctuary morays are separate `Moray` instances with their own resources, so disposing
+  sanctuary residents never touches the reef.
 - **Finding the darker morays**: only the snowflake moray sits straight ahead of spawn. The
   ribbon (left), zebra (right) and dragon (deeper, forward-left) require turning and are
   intentionally harder to spot — the zebra/dragon heads are dark against their caves. Use

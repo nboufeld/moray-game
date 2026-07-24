@@ -86,27 +86,42 @@ export class InputController {
 
   private readonly handleKeyDown = (event: KeyboardEvent): void => {
     const code = event.code.toLowerCase();
+
+    const listeners = this.listenersFor(code);
+    if (listeners) {
+      // Auto-repeat fires while the key is held; a panel must toggle only once.
+      if (!event.repeat) {
+        listeners.forEach((fn) => fn());
+      }
+      return;
+    }
+
+    // A focused control owns the keyboard: the comfort panel's slider and
+    // checkboxes need the arrow keys and Space that the dive otherwise claims.
+    if (isFormControl(event.target)) {
+      return;
+    }
+
     if (MOVEMENT_CODES.has(code) || LOOK_CODES.has(code)) {
       event.preventDefault();
     }
-    if (code === "keyc") {
-      this.onToggleCodex.forEach((fn) => fn());
-      return;
-    }
-    if (code === "keyh") {
-      this.onRequestHint.forEach((fn) => fn());
-      return;
-    }
-    if (code === "keyv") {
-      this.onToggleSanctuary.forEach((fn) => fn());
-      return;
-    }
-    if (code === "keyo") {
-      this.onToggleSettings.forEach((fn) => fn());
-      return;
-    }
     this.keys.add(code);
   };
+
+  private listenersFor(code: string): (() => void)[] | null {
+    switch (code) {
+      case "keyc":
+        return this.onToggleCodex;
+      case "keyh":
+        return this.onRequestHint;
+      case "keyv":
+        return this.onToggleSanctuary;
+      case "keyo":
+        return this.onToggleSettings;
+      default:
+        return null;
+    }
+  }
 
   private readonly handleKeyUp = (event: KeyboardEvent): void => {
     this.keys.delete(event.code.toLowerCase());
@@ -124,3 +139,9 @@ const MOVEMENT_CODES = new Set([
 ]);
 
 const LOOK_CODES = new Set(["arrowleft", "arrowright", "arrowup", "arrowdown"]);
+
+const FORM_CONTROL_SELECTOR = "input, select, textarea, button, [contenteditable='true']";
+
+function isFormControl(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && target.matches(FORM_CONTROL_SELECTOR);
+}

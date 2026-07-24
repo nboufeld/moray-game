@@ -50,9 +50,10 @@ Append `?reset=1` to the URL to start a completely fresh dive (clears the save).
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint (flat config) |
 | `npm run test` | Vitest unit tests (pure gameplay logic) |
-| `npm run test:e2e` | Playwright smoke + discovery tests |
+| `npm run test:e2e` | Playwright smoke, discovery and accessibility tests |
 
 The unit tests cover the pure gameplay logic (movement, focus/discovery, collisions,
-registry, hint ladder, game loop). The Playwright tests boot the real WebGL app and
-verify it renders and that the moray can be discovered and recorded into the Codex.
+registry, hint ladder, game loop, sanctuary resource lifetime). The Playwright tests boot
+the real WebGL app and verify it renders, that the moray can be discovered and recorded
+into the Codex, and that the Comfort & Accessibility panel is fully keyboard-operable.
 Run `npx playwright install chromium` once before `npm run test:e2e`.

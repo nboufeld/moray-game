@@ -10,6 +10,7 @@ import {
   PerspectiveCamera,
   Scene,
   Vector3,
+  type Object3D,
 } from "three";
 import { Moray } from "../creatures/morays/Moray";
 import type { MoraySpeciesConfig } from "../creatures/morays/MoraySpeciesConfig";
@@ -62,6 +63,7 @@ export class SanctuaryScene {
   setSpecies(configs: readonly MoraySpeciesConfig[]): void {
     for (const resident of this.residents) {
       this.scene.remove(resident.moray.asset.root);
+      disposeSubtree(resident.moray.asset.root);
     }
     this.residents.length = 0;
 
@@ -113,4 +115,21 @@ export class SanctuaryScene {
       resident.moray.update(dt * motion, this.playerProxy, true);
     }
   }
+}
+
+/**
+ * Residents are rebuilt every time the sanctuary is opened or a moray is
+ * discovered, so their geometries and materials must be released or the GPU
+ * copies accumulate for the rest of the session.
+ */
+function disposeSubtree(root: Object3D): void {
+  root.traverse((object) => {
+    if (!(object instanceof Mesh)) {
+      return;
+    }
+    object.geometry.dispose();
+    for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+      material.dispose();
+    }
+  });
 }
