@@ -15,7 +15,8 @@ comfort/accessibility settings panel with Calm Mode, and the Dream Sanctuary aqu
 - `src/creatures/fish/` — `FishSchoolSystem` (instanced ambient fish).
 - `src/discovery/` — `FocusScanner`, `DiscoverySystem`, `HintSystem` (all pure/testable).
 - `src/rendering/` — fog + gradient backdrop, lighting, caustics, light shafts, particles,
-  and the `ColorGradeShader` used by the post chain.
+  the `ColorGradeShader` used by the post chain, and `ProceduralTexture` (the noise and
+  map-building toolkit every surface is textured with).
 - `src/util/Random.ts` — seeded PRNG and the per-subsystem `SEEDS`.
 - `src/sanctuary/` — `SanctuaryScene` (separate scene rendered when in sanctuary mode).
 - `src/save/` — `SaveSystem` + `SaveMigration` (versioned localStorage).
@@ -74,9 +75,28 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
   overdraw-bound, so their count matters far more than their triangle budget; and the
   caustics sheet must be built from `createSeabedGeometry` so it follows the same dunes
   as the sand it lies on.
-- **No-DOM guards**: `createPatternTexture` and `UnderwaterFog`'s gradient both return
-  null when `document` is undefined, because the scene classes are constructed in plain
-  Node unit tests. Anything else that paints to a canvas at construction needs the same.
+- **Texturing goes through `ProceduralTexture`**, which builds `DataTexture`s from typed
+  arrays rather than painting canvases. That is deliberate: it needs no DOM, so maps work
+  unchanged in the Node unit tests, and it is bit-identical across environments, which
+  canvas rasterisation is not — and the whole screenshot loop depends on two runs of the
+  same seed matching. Every generator tiles by wrapping its lattice on an integer period,
+  so never "fix" a seam by stamping. Surface maps live next to their owner
+  (`SandMaterial`, `RockMaterial`, `CoralField.coralSkin`, `SeaGrass.bladeTexture`,
+  `MorayPattern`) and are cached per material or per species — they are built at
+  construction, which the unit tests hit for every species.
+- **Flat shading is kept on purpose.** Normal maps compose correctly with it, so the reef
+  reads as textured facets — chiselled, not smoothly rendered CG. The fix for a surface
+  that looks like a platonic solid is geometry (`weatherRock`), not smooth normals.
+- **Rock UVs are box-projected at build time**, not triplanar. Triplanar would cost three
+  fetches per map on the largest surfaces; box projection is one, and its seams land on
+  facet edges where flat shading has already broken the normal.
+- **`weatherRock` on a crevice mound must stay `inwardOnly`.** The mounds sit centimetres
+  behind a moray's head and are raycast for line of sight, so a mound that can bulge
+  outward can silently swallow the creature the game is about. Re-run the discovery spec
+  after touching anything near a hiding spot.
+- **No-DOM guards**: `UnderwaterFog`'s gradient still paints to a canvas and returns null
+  when `document` is undefined. Anything else that paints to a canvas at construction
+  needs the same — or better, build it as a `DataTexture` and avoid the problem.
 - **Manual/scripted testing gotcha (discovery)**: the hero moray sits *nearly straight
   ahead of the spawn point, only slightly below center*, and its head deliberately peeks
   out in front of the coral mound (line of sight must be clear, or `DiscoverySystem`

@@ -4,9 +4,11 @@ import {
   Float32BufferAttribute,
   Points,
   PointsMaterial,
+  type DataTexture,
   type Scene,
 } from "three";
 import { Random, SEEDS } from "../util/Random";
+import { buildScalarTexture } from "./ProceduralTexture";
 
 /**
  * Sparse drifting motes. Low density on purpose — the blueprint warns against
@@ -33,11 +35,15 @@ export class Particles {
 
     const material = new PointsMaterial({
       color: 0xdff4ef,
-      size: 0.07,
+      size: 0.09,
+      // Without a sprite every mote is a hard square, which is exactly how they
+      // read against the water: white confetti rather than drifting matter.
+      map: createMoteSprite(),
       transparent: true,
       opacity: 0.5,
       blending: AdditiveBlending,
       depthWrite: false,
+      sizeAttenuation: true,
     });
 
     this.points = new Points(geometry, material);
@@ -61,4 +67,12 @@ export class Particles {
     }
     attribute.needsUpdate = true;
   }
+}
+
+/** A soft round mote: opaque core fading to nothing at the rim. */
+function createMoteSprite(): DataTexture {
+  return buildScalarTexture(32, (u, v) => {
+    const distance = Math.hypot(u - 0.5, v - 0.5) * 2;
+    return Math.pow(Math.max(0, 1 - distance), 1.8);
+  });
 }

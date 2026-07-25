@@ -7,9 +7,11 @@ import {
   Object3D,
   PlaneGeometry,
   Vector2,
+  type DataTexture,
   type WebGLProgramParametersWithUniforms,
 } from "three";
-import { Random } from "../util/Random";
+import { buildColorTexture, fbm } from "../rendering/ProceduralTexture";
+import { Random, SEEDS } from "../util/Random";
 import { seabedHeight } from "./Seabed";
 
 const BLADE_HEIGHT = 1.25;
@@ -43,9 +45,10 @@ export class SeaGrass {
       roughness: 0.85,
       metalness: 0,
       side: DoubleSide,
-      // Blades are thin and backlit as often as not; a little translucency
-      // stops the far side of a patch reading as a dark hole.
-      transparent: false,
+      // Dark root climbing to a sun-bleached tip, with lengthwise fibre. A flat
+      // green blade reads as a cactus spine; the gradient is what makes it read
+      // as a leaf.
+      map: bladeTexture(),
     });
     material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
       shader.uniforms.uSway = this.sway;
@@ -67,6 +70,16 @@ export class SeaGrass {
            transformed.x += bend * 0.16 * uWind * tip * tip;
            transformed.z += bend * 0.09 * uWind * tip * tip;`,
         );
+
+      // Cheap translucency. Blades are a fraction of a millimetre thick and are
+      // backlit by the shafts as often as not, so the far side of a patch
+      // should glow rather than fall into shadow.
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <dithering_fragment>",
+        `#include <dithering_fragment>
+         float facing = 1.0 - abs(dot(normalize(vNormal), normalize(vViewPosition)));
+         gl_FragColor.rgb += diffuseColor.rgb * vec3(0.16, 0.29, 0.22) * facing;`,
+      );
     };
 
     const total = PATCH_COUNT * BLADES_PER_PATCH;
@@ -129,6 +142,24 @@ export class SeaGrass {
     this.sway.value += dt * (reducedMotion ? 0.35 : 1);
     this.windStrength.value = reducedMotion ? 0.45 : 1;
   }
+}
+
+/**
+ * Root-to-tip gradient with lengthwise fibre. Narrow because the blade's UVs
+ * only ever need one column: all the variation is along its length.
+ */
+let bladeMap: DataTexture | undefined;
+function bladeTexture(): DataTexture {
+  bladeMap ??= buildColorTexture(32, (u, v) => {
+    // PlaneGeometry's v runs base (0) to tip (1) after the remap below.
+    const toTip = v;
+    const fibre = 0.9 + fbm(u * 4, v, { seed: SEEDS.grassBlade, period: 12, octaves: 2 }) * 0.24;
+    // Edges of the blade catch a little more light than the centre rib.
+    const across = 0.86 + Math.abs(u - 0.5) * 0.5;
+    const shade = (0.52 + toTip * 0.72) * fibre * across;
+    return [shade * 0.82, shade, shade * 0.66];
+  });
+  return bladeMap;
 }
 
 /**

@@ -1,6 +1,5 @@
 import {
   ACESFilmicToneMapping,
-  HalfFloatType,
   PCFSoftShadowMap,
   SRGBColorSpace,
   Vector2,
@@ -17,6 +16,9 @@ import { ColorGradeShader } from "../rendering/ColorGradeShader";
 
 /** How far below display resolution the bloom mips are rendered. */
 const BLOOM_DIVISOR = 4;
+
+/** Multisampling on the composer targets. WebGL2 is a given here. */
+const MSAA_SAMPLES = 4;
 
 /** Frame budget either side of which the internal resolution is adjusted. */
 const SLOW_FRAME_MS = 30;
@@ -54,7 +56,10 @@ export class RendererAdapter {
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new WebGLRenderer({
       canvas,
-      antialias: true,
+      // No `antialias` here: every frame goes through the composer, so scene
+      // geometry never rasterises into the canvas's MSAA buffer. It was pure
+      // wasted memory. The multisampling that matters is on the composer
+      // targets below.
       powerPreference: "high-performance",
     });
     this.renderer.outputColorSpace = SRGBColorSpace;
@@ -63,10 +68,13 @@ export class RendererAdapter {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = PCFSoftShadowMap;
 
-    // Half float keeps the bloom highlights from banding before tone mapping.
+    // EffectComposer already defaults its targets to half float, which is what
+    // keeps bloom highlights from banding before tone mapping. What it does not
+    // do is multisample them, and without that every edge in the scene is
+    // stair-stepped no matter what the canvas was asked for.
     this.composer = new EffectComposer(this.renderer);
-    this.composer.renderTarget1.texture.type = HalfFloatType;
-    this.composer.renderTarget2.texture.type = HalfFloatType;
+    this.composer.renderTarget1.samples = MSAA_SAMPLES;
+    this.composer.renderTarget2.samples = MSAA_SAMPLES;
 
     // The scene and camera are swapped per frame: the reef and the sanctuary
     // are separate scenes that share this one chain.

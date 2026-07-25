@@ -11,7 +11,10 @@ complete emotional and technical loop rather than a fleet of assets:
 - A **Sunlit Coral Garden** reef: dune-shaped seabed, coral in three silhouettes, swaying
   sea grass, drifting motes and an instanced **fish school**, under depth-graded fog,
   raking sunlight shafts and animated caustics.
-- A post-processing chain (bloom, split-tone grade, vignette) behind an **adaptive
+- Every surface **procedurally textured** — sand ripples, weathered stone, corallite
+  brain coral, blade gradients and per-species moray skin — generated from seeded noise
+  at startup, with no art assets to ship.
+- A post-processing chain (bloom, split-tone grade, vignette, MSAA) behind an **adaptive
   resolution** scaler, so the reef still runs on hardware without a GPU.
 - Comfortable **kinematic swimming** with configurable camera comfort (bob, roll, auto-level).
 - **Four distinct hidden morays** — snowflake (_Echidna nebulosa_), ribbon

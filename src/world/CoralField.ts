@@ -10,9 +10,11 @@ import {
   Object3D,
   SphereGeometry,
   type BufferGeometry,
+  type DataTexture,
   type WebGLProgramParametersWithUniforms,
 } from "three";
-import { Random } from "../util/Random";
+import { buildColorTexture, buildNormalTexture, fbm, voronoi } from "../rendering/ProceduralTexture";
+import { Random, SEEDS } from "../util/Random";
 import { seabedHeight } from "./Seabed";
 
 interface ClusterSite {
@@ -57,6 +59,8 @@ interface Part {
 
 export class CoralField {
   readonly group = new Group();
+  /** Where each head meets the sand, for the seabed's baked contact shadows. */
+  readonly contacts: { x: number; z: number; radius: number; strength: number }[] = [];
 
   constructor(seed: number) {
     const random = new Random(seed);
@@ -78,8 +82,10 @@ export class CoralField {
         const head = new Object3D();
         head.position.set(x, seabedHeight(x, z), z);
         head.rotation.y = random.range(0, Math.PI * 2);
-        head.scale.setScalar(random.range(0.72, 1.35));
+        const headScale = random.range(0.72, 1.35);
+        head.scale.setScalar(headScale);
         head.updateMatrix();
+        this.contacts.push({ x, z, radius: headScale * 1.9, strength: 0.42 });
 
         const roll = random.next();
         if (roll < 0.45) {
@@ -106,7 +112,7 @@ export class CoralField {
         if (matching.length === 0) {
           continue;
         }
-        this.group.add(buildInstances(geometries[kind], matching, glowing));
+        this.group.add(buildInstances(geometries[kind], matching, glowing, kind));
       }
     }
   }
@@ -116,8 +122,18 @@ function buildInstances(
   geometry: BufferGeometry,
   parts: readonly Part[],
   glowing: boolean,
+  kind: ShapeKind,
 ): InstancedMesh {
-  const material = new MeshStandardMaterial({ roughness: 0.72, metalness: 0, flatShading: true });
+  const skin = coralSkin(kind);
+  const material = new MeshStandardMaterial({
+    roughness: 0.72,
+    metalness: 0,
+    flatShading: true,
+    // The maps are painted in neutral luminance so the per-instance colour
+    // below keeps carrying all the hue variation across the garden.
+    map: skin.map,
+    normalMap: skin.normal,
+  });
 
   if (glowing) {
     // Emissive is a material uniform, so on its own every glowing head would
@@ -148,6 +164,81 @@ function buildInstances(
   }
 
   return mesh;
+}
+
+interface CoralSkin {
+  readonly map: DataTexture;
+  readonly normal: DataTexture;
+}
+
+const SKIN_SIZE = 256;
+const skinCache = new Map<ShapeKind, CoralSkin>();
+
+/**
+ * Surface detail per silhouette, shared across every instance of that shape.
+ *
+ * Boulder heads get the most attention: a Voronoi corallite pattern — domed
+ * cells separated by darker walls — is the single detail that makes a lump of
+ * geometry read unmistakably as brain coral.
+ */
+function coralSkin(kind: ShapeKind): CoralSkin {
+  const cached = skinCache.get(kind);
+  if (cached) {
+    return cached;
+  }
+
+  const seed = SEEDS.coralSkin + kind.length * 7919;
+  let height: (u: number, v: number) => number;
+  let strength: number;
+
+  switch (kind) {
+    case "boulder":
+    case "polyp": {
+      height = (u, v) => {
+        const { f1, f2 } = voronoi(u, v, 12, seed);
+        // Domed cell interiors, sunk along the walls where f2 - f1 → 0.
+        const wall = Math.min(1, (f2 - f1) / 0.05);
+        return wall * 0.85 + (1 - Math.min(1, f1 / 0.08)) * 0.1;
+      };
+      strength = 0.09;
+      break;
+    }
+    case "branch": {
+      // Fine longitudinal ribbing plus polyp speckle.
+      height = (u, v) =>
+        Math.sin(u * Math.PI * 2 * 8) * 0.18 +
+        0.5 +
+        fbm(u, v, { seed, period: 24, octaves: 3 }) * 0.5;
+      strength = 0.05;
+      break;
+    }
+    case "tableTop":
+    case "tableStalk": {
+      // Concentric growth banding.
+      height = (u, v) => {
+        const rings = Math.sin(v * Math.PI * 2 * 14) * 0.5 + 0.5;
+        return rings * 0.6 + fbm(u, v, { seed, period: 16, octaves: 3 }) * 0.4;
+      };
+      strength = 0.045;
+      break;
+    }
+    default: {
+      const exhaustive: never = kind;
+      throw new Error(`Unhandled coral shape: ${String(exhaustive)}`);
+    }
+  }
+
+  const skin: CoralSkin = {
+    map: buildColorTexture(SKIN_SIZE, (u, v) => {
+      // Neutral luminance around 1.0 so `setColorAt` still decides the hue.
+      const tone = 0.72 + height(u, v) * 0.46;
+      return [tone, tone * 0.99, tone * 0.96];
+    }),
+    normal: buildNormalTexture(SKIN_SIZE, height, strength),
+  };
+
+  skinCache.set(kind, skin);
+  return skin;
 }
 
 /** Composes a part's local transform into its head's world matrix. */

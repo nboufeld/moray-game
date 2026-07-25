@@ -31,24 +31,16 @@ const SHAFT_LENGTH = 34;
 export class LightShafts {
   readonly group = new Group();
 
-  private readonly material: MeshBasicMaterial;
+  // One material per shaft. They are cheap, and a single shared opacity made
+  // the entire ocean breathe on one metronome.
+  private readonly materials: { material: MeshBasicMaterial; phase: number }[] = [];
   private readonly baseOpacity = 0.15;
   private time = 0;
 
   constructor(sunDirection: Vector3, seed: number = SEEDS.shafts) {
     const random = new Random(seed);
 
-    this.material = new MeshBasicMaterial({
-      map: createShaftTexture(),
-      transparent: true,
-      opacity: this.baseOpacity,
-      blending: AdditiveBlending,
-      depthWrite: false,
-      side: DoubleSide,
-      // Fog would tint an additive surface and brighten the distance instead
-      // of fading it, so the shafts opt out and rely on their own falloff.
-      fog: false,
-    });
+    const texture = createShaftTexture();
 
     // Point each shaft down the sun ray: the geometry runs along its own +Y.
     const along = sunDirection.clone().normalize().negate();
@@ -56,6 +48,19 @@ export class LightShafts {
 
     for (let i = 0; i < SHAFT_COUNT; i++) {
       const width = random.range(2.4, 6.5);
+      const material = new MeshBasicMaterial({
+        map: texture,
+        transparent: true,
+        opacity: this.baseOpacity,
+        blending: AdditiveBlending,
+        depthWrite: false,
+        side: DoubleSide,
+        // Fog would tint an additive surface and brighten the distance instead
+        // of fading it, so the shafts opt out and rely on their own falloff.
+        fog: false,
+      });
+      this.materials.push({ material, phase: random.range(0, Math.PI * 2) });
+
       const shaft = new Group();
       shaft.quaternion.copy(orientation);
       shaft.position.set(random.signed(26), random.range(4, 9), random.signed(26));
@@ -63,7 +68,7 @@ export class LightShafts {
 
       for (const spin of [0, Math.PI / 2]) {
         const geometry = new PlaneGeometry(width, SHAFT_LENGTH);
-        const blade = new Mesh(geometry, this.material);
+        const blade = new Mesh(geometry, material);
         blade.rotation.y = spin + random.signed(0.4);
         blade.renderOrder = 2;
         shaft.add(blade);
@@ -79,9 +84,12 @@ export class LightShafts {
 
   update(dt: number, reducedMotion: boolean): void {
     this.time += dt * (reducedMotion ? 0.25 : 1);
-    // A slow breathing pulse; the surface above is never quite still.
-    const pulse = 1 + Math.sin(this.time * 0.35) * 0.22;
-    this.material.opacity = this.baseOpacity * (reducedMotion ? 0.75 : 1) * pulse;
+    // A slow breathing pulse; the surface above is never quite still. Each
+    // shaft runs on its own phase so the swell reads as water, not a dimmer.
+    const scale = this.baseOpacity * (reducedMotion ? 0.75 : 1);
+    for (const { material, phase } of this.materials) {
+      material.opacity = scale * (1 + Math.sin(this.time * 0.35 + phase) * 0.28);
+    }
   }
 }
 

@@ -6,6 +6,7 @@ import {
   SRGBColorSpace,
   type Scene,
 } from "three";
+import { Random, SEEDS } from "../util/Random";
 
 export interface UnderwaterFogOptions {
   /** Deep water tint the fog fades toward, and the colour at the horizon. */
@@ -20,6 +21,14 @@ export interface UnderwaterFogOptions {
 
 /** Where the horizon colour sits in the vertical gradient (0 down, 1 up). */
 const HORIZON = 0.52;
+
+/** A few pixels wide so the dither has somewhere to vary horizontally. */
+const WIDTH = 8;
+const HEIGHT = 256;
+
+function clampByte(value: number): number {
+  return value < 0 ? 0 : value > 255 ? 255 : value;
+}
 
 /**
  * Depth-coloured exponential fog plus a matching gradient backdrop. The two
@@ -58,18 +67,31 @@ export class UnderwaterFog {
     }
 
     const canvas = document.createElement("canvas");
-    canvas.width = 1;
-    canvas.height = 256;
+    canvas.width = WIDTH;
+    canvas.height = HEIGHT;
     const ctx = canvas.getContext("2d");
     if (ctx) {
       // Canvas y runs top-down and equirectangular v runs bottom-up, so the
       // surface colour belongs at y = 0.
-      const gradient = ctx.createLinearGradient(0, 0, 0, 256);
+      const gradient = ctx.createLinearGradient(0, 0, 0, HEIGHT);
       gradient.addColorStop(0, `#${this.surfaceColor.getHexString()}`);
       gradient.addColorStop(1 - HORIZON, `#${this.color.getHexString()}`);
       gradient.addColorStop(1, `#${this.abyssColor.getHexString()}`);
       ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, 1, 256);
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+      // A smooth ramp stretched across the whole sky is exactly the case that
+      // bands on 8-bit output. A pixel of per-row jitter breaks the contours
+      // apart into noise the eye reads as water rather than as steps.
+      const image = ctx.getImageData(0, 0, WIDTH, HEIGHT);
+      const random = new Random(SEEDS.fogDither);
+      for (let i = 0; i < image.data.length; i += 4) {
+        const jitter = Math.round(random.range(-1.5, 1.5));
+        image.data[i] = clampByte((image.data[i] ?? 0) + jitter);
+        image.data[i + 1] = clampByte((image.data[i + 1] ?? 0) + jitter);
+        image.data[i + 2] = clampByte((image.data[i + 2] ?? 0) + jitter);
+      }
+      ctx.putImageData(image, 0, 0);
     }
 
     const texture = new CanvasTexture(canvas);

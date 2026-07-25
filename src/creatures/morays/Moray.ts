@@ -10,7 +10,7 @@ import {
   SphereGeometry,
   Vector3,
 } from "three";
-import { createPatternTexture } from "./MorayPattern";
+import { createMoraySkin } from "./MorayPattern";
 import type { BodyArchetype, MoraySpeciesConfig } from "./MoraySpeciesConfig";
 
 /** Named runtime handles shared by every species (the common contract). */
@@ -40,6 +40,23 @@ function tube(frontRadius: number, backRadius: number, length: number): Cylinder
   const geometry = new CylinderGeometry(frontRadius, backRadius, length, 10, 1, true);
   geometry.rotateX(Math.PI / 2);
   return geometry;
+}
+
+/**
+ * Rewrites a segment's `v` so it occupies its own slice of the body's length.
+ * A cylinder's `v` runs 0 at -Y (which becomes the tail-facing end after the
+ * rotation in `tube`) to 1 at +Y, so the head end of segment `index` sits at
+ * `index / total` and the tail end at `(index + 1) / total`.
+ */
+function spanBodyUv(geometry: CylinderGeometry, index: number, total: number): void {
+  const uv = geometry.attributes.uv;
+  if (!uv) {
+    return;
+  }
+  for (let i = 0; i < uv.count; i++) {
+    uv.setY(i, (index + 1 - uv.getY(i)) / total);
+  }
+  uv.needsUpdate = true;
 }
 
 const ARCHETYPES: Record<BodyArchetype, ArchetypeShape> = {
@@ -72,14 +89,14 @@ export class Moray {
     const bodyColor = new Color(config.bodyColor);
     const accentColor = new Color(config.accentColor);
 
-    // Markings are painted rather than modelled; where there is no DOM the map
-    // is null and the flat body colour stands in.
-    const markings = createPatternTexture(config);
+    // Markings, counter-shading, skin folds and wet sheen are all painted.
+    const skin = createMoraySkin(config);
     const bodyMaterial = new MeshStandardMaterial({
-      color: markings ? 0xffffff : bodyColor,
-      map: markings,
-      roughness: 0.55,
-      metalness: 0,
+      map: skin.map,
+      normalMap: skin.normalMap,
+      roughnessMap: skin.roughnessMap,
+      roughness: 1,
+      metalness: 0.04,
     });
     const accentMaterial = new MeshStandardMaterial({ color: accentColor, roughness: 0.5, metalness: 0 });
 
@@ -103,20 +120,28 @@ export class Moray {
       // shows a hollow cross-section where the tail should finish.
       const isTail = i === this.shape.segments - 1;
       const backRadius = isTail ? girth * 0.04 : girthAt(i + 1) * 0.5;
-      const segment = new Mesh(tube(girth * 0.5, backRadius, segmentLength * 1.04), bodyMaterial);
-      // Eels are laterally compressed, not round.
-      segment.scale.set(1, 0.92, 1);
+      const geometry = tube(girth * 0.5, backRadius, segmentLength * 1.04);
+      // Every segment is its own cylinder with its own 0..1 UVs, so without
+      // this the whole pattern tile compresses into each 0.4m link and a five
+      // band zebra wears forty. Remapping v to the segment's slice of the body
+      // makes one texture span the animal head to tail.
+      spanBodyUv(geometry, i, this.shape.segments);
+      const segment = new Mesh(geometry, bodyMaterial);
+      // Eels are laterally compressed — narrow across, deep top to bottom.
+      segment.scale.set(0.9, 1, 1);
       pivot.add(segment);
 
       // A thin dorsal ridge sharpens the silhouette (yellow margin on ribbons).
       // Overlapping its neighbours matters: butt-jointed ridges separate into a
       // row of loose bricks as soon as the body flexes.
       if (i < this.shape.segments - 1) {
+        // Low and heavily overlapped. A taller fin split at every joint fans
+        // apart as the body flexes and reads as a row of plates, not a fin.
         const ridge = new Mesh(
-          new BoxGeometry(girth * 0.09, girth * 0.28, segmentLength * 1.5),
+          new BoxGeometry(girth * 0.07, girth * 0.19, segmentLength * 1.75),
           accentMaterial,
         );
-        ridge.position.y = girth * 0.5;
+        ridge.position.y = girth * 0.46;
         segment.add(ridge);
       }
 
@@ -129,10 +154,24 @@ export class Moray {
     bodyRoot.add(head);
     const headScale = this.shape.headScale;
 
-    const skull = new Mesh(new SphereGeometry(0.29 * headScale, 12, 10), bodyMaterial);
-    skull.scale.set(0.86, 0.8, 1.1);
+    // A tapered cranium rather than a ball. This is the object the player is
+    // asked to hold a reticle on for a second and a half, so its silhouette
+    // carries the game's key moment: a snout that narrows forward, a brow that
+    // overhangs the eye, and a jaw line beneath it.
+    const skull = new Mesh(new SphereGeometry(0.29 * headScale, 14, 12), bodyMaterial);
+    skull.scale.set(0.82, 0.78, 1.16);
     skull.position.z = 0.26 * headScale;
     head.add(skull);
+
+    const snout = new Mesh(tube(0.13 * headScale, 0.25 * headScale, 0.34 * headScale), bodyMaterial);
+    snout.scale.set(0.88, 0.82, 1);
+    snout.position.set(0, 0.01 * headScale, 0.52 * headScale);
+    head.add(snout);
+
+    const brow = new Mesh(new SphereGeometry(0.1 * headScale, 8, 7), bodyMaterial);
+    brow.scale.set(1.9, 0.62, 1.25);
+    brow.position.set(0, 0.17 * headScale, 0.36 * headScale);
+    head.add(brow);
 
     const upperJaw = new Object3D();
     upperJaw.position.set(0, 0.06 * headScale, 0.5 * headScale);
@@ -182,11 +221,12 @@ export class Moray {
       toneMapped: false,
     });
 
+    // Set into sockets under the brow rather than stuck on the surface.
     const leftEye = new Mesh(eyeGeometry, eyeMaterial);
-    leftEye.position.set(-0.16 * headScale, 0.12 * headScale, 0.42 * headScale);
+    leftEye.position.set(-0.15 * headScale, 0.115 * headScale, 0.4 * headScale);
     head.add(leftEye);
     const rightEye = new Mesh(eyeGeometry, eyeMaterial);
-    rightEye.position.set(0.16 * headScale, 0.12 * headScale, 0.42 * headScale);
+    rightEye.position.set(0.15 * headScale, 0.115 * headScale, 0.4 * headScale);
     head.add(rightEye);
 
     for (const eye of [leftEye, rightEye]) {

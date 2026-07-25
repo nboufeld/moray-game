@@ -1,126 +1,122 @@
-import { CanvasTexture, RepeatWrapping, SRGBColorSpace } from "three";
-import { Random } from "../../util/Random";
+import { Color, type DataTexture } from "three";
+import {
+  buildColorTexture,
+  buildNormalTexture,
+  buildScalarTexture,
+  fbm,
+  voronoi,
+} from "../../rendering/ProceduralTexture";
 import type { MoraySpeciesConfig } from "./MoraySpeciesConfig";
 
-const SIZE = 128;
+/**
+ * 256 rather than 512: these are generated at construction time and the unit
+ * tests build every species, so the cost is paid on a hot path.
+ */
+const SIZE = 256;
+
+export interface MoraySkin {
+  readonly map: DataTexture;
+  readonly normalMap: DataTexture;
+  readonly roughnessMap: DataTexture;
+}
 
 /**
- * Paints a species' markings into a tiling texture for the body tube.
+ * The markings, skin and sheen of one species, painted across the whole body.
  *
- * Markings used to be geometry — spheres studded onto each segment and
- * alternating segment colours for bands — which read as golf balls glued to a
- * pipe. Painting them keeps the silhouette clean and lets the pattern flow
- * along the body the way a real moray's does.
+ * The body's UVs run `u` around the circumference and `v` from head to tail, so
+ * this paints in animal space: `u` carries the dorsal-ventral gradient that
+ * every real fish has (dark back, pale belly) and `v` carries the markings
+ * flowing down the length. That counter-shading is doing as much work as the
+ * pattern itself — it is what stops the eel reading as a coloured pipe.
  *
- * Returns null where there is no DOM (the unit tests build every species in a
- * plain Node environment), in which case the body falls back to a flat colour.
+ * Built as `DataTexture`, so unlike the canvas version this replaced it needs
+ * no DOM and works unchanged in the Node unit tests.
  */
-export function createPatternTexture(config: MoraySpeciesConfig): CanvasTexture | null {
-  if (typeof document === "undefined") {
-    return null;
+const cache = new Map<string, MoraySkin>();
+
+export function createMoraySkin(config: MoraySpeciesConfig): MoraySkin {
+  const cached = cache.get(config.id);
+  if (cached) {
+    return cached;
   }
 
-  const canvas = document.createElement("canvas");
-  canvas.width = SIZE;
-  canvas.height = SIZE;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    return null;
-  }
+  const body = new Color(config.bodyColor);
+  const pattern = new Color(config.patternColor);
+  const seed = hashId(config.id);
 
-  const body = hex(config.bodyColor);
-  const pattern = hex(config.patternColor);
+  const skin: MoraySkin = {
+    map: buildColorTexture(SIZE, (u, v) => {
+      // u = 0 is the belly and u = 0.5 the spine, given how the body tubes are
+      // built and rotated.
+      const dorsal = 0.5 - 0.5 * Math.cos(u * Math.PI * 2);
+      const marking = markingMask(config, u, v, seed);
 
-  ctx.fillStyle = body;
-  ctx.fillRect(0, 0, SIZE, SIZE);
+      // Counter-shading: back toward shadow, belly lifted toward pale.
+      const shade = 0.72 + (1 - dorsal) * 0.5;
+      const r = body.r * shade;
+      const g = body.g * shade;
+      const b = body.b * shade;
 
-  const random = new Random(hashId(config.id));
+      return [
+        r + (pattern.r - r) * marking,
+        g + (pattern.g - g) * marking,
+        b + (pattern.b - b) * marking,
+      ];
+    }),
+
+    // Fine skin wrinkles, tightening toward the head where the folds gather.
+    normalMap: buildNormalTexture(
+      SIZE,
+      (u, v) => {
+        const folds = fbm(u, v * 2.4, { seed: seed ^ 0x51, period: 26, octaves: 3 });
+        const nearHead = Math.pow(1 - v, 2);
+        return folds * (0.55 + nearHead * 0.85);
+      },
+      0.035,
+    ),
+
+    // A wet animal's most convincing detail is a broken specular, not albedo.
+    roughnessMap: buildScalarTexture(SIZE, (u, v) => {
+      const damp = fbm(u * 2, v * 3, { seed: seed ^ 0xa7, period: 14, octaves: 3 });
+      return 0.26 + damp * 0.34;
+    }),
+  };
+
+  cache.set(config.id, skin);
+  return skin;
+}
+
+/** 0 where the body colour shows, 1 where the marking colour does. */
+function markingMask(config: MoraySpeciesConfig, u: number, v: number, seed: number): number {
   switch (config.pattern) {
-    case "spots":
-      paintRosettes(ctx, pattern, random);
-      break;
-    case "bands":
-      paintBands(ctx, pattern, random);
-      break;
-    case "plain":
-      paintSheen(ctx, pattern);
-      break;
+    case "spots": {
+      // Clustered rosettes rather than dots: cell interiors speckled, walls clear.
+      const { f1 } = voronoi(u, v * 3, 9, seed);
+      const warp = fbm(u * 3, v * 6, { seed: seed ^ 0x2b, period: 18, octaves: 3 });
+      const rosette = 1 - Math.min(1, f1 / 0.055);
+      return clamp01((rosette * 0.9 + (warp - 0.55) * 0.9) * 1.4);
+    }
+    case "bands": {
+      // Bars wrapping the body, with irregular edges so they read as an animal
+      // rather than as a set of printed rings.
+      const wobble = (fbm(u * 2, v * 4, { seed: seed ^ 0x3d, period: 10, octaves: 3 }) - 0.5) * 0.06;
+      const along = v + wobble;
+      const wave = Math.sin(along * Math.PI * 2 * 13);
+      return clamp01((wave - 0.05) * 6);
+    }
+    case "plain": {
+      // No markings; a faint lengthwise mottle keeps it from looking printed.
+      return clamp01((fbm(u, v * 2, { seed, period: 8, octaves: 3 }) - 0.62) * 1.2);
+    }
     default: {
       const exhaustive: never = config.pattern;
       throw new Error(`Unhandled moray pattern: ${String(exhaustive)}`);
     }
   }
-
-  const texture = new CanvasTexture(canvas);
-  texture.colorSpace = SRGBColorSpace;
-  texture.wrapS = RepeatWrapping;
-  texture.wrapT = RepeatWrapping;
-  return texture;
 }
 
-/** Clustered flecks, the snowflake and dragon morays' reticulated dusting. */
-function paintRosettes(ctx: CanvasRenderingContext2D, color: string, random: Random): void {
-  ctx.fillStyle = color;
-  const wrap = [-SIZE, 0, SIZE];
-
-  for (let i = 0; i < 26; i++) {
-    const centreX = random.range(0, SIZE);
-    const centreY = random.range(0, SIZE);
-    const flecks = Math.round(random.range(4, 9));
-    const spread = random.range(5, 13);
-
-    for (let f = 0; f < flecks; f++) {
-      const angle = random.range(0, Math.PI * 2);
-      const distance = random.range(0, spread);
-      const radius = random.range(1.4, 3.6);
-      // Stamped at wrapped offsets so the tile has no visible seam.
-      for (const offsetX of wrap) {
-        for (const offsetY of wrap) {
-          ctx.beginPath();
-          ctx.arc(
-            centreX + Math.cos(angle) * distance + offsetX,
-            centreY + Math.sin(angle) * distance + offsetY,
-            radius,
-            0,
-            Math.PI * 2,
-          );
-          ctx.fill();
-        }
-      }
-    }
-  }
-}
-
-/**
- * Bars wrapping the body. The texture's vertical axis runs along the tube, so
- * a horizontal stripe here becomes a ring around the animal.
- */
-function paintBands(ctx: CanvasRenderingContext2D, color: string, random: Random): void {
-  ctx.fillStyle = color;
-  const bands = 5;
-  for (let i = 0; i < bands; i++) {
-    const height = (SIZE / bands) * random.range(0.34, 0.52);
-    const y = (i / bands) * SIZE + random.range(0, 4);
-    ctx.fillRect(0, y, SIZE, height);
-    // Repeat across the seam so a band is never clipped mid-ring.
-    ctx.fillRect(0, y - SIZE, SIZE, height);
-  }
-}
-
-/** A soft lengthwise sheen for the unmarked species. */
-function paintSheen(ctx: CanvasRenderingContext2D, color: string): void {
-  const gradient = ctx.createLinearGradient(0, 0, SIZE, 0);
-  gradient.addColorStop(0, "rgba(0,0,0,0.22)");
-  gradient.addColorStop(0.5, color);
-  gradient.addColorStop(1, "rgba(0,0,0,0.22)");
-  ctx.globalAlpha = 0.35;
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, SIZE, SIZE);
-  ctx.globalAlpha = 1;
-}
-
-function hex(color: number): string {
-  return `#${color.toString(16).padStart(6, "0")}`;
+function clamp01(value: number): number {
+  return value < 0 ? 0 : value > 1 ? 1 : value;
 }
 
 /** Stable per-species seed so a given moray always wears the same markings. */

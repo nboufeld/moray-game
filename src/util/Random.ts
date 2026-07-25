@@ -44,4 +44,9 @@ export const SEEDS = {
   motes: 0x3a17_7e5c,
   caustics: 0xca05_71c5,
   shafts: 0x5eab_ea11,
+  fogDither: 0xd177_be71,
+  sand: 0x5a4d_0001,
+  rock: 0x5a4d_0002,
+  coralSkin: 0x5a4d_0003,
+  grassBlade: 0x5a4d_0004,
 } as const;
