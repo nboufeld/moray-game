@@ -424,7 +424,8 @@ export class SanctuaryScene {
 
     this.grass.update(dt, reducedMotion);
     this.caustics.update(dt, reducedMotion);
-    this.shafts.update(dt, reducedMotion);
+    // `playerProxy` is this frame's camera position, read above.
+    this.shafts.update(dt, reducedMotion, this.playerProxy);
     this.motes.update(dt, reducedMotion);
   }
 

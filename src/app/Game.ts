@@ -253,7 +253,10 @@ export class Game {
     this.rig.update(delta, this.dive.position, this.dive.velocity, this.settings);
     this.reef.update(paused ? 0 : delta, this.settings.reducedMotion);
     this.caustics.update(delta, this.settings.reducedMotion);
-    this.shafts.update(delta, this.settings.reducedMotion);
+    // After the rig has placed the camera: the shafts fade whichever of their
+    // quads the eye is looking along, and that is a property of where it is
+    // this frame.
+    this.shafts.update(delta, this.settings.reducedMotion, this.camera.position);
     this.particles.update(delta, this.settings.reducedMotion);
     this.fish.update(paused ? 0 : delta, this.settings.reducedMotion);
     this.hud.update(delta);

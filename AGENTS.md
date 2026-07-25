@@ -83,6 +83,27 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
   overdraw-bound, so their count matters far more than their triangle budget; and the
   caustics sheet must be built from `createSeabedGeometry` so it follows the same dunes
   as the sand it lies on.
+- **A light shaft has to fade out before it reaches the sand.** The beams run down the
+  sun ray, forty degrees off vertical, so a blade's *width* axis is tilted with it and
+  the quad's plane meets the flat seabed along a diagonal that climbs a metre and a half
+  from one side of the beam to the other. The depth test cuts the curtain along that
+  diagonal, and whatever brightness the curtain still has there lands on the floor as a
+  hard-edged bright wedge — which is what the "light pool with straight edges" in shots B
+  and C actually was. The pool discs were innocent; confirm which is which by zeroing
+  `poolOpacity` or `baseOpacity` before touching either. Ending the quad below the sand
+  cannot fix it, and not for the reason `FOOT_DEPTH` gives: the plane's local +Y points
+  *down* the ray, so the texture's bright end is the ground end and the beam is hottest
+  exactly where it enters the sand. `bakeGroundFade` writes a fade against `seabedHeight`
+  into each blade's vertex colours instead, which is the only reason the blades are
+  tessellated. A blade caught edge-on is faded out the same way — by opacity, from the
+  camera position `update` now takes — because a crossed quad seen along its plane still
+  rasterises, as a bright hairline (it was crossing shot E).
+- **A pool's rim fade lives in its vertex colours, not only in its map.** A pool is a
+  wide, nearly horizontal disc viewed from close to the ground, which is the worst case
+  for minification: the rim samples a mip coarse enough to average the falloff into a
+  flat wash, and a flat wash out to the last triangle is a bright polygon with a hard
+  outline. The map's own window (`POOL_TEXTURE_FADE_*`) covers the ordinary case;
+  `POOL_RIM_FADE` is the part filtering cannot reach.
 - **Texturing goes through `ProceduralTexture`**, which builds `DataTexture`s from typed
   arrays rather than painting canvases. That is deliberate: it needs no DOM, so maps work
   unchanged in the Node unit tests, and it is bit-identical across environments, which

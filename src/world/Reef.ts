@@ -404,9 +404,16 @@ export class Reef {
     this.group.add(cave);
 
     // Flank blocks framing the mouth (a natural cleaner-shrimp perch).
+    //
+    // Segmented finely enough for `weatherRock` to have something to work
+    // with. A box at two segments an axis has one vertex ring to displace per
+    // face, so however much it is weathered it stays a box with a bevel — six
+    // flat faces and twelve straight edges, standing beside the moray's head
+    // where the camera is closest to it and reading as laid masonry. At four
+    // it breaks into facets like every other stone in the reef.
     for (const sign of [-1, 1]) {
-      const flankGeometry = new BoxGeometry(1.1, 1.7, 1.5, 2, 2, 2);
-      weatherRock(flankGeometry, SEEDS.rock ^ hashSpecies(placement.speciesId + sign), 0.22);
+      const flankGeometry = new BoxGeometry(1.1, 1.7, 1.5, 4, 4, 4);
+      weatherRock(flankGeometry, SEEDS.rock ^ hashSpecies(placement.speciesId + sign), 0.3);
       const flank = new Mesh(flankGeometry, this.rockMaterial);
       flank.position
         .copy(position)

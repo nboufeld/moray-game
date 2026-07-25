@@ -479,7 +479,7 @@ function plateGeometry(): BufferGeometry {
     // Daylight arrives from above and the plate is its own ceiling: the
     // underside only ever sees bounce, so bake that in rather than hope the
     // lighting finds it.
-    const shade = 1 - 0.45 * Math.max(0, -normal.getY(i));
+    const shade = 1 - 0.55 * Math.max(0, -normal.getY(i));
     colors[i * 3] = shade;
     colors[i * 3 + 1] = shade;
     colors[i * 3 + 2] = shade;
@@ -496,14 +496,22 @@ function plateGeometry(): BufferGeometry {
     /**
      * Two scales of rim noise. The broad one — three lobes around the whole
      * colony — is what stops the plate being a disc at all: the margin runs
-     * from about 0.6 to 1.3 of the nominal radius, so the plate reaches twice
-     * as far into the light on one side as it does on the other. The tight
-     * one scallops the edge between neighbouring segments.
+     * from about 0.6 of the nominal radius up to the cap below, so the plate
+     * reaches much further into the light on one side than the other. The
+     * tight one scallops the edge between neighbouring segments.
+     *
+     * The cap is the difference between a lobed colony and a plank. Left
+     * unbounded the two scales can agree, and where they do the plate throws
+     * a single long tongue out past a third again of its radius — which, on a
+     * squat brown shape a metre off the sand, reads as a length of driftwood
+     * or the strake of a hull rather than as coral.
      */
-    const lobe =
+    const lobe = Math.min(
+      1.15,
       1 +
-      (fbm(angle, 0.5, { seed: seed ^ 0x5a35, period: 3, octaves: 2 }) - 0.5) * 1.2 +
-      (fbm(angle, 0.5, { seed: seed ^ 0xf1b9, period: 9, octaves: 1 }) - 0.5) * 0.7;
+        (fbm(angle, 0.5, { seed: seed ^ 0x5a35, period: 3, octaves: 2 }) - 0.5) * 1.2 +
+        (fbm(angle, 0.5, { seed: seed ^ 0xf1b9, period: 9, octaves: 1 }) - 0.5) * 0.7,
+    );
     // The rim lifts and drops around the colony, and the crown sits proud of
     // it — a plate that has grown, rather than one that was turned.
     const warp = (fbm(angle, 0.5, { seed: seed ^ 0x2c5f, period: 5, octaves: 2 }) - 0.5) * 0.7;
@@ -606,7 +614,12 @@ function addTable(
   push(parts, "tableStalk", headMatrix, local, color, glowing);
 
   const tiltAround = random.range(0, Math.PI * 2);
-  const tilt = random.range(0.05, 0.11);
+  // One draw, as before: `tableRandom` feeds every plate in the garden in
+  // order, so changing how many numbers a table takes re-rolls all the ones
+  // after it. Only the range moves — a plate tipped a hand's width at its rim
+  // still catches the light unevenly, where the previous tilt could turn the
+  // silhouette side-on into a leaning board.
+  const tilt = random.range(0.02, 0.06);
   local.scale.set(random.range(0.86, 1.12), 1, random.range(0.86, 1.12));
   local.rotation.set(
     Math.sin(tiltAround) * tilt,
