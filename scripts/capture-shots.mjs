@@ -12,6 +12,7 @@
 import { chromium } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
+import { waitForAssets } from "./wait-for-assets.mjs";
 
 const BASE_URL = process.env.SHOT_URL ?? "http://localhost:5173";
 const OUT_DIR = path.resolve("visual-qa");
@@ -100,6 +101,7 @@ for (const shot of SHOTS) {
     await page.goto(`${BASE_URL}/?reset=1`, { waitUntil: "load" });
   }
   await page.waitForFunction(() => "__reef" in window);
+  await waitForAssets(page);
 
   if (shot.openSettings) {
     await page.keyboard.press("KeyO");

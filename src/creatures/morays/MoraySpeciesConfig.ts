@@ -20,6 +20,14 @@ export interface MoraySpeciesConfig {
   /** Accent colour (hex) for fin margin and nasal appendages. */
   readonly accentColor: number;
   readonly pattern: PatternKind;
+  /**
+   * Painted albedo for the body tube, as a path under `public/assets/`.
+   *
+   * Optional, and only ever an upgrade: a species without one — or one whose
+   * file is missing at runtime — wears the procedural skin `MorayPattern`
+   * builds from the colours above, which stays the fallback for all of them.
+   */
+  readonly albedoAsset?: string;
   /** Slender ribbon and ornate dragon morays carry raised nasal appendages. */
   readonly nasalAppendages: boolean;
   /** Relative body length multiplier for the shared rig. */
@@ -42,6 +50,7 @@ export const MORAY_SPECIES: readonly MoraySpeciesConfig[] = [
     patternColor: 0x3b3730,
     accentColor: 0xf6c667,
     pattern: "spots",
+    albedoAsset: "creatures/moray-snowflake-albedo.png",
     nasalAppendages: false,
     lengthScale: 1,
     girthScale: 1.05,
@@ -57,6 +66,7 @@ export const MORAY_SPECIES: readonly MoraySpeciesConfig[] = [
     patternColor: 0x2b6fff,
     accentColor: 0xffd23a,
     pattern: "plain",
+    albedoAsset: "creatures/moray-ribbon-albedo.png",
     nasalAppendages: true,
     lengthScale: 1.35,
     girthScale: 0.55,
@@ -72,6 +82,7 @@ export const MORAY_SPECIES: readonly MoraySpeciesConfig[] = [
     patternColor: 0xe8e0cf,
     accentColor: 0xcbbfa6,
     pattern: "bands",
+    albedoAsset: "creatures/moray-zebra-albedo.png",
     nasalAppendages: false,
     lengthScale: 1.0,
     girthScale: 1.35,
@@ -87,6 +98,7 @@ export const MORAY_SPECIES: readonly MoraySpeciesConfig[] = [
     patternColor: 0xf4e9d0,
     accentColor: 0xffb347,
     pattern: "spots",
+    albedoAsset: "creatures/moray-dragon-albedo.png",
     nasalAppendages: true,
     lengthScale: 1.1,
     girthScale: 0.95,

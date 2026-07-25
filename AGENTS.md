@@ -17,8 +17,9 @@ comfort/accessibility settings panel with Calm Mode, and the Dream Sanctuary aqu
 - `src/discovery/` — `FocusScanner`, `DiscoverySystem`, `HintSystem` (all pure/testable).
 - `src/rendering/` — fog + gradient backdrop, lighting, caustics, light shafts, particles,
   the `ColorGradeShader` used by the post chain, the `DiscoveryPulse` that drives its
-  swell, and `ProceduralTexture` (the noise and map-building toolkit every surface is
-  textured with).
+  swell, `ProceduralTexture` (the noise and map-building toolkit every surface is
+  textured with) and `AssetLibrary` (the one door authored art comes in through).
+- `public/assets/` — the only authored art in the project: four painted moray albedos.
 - `src/audio/` — `AudioEngine` (context + master, armed by the first gesture), `synth.ts`
   (every voice, all synthesised), `BubbleScheduler` (pure), `ReefSoundscape` (the layers).
 - `src/util/Random.ts` — seeded PRNG and the per-subsystem `SEEDS`.
@@ -110,6 +111,54 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
   flat wash, and a flat wash out to the last triangle is a bright polygon with a hard
   outline. The map's own window (`POOL_TEXTURE_FADE_*`) covers the ordinary case;
   `POOL_RIM_FADE` is the part filtering cannot reach.
+- **Authored assets live in `public/assets/`, and there are exactly four of them.**
+  `assets/creatures/moray-{snowflake,ribbon,zebra,dragon}-albedo.png` are painted body
+  albedos, loaded by `src/rendering/AssetLibrary.ts` and swapped onto the moray body
+  material in `Moray`'s constructor. Everything else on the animal stays generated: the
+  swap replaces `map` only, because the wrinkles and the broken wet sheen live in
+  `MorayPattern`'s normal and roughness maps and the painting has no channel for them.
+  Which file a species wears is `albedoAsset` in `MoraySpeciesConfig`, so adding a
+  species is still a data change.
+  - **The UV contract a moray skin is painted to.** `u` wraps the circumference — 0 the
+    belly, 0.5 the spine, 1 the belly again — so the image's left and right edges are
+    both pale underside and its centre column is the back. `v` runs the length, 0 at the
+    snout and 1 at the tail tip, and the images are painted with the **head at the top
+    row**. That last fact is why `flipY` is **false**: three's `TextureLoader` flips by
+    default, which would sample the bottom row at `v = 0` and hang every eel's tail
+    detail off its face. It was confirmed by rendering it both ways — with `flipY` left
+    at its default the dragon's ocelli come out finest at the head and boldest at the
+    tail tip, which is the painting inside out. Unflipped is also what the procedural
+    maps do, since `DataTexture` does not flip either, so the two paths agree.
+  - A map is stretched about three times harder along `v` than around `u` (the body is
+    metres long and about a metre around), which is why the markings are painted roughly
+    3:1 wide. That ratio is exact for the dragon and generous for the shorter, fatter
+    snowflake, whose rosettes land a little banded — it is one image per species, not one
+    per rig, so this is a compromise by construction.
+  - **A missing file is not an error.** Loads never throw and never reject; a failure
+    logs one `console.warn` and leaves the procedural skin exactly where it was, so the
+    game still boots and still ships with no `public/` directory at all. The smoke spec
+    asserts on `pageerror` only, which is what makes a warn the right channel.
+  - **`whenAssetsSettled` gates the captures.** A texture that lands one frame after the
+    shutter turns a fast machine and a slow one into two different pictures. `Game`
+    exposes `assetsReady` on `window.__reef` and `scripts/wait-for-assets.mjs` polls it —
+    with a ten second cap and a warning, since a shot of the fallback is still a valid
+    shot — before `capture-shots`, `probe-moray` and `probe-sanctuary` pose. The same
+    flag holds back `renderNextPortrait`: a codex plate is baked once into a data URL
+    that nothing revisits, so taking it early would keep a procedural portrait of an
+    animal that no longer looks like that for the rest of the session.
+  - **Textures are owned by the library, not by the animals.** They are cached per path
+    and handed to every reef moray, sanctuary resident and portrait alike, so nothing may
+    dispose them per instance — the same rule the `MorayPattern` cache has, and the
+    reason `disposeSubtree` releases geometries, materials and skeletons but not maps.
+  - **The head still wears the body's texture on its own UVs**, and always has. The
+    skull is a sphere poled along Y and the snout is a cylinder a third of a metre long,
+    so between them they smear the whole length of the map across the head and roll its
+    counter-shading a quarter turn. With a low-contrast procedural map that read as
+    skin; with a painted one the head is visibly finer and busier than the neck it joins
+    — most obvious on the zebra. It is unchanged by the authored maps (the procedural
+    fallback does exactly the same thing) and fixing it means re-projecting the head
+    parts' UVs cylindrically about the body axis into a band near `v = 0`, which is a
+    change to the hero creature and wants its own pass.
 - **Texturing goes through `ProceduralTexture`**, which builds `DataTexture`s from typed
   arrays rather than painting canvases. That is deliberate: it needs no DOM, so maps work
   unchanged in the Node unit tests, and it is bit-identical across environments, which

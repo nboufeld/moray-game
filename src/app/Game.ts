@@ -13,6 +13,7 @@ import { DiscoverySystem, type DiscoveryTarget } from "../discovery/DiscoverySys
 import { DiveController } from "../player/DiveController";
 import { CameraRig } from "../player/CameraRig";
 import { InputController } from "../player/InputController";
+import { assetsPending } from "../rendering/AssetLibrary";
 import { CausticsSystem } from "../rendering/CausticsSystem";
 import { DiscoveryPulse } from "../rendering/DiscoveryPulse";
 import { LightShafts } from "../rendering/LightShafts";
@@ -195,6 +196,17 @@ export class Game {
     return this.mode;
   }
 
+  /**
+   * Whether every authored asset requested so far has loaded or failed.
+   *
+   * The capture scripts poll this before posing. A texture that lands one frame
+   * after the shutter is the one way this scene stops being reproducible, and
+   * it would look exactly like an art change.
+   */
+  get assetsReady(): boolean {
+    return !assetsPending();
+  }
+
   /** The soundscape, exposed for the audio probe the way `__reef` is. */
   get audio(): ReefSoundscape {
     return this.soundscape;
@@ -354,6 +366,12 @@ export class Game {
    * if this stalls the frame after it.
    */
   private renderNextPortrait(): void {
+    // A portrait is baked once, into a data URL that nothing ever revisits, so
+    // it has to be taken after the painted skins have landed or the codex keeps
+    // a procedural plate of an animal that no longer looks like that.
+    if (assetsPending()) {
+      return;
+    }
     const config = this.portraitQueue.shift();
     if (config) {
       this.codex.setPortrait(config.id, renderMorayPortrait(this.renderer, config));
@@ -482,7 +500,11 @@ export class Game {
 
     // A shot must not depend on how many frames happened to have drawn before
     // it, so the portraits are all finished here rather than one per frame.
-    while (this.portraitQueue.length > 0) {
+    // The readiness term is what stops that being a spin: an asset still in
+    // flight makes `renderNextPortrait` a no-op, and the queue would never
+    // shorten. The harness waits on `assetsReady` before posing precisely so
+    // this drains.
+    while (this.portraitQueue.length > 0 && !assetsPending()) {
       this.renderNextPortrait();
     }
 

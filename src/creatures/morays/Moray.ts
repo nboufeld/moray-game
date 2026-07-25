@@ -12,6 +12,7 @@ import {
   SphereGeometry,
   Vector3,
 } from "three";
+import { requestAlbedo } from "../../rendering/AssetLibrary";
 import { buildMorayBody } from "./MorayBody";
 import { createMoraySkin } from "./MorayPattern";
 import type { BodyArchetype, MoraySpeciesConfig } from "./MoraySpeciesConfig";
@@ -142,6 +143,21 @@ export class Moray {
         metalness: 0.04,
       }),
     );
+    // Upgrade the albedo to the painted one if there is a painted one. Only the
+    // albedo: the wrinkles and the broken wet sheen live in the procedural
+    // normal and roughness maps, which the painting has no channel for and no
+    // reason to replace. The material is untinted — `bodyMaterial` is built
+    // without a `color`, so it is white and multiplies the map by 1 — which is
+    // also what makes the procedural path work, since that map already carries
+    // the species colour. Nothing arrives here in Node, and nothing arrives if
+    // the file is missing; either way the skin above is what stays on.
+    if (config.albedoAsset) {
+      requestAlbedo(config.albedoAsset, (albedo) => {
+        bodyMaterial.map = albedo;
+        bodyMaterial.needsUpdate = true;
+      });
+    }
+
     const accentMaterial = addRimLight(
       new MeshStandardMaterial({ color: accentColor, roughness: 0.5, metalness: 0 }),
     );
