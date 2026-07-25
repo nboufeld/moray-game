@@ -13,6 +13,7 @@ import { DiveController } from "../player/DiveController";
 import { CameraRig } from "../player/CameraRig";
 import { InputController } from "../player/InputController";
 import { CausticsSystem } from "../rendering/CausticsSystem";
+import { DiscoveryPulse } from "../rendering/DiscoveryPulse";
 import { LightShafts } from "../rendering/LightShafts";
 import { Lighting } from "../rendering/Lighting";
 import { Particles } from "../rendering/Particles";
@@ -21,6 +22,7 @@ import { SanctuaryScene } from "../sanctuary/SanctuaryScene";
 import { SaveSystem } from "../save/SaveSystem";
 import { Codex } from "../ui/Codex";
 import { Hud } from "../ui/Hud";
+import { renderMorayPortrait } from "../ui/MorayPortrait";
 import { SanctuaryOverlay } from "../ui/SanctuaryOverlay";
 import { SettingsPanel } from "../ui/SettingsPanel";
 import { CollisionField } from "../world/CollisionField";
@@ -72,6 +74,8 @@ export class Game {
   private readonly input: InputController;
 
   private readonly discovery: DiscoverySystem;
+  private readonly pulse = new DiscoveryPulse();
+  private readonly portraitQueue: MoraySpeciesConfig[] = [];
   private readonly hud = new Hud();
   private readonly codex = new Codex();
   private readonly settingsPanel: SettingsPanel;
@@ -151,7 +155,7 @@ export class Game {
     for (const id of saved.discovered) {
       if (this.registry.has(id)) {
         this.discovery.markDiscovered(id);
-        this.codex.record(this.registry.require(id));
+        this.recordInCodex(this.registry.require(id));
       }
     }
     this.hud.setProgress(this.discovery.discoveredCount, this.discovery.totalCount);
@@ -208,6 +212,13 @@ export class Game {
   };
 
   private advance(delta: number): void {
+    // Before anything that can bail out: the swell is a property of the frame,
+    // not of the simulation, so it keeps decaying while the reef is paused and
+    // while the player is away in the sanctuary.
+    if (this.pulse.isRunning) {
+      this.renderer.setGradePulse(this.pulse.advance(delta, this.settings.reducedMotion));
+    }
+
     if (this.mode === "sanctuary") {
       this.sanctuary.update(delta, this.settings.reducedMotion);
       return;
@@ -238,6 +249,7 @@ export class Game {
     } else {
       this.renderer.render(this.scene, this.camera);
     }
+    this.renderNextPortrait();
   }
 
   private simulate(step: number): void {
@@ -282,14 +294,42 @@ export class Game {
 
   private onDiscovered(speciesId: string): void {
     const config = this.registry.require(speciesId);
-    this.codex.record(config);
-    this.hud.showDiscovery(config.commonName, config.scientificName);
+    this.recordInCodex(config);
+    this.hud.showDiscovery(config.commonName, config.scientificName, this.settings.reducedMotion);
+    this.pulse.trigger();
     this.hud.setProgress(this.discovery.discoveredCount, this.discovery.totalCount);
     this.hud.setHint("Added to the Codex. Visit the sanctuary (V) to watch it swim.");
     this.hintLevel = -1;
     this.refreshObjective();
     this.save.recordDiscovery(speciesId, this.settings);
     this.sanctuary.setSpecies(this.discoveredConfigs());
+  }
+
+  /**
+   * Files a species in the codex and queues its portrait. One path for both a
+   * discovery made this dive and one restored from a save, so the codex cannot
+   * end up half illustrated.
+   */
+  private recordInCodex(config: MoraySpeciesConfig): void {
+    this.codex.record(config);
+    this.portraitQueue.push(config);
+  }
+
+  /**
+   * Renders one queued portrait, at most, after the frame has been presented.
+   *
+   * Measured at roughly a third of a second each on a software rasteriser —
+   * not for any reason that shrinks with resolution — which is far too much to
+   * spend inside the discovery that asked for it. Deferring costs nothing that
+   * shows: the codex is closed at that moment, and the plate and the reticle
+   * are CSS animations, so the ceremony keeps playing on the compositor even
+   * if this stalls the frame after it.
+   */
+  private renderNextPortrait(): void {
+    const config = this.portraitQueue.shift();
+    if (config) {
+      this.codex.setPortrait(config.id, renderMorayPortrait(this.renderer, config));
+    }
   }
 
   private refreshObjective(): void {
@@ -403,6 +443,12 @@ export class Game {
   capture(pose: CapturePose = {}): void {
     this.running = false;
     this.renderer.pinRenderScale(1);
+
+    // A shot must not depend on how many frames happened to have drawn before
+    // it, so the portraits are all finished here rather than one per frame.
+    while (this.portraitQueue.length > 0) {
+      this.renderNextPortrait();
+    }
 
     if (pose.position) {
       this.dive.position.set(...pose.position);

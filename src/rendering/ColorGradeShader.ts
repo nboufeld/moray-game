@@ -19,6 +19,13 @@ export const ColorGradeShader = {
     uToe: { value: 0.012 },
     uShadowTint: { value: new Vector3(0.72, 0.93, 1.08) },
     uHighlightTint: { value: new Vector3(1.05, 1.0, 0.94) },
+    /**
+     * Discovery swell, 0 when nothing is happening. The reef itself does not
+     * change — the grade does, briefly: the water saturates and the vignette
+     * opens, which reads as the moment landing rather than as an effect being
+     * played over it.
+     */
+    uPulse: { value: 0 },
   },
 
   vertexShader: /* glsl */ `
@@ -38,8 +45,13 @@ export const ColorGradeShader = {
     uniform float uToe;
     uniform vec3 uShadowTint;
     uniform vec3 uHighlightTint;
+    uniform float uPulse;
 
     varying vec2 vUv;
+
+    /** How far the swell lifts saturation and opens the vignette at full strength. */
+    const float PULSE_SATURATION = 0.12;
+    const float PULSE_VIGNETTE = 0.2;
 
     // Linear-space mid grey, the pivot both contrast and the tint split use.
     const float MID = 0.18;
@@ -55,7 +67,7 @@ export const ColorGradeShader = {
       // unlit — the whole shadow side of the reef — belongs on the cold side of
       // it, and a crossover at 0.6 put most of that in the warm half instead.
       color *= mix(uShadowTint, uHighlightTint, smoothstep(0.0, 0.45, luma));
-      color = mix(vec3(luma), color, uSaturation);
+      color = mix(vec3(luma), color, uSaturation + PULSE_SATURATION * uPulse);
       // Saturation can drive a channel of a strongly coloured pixel below zero.
       color = max(color, 0.0);
 
@@ -84,7 +96,7 @@ export const ColorGradeShader = {
       color *= graded / lum;
 
       vec2 offset = vUv - 0.5;
-      color *= 1.0 - uVignette * dot(offset, offset);
+      color *= 1.0 - max(uVignette - PULSE_VIGNETTE * uPulse, 0.0) * dot(offset, offset);
 
       gl_FragColor = vec4(max(color, 0.0), texel.a);
     }

@@ -8,10 +8,10 @@ import {
   PerspectiveCamera,
   Scene,
   Vector3,
-  type Object3D,
 } from "three";
 import { Moray } from "../creatures/morays/Moray";
 import { UnderwaterFog } from "../rendering/UnderwaterFog";
+import { disposeSubtree } from "../util/disposeSubtree";
 import type { MoraySpeciesConfig } from "../creatures/morays/MoraySpeciesConfig";
 
 /** The aquarium's key light, shared with the backdrop that has to agree with it. */
@@ -135,21 +135,4 @@ export class SanctuaryScene {
       resident.moray.update(dt * motion, this.playerProxy, true);
     }
   }
-}
-
-/**
- * Residents are rebuilt every time the sanctuary is opened or a moray is
- * discovered, so their geometries and materials must be released or the GPU
- * copies accumulate for the rest of the session.
- */
-function disposeSubtree(root: Object3D): void {
-  root.traverse((object) => {
-    if (!(object instanceof Mesh)) {
-      return;
-    }
-    object.geometry.dispose();
-    for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
-      material.dispose();
-    }
-  });
 }

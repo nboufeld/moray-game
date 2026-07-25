@@ -37,7 +37,7 @@
 
 /* One surface treatment, shared. `:where()` keeps specificity at zero so each
    panel below can still override any part of it without fighting the cascade. */
-:where(.hud, .controls-help, .discovery-toast, .sanctuary-overlay__header, .sanctuary-card) {
+:where(.hud, .controls-help, .sanctuary-overlay__header, .sanctuary-card) {
   background: var(--glass);
   border: 1px solid var(--glass-edge);
   border-radius: var(--panel-radius);
@@ -226,8 +226,26 @@ kbd {
 }
 
 .codex__entry {
-  padding: 14px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 0;
   border-top: 1px solid rgba(159, 231, 224, 0.18);
+}
+
+/* The plate the codex has always promised. Rendered once, at discovery, from
+   the same species configuration the animal in the reef was built from. */
+.codex__portrait {
+  flex: 0 0 auto;
+  width: 132px;
+  height: 132px;
+  background: #0c3243;
+  border-radius: 12px;
+  border: 1px solid var(--glass-edge);
+  box-shadow:
+    0 1px 0 0 rgb(226 250 255 / 0.12) inset,
+    0 10px 24px -14px rgb(0 0 0 / 0.7);
+  corner-shape: squircle;
 }
 
 .codex__entry h3 {
@@ -259,39 +277,173 @@ kbd {
   cursor: pointer;
 }
 
-.discovery-toast {
+/* The discovery ceremony ------------------------------------------------- */
+
+/* A band across the foot of the frame rather than a box in the corner. This is
+   the payoff of the whole loop, so it is titled like one: the reef reads
+   straight through the ends of the band, and the plate is gone again in two
+   and a half seconds without ever having taken the screen. */
+.discovery-plate {
   position: absolute;
-  top: 22%;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 16px 26px;
-  border-color: color-mix(in oklab, var(--amber) 62%, transparent);
+  left: 0;
+  right: 0;
+  /* Clear of the controls card in the bottom-left corner. */
+  bottom: 17%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 20px 24px;
+  pointer-events: none;
   text-align: center;
-  font-size: 18px;
-  color: #fff3df;
-  /* Warm halo on top of the shared glass: this is the payoff moment. */
-  box-shadow:
-    var(--glass-shadow),
-    0 0 32px -6px color-mix(in oklab, var(--amber) 45%, transparent);
-  animation: toast-in 420ms ease;
+  background: linear-gradient(
+    to right var(--in-oklab),
+    transparent,
+    rgb(5 26 36 / 0.7) 24%,
+    rgb(5 26 36 / 0.72) 50%,
+    rgb(5 26 36 / 0.7) 76%,
+    transparent
+  );
 }
 
-.discovery-toast[hidden] {
+.discovery-plate[hidden] {
   display: none;
 }
 
-.discovery-toast strong {
-  color: var(--amber);
+/* Hairlines that fade out well before the band does, so the plate has an edge
+   without having a frame. */
+.discovery-plate::before,
+.discovery-plate::after {
+  content: "";
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    color-mix(in oklab, var(--amber) 72%, transparent),
+    transparent
+  );
 }
 
-@keyframes toast-in {
-  from {
+.discovery-plate::before {
+  top: 0;
+}
+
+.discovery-plate::after {
+  bottom: 0;
+  opacity: 0.45;
+}
+
+.discovery-plate__eyebrow {
+  font-size: 11px;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--turquoise) 78%, transparent);
+}
+
+.discovery-plate__name {
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--amber);
+  text-shadow: 0 0 26px color-mix(in oklab, var(--amber) 40%, transparent);
+}
+
+.discovery-plate__sci {
+  font-style: italic;
+  font-size: 15px;
+  color: #d7efec;
+}
+
+/* One animation covers rise, hold and exit, so the plate needs no state beyond
+   the timer that hides it. */
+.discovery-plate.is-showing {
+  animation: plate-cycle 2500ms ease;
+}
+
+.discovery-plate.is-calm.is-showing {
+  animation: plate-fade 2500ms ease;
+}
+
+@keyframes plate-cycle {
+  0% {
     opacity: 0;
-    transform: translate(-50%, 12px);
+    transform: translateY(26px);
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes plate-fade {
+  0% {
+    opacity: 0;
+  }
+  14% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* The reticle opens out and dissolves: the ring the player was holding on the
+   animal releases it. */
+/* Pinned to the found-ring size for the duration: the scan can drop its target
+   the instant the moray is recorded, and a release that starts from the idle
+   twelve-pixel ring is a flicker rather than a flourish. */
+.reticle__ring.is-blooming {
+  inset: 8px;
+  animation: reticle-bloom 900ms ease-out;
+}
+
+.reticle.is-calm .reticle__ring.is-blooming {
+  animation: reticle-glow 900ms ease;
+}
+
+/* The opacity is held up through the middle on purpose: a straight fade across
+   the scale spends most of the animation invisible, and the ring opening is
+   the part worth seeing. */
+@keyframes reticle-bloom {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+    border-color: var(--turquoise);
+  }
+  55% {
+    transform: scale(1.38);
+    opacity: 0.75;
+    border-color: var(--turquoise);
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+    border-color: var(--turquoise);
+  }
+}
+
+@keyframes reticle-glow {
+  from {
+    opacity: 1;
+    border-color: var(--turquoise);
   }
   to {
-    opacity: 1;
-    transform: translate(-50%, 0);
+    opacity: 0.25;
+    border-color: var(--turquoise);
   }
 }
 

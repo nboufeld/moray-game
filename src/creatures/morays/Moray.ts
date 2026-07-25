@@ -59,6 +59,53 @@ function spanBodyUv(geometry: CylinderGeometry, index: number, total: number): v
   uv.needsUpdate = true;
 }
 
+/**
+ * A cool edge light on every skin surface.
+ *
+ * The reef has one sun and a fill, so a head set back in a crevice has nothing
+ * behind it: the animal the game asks the player to study is the only subject
+ * in frame without a silhouette. This is the back light the cave cannot give
+ * it — water-coloured rather than white, because a warm rim here reads as a
+ * second sun, and emissive, so it survives the shadow the mound casts.
+ *
+ * Two things about it are load-bearing, and both were found by rendering it
+ * wrong first.
+ *
+ * It is weighted by a fixed world direction — up and behind, opposite the sun —
+ * and not by facing alone. A moray is a stack of cylinders running away from
+ * the camera, and every side normal of a cylinder seen end-on is perpendicular
+ * to the view, so a plain fresnel scores the whole animal as silhouette and
+ * turns it into a cool glowing blob. The direction is what makes it an edge.
+ *
+ * And it runs before the skin's normal map is applied, on the smooth geometric
+ * normal: the wrinkle map throws normals far enough off that the rim breaks up
+ * into a haze across the body instead of following the silhouette.
+ *
+ * The source is a module constant and identical for every material on purpose:
+ * three keys its program cache on `onBeforeCompile.toString()`, so two
+ * materials whose injected source differed only in a baked-in constant would
+ * silently share one program — and one of them would wear the other's numbers.
+ */
+const RIM_LIGHT_CHUNK = /* glsl */ `
+  vec3 rimWorldNormal = inverseTransformDirection( normal, viewMatrix );
+  float rimFacing = 1.0 - saturate( dot( normalize( vViewPosition ), normal ) );
+  float rimBack = saturate( dot( rimWorldNormal, normalize( vec3( -0.35, 0.9, -0.4 ) ) ) );
+  totalEmissiveRadiance +=
+    vec3( 0.34, 0.56, 0.64 ) * pow( rimFacing, 2.0 ) * pow( rimBack, 3.0 ) * 0.65;
+  #include <normal_fragment_maps>
+`;
+
+/** Adds {@link RIM_LIGHT_CHUNK}. Inert in Node: nothing compiles without a renderer. */
+function addRimLight(material: MeshStandardMaterial): MeshStandardMaterial {
+  material.onBeforeCompile = (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <normal_fragment_maps>",
+      RIM_LIGHT_CHUNK,
+    );
+  };
+  return material;
+}
+
 const ARCHETYPES: Record<BodyArchetype, ArchetypeShape> = {
   ribbon: { segments: 13, headScale: 0.7, segmentLength: 0.34 },
   standard: { segments: 9, headScale: 0.9, segmentLength: 0.38 },
@@ -91,14 +138,18 @@ export class Moray {
 
     // Markings, counter-shading, skin folds and wet sheen are all painted.
     const skin = createMoraySkin(config);
-    const bodyMaterial = new MeshStandardMaterial({
-      map: skin.map,
-      normalMap: skin.normalMap,
-      roughnessMap: skin.roughnessMap,
-      roughness: 1,
-      metalness: 0.04,
-    });
-    const accentMaterial = new MeshStandardMaterial({ color: accentColor, roughness: 0.5, metalness: 0 });
+    const bodyMaterial = addRimLight(
+      new MeshStandardMaterial({
+        map: skin.map,
+        normalMap: skin.normalMap,
+        roughnessMap: skin.roughnessMap,
+        roughness: 1,
+        metalness: 0.04,
+      }),
+    );
+    const accentMaterial = addRimLight(
+      new MeshStandardMaterial({ color: accentColor, roughness: 0.5, metalness: 0 }),
+    );
 
     const root = new Group();
     const bodyRoot = new Object3D();
@@ -197,7 +248,11 @@ export class Moray {
     lowerJaw.position.set(0, -0.08 * headScale, 0.5 * headScale);
     const lowerJawMesh = new Mesh(
       tube(0.08 * headScale, 0.17 * headScale, 0.4 * headScale),
-      new MeshStandardMaterial({ color: bodyColor.clone().multiplyScalar(0.75), roughness: 0.6 }),
+      // The jaw line is the bottom edge of the head's silhouette, so it carries
+      // the rim too — without it the head separates and its chin does not.
+      addRimLight(
+        new MeshStandardMaterial({ color: bodyColor.clone().multiplyScalar(0.75), roughness: 0.6 }),
+      ),
     );
     lowerJawMesh.scale.set(1, 0.55, 1);
     lowerJawMesh.position.z = 0.17 * headScale;
@@ -213,11 +268,15 @@ export class Moray {
     });
     // A wet catchlight is what separates "a creature is looking at you" from
     // "two dark beads"; the bloom pass then gives it a faint wet flare.
-    const catchlightGeometry = new SphereGeometry(0.022 * headScale, 6, 6);
+    // Sized for the distance the game is actually played at: at the range shot
+    // C frames the crevice from, the old bead covered well under a pixel and
+    // fell below the bloom threshold, so the one spark in the frame was gone
+    // exactly when the player was being asked to look for it.
+    const catchlightGeometry = new SphereGeometry(0.028 * headScale, 8, 8);
     const catchlightMaterial = new MeshStandardMaterial({
       color: 0xffffff,
       emissive: 0xfff4e2,
-      emissiveIntensity: 2.4,
+      emissiveIntensity: 3.2,
       toneMapped: false,
     });
 

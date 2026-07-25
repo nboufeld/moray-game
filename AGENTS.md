@@ -15,12 +15,13 @@ comfort/accessibility settings panel with Calm Mode, and the Dream Sanctuary aqu
 - `src/creatures/fish/` — `FishSchoolSystem` (instanced ambient fish).
 - `src/discovery/` — `FocusScanner`, `DiscoverySystem`, `HintSystem` (all pure/testable).
 - `src/rendering/` — fog + gradient backdrop, lighting, caustics, light shafts, particles,
-  the `ColorGradeShader` used by the post chain, and `ProceduralTexture` (the noise and
-  map-building toolkit every surface is textured with).
+  the `ColorGradeShader` used by the post chain, the `DiscoveryPulse` that drives its
+  swell, and `ProceduralTexture` (the noise and map-building toolkit every surface is
+  textured with).
 - `src/util/Random.ts` — seeded PRNG and the per-subsystem `SEEDS`.
 - `src/sanctuary/` — `SanctuaryScene` (separate scene rendered when in sanctuary mode).
 - `src/save/` — `SaveSystem` + `SaveMigration` (versioned localStorage).
-- `src/ui/` — `Hud`, `Codex`, `SettingsPanel`, `SanctuaryOverlay`.
+- `src/ui/` — `Hud`, `Codex`, `SettingsPanel`, `SanctuaryOverlay`, `MorayPortrait`.
 - `src/accessibility/` — comfort settings + Calm Mode preset.
 - `tests/` — Vitest unit tests (pure gameplay logic, no WebGL).
 - `tests-e2e/` — Playwright tests (render, codex, discovery, sanctuary, calm mode, save,
@@ -104,6 +105,27 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
   behind a moray's head and are raycast for line of sight, so a mound that can bulge
   outward can silently swallow the creature the game is about. Re-run the discovery spec
   after touching anything near a hiding spot.
+- **The moray's rim light must stay directional.** `RIM_LIGHT_CHUNK` in `Moray.ts` is
+  injected by `onBeforeCompile` and weights its fresnel by a fixed world direction. Drop
+  that weighting for a plain facing term and the animal turns into a cool glowing blob:
+  it is built from cylinders running away from the camera, and every side normal of a
+  cylinder seen end-on is perpendicular to the view, so *everything* scores as
+  silhouette. Turning the exponent up does not fix it — measured, it barely moves. The
+  chunk also has to run before `<normal_fragment_maps>`: on the mapped normal the skin
+  wrinkles scatter the rim into a haze over the whole body. It is a module constant on
+  purpose, because three keys its program cache on `onBeforeCompile.toString()`.
+- **Off-screen renders skip tone mapping.** Three sets `NoToneMapping` and linear output
+  whenever the destination is a render target, so pixels read back from one are raw
+  scene-linear and look milky if shown as-is. `RendererAdapter.captureToDataUrl` applies
+  the same ACES curve and sRGB transfer the screen gets, on the CPU. Change the
+  renderer's tone mapping and that port has to follow.
+- **A codex portrait costs ~330ms** on the headless software rasteriser, and it is not
+  fill-rate: rendering the same species again is just as slow, and quartering the pixels
+  saves 14ms, while an empty scene through the identical path costs 7ms. So it is never
+  called inline — `Game` queues portraits and `renderNextPortrait` draws at most one per
+  frame, after the frame is presented, with `capture()` draining the queue up front so a
+  screenshot does not depend on how many frames have drawn. Keep it off the discovery
+  frame; the ceremony's plate and reticle are CSS, so they ride out the stall.
 - **No-DOM guards**: `UnderwaterFog`'s gradient still paints to a canvas and returns null
   when `document` is undefined. Anything else that paints to a canvas at construction
   needs the same — or better, build it as a `DataTexture` and avoid the problem.
