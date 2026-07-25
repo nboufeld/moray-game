@@ -1,4 +1,5 @@
 import {
+  BufferAttribute,
   Color,
   ConeGeometry,
   CylinderGeometry,
@@ -53,15 +54,26 @@ const SITES: readonly ClusterSite[] = [
  *
  * A garden of identical cones reads as traffic cones however it is coloured;
  * the variety of silhouette is what makes it read as coral, so shape carries
- * more weight here than the palette does. The palette itself stays muted —
- * saturated candy colours fight the calm the rest of the reef is going for.
+ * more weight here than the palette does.
  *
  * Every head is flattened into shared instanced meshes. Built as individual
  * meshes this field cost roughly two hundred draw calls, twice over once the
  * shadow pass ran, which dominated the frame on machines without hardware
  * acceleration. Instanced, the whole garden is ten.
  */
-const PALETTE = [0xe08f72, 0xc9788d, 0xdfb379, 0x7fbfb2, 0x9d8cc4, 0xd18874];
+
+/**
+ * Dusty, absorbed reef tones rather than swatch colours.
+ *
+ * Ten metres of water has already eaten most of the red out of the light
+ * before it reaches these heads, so a fully saturated pink or purple down here
+ * is not a bold choice, it is a physical impossibility — and it is the loudest
+ * plastic-toy tell in the frame. These are the same hue families, taken down
+ * in chroma to where the water leaves them: rust, dried rose, ochre, sea
+ * green, dusty violet, clay. The wide value multiplier below matters as much
+ * as the hues: a garden all at one value reads as one moulded object.
+ */
+const PALETTE = [0xc7755a, 0xb06379, 0xcca572, 0x69a99c, 0x8372a9, 0xac755e];
 
 type ShapeKind = "branch" | "boulder" | "polyp" | "tableTop" | "tableStalk";
 
@@ -79,6 +91,15 @@ export class CoralField {
 
   constructor(seed: number) {
     const random = new Random(seed);
+    /**
+     * Tables draw their lean and tilt from their own stream.
+     *
+     * `random` also places every head, so a draw taken inside `addTable` would
+     * shift each following head and re-roll the whole garden — and these
+     * bommies are composed for the canonical cameras, not scattered. A second
+     * stream keeps the layout bit-identical while the plates still vary.
+     */
+    const tableRandom = new Random(seed ^ 0x7ab1_e001);
     const parts: Part[] = [];
 
     for (const site of SITES) {
@@ -88,7 +109,7 @@ export class CoralField {
 
         const color = new Color(
           PALETTE[Math.floor(random.next() * PALETTE.length)] ?? PALETTE[0]!,
-        ).multiplyScalar(random.range(0.78, 1.1));
+        ).multiplyScalar(random.range(0.6, 1.15));
         // A minority of heads are bioluminescent. Kept rare on purpose:
         // everything glowing reads as neon, a few glowing reads as magic.
         const glowing = random.next() < 0.28;
@@ -107,16 +128,16 @@ export class CoralField {
         } else if (roll < 0.78) {
           addBoulder(parts, head.matrix, color, glowing, random);
         } else {
-          addTable(parts, head.matrix, color, glowing);
+          addTable(parts, head.matrix, color, glowing, tableRandom);
         }
       }
     }
 
     const geometries: Record<ShapeKind, BufferGeometry> = {
       branch: new ConeGeometry(0.17, 1.5, 6),
-      boulder: new IcosahedronGeometry(0.62, 1),
+      boulder: boulderGeometry(),
       polyp: new SphereGeometry(0.1, 6, 5),
-      tableTop: new CylinderGeometry(1.05, 1.15, 0.16, 9),
+      tableTop: plateGeometry(),
       tableStalk: new CylinderGeometry(0.14, 0.2, 0.7, 6),
     };
 
@@ -140,13 +161,21 @@ function buildInstances(
 ): InstancedMesh {
   const skin = coralSkin(kind);
   const material = new MeshStandardMaterial({
-    roughness: 0.72,
+    // Coral is a porous limestone skeleton under a skin of polyps. At 0.72 it
+    // held a broad specular sheen across every head at once, which is most of
+    // what read as moulded plastic.
+    roughness: 0.88,
     metalness: 0,
     flatShading: true,
-    // The maps are painted in neutral luminance so the per-instance colour
-    // below keeps carrying all the hue variation across the garden.
+    // The maps stay light and hue-neutral so the per-instance colour below
+    // keeps carrying the variation across the garden; what they do carry is
+    // baked occlusion, which is a multiplier on whatever hue lands on them.
     map: skin.map,
     normalMap: skin.normal,
+    // Only the table plate ships one, to shade its underside. Vertex colour
+    // and instance colour multiply together in the shader, so the per-head
+    // tint survives it.
+    vertexColors: geometry.hasAttribute("color"),
   });
 
   if (glowing) {
@@ -188,12 +217,28 @@ interface CoralSkin {
 const SKIN_SIZE = 256;
 const skinCache = new Map<ShapeKind, CoralSkin>();
 
+interface SkinRecipe {
+  /** Surface height, differentiated into the normal map. */
+  readonly height: (u: number, v: number) => number;
+  /** Albedo multiplier, carrying the baked occlusion. */
+  readonly tone: (u: number, v: number) => number;
+  readonly strength: number;
+}
+
 /**
  * Surface detail per silhouette, shared across every instance of that shape.
  *
+ * Height and tone are separate on purpose. A normal map only tilts the light;
+ * it cannot darken anything, so a corallite wall lit from the side stayed as
+ * bright as the dome beside it and the head kept reading as one smooth lump
+ * with a pattern printed on it. The occlusion a real coral head owns —
+ * daylight cannot reach the bottom of a corallite, whichever way the head
+ * faces — has to be in the albedo, and it is the difference between a surface
+ * with interior structure and a decal.
+ *
  * Boulder heads get the most attention: a Voronoi corallite pattern — domed
- * cells separated by darker walls — is the single detail that makes a lump of
- * geometry read unmistakably as brain coral.
+ * cells separated by walls sunk deep in shadow — is the single detail that
+ * makes a lump of geometry read unmistakably as brain coral.
  */
 function coralSkin(kind: ShapeKind): CoralSkin {
   const cached = skinCache.get(kind);
@@ -201,58 +246,269 @@ function coralSkin(kind: ShapeKind): CoralSkin {
     return cached;
   }
 
+  const recipe = skinRecipe(kind);
+  const skin: CoralSkin = {
+    map: buildColorTexture(SKIN_SIZE, (u, v) => {
+      const tone = recipe.tone(u, v);
+      return [tone, tone * 0.99, tone * 0.96];
+    }),
+    normal: buildNormalTexture(SKIN_SIZE, recipe.height, recipe.strength),
+  };
+
+  skinCache.set(kind, skin);
+  return skin;
+}
+
+function skinRecipe(kind: ShapeKind): SkinRecipe {
   const seed = SEEDS.coralSkin + kind.length * 7919;
-  let height: (u: number, v: number) => number;
-  let strength: number;
 
   switch (kind) {
     case "boulder":
     case "polyp": {
-      height = (u, v) => {
-        const { f1, f2 } = voronoi(u, v, 12, seed);
-        // Domed cell interiors, sunk along the walls where f2 - f1 → 0.
-        const wall = Math.min(1, (f2 - f1) / 0.05);
-        return wall * 0.85 + (1 - Math.min(1, f1 / 0.08)) * 0.1;
+      /**
+       * Corallites at two scales. One Voronoi period gives every cell on the
+       * head the same diameter, which no colony has: growth crowds at the
+       * crown and spreads at the flanks. The coarser field, blended in at
+       * roughly a third, breaks that regularity into lobes of larger and
+       * smaller cells; both are resolved into the one map, so the second
+       * scale costs nothing at draw time.
+       *
+       * Both return the distance to the cell wall, normalised so 0 is the
+       * wall itself and 1 the middle of a cell dome.
+       */
+      const cell = (u: number, v: number): { dome: number; crown: number } => {
+        const fine = voronoi(u, v, 12, seed);
+        const coarse = voronoi(u, v, 4, seed ^ 0x1f83);
+        // Raised to a fractional power so the wall is a line and not a
+        // gradient: with a linear falloff the shaded band covered half the
+        // surface and the head just went uniformly dark, which buys the
+        // penalty of occlusion without the structure it is there to give.
+        const fineWall = Math.min(1, (fine.f2 - fine.f1) / 0.03) ** 0.6;
+        const coarseWall = Math.min(1, (coarse.f2 - coarse.f1) / 0.09) ** 0.6;
+        return {
+          dome: fineWall * 0.7 + coarseWall * 0.3,
+          crown: 1 - Math.min(1, fine.f1 / 0.08),
+        };
       };
-      strength = 0.09;
-      break;
+      return {
+        height: (u, v) => {
+          const { dome, crown } = cell(u, v);
+          return dome * 0.85 + crown * 0.1;
+        },
+        // Deep in the wall almost nothing gets out again; the dome tops keep
+        // the full hue.
+        tone: (u, v) => 0.35 + 0.65 * cell(u, v).dome,
+        strength: 0.09,
+      };
     }
     case "branch": {
       // Fine longitudinal ribbing plus polyp speckle.
-      height = (u, v) =>
+      const height = (u: number, v: number): number =>
         Math.sin(u * Math.PI * 2 * 8) * 0.18 +
         0.5 +
         fbm(u, v, { seed, period: 24, octaves: 3 }) * 0.5;
-      strength = 0.05;
-      break;
-    }
-    case "tableTop":
-    case "tableStalk": {
-      // Concentric growth banding.
-      height = (u, v) => {
-        const rings = Math.sin(v * Math.PI * 2 * 14) * 0.5 + 0.5;
-        return rings * 0.6 + fbm(u, v, { seed, period: 16, octaves: 3 }) * 0.4;
+      return {
+        height,
+        /**
+         * Growth runs at the tips, where the skeleton is newest and thinnest
+         * and the tissue barely covers it — every staghorn is pale at the
+         * ends and dark down in the crotch of the branch, where the light
+         * never gets. `v` runs 1 at the cone's point to 0 at its base.
+         */
+        tone: (u, v) => (0.6 + height(u, v) * 0.32) * (0.75 + v * 0.5),
+        strength: 0.05,
       };
-      strength = 0.045;
-      break;
+    }
+    case "tableTop": {
+      /**
+       * The plate's faces are laid out as a disc: a cylinder cap's UVs run
+       * out from (0.5, 0.5) to a circle of radius 0.5, and the rim band takes
+       * the square around it. So growth structure has to be authored in polar
+       * coordinates about that centre. Banding straight down `v` — the
+       * obvious reading of "concentric" — comes out as parallel stripes
+       * across the plate, which is corduroy, and corduroy is upholstery.
+       *
+       * What a plate coral actually shows is branchlets radiating from the
+       * stalk, crossed by the growth rings the colony laid down as it spread.
+       * Outside the inscribed circle nothing but the rim band samples, so
+       * that region crossfades to plain noise — which keeps the whole tile
+       * seamless where the band wraps.
+       */
+      const height = (u: number, v: number): number => {
+        const dx = u - 0.5;
+        const dy = v - 0.5;
+        const radius = Math.hypot(dx, dy) * 2;
+        const angle = Math.atan2(dy, dx) / (Math.PI * 2) + 0.5;
+
+        const rings = Math.sin(radius * Math.PI * 2 * 6) * 0.5 + 0.5;
+        /**
+         * Branchlets radiating from the stalk — but jittered in both spacing
+         * and depth. Evenly spaced ribs of equal depth are a parasol, which
+         * is the same failure as the table with a different outline; a colony
+         * crowds its branchlets where it grew fastest. The jitter is itself
+         * periodic in the angle, so the rim band still wraps.
+         */
+        const jitter = fbm(angle, 0.5, { seed: seed ^ 0x91c3, period: 5, octaves: 2 });
+        const depth = 0.45 + fbm(angle, 0.5, { seed: seed ^ 0x33d7, period: 3, octaves: 2 }) * 0.8;
+        // Ribs converge at the centre, so fade them out before they collapse
+        // into a moiré knot there.
+        const ribs =
+          (Math.sin((angle * 22 + jitter * 1.7) * Math.PI * 2) * 0.5 + 0.5) *
+          Math.min(1, radius / 0.3) *
+          depth;
+        const grain = fbm(u, v, { seed, period: 16, octaves: 3 });
+        const plate = rings * 0.3 + ribs * 0.42 + grain * 0.28;
+
+        const band = 0.35 + grain * 0.5;
+        const feather = Math.min(1, Math.max(0, (radius - 0.84) / 0.16));
+        return plate * (1 - feather) + band * feather;
+      };
+      return {
+        height,
+        /**
+         * Occlusion sits in the ring valleys and between the ribs, and the
+         * growing margin at the rim is darker than the crown. The underside
+         * proper is shaded per vertex in `plateGeometry` — it faces away from
+         * every light in the scene, which no map can express on its own.
+         */
+        tone: (u, v) => {
+          const radius = Math.min(1, Math.hypot(u - 0.5, v - 0.5) * 2);
+          return (0.56 + height(u, v) * 0.58) * (1 - 0.26 * radius * radius);
+        },
+        strength: 0.05,
+      };
+    }
+    case "tableStalk": {
+      // A short trunk: longitudinal grooves where the plate's ribs run down
+      // into it, roughened by the same grain.
+      const height = (u: number, v: number): number =>
+        (Math.sin(u * Math.PI * 2 * 9) * 0.5 + 0.5) * 0.45 +
+        fbm(u, v, { seed, period: 12, octaves: 3 }) * 0.55;
+      return {
+        height,
+        // The plate is the stalk's own ceiling, so the shade deepens upward.
+        tone: (u, v) => (0.6 + height(u, v) * 0.4) * (0.95 - v * 0.22),
+        strength: 0.06,
+      };
     }
     default: {
       const exhaustive: never = kind;
       throw new Error(`Unhandled coral shape: ${String(exhaustive)}`);
     }
   }
+}
 
-  const skin: CoralSkin = {
-    map: buildColorTexture(SKIN_SIZE, (u, v) => {
-      // Neutral luminance around 1.0 so `setColorAt` still decides the hue.
-      const tone = 0.72 + height(u, v) * 0.46;
-      return [tone, tone * 0.99, tone * 0.96];
-    }),
-    normal: buildNormalTexture(SKIN_SIZE, height, strength),
-  };
+/**
+ * The shared boulder template, knocked out of round.
+ *
+ * A subdivided icosahedron is a sphere with a rendering artefact, and a
+ * garden of them reads as marbles however they are textured. This is the same
+ * radial FBM displacement the rocks get, hand-rolled rather than borrowed
+ * from `weatherRock`: that one finishes by box-projecting UVs and writing a
+ * facing tint, and the corallite pattern here is authored against the
+ * icosahedron's own spherical UVs — box projection at this scale would spread
+ * about one cell across a whole head.
+ *
+ * Displacing the template once is also the only affordable place to do it.
+ * Every boulder in the reef is an instance of this geometry, so the cost is
+ * one pass over 240 vertices at construction, not one per head.
+ */
+function boulderGeometry(): BufferGeometry {
+  const geometry = new IcosahedronGeometry(0.62, 1);
+  const position = geometry.attributes.position;
+  if (!position) {
+    return geometry;
+  }
 
-  skinCache.set(kind, skin);
-  return skin;
+  const seed = SEEDS.coralSkin ^ 0x0b0d_5e11;
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i);
+    const y = position.getY(i);
+    const z = position.getZ(i);
+    const length = Math.hypot(x, y, z) || 1;
+
+    // Sampled by direction, so vertices shared between faces displace
+    // identically and the surface stays closed.
+    const u = Math.atan2(z, x) / (Math.PI * 2) + 0.5;
+    const v = Math.asin(Math.max(-1, Math.min(1, y / length))) / Math.PI + 0.5;
+    const scale = 1 + (fbm(u, v, { seed, period: 6, octaves: 4 }) - 0.5) * 0.24;
+    position.setXYZ(i, x * scale, y * scale, z * scale);
+  }
+
+  position.needsUpdate = true;
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+/** Nominal plate radius, before the rim noise pushes it around. */
+const PLATE_RADIUS = 1.1;
+
+/**
+ * The shared table plate: a lobed, warped, flaring disc rather than a table
+ * top.
+ *
+ * A true circle of constant thickness, level, on a centred stalk, is patio
+ * furniture, and no amount of surface texture argues with a silhouette. Three
+ * things are wrong with the primitive and all three are fixed here: the rim
+ * is pushed in and out by noise, the plate is warped out of plane so its edge
+ * rises and falls and its middle domes, and it flares outward as it rises the
+ * way a plate coral grows into the light rather than tapering like a table's
+ * moulded lip.
+ *
+ * Everything is sampled by direction and radius, never per vertex, so
+ * neighbouring rings move as one and the shell stays closed.
+ */
+function plateGeometry(): BufferGeometry {
+  const geometry = new CylinderGeometry(PLATE_RADIUS, 0.9, 0.1, 15);
+  const position = geometry.attributes.position;
+  const normal = geometry.attributes.normal;
+  if (!position || !normal) {
+    return geometry;
+  }
+
+  // Read the cap facing before displacement, while the cylinder's own normals
+  // still say cleanly which vertices face down.
+  const colors = new Float32Array(position.count * 3);
+  for (let i = 0; i < position.count; i++) {
+    // Daylight arrives from above and the plate is its own ceiling: the
+    // underside only ever sees bounce, so bake that in rather than hope the
+    // lighting finds it.
+    const shade = 1 - 0.45 * Math.max(0, -normal.getY(i));
+    colors[i * 3] = shade;
+    colors[i * 3 + 1] = shade;
+    colors[i * 3 + 2] = shade;
+  }
+  geometry.setAttribute("color", new BufferAttribute(colors, 3));
+
+  const seed = SEEDS.coralSkin ^ 0x71ab_1e00;
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i);
+    const z = position.getZ(i);
+    const angle = Math.atan2(z, x) / (Math.PI * 2) + 0.5;
+    const radial = Math.min(1, Math.hypot(x, z) / PLATE_RADIUS);
+
+    /**
+     * Two scales of rim noise. The broad one — three lobes around the whole
+     * colony — is what stops the plate being a disc at all: the margin runs
+     * from about 0.6 to 1.3 of the nominal radius, so the plate reaches twice
+     * as far into the light on one side as it does on the other. The tight
+     * one scallops the edge between neighbouring segments.
+     */
+    const lobe =
+      1 +
+      (fbm(angle, 0.5, { seed: seed ^ 0x5a35, period: 3, octaves: 2 }) - 0.5) * 1.2 +
+      (fbm(angle, 0.5, { seed: seed ^ 0xf1b9, period: 9, octaves: 1 }) - 0.5) * 0.7;
+    // The rim lifts and drops around the colony, and the crown sits proud of
+    // it — a plate that has grown, rather than one that was turned.
+    const warp = (fbm(angle, 0.5, { seed: seed ^ 0x2c5f, period: 5, octaves: 2 }) - 0.5) * 0.7;
+    const crown = 0.07 * (1 - radial * radial);
+
+    position.setXYZ(i, x * lobe, position.getY(i) + warp * radial + crown, z * lobe);
+  }
+
+  position.needsUpdate = true;
+  geometry.computeVertexNormals();
+  return geometry;
 }
 
 /** Composes a part's local transform into its head's world matrix. */
@@ -318,15 +574,39 @@ function addBoulder(
   }
 }
 
-/** A flat plate on a stalk, the shape that casts the best shade to hide under. */
-function addTable(parts: Part[], headMatrix: Matrix4, color: Color, glowing: boolean): void {
+/**
+ * A plate on a stalk, the shape that casts the best shade to hide under.
+ *
+ * The plate's outline is already irregular in `plateGeometry`, but every head
+ * shares that one geometry, so the rest of the variety has to come from the
+ * transform: the stalk stands off-centre, the plate sits over at a tilt and
+ * is squashed on one axis. A colony grows toward the light it can reach, not
+ * symmetrically about its own foot.
+ */
+function addTable(
+  parts: Part[],
+  headMatrix: Matrix4,
+  color: Color,
+  glowing: boolean,
+  random: Random,
+): void {
   const local = new Object3D();
+
+  const leanAround = random.range(0, Math.PI * 2);
+  const lean = random.range(0.09, 0.2);
   local.scale.setScalar(1);
   local.rotation.set(0, 0, 0);
-
-  local.position.set(0, 0.35, 0);
+  local.position.set(Math.cos(leanAround) * lean, 0.35, Math.sin(leanAround) * lean);
   push(parts, "tableStalk", headMatrix, local, color, glowing);
 
-  local.position.set(0, 0.72, 0);
+  const tiltAround = random.range(0, Math.PI * 2);
+  const tilt = random.range(0.05, 0.11);
+  local.scale.set(random.range(0.86, 1.12), 1, random.range(0.86, 1.12));
+  local.rotation.set(
+    Math.sin(tiltAround) * tilt,
+    random.range(0, Math.PI * 2),
+    Math.cos(tiltAround) * tilt,
+  );
+  local.position.set(0, 0.7, 0);
   push(parts, "tableTop", headMatrix, local, color, glowing);
 }
