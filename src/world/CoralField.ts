@@ -18,7 +18,7 @@ import { buildColorTexture, buildNormalTexture, fbm, voronoi } from "../renderin
 import { Random, SEEDS } from "../util/Random";
 import { seabedHeight } from "./Seabed";
 
-interface ClusterSite {
+export interface ClusterSite {
   readonly x: number;
   readonly z: number;
   /** Heads in this bommie. */
@@ -89,7 +89,13 @@ export class CoralField {
   /** Where each head meets the sand, for the seabed's baked contact shadows. */
   readonly contacts: { x: number; z: number; radius: number; strength: number }[] = [];
 
-  constructor(seed: number) {
+  /**
+   * `sites` defaults to the reef's authored bommies. The sanctuary grows its
+   * own garden from the same generators, and passing its sites in is the whole
+   * of the difference — the reef's composition is the default precisely so that
+   * a second room cannot disturb it.
+   */
+  constructor(seed: number, sites: readonly ClusterSite[] = SITES) {
     const random = new Random(seed);
     /**
      * Tables draw their lean and tilt from their own stream.
@@ -102,7 +108,7 @@ export class CoralField {
     const tableRandom = new Random(seed ^ 0x7ab1_e001);
     const parts: Part[] = [];
 
-    for (const site of SITES) {
+    for (const site of sites) {
       for (let i = 0; i < site.heads; i++) {
         const x = site.x + random.signed(2.8);
         const z = site.z + random.signed(2.8);

@@ -51,4 +51,13 @@ export const SEEDS = {
   grassBlade: 0x5a4d_0004,
   pinnacle: 0x5a4d_0005,
   cave: 0x5a4d_0006,
+  // The sanctuary dresses its own set from the same generators as the reef, so
+  // it takes its own streams: sharing the reef's would put the reef's meadow
+  // and its bommies in the aquarium, and re-tuning one room would re-roll the
+  // other out from under a screenshot comparison.
+  sanctuaryRock: 0x5a4d_0101,
+  sanctuaryCoral: 0x5a4d_0102,
+  sanctuaryGrass: 0x5a4d_0103,
+  sanctuaryMotes: 0x5a4d_0104,
+  sanctuaryShafts: 0x5a4d_0105,
 } as const;

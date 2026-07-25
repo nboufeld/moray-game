@@ -106,6 +106,15 @@ function addRimLight(material: MeshStandardMaterial): MeshStandardMaterial {
   return material;
 }
 
+/** Seconds of turn each joint lags the head by; see `update`. */
+const BANK_SECONDS = 0.4;
+/** Hard limit on that lag, in radians per joint. */
+const MAX_BANK = 0.13;
+
+function clamp(value: number, min: number, max: number): number {
+  return value < min ? min : value > max ? max : value;
+}
+
 const ARCHETYPES: Record<BodyArchetype, ArchetypeShape> = {
   ribbon: { segments: 13, headScale: 0.7, segmentLength: 0.34 },
   standard: { segments: 9, headScale: 0.9, segmentLength: 0.38 },
@@ -317,7 +326,12 @@ export class Moray {
     return this.asset.head.getWorldPosition(out);
   }
 
-  update(dt: number, playerPosition: Vector3, curious: boolean): void {
+  /**
+   * @param turnRate Yaw rate of the path the animal is following, in radians
+   * per second, or 0 for an animal that is holding station — which is every
+   * moray in the reef, so the default leaves their motion untouched.
+   */
+  update(dt: number, playerPosition: Vector3, curious: boolean, turnRate = 0): void {
     this.breatheTime += dt;
     this.swayTime += dt;
 
@@ -325,6 +339,18 @@ export class Moray {
     const ventilation = (Math.sin(this.breatheTime * 1.6) * 0.5 + 0.5) * 0.28;
     this.asset.lowerJaw.rotation.x = ventilation;
     this.asset.upperJaw.rotation.x = -ventilation * 0.35;
+
+    // Curvature the body inherits from the path it is on.
+    //
+    // The chain is rigid and the root only carries the head's heading, so an
+    // animal on a curve drifts sideways like a ship unless every joint takes a
+    // share of the turn. The sign is negative because the body *trails*: joint
+    // i is where the head was `i` segment-times ago, when it was pointing that
+    // much further back around the turn. The magnitude is that lag in seconds —
+    // roughly how long a segment takes to pass a point at swimming speed — and
+    // it is clamped because a figure-eight's ends are tighter than any eel can
+    // actually bend, and past this the animal coils into a spring.
+    const bank = clamp(-turnRate * BANK_SECONDS, -MAX_BANK, MAX_BANK);
 
     // Slow body sway travelling down the chain, over a resting S-curve. Without
     // the resting curve a moray at rest is a straight pipe; eels are never
@@ -335,7 +361,7 @@ export class Moray {
         continue;
       }
       const amplitude = 0.07 + i * 0.018;
-      const rest = Math.sin(i * 0.55) * 0.07;
+      const rest = Math.sin(i * 0.55) * 0.07 + bank;
       segment.rotation.y = rest + Math.sin(this.swayTime * 1.1 - i * 0.5) * amplitude;
       segment.rotation.x = Math.sin(this.swayTime * 0.73 - i * 0.38) * amplitude * 0.3;
     }

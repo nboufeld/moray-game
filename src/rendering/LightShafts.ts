@@ -56,7 +56,7 @@ const POOL_SPREAD = 0.7;
  */
 const FOOT_DEPTH = 1.4;
 
-interface ShaftPlacement {
+export interface ShaftPlacement {
   /**
    * Where the beam meets the sand, in world XZ. Authoring the landing point
    * rather than the beam's midpoint is the whole trick: it is what lets a pool
@@ -136,11 +136,20 @@ export class LightShafts {
   private readonly poolOpacity = 0.45;
   private time = 0;
 
-  constructor(sunDirection: Vector3, seed: number = SEEDS.shafts) {
+  /**
+   * `placements` defaults to the reef's authored beams. The sanctuary lights
+   * its own room with the same machinery and its own landing points; the reef's
+   * are the default so that a second set of beams cannot move the first.
+   */
+  constructor(
+    sunDirection: Vector3,
+    seed: number = SEEDS.shafts,
+    placements: readonly ShaftPlacement[] = PLACEMENTS,
+  ) {
     const random = new Random(seed);
 
-    const texture = createShaftTexture();
-    const poolTexture = createPoolTexture();
+    const texture = shaftMap();
+    const poolTexture = poolMap();
 
     // Point each shaft down the sun ray: the geometry runs along its own +Y.
     const along = sunDirection.clone().normalize().negate();
@@ -149,7 +158,7 @@ export class LightShafts {
     // height is what keeps a pool under its shaft however the sun is angled.
     const perMetre = 1 / -along.y;
 
-    for (const placement of PLACEMENTS) {
+    for (const placement of placements) {
       const [groundX, groundZ] = placement.ground;
       const strength = placement.faint === true ? 0.5 : 1;
       const phase = random.range(0, Math.PI * 2);
@@ -263,10 +272,38 @@ export class LightShafts {
 }
 
 /**
+ * Both maps are content-identical for every beam in every room, so they are
+ * built once and shared. Two rooms' worth of shafts is the case that made it
+ * worth doing: nothing here varies per instance, and the pool's spin and dune
+ * fitting are baked into its geometry rather than its texture.
+ */
+let shaftTexture: CanvasTexture | null | undefined;
+function shaftMap(): CanvasTexture | null {
+  if (shaftTexture === undefined) {
+    shaftTexture = createShaftTexture();
+  }
+  return shaftTexture;
+}
+
+let poolTexture: DataTexture | undefined;
+function poolMap(): DataTexture {
+  poolTexture ??= createPoolTexture();
+  return poolTexture;
+}
+
+/**
  * A soft-edged beam: a bell across the width so the sides never show a hard
  * boundary, fading out along its length as the light is absorbed.
+ *
+ * The one map here still painted into a canvas, so like the fog's gradient it
+ * returns null where there is no DOM — which is what keeps a scene that owns
+ * shafts constructible in the plain Node unit tests.
  */
-function createShaftTexture(): CanvasTexture {
+function createShaftTexture(): CanvasTexture | null {
+  if (typeof document === "undefined") {
+    return null;
+  }
+
   const width = 64;
   const height = 256;
   const canvas = document.createElement("canvas");

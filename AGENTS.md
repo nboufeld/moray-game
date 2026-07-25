@@ -69,7 +69,12 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
   sanctuary portrait). `Game.capture()` stops the live loop, places the diver and advances
   the world by whole fixed steps, so a shot is reproducible frame for frame. Capture
   before *and* after a change and compare; `scripts/measure-frames.mjs` does the same for
-  frame cost.
+  frame cost. The shot set holds exactly one sanctuary frame and that camera moves, so for
+  work in there use `node scripts/probe-sanctuary.mjs <tag>`: it walks the sweep in four
+  steps and then samples frame time with the room open, at the same window size
+  `measure-frames.mjs` uses so the two costs can be read side by side. The sanctuary
+  *replaces* the reef render rather than adding to it, so that is the number it has to
+  beat (it currently comes in under it).
 - **Render cost gotchas** (all of these were measured, not guessed): coral is flattened
   into a handful of instanced meshes because ~200 individual draw calls dominated the
   frame; grass and fish deliberately do not cast shadows; the light shafts are
@@ -156,7 +161,30 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
   every time the sanctuary opens. It disposes the previous residents' geometries and
   materials; drop that and the GPU copies accumulate for the rest of the session. Reef and
   sanctuary morays are separate `Moray` instances with their own resources, so disposing
-  sanctuary residents never touches the reef.
+  sanctuary residents never touches the reef. **The set is not part of that path**: the
+  sand, the two stacks, the coral, the grass, the shafts, the caustics and the motes are
+  all built once in the constructor, and `tests/sanctuaryScene.test.ts` fails if a fixture
+  stops surviving a rebuild. That test also constructs the scene in plain Node, so
+  everything the room owns has to be DOM-free at construction — which is why
+  `LightShafts`' canvas-painted beam texture returns null without a `document`, the same
+  guard `UnderwaterFog` has.
+- **The sanctuary is dressed from the reef's own generators**, with its own seeds
+  (`SEEDS.sanctuary*`). `CoralField` and `LightShafts` take their sites/placements as an
+  optional second and third constructor argument; the reef's authored ones are the
+  defaults precisely so a second room cannot move them.
+- **Sanctuary lane gotcha**: residents swim a lemniscate, and a lemniscate's heading stops
+  turning at the crossing, so an animal spends most of its loop at one of two headings —
+  forty-five degrees either side of its lane's `turn`. Turn a lane far enough that one of
+  those points at the camera and the animal parks end-on, where an eel is a lump with a
+  face on it. Keep `turn` small and use a negative `speed` (the same eight, run backwards)
+  when you want one heading away instead. `Moray.update` takes the lane's yaw rate as an
+  optional `turnRate` and bends the body into the curve with it; it defaults to 0, so the
+  reef's morays are untouched.
+- **The sanctuary camera sweeps, it does not orbit.** A full circle has to be composed for
+  from every azimuth, so nothing can stand near the frame edge without becoming a wall in
+  the lens later. `SWEEP` is sixty degrees of arc and the stacks, bommies and grass are
+  placed for it. `setSpecies` resets the sweep so the room always opens on its authored
+  view — which is also what keeps shot E comparable between runs.
 - **Finding the darker morays**: only the snowflake moray sits straight ahead of spawn. The
   ribbon (left), zebra (right) and dragon (deeper, forward-left) require turning and are
   intentionally harder to spot — the zebra/dragon heads are dark against their caves. Use
