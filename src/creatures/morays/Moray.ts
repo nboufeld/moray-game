@@ -1,5 +1,5 @@
 import {
-  BoxGeometry,
+  Bone,
   Color,
   ConeGeometry,
   CylinderGeometry,
@@ -7,9 +7,12 @@ import {
   Mesh,
   MeshStandardMaterial,
   Object3D,
+  Skeleton,
+  SkinnedMesh,
   SphereGeometry,
   Vector3,
 } from "three";
+import { buildMorayBody } from "./MorayBody";
 import { createMoraySkin } from "./MorayPattern";
 import type { BodyArchetype, MoraySpeciesConfig } from "./MoraySpeciesConfig";
 
@@ -43,23 +46,6 @@ function tube(frontRadius: number, backRadius: number, length: number): Cylinder
 }
 
 /**
- * Rewrites a segment's `v` so it occupies its own slice of the body's length.
- * A cylinder's `v` runs 0 at -Y (which becomes the tail-facing end after the
- * rotation in `tube`) to 1 at +Y, so the head end of segment `index` sits at
- * `index / total` and the tail end at `(index + 1) / total`.
- */
-function spanBodyUv(geometry: CylinderGeometry, index: number, total: number): void {
-  const uv = geometry.attributes.uv;
-  if (!uv) {
-    return;
-  }
-  for (let i = 0; i < uv.count; i++) {
-    uv.setY(i, (index + 1 - uv.getY(i)) / total);
-  }
-  uv.needsUpdate = true;
-}
-
-/**
  * A cool edge light on every skin surface.
  *
  * The reef has one sun and a fill, so a head set back in a crevice has nothing
@@ -72,10 +58,10 @@ function spanBodyUv(geometry: CylinderGeometry, index: number, total: number): v
  * wrong first.
  *
  * It is weighted by a fixed world direction — up and behind, opposite the sun —
- * and not by facing alone. A moray is a stack of cylinders running away from
- * the camera, and every side normal of a cylinder seen end-on is perpendicular
- * to the view, so a plain fresnel scores the whole animal as silhouette and
- * turns it into a cool glowing blob. The direction is what makes it an edge.
+ * and not by facing alone. A moray is a tube running away from the camera, and
+ * every side normal of a tube seen end-on is perpendicular to the view, so a
+ * plain fresnel scores the whole animal as silhouette and turns it into a cool
+ * glowing blob. The direction is what makes it an edge.
  *
  * And it runs before the skin's normal map is applied, on the smooth geometric
  * normal: the wrinkle map throws normals far enough off that the rim breaks up
@@ -123,15 +109,15 @@ const ARCHETYPES: Record<BodyArchetype, ArchetypeShape> = {
 };
 
 /**
- * A procedurally built moray: head, jaw, eyes, an optional dorsal ridge and
- * nasal appendages, plus a body chain that can recede into a crevice or swim
- * freely in the sanctuary. Individuality comes from the species config layered
- * onto shared machinery.
+ * A procedurally built moray: a sculpted head with jaw, eyes and optional nasal
+ * appendages, on a skinned body and dorsal fin that can recede into a crevice
+ * or swim freely in the sanctuary. Individuality comes from the species config
+ * layered onto shared machinery.
  */
 export class Moray {
   readonly asset: MorayAsset;
 
-  private readonly segments: Object3D[] = [];
+  private readonly joints: Bone[] = [];
   private readonly shape: ArchetypeShape;
   private breatheTime = 0;
   private swayTime = 0;
@@ -159,56 +145,56 @@ export class Moray {
     const accentMaterial = addRimLight(
       new MeshStandardMaterial({ color: accentColor, roughness: 0.5, metalness: 0 }),
     );
+    // The fin wears the accent colour but not the accent's sheen. It is a broad
+    // thin surface that the camera meets edge-on as often as not, and at the
+    // nasal tubes' roughness a pale one catches a hard highlight all down its
+    // top edge — which over a head in a dark crevice reads as a spike, not a
+    // fin. A fin is skin, and skin at this angle is scatter, not gloss.
+    const finMaterial = addRimLight(
+      new MeshStandardMaterial({ color: accentColor, roughness: 0.9, metalness: 0 }),
+    );
 
     const root = new Group();
     const bodyRoot = new Object3D();
     root.add(bodyRoot);
 
     const segmentLength = this.shape.segmentLength * config.lengthScale;
-    const girthAt = (index: number): number =>
-      (0.42 - Math.min(1, index / (this.shape.segments - 1)) * 0.24) * config.girthScale;
 
+    // The chain the wave is driven down. These used to each carry a cylinder;
+    // now they are the skeleton one continuous tube is skinned to, so `update`
+    // is unchanged and the same wave bends the body instead of hinging it.
     let parent: Object3D = bodyRoot;
     for (let i = 0; i < this.shape.segments; i++) {
-      const girth = girthAt(i);
-      const pivot = new Object3D();
-      pivot.position.z = i === 0 ? 0 : -segmentLength;
-
-      // A rounded, tapering tube: the box chain this replaced read as a train
-      // of crates, and the moray is the one thing the game asks you to study.
-      // The last segment closes to a near-point, otherwise the open-ended tube
-      // shows a hollow cross-section where the tail should finish.
-      const isTail = i === this.shape.segments - 1;
-      const backRadius = isTail ? girth * 0.04 : girthAt(i + 1) * 0.5;
-      const geometry = tube(girth * 0.5, backRadius, segmentLength * 1.04);
-      // Every segment is its own cylinder with its own 0..1 UVs, so without
-      // this the whole pattern tile compresses into each 0.4m link and a five
-      // band zebra wears forty. Remapping v to the segment's slice of the body
-      // makes one texture span the animal head to tail.
-      spanBodyUv(geometry, i, this.shape.segments);
-      const segment = new Mesh(geometry, bodyMaterial);
-      // Eels are laterally compressed — narrow across, deep top to bottom.
-      segment.scale.set(0.9, 1, 1);
-      pivot.add(segment);
-
-      // A thin dorsal ridge sharpens the silhouette (yellow margin on ribbons).
-      // Overlapping its neighbours matters: butt-jointed ridges separate into a
-      // row of loose bricks as soon as the body flexes.
-      if (i < this.shape.segments - 1) {
-        // Low and heavily overlapped. A taller fin split at every joint fans
-        // apart as the body flexes and reads as a row of plates, not a fin.
-        const ridge = new Mesh(
-          new BoxGeometry(girth * 0.07, girth * 0.19, segmentLength * 1.75),
-          accentMaterial,
-        );
-        ridge.position.y = girth * 0.46;
-        segment.add(ridge);
-      }
-
-      parent.add(pivot);
-      this.segments.push(pivot);
-      parent = pivot;
+      const joint = new Bone();
+      joint.position.z = i === 0 ? 0 : -segmentLength;
+      parent.add(joint);
+      this.joints.push(joint);
+      parent = joint;
     }
+
+    const rig = buildMorayBody({
+      jointCount: this.shape.segments,
+      jointSpacing: segmentLength,
+      girthScale: config.girthScale,
+    });
+    // One texture spanning the animal head to tail: the tube's `v` already
+    // runs 0 at the snout to 1 at the tip, which is the space `MorayPattern`
+    // paints in.
+    const body = new SkinnedMesh(rig.body, bodyMaterial);
+    const fin = new SkinnedMesh(rig.fin, finMaterial);
+    for (const skinned of [body, fin]) {
+      // Three would otherwise bound these from whichever pose the bones are in
+      // at the first render and never update it. See `BOUNDS_SLACK`.
+      skinned.boundingSphere = rig.bounds.clone();
+      bodyRoot.add(skinned);
+    }
+
+    // Bind while the rig is still in its rest pose: the inverses taken here are
+    // what every later pose is measured against.
+    root.updateMatrixWorld(true);
+    const skeleton = new Skeleton(this.joints);
+    body.bind(skeleton);
+    fin.bind(skeleton);
 
     const head = new Object3D();
     bodyRoot.add(head);
@@ -342,9 +328,9 @@ export class Moray {
 
     // Curvature the body inherits from the path it is on.
     //
-    // The chain is rigid and the root only carries the head's heading, so an
-    // animal on a curve drifts sideways like a ship unless every joint takes a
-    // share of the turn. The sign is negative because the body *trails*: joint
+    // The root only carries the head's heading, so an animal on a curve drifts
+    // sideways like a ship unless every joint takes a share of the turn. The
+    // sign is negative because the body *trails*: joint
     // i is where the head was `i` segment-times ago, when it was pointing that
     // much further back around the turn. The magnitude is that lag in seconds —
     // roughly how long a segment takes to pass a point at swimming speed — and
@@ -355,15 +341,15 @@ export class Moray {
     // Slow body sway travelling down the chain, over a resting S-curve. Without
     // the resting curve a moray at rest is a straight pipe; eels are never
     // straight, and the curve is most of what sells the animal at a glance.
-    for (let i = 0; i < this.segments.length; i++) {
-      const segment = this.segments[i];
-      if (!segment) {
+    for (let i = 0; i < this.joints.length; i++) {
+      const joint = this.joints[i];
+      if (!joint) {
         continue;
       }
       const amplitude = 0.07 + i * 0.018;
       const rest = Math.sin(i * 0.55) * 0.07 + bank;
-      segment.rotation.y = rest + Math.sin(this.swayTime * 1.1 - i * 0.5) * amplitude;
-      segment.rotation.x = Math.sin(this.swayTime * 0.73 - i * 0.38) * amplitude * 0.3;
+      joint.rotation.y = rest + Math.sin(this.swayTime * 1.1 - i * 0.5) * amplitude;
+      joint.rotation.x = Math.sin(this.swayTime * 0.73 - i * 0.38) * amplitude * 0.3;
     }
 
     // Gentle head tracking that strengthens once the player is close/curious.

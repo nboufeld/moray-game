@@ -11,7 +11,8 @@ comfort/accessibility settings panel with Calm Mode, and the Dream Sanctuary aqu
 - `src/app/` — `Game` wiring, fixed-timestep `GameLoop`, `RendererAdapter` (WebGL).
 - `src/player/` — `DiveController` (pure physics), `CameraRig` (comfort options), `InputController`.
 - `src/world/` — `Reef`, `Seabed` (shared dune height), `CoralField`, `SeaGrass`, `CollisionField`.
-- `src/creatures/morays/` — data-driven `MoraySpeciesConfig`, `MorayRegistry`, procedural `Moray`.
+- `src/creatures/morays/` — data-driven `MoraySpeciesConfig`, `MorayRegistry`, procedural `Moray`,
+ and `MorayBody` (the skinned tube and dorsal fin its joint chain drives).
 - `src/creatures/fish/` — `FishSchoolSystem` (instanced ambient fish).
 - `src/discovery/` — `FocusScanner`, `DiscoverySystem`, `HintSystem` (all pure/testable).
 - `src/rendering/` — fog + gradient backdrop, lighting, caustics, light shafts, particles,
@@ -75,8 +76,13 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
   work in there use `node scripts/probe-sanctuary.mjs <tag>`: it walks the sweep in four
   steps and then samples frame time with the room open, at the same window size
   `measure-frames.mjs` uses so the two costs can be read side by side. The sanctuary
-  *replaces* the reef render rather than adding to it, so that is the number it has to
-  beat (it currently comes in under it).
+ *replaces* the reef render rather than adding to it, so that is the number it has to
+ beat (it currently comes in under it). The animals get the same treatment from
+ `node scripts/probe-moray.mjs <tag>`: shot C stands where the *game* asks the player to stand,
+ which is far enough that a seam a body's width across is two pixels, so this walks up to all four
+ heads instead — one pose per crevice, down the approach corridor `Reef` keeps clear for it. It
+ plants a completed save first, because two seconds of a centred reticle is a discovery and the
+ ceremony's plate covers the animal it is celebrating.
 - **Render cost gotchas** (all of these were measured, not guessed): coral is flattened
   into a handful of instanced meshes because ~200 individual draw calls dominated the
   frame; grass and fish deliberately do not cast shadows; the light shafts are
@@ -133,6 +139,21 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
   behind a moray's head and are raycast for line of sight, so a mound that can bulge
   outward can silently swallow the creature the game is about. Re-run the discovery spec
   after touching anything near a hiding spot.
+- **The moray is one skinned tube, not a stack.** `MorayBody` builds a single `SkinnedMesh` for
+ the body and a second for the dorsal fin, both weighted to the same chain of joints — which are
+ the very `Object3D` pivots the wave was always driven down, now `Bone`s. `Moray.update` is
+ unchanged and does not know the difference; the smoothness is free, because a vertex straddling
+ two joints interpolates between them where a rigid link could only hinge. Three things about it
+ were paid for once: the tube's normals are **analytic**, because a tube's seam column exists
+ twice and averaged normals give the two copies different values, which draws a bright line down
+ the belly; the meshes carry an **explicit `boundingSphere`**, because three bounds a skinned mesh
+ from whichever pose the bones happen to be in at the first render and then never again; and the
+ fin has its **own material at roughness 0.9**, because at the accent's sheen a pale fin caught
+ edge-on renders as a bright spike over the head — the comb of plates it replaced, wearing a
+ different shape. Geometry is authored in *joint units* (`g`), so a fractional position along the
+ body is also literally its skin weight. The head is not part of any of this: it hangs off
+ `bodyRoot`, so `getHeadWorldPosition` is the root's own world position and no body change can
+ move it.
 - **The moray's rim light must stay directional.** `RIM_LIGHT_CHUNK` in `Moray.ts` is
   injected by `onBeforeCompile` and weights its fresnel by a fixed world direction. Drop
   that weighting for a plain facing term and the animal turns into a cool glowing blob:
@@ -181,8 +202,10 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
   slider cannot be operated from the keyboard. The `C`/`H`/`V`/`O` shortcuts stay global
   (so `O` always closes the panel) and ignore `event.repeat` so holding a key toggles once.
 - **Sanctuary rebuild gotcha**: `SanctuaryScene.setSpecies` runs on every discovery and
-  every time the sanctuary opens. It disposes the previous residents' geometries and
-  materials; drop that and the GPU copies accumulate for the rest of the session. Reef and
+ every time the sanctuary opens. It disposes the previous residents' geometries, materials and
+ skeletons — a skeleton owns a float texture of bone matrices that nothing else releases, and
+ `disposeSubtree` is where that happens; drop any of it and the GPU copies accumulate for the rest
+ of the session. Reef and
   sanctuary morays are separate `Moray` instances with their own resources, so disposing
   sanctuary residents never touches the reef. **The set is not part of that path**: the
   sand, the two stacks, the coral, the grass, the shafts, the caustics and the motes are

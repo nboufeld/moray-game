@@ -1,14 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { Mesh, type BufferGeometry, type Material, type Object3D } from "three";
+import {
+  Mesh,
+  SkinnedMesh,
+  type BufferGeometry,
+  type Material,
+  type Object3D,
+  type Skeleton,
+} from "three";
 import { MORAY_SPECIES } from "../src/creatures/morays/MoraySpeciesConfig";
 import { SanctuaryScene } from "../src/sanctuary/SanctuaryScene";
 
 function collectResources(roots: readonly Object3D[]): {
   geometries: Set<BufferGeometry>;
   materials: Set<Material>;
+  skeletons: Set<Skeleton>;
 } {
   const geometries = new Set<BufferGeometry>();
   const materials = new Set<Material>();
+  const skeletons = new Set<Skeleton>();
   for (const root of roots) {
     root.traverse((object) => {
       if (!(object instanceof Mesh)) {
@@ -18,9 +27,12 @@ function collectResources(roots: readonly Object3D[]): {
       for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
         materials.add(material);
       }
+      if (object instanceof SkinnedMesh) {
+        skeletons.add(object.skeleton);
+      }
     });
   }
-  return { geometries, materials };
+  return { geometries, materials, skeletons };
 }
 
 describe("SanctuaryScene", () => {
@@ -44,19 +56,33 @@ describe("SanctuaryScene", () => {
 
     sanctuary.setSpecies(MORAY_SPECIES);
     const residentRoots = sanctuary.scene.children.filter((child) => !fixtures.has(child));
-    const { geometries, materials } = collectResources(residentRoots);
+    const { geometries, materials, skeletons } = collectResources(residentRoots);
     expect(geometries.size).toBeGreaterThan(0);
     expect(materials.size).toBeGreaterThan(0);
+    // A skinned body brings a skeleton, and a skeleton owns a texture of bone
+    // matrices that nothing else releases.
+    expect(skeletons.size).toBe(MORAY_SPECIES.length);
 
     const disposed = new Set<BufferGeometry | Material>();
     for (const resource of [...geometries, ...materials]) {
       resource.addEventListener("dispose", () => disposed.add(resource));
+    }
+    // A skeleton has no dispose event to listen for, and in Node it has no
+    // bone texture to check for either, so the call itself is what is observed.
+    const disposedSkeletons = new Set<Skeleton>();
+    for (const skeleton of skeletons) {
+      const release = skeleton.dispose.bind(skeleton);
+      skeleton.dispose = () => {
+        disposedSkeletons.add(skeleton);
+        release();
+      };
     }
 
     sanctuary.setSpecies([]);
 
     expect(sanctuary.residentCount).toBe(0);
     expect(disposed.size).toBe(geometries.size + materials.size);
+    expect(disposedSkeletons.size).toBe(skeletons.size);
     // The permanent scene fixtures (floor, lights) must survive the rebuild.
     for (const fixture of fixtures) {
       expect(sanctuary.scene.children).toContain(fixture);
