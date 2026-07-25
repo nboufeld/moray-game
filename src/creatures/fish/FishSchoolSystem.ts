@@ -447,9 +447,22 @@ export class FishSchoolSystem {
       const bank = -Math.sin(weave) * fish.bankAmp;
       const pitch = -Math.cos(weave * 0.7) * fish.riseAmp * 0.5;
 
+      // Near-field cap. The faceted mesh only fails when it is large in
+      // frame: at distance it is a perfect fish, within a few metres it is
+      // three flat facets and an outline. The standoff bends shoal courses
+      // away from the diver, but it is a steering force — a fish already
+      // inside the bubble when a capture teleports the camera stays there
+      // for the settle. So the render itself shrinks close fish toward the
+      // small end of the scale range, blended over 6-12m so nothing pumps.
+      const dx = x - viewer.x;
+      const dy = y - viewer.y;
+      const dz = z - viewer.z;
+      const range = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      const far = Math.min(1, Math.max(0, (range - 6) / 6));
+      const nearScale = Math.min(fish.scale, 0.55);
       this.dummy.position.set(x, y, z);
       this.dummy.rotation.set(pitch, yaw, bank, "YXZ");
-      this.dummy.scale.setScalar(fish.scale);
+      this.dummy.scale.setScalar(nearScale + (fish.scale - nearScale) * far);
       this.dummy.updateMatrix();
       this.matrix.copy(this.dummy.matrix);
       this.mesh.setMatrixAt(i, this.matrix);

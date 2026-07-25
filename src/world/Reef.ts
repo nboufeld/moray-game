@@ -419,7 +419,14 @@ export class Reef {
         .copy(position)
         .addScaledVector(back, 1.9)
         .addScaledVector(right, sign * 1.9)
-        .setY(position.y - 0.3);
+        .setY(position.y - 0.5);
+      // Two matched blocks square to the mouth form a right-angled doorway
+      // around the eel — the last trace of greybox in the close-up. Yawing
+      // each off the mound axis, sinking them, and scaling them unequally
+      // turns the doorway back into two stones that happen to sit there.
+      const skew = ((hashSpecies(placement.speciesId + String(sign)) % 100) / 100 - 0.5) * 0.4;
+      flank.rotation.y = facing + sign * 0.24 + skew;
+      flank.scale.set(1 + sign * 0.14, 0.94 - sign * 0.12, 1.08);
       flank.castShadow = true;
       flank.receiveShadow = true;
       this.group.add(flank);
