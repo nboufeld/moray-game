@@ -14,6 +14,9 @@ import { Moray } from "../creatures/morays/Moray";
 import { UnderwaterFog } from "../rendering/UnderwaterFog";
 import type { MoraySpeciesConfig } from "../creatures/morays/MoraySpeciesConfig";
 
+/** The aquarium's key light, shared with the backdrop that has to agree with it. */
+const KEY_POSITION = new Vector3(6, 14, 8);
+
 interface SanctuaryResident {
   readonly moray: Moray;
   readonly centerX: number;
@@ -46,10 +49,13 @@ export class SanctuaryScene {
       density: 0.028,
       surfaceColor: 0x63d0e0,
       abyssColor: 0x0a2f3e,
+      // Its own key, not the reef's sun: the backdrop has to brighten on the
+      // side the light in this room actually comes from.
+      sunDirection: KEY_POSITION,
     }).applyTo(this.scene);
 
     const key = new DirectionalLight(0xffe7c2, 2.1);
-    key.position.set(6, 14, 8);
+    key.position.copy(KEY_POSITION);
     // A second, cooler light from behind picks the moray silhouettes off the
     // background; one key alone leaves their far side in flat shadow.
     const rim = new DirectionalLight(0x9fd8ea, 0.9);

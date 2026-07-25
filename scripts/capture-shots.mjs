@@ -18,6 +18,16 @@ const OUT_DIR = path.resolve("visual-qa");
 const SEED = "seed1";
 const QUALITY = "hi";
 const VIEWPORT = { width: 1600, height: 900 };
+/**
+ * Playwright's 30s default is not enough headroom here. The `load` event waits
+ * for the module script, which builds the whole reef and compiles the post
+ * chain against a software rasteriser; on a busy machine that alone runs close
+ * to the default, and a capture that dies on the first navigation costs far
+ * more than a generous ceiling ever will. Shot *content* does not depend on how
+ * fast the machine is — `capture()` advances by whole fixed steps — so waiting
+ * longer changes nothing except whether the run finishes.
+ */
+const NAV_TIMEOUT_MS = 120_000;
 
 const SHOTS = [
   {
@@ -66,6 +76,8 @@ await mkdir(OUT_DIR, { recursive: true });
 const browser = await chromium.launch();
 const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1 });
 const page = await context.newPage();
+page.setDefaultNavigationTimeout(NAV_TIMEOUT_MS);
+page.setDefaultTimeout(NAV_TIMEOUT_MS);
 page.on("pageerror", (error) => console.error(`  page error: ${error.message}`));
 
 // Warm-up load: a cold dev server can re-optimize dependencies and reload the

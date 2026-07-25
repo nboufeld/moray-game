@@ -81,9 +81,15 @@ export class RendererAdapter {
     this.renderPass = new RenderPass(undefined as unknown as Scene, undefined as unknown as Camera);
     this.composer.addPass(this.renderPass);
 
-    // Threshold high enough that only the caustics, the shafts and the surface
-    // bloom — a low threshold turns the bright sand into an undifferentiated haze.
-    this.bloomPass = new UnrealBloomPass(new Vector2(1, 1), 0.35, 0.7, 1.05);
+    // The threshold has to sit between the brightest sand and the light sources
+    // themselves, and both of those are properties of this scene rather than
+    // round numbers. Measured off the shots: sunlit sand tops out near 0.31 in
+    // this buffer and a light pool's core reaches about 0.93, so 0.55 catches
+    // every light and no sand. Above the pool's peak — where it started — bloom
+    // has no input at all and the whole pass may as well be switched off; only
+    // a little below, and the sand hazes over, which is the flatness the grade
+    // was opened up to fix.
+    this.bloomPass = new UnrealBloomPass(new Vector2(1, 1), 0.42, 0.65, 0.55);
     this.composer.addPass(this.bloomPass);
 
     this.composer.addPass(new ShaderPass(ColorGradeShader));

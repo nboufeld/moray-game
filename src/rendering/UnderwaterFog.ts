@@ -4,9 +4,11 @@ import {
   EquirectangularReflectionMapping,
   FogExp2,
   SRGBColorSpace,
+  Vector3,
   type Scene,
 } from "three";
 import { Random, SEEDS } from "../util/Random";
+import { SUN_POSITION } from "./Lighting";
 
 export interface UnderwaterFogOptions {
   /** Deep water tint the fog fades toward, and the colour at the horizon. */
@@ -17,17 +19,63 @@ export interface UnderwaterFogOptions {
   surfaceColor?: number;
   /** The dark below, where the light has stopped reaching. */
   abyssColor?: number;
+  /** Which way the light arrives from, so the backdrop can brighten toward it. */
+  sunDirection?: Vector3;
 }
 
 /** Where the horizon colour sits in the vertical gradient (0 down, 1 up). */
 const HORIZON = 0.52;
 
-/** A few pixels wide so the dither has somewhere to vary horizontally. */
-const WIDTH = 8;
+/**
+ * Wide enough to resolve a smooth horizontal lobe. It used to be 8 columns,
+ * which is all a purely vertical gradient plus dither ever needed.
+ */
+const WIDTH = 64;
 const HEIGHT = 256;
+
+/**
+ * The sun's near glow and the much broader haze around it, as half-widths in
+ * radians of azimuth, with the multiplier each applies to the surface colour.
+ *
+ * Two lobes rather than one because they answer different questions. The narrow
+ * one is the glare you look into when you turn toward the sun. The wide one is
+ * why, with the sun off behind your shoulder, the water on that side of the
+ * frame is still perceptibly brighter than the water on the other — which is
+ * the read that tells the eye where the light is coming from in every shot, not
+ * just the one that happens to face the sun.
+ */
+const SUN_LOBE = 0.7;
+const SUN_GAIN = 1.6;
+const HAZE_LOBE = 2.4;
+const HAZE_GAIN = 1.24;
 
 function clampByte(value: number): number {
   return value < 0 ? 0 : value > 255 ? 255 : value;
+}
+
+function smoothstep01(t: number): number {
+  return t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
+}
+
+/** A cos² falloff over `halfWidth`, flat at the peak and zero at the edge. */
+function lobe(delta: number, halfWidth: number): number {
+  if (delta >= halfWidth) {
+    return 0;
+  }
+  const c = Math.cos((delta / halfWidth) * (Math.PI / 2));
+  return c * c;
+}
+
+/** Shortest angular distance between two azimuths, in [0, π]. */
+function angleBetween(a: number, b: number): number {
+  const delta = Math.abs(a - b) % (Math.PI * 2);
+  return delta > Math.PI ? Math.PI * 2 - delta : delta;
+}
+
+/** sRGB bytes, which is the space the gradient is interpolated and written in. */
+function bytes(color: Color): [number, number, number] {
+  const hex = color.getHex(SRGBColorSpace);
+  return [(hex >> 16) & 0xff, (hex >> 8) & 0xff, hex & 0xff];
 }
 
 /**
@@ -36,18 +84,25 @@ function clampByte(value: number): number {
  * behind it is any other shade the seabed terminates on a hard horizon line
  * instead of dissolving into the water. This carries most of the "remembered
  * ocean" atmosphere cheaply, without volumetric rendering.
+ *
+ * The fog colour is well below the midtone the reef sits in, which is what
+ * makes distance read as distance: geometry does not just lose contrast with
+ * range, it gets darker and colder, and a rock thirty metres out can no longer
+ * be confused with the same rock five metres out.
  */
 export class UnderwaterFog {
   readonly color: Color;
   readonly density: number;
   private readonly surfaceColor: Color;
   private readonly abyssColor: Color;
+  private readonly sunDirection: Vector3;
 
   constructor(options: UnderwaterFogOptions = {}) {
-    this.color = new Color(options.color ?? 0x11596a);
-    this.density = options.density ?? 0.032;
+    this.color = new Color(options.color ?? 0x0b4152);
+    this.density = options.density ?? 0.038;
     this.surfaceColor = new Color(options.surfaceColor ?? 0x4fc3d9);
-    this.abyssColor = new Color(options.abyssColor ?? 0x05202b);
+    this.abyssColor = new Color(options.abyssColor ?? 0x02141c);
+    this.sunDirection = (options.sunDirection ?? SUN_POSITION).clone().normalize();
   }
 
   applyTo(scene: Scene): void {
@@ -58,8 +113,9 @@ export class UnderwaterFog {
   }
 
   /**
-   * A one-pixel-wide equirectangular strip: cheap, and three stretches it
-   * around the whole sky so the water column reads brighter overhead.
+   * An equirectangular strip: cheap, and three stretches it around the whole
+   * sky so the water column reads brighter overhead and brighter still toward
+   * the sun.
    */
   private createGradient(): CanvasTexture | null {
     if (typeof document === "undefined") {
@@ -71,32 +127,68 @@ export class UnderwaterFog {
     canvas.height = HEIGHT;
     const ctx = canvas.getContext("2d");
     if (ctx) {
-      // Canvas y runs top-down and equirectangular v runs bottom-up, so the
-      // surface colour belongs at y = 0.
-      const gradient = ctx.createLinearGradient(0, 0, 0, HEIGHT);
-      gradient.addColorStop(0, `#${this.surfaceColor.getHexString()}`);
-      gradient.addColorStop(1 - HORIZON, `#${this.color.getHexString()}`);
-      gradient.addColorStop(1, `#${this.abyssColor.getHexString()}`);
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, WIDTH, HEIGHT);
-
-      // A smooth ramp stretched across the whole sky is exactly the case that
-      // bands on 8-bit output. A pixel of per-row jitter breaks the contours
-      // apart into noise the eye reads as water rather than as steps.
-      const image = ctx.getImageData(0, 0, WIDTH, HEIGHT);
-      const random = new Random(SEEDS.fogDither);
-      for (let i = 0; i < image.data.length; i += 4) {
-        const jitter = Math.round(random.range(-1.5, 1.5));
-        image.data[i] = clampByte((image.data[i] ?? 0) + jitter);
-        image.data[i + 1] = clampByte((image.data[i + 1] ?? 0) + jitter);
-        image.data[i + 2] = clampByte((image.data[i + 2] ?? 0) + jitter);
-      }
-      ctx.putImageData(image, 0, 0);
+      this.paint(ctx);
     }
 
     const texture = new CanvasTexture(canvas);
     texture.mapping = EquirectangularReflectionMapping;
     texture.colorSpace = SRGBColorSpace;
     return texture;
+  }
+
+  private paint(ctx: CanvasRenderingContext2D): void {
+    const surface = bytes(this.surfaceColor);
+    const horizon = bytes(this.color);
+    const abyss = bytes(this.abyssColor);
+
+    // `equirectUv` in three maps a direction to u as atan2(z, x), so the lobe
+    // has to be centred on the same measure. Read off the sun vector rather
+    // than written down, so moving the sun moves its glow with it.
+    const sunAzimuth = Math.atan2(this.sunDirection.z, this.sunDirection.x);
+
+    // Canvas y runs top-down and equirectangular v runs bottom-up, so the
+    // surface colour belongs at y = 0.
+    const image = ctx.createImageData(WIDTH, HEIGHT);
+    const random = new Random(SEEDS.fogDither);
+    const channel = [0, 0, 0];
+
+    for (let y = 0; y < HEIGHT; y++) {
+      const t = y / (HEIGHT - 1);
+      // Above the horizon the ramp runs surface → horizon; below it continues
+      // horizon → abyss.
+      const up = t < 1 - HORIZON;
+      const from = up ? surface : horizon;
+      const to = up ? horizon : abyss;
+      const k = up ? t / (1 - HORIZON) : (t - (1 - HORIZON)) / HORIZON;
+      // The sun's contribution lives in the water overhead and is gone by the
+      // horizon; carrying it lower turns the lobe into a visible disc pasted
+      // onto the sky rather than light coming down through the surface.
+      const overhead = 1 - smoothstep01(t / (1 - HORIZON));
+
+      for (let x = 0; x < WIDTH; x++) {
+        const azimuth = ((x + 0.5) / WIDTH - 0.5) * Math.PI * 2;
+        const delta = angleBetween(azimuth, sunAzimuth);
+        const gain =
+          (lobe(delta, SUN_LOBE) * (SUN_GAIN - 1) + lobe(delta, HAZE_LOBE) * (HAZE_GAIN - 1)) *
+          overhead;
+
+        // A smooth ramp stretched across the whole sky is exactly the case that
+        // bands on 8-bit output. A pixel of per-row jitter breaks the contours
+        // apart into noise the eye reads as water rather than as steps.
+        const jitter = Math.round(random.range(-1.5, 1.5));
+        for (let c = 0; c < 3; c++) {
+          const base = (from[c] ?? 0) + ((to[c] ?? 0) - (from[c] ?? 0)) * k;
+          channel[c] = clampByte(Math.round(base + (surface[c] ?? 0) * gain) + jitter);
+        }
+
+        const index = (y * WIDTH + x) * 4;
+        image.data[index] = channel[0] ?? 0;
+        image.data[index + 1] = channel[1] ?? 0;
+        image.data[index + 2] = channel[2] ?? 0;
+        image.data[index + 3] = 255;
+      }
+    }
+
+    ctx.putImageData(image, 0, 0);
   }
 }

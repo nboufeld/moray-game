@@ -16,6 +16,12 @@ const SAMPLE_MS = 5000;
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+// The `load` event waits for the module script, which builds the whole reef and
+// compiles the post chain against a software rasteriser. On a busy machine that
+// alone runs close to Playwright's 30s default, and losing the run to a
+// navigation timeout is far more expensive than waiting.
+page.setDefaultNavigationTimeout(120_000);
+page.setDefaultTimeout(120_000);
 
 await page.goto(`${BASE_URL}/?reset=1`, { waitUntil: "load" });
 await page.waitForFunction(() => "__reef" in window);
