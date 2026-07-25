@@ -20,17 +20,32 @@ import { seabedHeight } from "./Seabed";
 interface ClusterSite {
   readonly x: number;
   readonly z: number;
+  /** Heads in this bommie. */
+  readonly heads: number;
 }
 
+/**
+ * Five bommies rather than an even sprinkling.
+ *
+ * Eight small clusters spread over a forty-metre square is statistically
+ * uniform coverage, and uniform coverage is exactly what makes an image read
+ * as procedural filler. Grouping is only half of composition; the other half
+ * is the emptiness it creates, so these hug the pinnacle feet and the crevice
+ * mounds and leave the sand between them bare — including the channels the
+ * morays are approached along (x ≈ -6 south to the dragon, the z ≈ 6 band out
+ * to the ribbon and zebra, and the spawn line down x ≈ 0), which have to stay
+ * clear to look down as well as to swim.
+ *
+ * The first site is composition rather than habitat: it is the only colour in
+ * the establishing shot's middle distance, half way between the dark
+ * foreground shoulder and the crevice the shot is about.
+ */
 const SITES: readonly ClusterSite[] = [
-  { x: -16, z: 14 },
-  { x: -8, z: 8 },
-  { x: 1.5, z: 2 },
-  { x: 9, z: -4 },
-  { x: 16, z: -10 },
-  { x: -19, z: -6 },
-  { x: 18, z: 7 },
-  { x: -4, z: 17 },
+  { x: -4.8, z: 11.8, heads: 12 },
+  { x: 13.6, z: -2.5, heads: 12 },
+  { x: 4.2, z: -1.2, heads: 11 },
+  { x: -16.2, z: 9.6, heads: 10 },
+  { x: -4.4, z: -18.2, heads: 12 },
 ];
 
 /**
@@ -67,8 +82,7 @@ export class CoralField {
     const parts: Part[] = [];
 
     for (const site of SITES) {
-      const heads = Math.round(random.range(3, 6));
-      for (let i = 0; i < heads; i++) {
+      for (let i = 0; i < site.heads; i++) {
         const x = site.x + random.signed(2.8);
         const z = site.z + random.signed(2.8);
 

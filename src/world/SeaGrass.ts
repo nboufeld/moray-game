@@ -28,6 +28,19 @@ const CLEARANCE_SQ = 16;
 const PALETTE = [0x4f9d6b, 0x3f8a5e, 0x63ab6d, 0x2f7a58, 0x76b877];
 
 /**
+ * A hand-placed patch, for the few clumps that are composition rather than
+ * ground cover — a foreground clump has to stand tall enough to crop the
+ * frame, which the scattered meadow never does.
+ */
+export interface GrassClump {
+  readonly x: number;
+  readonly z: number;
+  readonly radius: number;
+  readonly blades: number;
+  readonly heightScale: number;
+}
+
+/**
  * Instanced sea grass. A blade is a tapered, slightly curved strip rather than
  * a cone — cones read as conifers, which is the single loudest "greybox" tell
  * in the reef. Sway happens in the vertex shader so a whole meadow costs one
@@ -39,7 +52,7 @@ export class SeaGrass {
   private readonly sway = { value: 0 };
   private readonly windStrength = { value: 1 };
 
-  constructor(seed: number, clearances: readonly Vector2[]) {
+  constructor(seed: number, clearances: readonly Vector2[], clumps: readonly GrassClump[] = []) {
     const random = new Random(seed);
     const material = new MeshStandardMaterial({
       roughness: 0.85,
@@ -82,7 +95,8 @@ export class SeaGrass {
       );
     };
 
-    const total = PATCH_COUNT * BLADES_PER_PATCH;
+    const total =
+      PATCH_COUNT * BLADES_PER_PATCH + clumps.reduce((sum, clump) => sum + clump.blades, 0);
     this.mesh = new InstancedMesh(createBladeGeometry(), material, total);
     this.mesh.receiveShadow = true;
     // Blades still catch shadow from the reef above them, but they do not cast:
@@ -94,6 +108,24 @@ export class SeaGrass {
     const color = new Color();
     let placed = 0;
 
+    const plant = (x: number, z: number, heightScale: number): void => {
+      if (clearances.some((spot) => spot.distanceToSquared(new Vector2(x, z)) < CLEARANCE_SQ)) {
+        return;
+      }
+
+      dummy.position.set(x, seabedHeight(x, z) - 0.05, z);
+      dummy.rotation.set(random.signed(0.12), random.range(0, Math.PI * 2), random.signed(0.12));
+      dummy.scale.set(random.range(0.75, 1.25), random.range(0.6, 1.45) * heightScale, 1);
+      dummy.updateMatrix();
+      this.mesh.setMatrixAt(placed, dummy.matrix);
+
+      color.setHex(PALETTE[Math.floor(random.next() * PALETTE.length)] ?? PALETTE[0]!);
+      // Deeper blades sit in shade; lighter tips catch the surface light.
+      color.multiplyScalar(random.range(0.75, 1.15));
+      this.mesh.setColorAt(placed, color);
+      placed++;
+    };
+
     for (let patch = 0; patch < PATCH_COUNT; patch++) {
       const patchX = random.signed(30);
       const patchZ = random.signed(30);
@@ -102,24 +134,22 @@ export class SeaGrass {
         // Bias toward the middle so patches have a dense heart and soft edges.
         const spread = PATCH_RADIUS * Math.sqrt(random.next());
         const angle = random.range(0, Math.PI * 2);
-        const x = patchX + Math.cos(angle) * spread;
-        const z = patchZ + Math.sin(angle) * spread;
+        plant(patchX + Math.cos(angle) * spread, patchZ + Math.sin(angle) * spread, 1);
+      }
+    }
 
-        if (clearances.some((spot) => spot.distanceToSquared(new Vector2(x, z)) < CLEARANCE_SQ)) {
-          continue;
-        }
-
-        dummy.position.set(x, seabedHeight(x, z) - 0.05, z);
-        dummy.rotation.set(random.signed(0.12), random.range(0, Math.PI * 2), random.signed(0.12));
-        dummy.scale.set(random.range(0.75, 1.25), random.range(0.6, 1.45), 1);
-        dummy.updateMatrix();
-        this.mesh.setMatrixAt(placed, dummy.matrix);
-
-        color.setHex(PALETTE[Math.floor(random.next() * PALETTE.length)] ?? PALETTE[0]!);
-        // Deeper blades sit in shade; lighter tips catch the surface light.
-        color.multiplyScalar(random.range(0.75, 1.15));
-        this.mesh.setColorAt(placed, color);
-        placed++;
+    // Authored clumps are drawn last so that adding one leaves the scattered
+    // meadow taking exactly the numbers it took before, and only the clump is
+    // new in the next screenshot.
+    for (const clump of clumps) {
+      for (let blade = 0; blade < clump.blades; blade++) {
+        const spread = clump.radius * Math.sqrt(random.next());
+        const angle = random.range(0, Math.PI * 2);
+        plant(
+          clump.x + Math.cos(angle) * spread,
+          clump.z + Math.sin(angle) * spread,
+          clump.heightScale,
+        );
       }
     }
 

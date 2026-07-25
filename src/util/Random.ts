@@ -49,4 +49,6 @@ export const SEEDS = {
   rock: 0x5a4d_0002,
   coralSkin: 0x5a4d_0003,
   grassBlade: 0x5a4d_0004,
+  pinnacle: 0x5a4d_0005,
+  cave: 0x5a4d_0006,
 } as const;

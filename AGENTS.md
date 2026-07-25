@@ -90,6 +90,16 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
 - **Rock UVs are box-projected at build time**, not triplanar. Triplanar would cost three
   fetches per map on the largest surfaces; box projection is one, and its seams land on
   facet edges where flat shading has already broken the normal.
+- **The stage is authored for the canonical cameras.** `PINNACLES`,
+  `FOREGROUND_SHOULDER` and `FOREGROUND_CLUMPS` in `src/world/Reef.ts`, and the coral
+  `SITES` in `CoralField`, are placed for shots A and B — a gate of sea stacks either
+  side of the snowflake crevice, a dark shoulder cropping the left edge, clustered
+  bommies with bare sand between them. They are not a scatter, so re-rolling or evening
+  them out undoes the composition. Every placement also stays out of the morays'
+  approach corridors: south down x ≈ -6 to the dragon, the z ≈ 6 band to the ribbon and
+  zebra, and the spawn line down x ≈ 0 to the snowflake. `tests/reefSightlines.test.ts`
+  raycasts those corridors the way `Game.isObstructed` does and fails if anything new
+  blocks a head — run it (it is in `npm run test`) before trusting a placement change.
 - **`weatherRock` on a crevice mound must stay `inwardOnly`.** The mounds sit centimetres
   behind a moray's head and are raycast for line of sight, so a mound that can bulge
   outward can silently swallow the creature the game is about. Re-run the discovery spec
