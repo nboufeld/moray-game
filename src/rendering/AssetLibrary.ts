@@ -2,6 +2,7 @@
 import {
   ClampToEdgeWrapping,
   LinearMipmapLinearFilter,
+  MirroredRepeatWrapping,
   RepeatWrapping,
   SRGBColorSpace,
   TextureLoader,
@@ -58,7 +59,21 @@ let loader: TextureLoader | null = null;
  *
  * @param assetPath Path under `public/assets/`, e.g. `creatures/skin.png`.
  */
-export function requestAlbedo(assetPath: string, onReady: (texture: Texture) => void): void {
+export interface AlbedoOptions {
+  /**
+   * For terrain maps that repeat many times across a surface. Mirrored rather
+   * than plain repeat: a generated image never wraps perfectly, and mirroring
+   * makes every edge seamless by construction — invisible on isotropic
+   * material like sand grain, where there is no direction to betray it.
+   */
+  readonly tile?: boolean;
+}
+
+export function requestAlbedo(
+  assetPath: string,
+  onReady: (texture: Texture) => void,
+  options?: AlbedoOptions,
+): void {
   if (typeof window === "undefined") {
     return;
   }
@@ -92,7 +107,7 @@ export function requestAlbedo(assetPath: string, onReady: (texture: Texture) => 
   loader.load(
     url,
     (texture) => {
-      configureAlbedo(texture);
+      configureAlbedo(texture, options?.tile === true);
       loaded.set(assetPath, texture);
       for (const callback of waiting.get(assetPath) ?? []) {
         callback(texture);
@@ -149,11 +164,11 @@ function finish(assetPath: string, settle: () => void): void {
  * so `wrapS` repeats. `v` does not wrap — the head and the tail are not
  * neighbours — so `wrapT` clamps rather than blending one into the other.
  */
-function configureAlbedo(texture: Texture): void {
+function configureAlbedo(texture: Texture, tile: boolean): void {
   texture.flipY = false;
   texture.colorSpace = SRGBColorSpace;
-  texture.wrapS = RepeatWrapping;
-  texture.wrapT = ClampToEdgeWrapping;
+  texture.wrapS = tile ? MirroredRepeatWrapping : RepeatWrapping;
+  texture.wrapT = tile ? MirroredRepeatWrapping : ClampToEdgeWrapping;
   texture.generateMipmaps = true;
   texture.minFilter = LinearMipmapLinearFilter;
   texture.anisotropy = ANISOTROPY;

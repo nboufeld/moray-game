@@ -1,4 +1,5 @@
 import { MeshStandardMaterial } from "three";
+import { requestAlbedo } from "../rendering/AssetLibrary";
 import {
   buildColorTexture,
   buildNormalTexture,
@@ -40,6 +41,21 @@ export function createSandMaterial(): MeshStandardMaterial {
   for (const map of [material.map, material.normalMap, material.roughnessMap]) {
     map?.repeat.set(SAND_REPEAT, SAND_REPEAT);
   }
+
+  // Authored grain tile, when present. The painted image carries its own
+  // colour, unlike the procedural map that is authored to sit under the
+  // material tint — so the tint neutralises on swap. Ripples stay in the
+  // procedural normal map either way; the tile is painted shadow-free.
+  requestAlbedo(
+    "world/sand-albedo.png",
+    (texture) => {
+      texture.repeat.set(SAND_REPEAT, SAND_REPEAT);
+      material.map = texture;
+      material.color.set(0xffffff);
+      material.needsUpdate = true;
+    },
+    { tile: true },
+  );
 
   return material;
 }
