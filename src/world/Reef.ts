@@ -2,20 +2,21 @@ import {
   BoxGeometry,
   CircleGeometry,
   Color,
-  ConeGeometry,
   DodecahedronGeometry,
   Group,
   IcosahedronGeometry,
   InstancedMesh,
-  Matrix4,
   Mesh,
   MeshStandardMaterial,
   Object3D,
-  PlaneGeometry,
-  Quaternion,
+  Vector2,
   Vector3,
 } from "three";
+import { Random, SEEDS } from "../util/Random";
 import type { ReefBounds, SphereCollider } from "./CollisionField";
+import { CoralField } from "./CoralField";
+import { createSeabedGeometry, seabedHeight } from "./Seabed";
+import { SeaGrass } from "./SeaGrass";
 
 export interface HidingSpot {
   readonly speciesId: string;
@@ -58,35 +59,42 @@ export class Reef {
     maxZ: 30,
   };
 
+  // Lifted well off the old near-black: against bright sand and blue water the
+  // previous value read as a silhouette hole rather than as stone.
   private readonly rockMaterial = new MeshStandardMaterial({
-    color: 0x6a7a6c,
+    color: 0x8b9184,
     roughness: 0.95,
     metalness: 0,
     flatShading: true,
   });
 
-  constructor() {
+  private readonly random: Random;
+  private grass?: SeaGrass;
+
+  constructor(seed: number = SEEDS.reef) {
+    this.random = new Random(seed);
     this.buildSeabed();
     this.buildRockField();
     this.buildCoral();
     for (const placement of SPOT_PLACEMENTS) {
       this.addHidingSpot(placement);
     }
+    this.buildRubble();
     this.buildSeaGrass();
   }
 
   private buildSeabed(): void {
-    const geometry = new PlaneGeometry(80, 80, 1, 1);
-    const material = new MeshStandardMaterial({ color: 0xd8c69a, roughness: 1, metalness: 0 });
-    const seabed = new Mesh(geometry, material);
-    seabed.rotation.x = -Math.PI / 2;
+    // Sand this bright reads as blown-out white under the sun and drags the
+    // whole frame into bloom; real wet sand reflects far less than it looks.
+    const material = new MeshStandardMaterial({ color: 0xa8926a, roughness: 1, metalness: 0 });
+    const seabed = new Mesh(createSeabedGeometry(90, 96), material);
     seabed.receiveShadow = true;
     this.group.add(seabed);
   }
 
   private buildRockField(): void {
     const material = new MeshStandardMaterial({
-      color: 0x7c8a76,
+      color: 0x93a089,
       roughness: 0.95,
       metalness: 0,
       flatShading: true,
@@ -103,8 +111,8 @@ export class Reef {
 
     for (const p of placements) {
       const rock = new Mesh(new IcosahedronGeometry(p.scale, 0), material);
-      rock.position.set(p.x, p.scale * 0.55, p.z);
-      rock.rotation.set(Math.random(), Math.random(), Math.random());
+      rock.position.set(p.x, p.scale * 0.55 + seabedHeight(p.x, p.z), p.z);
+      rock.rotation.set(this.random.next(), this.random.next(), this.random.next());
       rock.scale.y = 0.75;
       rock.castShadow = true;
       rock.receiveShadow = true;
@@ -115,35 +123,7 @@ export class Reef {
   }
 
   private buildCoral(): void {
-    const palette = [0xff9e7a, 0xb98cff, 0xffd27a, 0x7ad0c0];
-    const dummy = new Object3D();
-
-    for (let cluster = 0; cluster < 5; cluster++) {
-      const color = palette[cluster % palette.length] ?? 0xff9e7a;
-      const material = new MeshStandardMaterial({
-        color: new Color(color),
-        roughness: 0.7,
-        metalness: 0,
-        flatShading: true,
-      });
-      const branches = new InstancedMesh(new ConeGeometry(0.32, 1.6, 6), material, 7);
-      branches.castShadow = true;
-
-      const base = new Vector3(-16 + cluster * 8, 0, 14 - cluster * 6);
-      for (let i = 0; i < 7; i++) {
-        dummy.position.set(
-          base.x + (Math.random() - 0.5) * 2.4,
-          0.8 + Math.random() * 0.5,
-          base.z + (Math.random() - 0.5) * 2.4,
-        );
-        dummy.rotation.set((Math.random() - 0.5) * 0.5, Math.random() * Math.PI, (Math.random() - 0.5) * 0.5);
-        dummy.scale.setScalar(0.7 + Math.random() * 0.8);
-        dummy.updateMatrix();
-        branches.setMatrixAt(i, dummy.matrix);
-      }
-      branches.instanceMatrix.needsUpdate = true;
-      this.group.add(branches);
-    }
+    this.group.add(new CoralField(SEEDS.coral).group);
   }
 
   private addHidingSpot(placement: SpotPlacement): void {
@@ -168,7 +148,9 @@ export class Reef {
     });
 
     // Dark cave mouth framing the crevice, facing the head's open side.
-    const cave = new Mesh(new CircleGeometry(1.05, 24), new MeshStandardMaterial({ color: 0x04141a }));
+    // Dark enough to read as depth, but not the flat black that looked like a
+    // hole punched through the reef.
+    const cave = new Mesh(new CircleGeometry(1.05, 24), new MeshStandardMaterial({ color: 0x0d2a33 }));
     cave.position.copy(position).addScaledVector(back, 0.95).setY(position.y - 0.05);
     cave.rotation.y = facing;
     this.group.add(cave);
@@ -190,51 +172,65 @@ export class Reef {
     this.hidingSpots.push({ speciesId: placement.speciesId, position: position.clone(), facing });
   }
 
-  private buildSeaGrass(): void {
+  /**
+   * Small stones strewn across the sand. Bare seabed is the dead space that
+   * makes an open reef read as an empty stage, and rubble is the cheapest way
+   * to give the eye something to travel over between the set pieces.
+   */
+  private buildRubble(): void {
+    const count = 150;
     const material = new MeshStandardMaterial({
-      color: 0x4f9d6b,
-      roughness: 0.8,
+      // Close to the sand it lies on. Stones darker than this read as holes
+      // punched in the seabed rather than as pebbles resting on it.
+      color: 0xc4baa0,
+      roughness: 1,
       metalness: 0,
       flatShading: true,
     });
-    const count = 220;
-    const grass = new InstancedMesh(new ConeGeometry(0.08, 1.1, 4), material, count);
-    const dummy = new Object3D();
-    const rotation = new Quaternion();
-    const matrix = new Matrix4();
-    const up = new Vector3(0, 1, 0);
+    const stones = new InstancedMesh(new DodecahedronGeometry(0.24, 0), material, count);
+    stones.receiveShadow = true;
+    // No cast shadow: at this size the contact shadow is larger than the stone
+    // and turns a scattering of pebbles into a scattering of dark smudges.
+    stones.castShadow = false;
 
-    let placed = 0;
+    const dummy = new Object3D();
+    const color = new Color();
     for (let i = 0; i < count; i++) {
-      const x = (Math.random() - 0.5) * 58;
-      const z = (Math.random() - 0.5) * 58;
-      // Keep every crevice mouth clear.
-      const nearSpot = this.hidingSpots.some((spot) => {
-        const dx = x - spot.position.x;
-        const dz = z - spot.position.z;
-        return dx * dx + dz * dz < 16;
-      });
-      if (nearSpot) {
-        continue;
-      }
-      dummy.position.set(x, 0.5 + Math.random() * 0.3, z);
-      rotation.setFromAxisAngle(up, Math.random() * Math.PI);
-      dummy.quaternion.copy(rotation);
-      dummy.scale.set(1, 0.7 + Math.random() * 0.9, 1);
+      const x = this.random.signed(30);
+      const z = this.random.signed(30);
+      dummy.position.set(x, seabedHeight(x, z) + this.random.range(-0.04, 0.06), z);
+      dummy.rotation.set(
+        this.random.range(0, Math.PI),
+        this.random.range(0, Math.PI),
+        this.random.range(0, Math.PI),
+      );
+      // Flattened, as though long settled rather than freshly dropped.
+      dummy.scale.set(
+        this.random.range(0.35, 1.1),
+        this.random.range(0.18, 0.45),
+        this.random.range(0.35, 1.1),
+      );
       dummy.updateMatrix();
-      matrix.copy(dummy.matrix);
-      grass.setMatrixAt(placed, matrix);
-      placed++;
+      stones.setMatrixAt(i, dummy.matrix);
+
+      color.setHex(0xc4baa0).multiplyScalar(this.random.range(0.82, 1.1));
+      stones.setColorAt(i, color);
     }
-    // Hide any unused instances beyond `placed`.
-    for (let i = placed; i < count; i++) {
-      dummy.position.set(0, -100, 0);
-      dummy.scale.setScalar(0.0001);
-      dummy.updateMatrix();
-      grass.setMatrixAt(i, dummy.matrix);
+    stones.instanceMatrix.needsUpdate = true;
+    if (stones.instanceColor) {
+      stones.instanceColor.needsUpdate = true;
     }
-    grass.instanceMatrix.needsUpdate = true;
-    grass.receiveShadow = true;
-    this.group.add(grass);
+    this.group.add(stones);
+  }
+
+  private buildSeaGrass(): void {
+    const clearances = this.hidingSpots.map((spot) => new Vector2(spot.position.x, spot.position.z));
+    this.grass = new SeaGrass(SEEDS.grass, clearances);
+    this.group.add(this.grass.mesh);
+  }
+
+  /** Advances the ambient life in the reef (currently the grass sway). */
+  update(dt: number, reducedMotion: boolean): void {
+    this.grass?.update(dt, reducedMotion);
   }
 }

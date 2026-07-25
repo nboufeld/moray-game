@@ -2,6 +2,7 @@ import {
   BoxGeometry,
   Color,
   ConeGeometry,
+  CylinderGeometry,
   Group,
   Mesh,
   MeshStandardMaterial,
@@ -9,6 +10,7 @@ import {
   SphereGeometry,
   Vector3,
 } from "three";
+import { createPatternTexture } from "./MorayPattern";
 import type { BodyArchetype, MoraySpeciesConfig } from "./MoraySpeciesConfig";
 
 /** Named runtime handles shared by every species (the common contract). */
@@ -27,6 +29,17 @@ interface ArchetypeShape {
   readonly segments: number;
   readonly headScale: number;
   readonly segmentLength: number;
+}
+
+/**
+ * A tube running along +Z, tapering from `frontRadius` to `backRadius`.
+ * Cylinders are built around +Y, so the geometry is rotated once at build time
+ * rather than every segment carrying its own correction.
+ */
+function tube(frontRadius: number, backRadius: number, length: number): CylinderGeometry {
+  const geometry = new CylinderGeometry(frontRadius, backRadius, length, 10, 1, true);
+  geometry.rotateX(Math.PI / 2);
+  return geometry;
 }
 
 const ARCHETYPES: Record<BodyArchetype, ArchetypeShape> = {
@@ -57,47 +70,53 @@ export class Moray {
     this.shape = ARCHETYPES[config.archetype];
 
     const bodyColor = new Color(config.bodyColor);
-    const patternColor = new Color(config.patternColor);
     const accentColor = new Color(config.accentColor);
 
-    const bodyMaterial = new MeshStandardMaterial({ color: bodyColor, roughness: 0.55, metalness: 0 });
-    const patternMaterial = new MeshStandardMaterial({ color: patternColor, roughness: 0.6, metalness: 0 });
+    // Markings are painted rather than modelled; where there is no DOM the map
+    // is null and the flat body colour stands in.
+    const markings = createPatternTexture(config);
+    const bodyMaterial = new MeshStandardMaterial({
+      color: markings ? 0xffffff : bodyColor,
+      map: markings,
+      roughness: 0.55,
+      metalness: 0,
+    });
     const accentMaterial = new MeshStandardMaterial({ color: accentColor, roughness: 0.5, metalness: 0 });
 
     const root = new Group();
     const bodyRoot = new Object3D();
     root.add(bodyRoot);
 
+    const segmentLength = this.shape.segmentLength * config.lengthScale;
+    const girthAt = (index: number): number =>
+      (0.42 - Math.min(1, index / (this.shape.segments - 1)) * 0.24) * config.girthScale;
+
     let parent: Object3D = bodyRoot;
     for (let i = 0; i < this.shape.segments; i++) {
-      const t = i / (this.shape.segments - 1);
-      const girth = (0.42 - t * 0.24) * config.girthScale;
+      const girth = girthAt(i);
       const pivot = new Object3D();
-      pivot.position.z = i === 0 ? 0 : -this.shape.segmentLength * config.lengthScale;
+      pivot.position.z = i === 0 ? 0 : -segmentLength;
 
-      // Bands alternate the segment colour; spots add studs; plain stays body.
-      const useBand = config.pattern === "bands" && i % 2 === 1;
-      const segment = new Mesh(
-        new BoxGeometry(girth, girth * 0.92, this.shape.segmentLength * 1.05 * config.lengthScale),
-        useBand ? patternMaterial : bodyMaterial,
-      );
+      // A rounded, tapering tube: the box chain this replaced read as a train
+      // of crates, and the moray is the one thing the game asks you to study.
+      // The last segment closes to a near-point, otherwise the open-ended tube
+      // shows a hollow cross-section where the tail should finish.
+      const isTail = i === this.shape.segments - 1;
+      const backRadius = isTail ? girth * 0.04 : girthAt(i + 1) * 0.5;
+      const segment = new Mesh(tube(girth * 0.5, backRadius, segmentLength * 1.04), bodyMaterial);
+      // Eels are laterally compressed, not round.
+      segment.scale.set(1, 0.92, 1);
       pivot.add(segment);
 
-      if (config.pattern === "spots" && i > 0 && i < 6) {
-        for (const side of [-1, 1]) {
-          const spot = new Mesh(new SphereGeometry(girth * 0.18, 6, 6), patternMaterial);
-          spot.position.set(side * girth * 0.4, girth * 0.15, 0);
-          segment.add(spot);
-        }
-      }
-
       // A thin dorsal ridge sharpens the silhouette (yellow margin on ribbons).
+      // Overlapping its neighbours matters: butt-jointed ridges separate into a
+      // row of loose bricks as soon as the body flexes.
       if (i < this.shape.segments - 1) {
         const ridge = new Mesh(
-          new BoxGeometry(girth * 0.12, girth * 0.34, this.shape.segmentLength * config.lengthScale),
+          new BoxGeometry(girth * 0.09, girth * 0.28, segmentLength * 1.5),
           accentMaterial,
         );
-        ridge.position.y = girth * 0.6;
+        ridge.position.y = girth * 0.5;
         segment.add(ridge);
       }
 
@@ -110,14 +129,19 @@ export class Moray {
     bodyRoot.add(head);
     const headScale = this.shape.headScale;
 
-    const skull = new Mesh(new BoxGeometry(0.5 * headScale, 0.44 * headScale, 0.62 * headScale), bodyMaterial);
-    skull.position.z = 0.28 * headScale;
+    const skull = new Mesh(new SphereGeometry(0.29 * headScale, 12, 10), bodyMaterial);
+    skull.scale.set(0.86, 0.8, 1.1);
+    skull.position.z = 0.26 * headScale;
     head.add(skull);
 
     const upperJaw = new Object3D();
     upperJaw.position.set(0, 0.06 * headScale, 0.5 * headScale);
-    const upperJawMesh = new Mesh(new BoxGeometry(0.34 * headScale, 0.12 * headScale, 0.4 * headScale), bodyMaterial);
-    upperJawMesh.position.z = 0.18 * headScale;
+    const upperJawMesh = new Mesh(
+      tube(0.09 * headScale, 0.19 * headScale, 0.42 * headScale),
+      bodyMaterial,
+    );
+    upperJawMesh.scale.set(1, 0.62, 1);
+    upperJawMesh.position.z = 0.17 * headScale;
     upperJaw.add(upperJawMesh);
     head.add(upperJaw);
 
@@ -133,21 +157,43 @@ export class Moray {
     const lowerJaw = new Object3D();
     lowerJaw.position.set(0, -0.08 * headScale, 0.5 * headScale);
     const lowerJawMesh = new Mesh(
-      new BoxGeometry(0.32 * headScale, 0.1 * headScale, 0.38 * headScale),
+      tube(0.08 * headScale, 0.17 * headScale, 0.4 * headScale),
       new MeshStandardMaterial({ color: bodyColor.clone().multiplyScalar(0.75), roughness: 0.6 }),
     );
+    lowerJawMesh.scale.set(1, 0.55, 1);
     lowerJawMesh.position.z = 0.17 * headScale;
     lowerJaw.add(lowerJawMesh);
     head.add(lowerJaw);
 
-    const eyeGeometry = new SphereGeometry(0.06 * headScale, 8, 8);
-    const eyeMaterial = new MeshStandardMaterial({ color: 0x1a1512, roughness: 0.2, emissive: 0x120d0a });
+    const eyeGeometry = new SphereGeometry(0.06 * headScale, 10, 10);
+    const eyeMaterial = new MeshStandardMaterial({
+      color: 0x14100e,
+      roughness: 0.08,
+      metalness: 0.1,
+      emissive: 0x241a12,
+    });
+    // A wet catchlight is what separates "a creature is looking at you" from
+    // "two dark beads"; the bloom pass then gives it a faint wet flare.
+    const catchlightGeometry = new SphereGeometry(0.022 * headScale, 6, 6);
+    const catchlightMaterial = new MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: 0xfff4e2,
+      emissiveIntensity: 2.4,
+      toneMapped: false,
+    });
+
     const leftEye = new Mesh(eyeGeometry, eyeMaterial);
     leftEye.position.set(-0.16 * headScale, 0.12 * headScale, 0.42 * headScale);
     head.add(leftEye);
     const rightEye = new Mesh(eyeGeometry, eyeMaterial);
     rightEye.position.set(0.16 * headScale, 0.12 * headScale, 0.42 * headScale);
     head.add(rightEye);
+
+    for (const eye of [leftEye, rightEye]) {
+      const catchlight = new Mesh(catchlightGeometry, catchlightMaterial);
+      catchlight.position.set(0.022 * headScale, 0.026 * headScale, 0.046 * headScale);
+      eye.add(catchlight);
+    }
 
     root.traverse((object) => {
       if (object instanceof Mesh) {
@@ -181,14 +227,18 @@ export class Moray {
     this.asset.lowerJaw.rotation.x = ventilation;
     this.asset.upperJaw.rotation.x = -ventilation * 0.35;
 
-    // Slow body sway travelling down the chain.
+    // Slow body sway travelling down the chain, over a resting S-curve. Without
+    // the resting curve a moray at rest is a straight pipe; eels are never
+    // straight, and the curve is most of what sells the animal at a glance.
     for (let i = 0; i < this.segments.length; i++) {
       const segment = this.segments[i];
       if (!segment) {
         continue;
       }
-      const amplitude = 0.05 + i * 0.012;
-      segment.rotation.y = Math.sin(this.swayTime * 1.1 - i * 0.5) * amplitude;
+      const amplitude = 0.07 + i * 0.018;
+      const rest = Math.sin(i * 0.55) * 0.07;
+      segment.rotation.y = rest + Math.sin(this.swayTime * 1.1 - i * 0.5) * amplitude;
+      segment.rotation.x = Math.sin(this.swayTime * 0.73 - i * 0.38) * amplitude * 0.3;
     }
 
     // Gentle head tracking that strengthens once the player is close/curious.

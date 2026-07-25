@@ -8,8 +8,11 @@ approach without startling the moray, focus on it, and add it to your illustrate
 This repository is the **vertical slice** from the project blueprint. It proves the
 complete emotional and technical loop rather than a fleet of assets:
 
-- A greybox **Sunlit Coral Garden** reef with underwater fog, caustics, soft lighting and
-  an instanced supporting **fish school**.
+- A **Sunlit Coral Garden** reef: dune-shaped seabed, coral in three silhouettes, swaying
+  sea grass, drifting motes and an instanced **fish school**, under depth-graded fog,
+  raking sunlight shafts and animated caustics.
+- A post-processing chain (bloom, split-tone grade, vignette) behind an **adaptive
+  resolution** scaler, so the reef still runs on hardware without a GPU.
 - Comfortable **kinematic swimming** with configurable camera comfort (bob, roll, auto-level).
 - **Four distinct hidden morays** — snowflake (_Echidna nebulosa_), ribbon
   (_Rhinomuraena quaesita_), zebra (_Gymnomuraena zebra_) and dragon (_Enchelycore pardalis_) —
@@ -51,6 +54,7 @@ Append `?reset=1` to the URL to start a completely fresh dive (clears the save).
 | `npm run lint` | ESLint (flat config) |
 | `npm run test` | Vitest unit tests (pure gameplay logic) |
 | `npm run test:e2e` | Playwright smoke, discovery and accessibility tests |
+| `npm run shots -- <tag>` | Capture the art-direction shot set into `visual-qa/` |
 
 The unit tests cover the pure gameplay logic (movement, focus/discovery, collisions,
 registry, hint ladder, game loop, sanctuary resource lifetime). The Playwright tests boot

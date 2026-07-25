@@ -10,11 +10,13 @@ comfort/accessibility settings panel with Calm Mode, and the Dream Sanctuary aqu
 
 - `src/app/` — `Game` wiring, fixed-timestep `GameLoop`, `RendererAdapter` (WebGL).
 - `src/player/` — `DiveController` (pure physics), `CameraRig` (comfort options), `InputController`.
-- `src/world/` — `Reef` greybox + `CollisionField`.
+- `src/world/` — `Reef`, `Seabed` (shared dune height), `CoralField`, `SeaGrass`, `CollisionField`.
 - `src/creatures/morays/` — data-driven `MoraySpeciesConfig`, `MorayRegistry`, procedural `Moray`.
 - `src/creatures/fish/` — `FishSchoolSystem` (instanced ambient fish).
 - `src/discovery/` — `FocusScanner`, `DiscoverySystem`, `HintSystem` (all pure/testable).
-- `src/rendering/` — fog, lighting, caustics, particles.
+- `src/rendering/` — fog + gradient backdrop, lighting, caustics, light shafts, particles,
+  and the `ColorGradeShader` used by the post chain.
+- `src/util/Random.ts` — seeded PRNG and the per-subsystem `SEEDS`.
 - `src/sanctuary/` — `SanctuaryScene` (separate scene rendered when in sanctuary mode).
 - `src/save/` — `SaveSystem` + `SaveMigration` (versioned localStorage).
 - `src/ui/` — `Hud`, `Codex`, `SettingsPanel`, `SanctuaryOverlay`.
@@ -26,7 +28,7 @@ comfort/accessibility settings panel with Calm Mode, and the Dream Sanctuary aqu
 ## Commands
 
 All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
-`typecheck`, `lint`, `test`, `test:watch`, `test:e2e`.
+`typecheck`, `lint`, `test`, `test:watch`, `test:e2e`, `shots`.
 
 ## Cursor Cloud specific instructions
 
@@ -38,8 +40,43 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
   script does this). `playwright.config.ts` starts/reuses the dev server on port 5173
   automatically via its `webServer` block — do not start a second dev server on 5173
   before running `npm run test:e2e` unless you want it reused.
+- **e2e is slow and CPU-bound, by nature**: every spec boots a real WebGL scene that
+  headless Chromium rasterises on the CPU, so the suite takes minutes, not seconds, and
+  the worker count is capped in `playwright.config.ts`. Over-parallelising does not just
+  slow it down — a starved render loop stops answering the test protocol, which surfaces
+  as timeouts in specs that have nothing to do with the change. If the suite suddenly
+  fails everywhere, check the machine's load average before suspecting the code.
+- **Never time a swim by wall clock in a test**: the world only advances while the browser
+  draws, so a fixed `waitForTimeout` covers wildly different distances on different
+  machines. `swimToFirstDiscovery` waits on `__reef.divePosition` instead.
 - **Renderer**: rendering goes through `RendererAdapter` (WebGLRenderer). Keep new
-  render code behind that adapter; a WebGPU swap should touch only that file.
+  render code behind that adapter; a WebGPU swap should touch only that file. It owns the
+  post chain — `RenderPass` → `UnrealBloomPass` (quarter resolution) → `ColorGradeShader`
+  → `OutputPass` — and swaps the pass's scene/camera per frame so the reef and the
+  sanctuary share one composer.
+- **Adaptive resolution**: the adapter measures frame time and shrinks the *internal*
+  render targets (never the canvas) down to 0.34 when frames run long, restoring them
+  when there is headroom. Without it this scene runs around 3fps on a machine with no
+  hardware acceleration, which is exactly what headless Chromium falls back to. Call
+  `pinRenderScale(1)` before any screenshot, which `Game.capture()` already does.
+- **Everything procedural is seeded** (`src/util/Random.ts`). Do not reach for
+  `Math.random()` in world generation: an unseeded reef is different on every load, and
+  then no two screenshots can be compared and no visual change can be judged.
+- **Visual QA**: `npm run dev`, then `npm run shots -- <change-tag>` writes the canonical
+  shot set to `visual-qa/` (opening hero, mid-depth traverse, close moray, UI overlay,
+  sanctuary portrait). `Game.capture()` stops the live loop, places the diver and advances
+  the world by whole fixed steps, so a shot is reproducible frame for frame. Capture
+  before *and* after a change and compare; `scripts/measure-frames.mjs` does the same for
+  frame cost.
+- **Render cost gotchas** (all of these were measured, not guessed): coral is flattened
+  into a handful of instanced meshes because ~200 individual draw calls dominated the
+  frame; grass and fish deliberately do not cast shadows; the light shafts are
+  overdraw-bound, so their count matters far more than their triangle budget; and the
+  caustics sheet must be built from `createSeabedGeometry` so it follows the same dunes
+  as the sand it lies on.
+- **No-DOM guards**: `createPatternTexture` and `UnderwaterFog`'s gradient both return
+  null when `document` is undefined, because the scene classes are constructed in plain
+  Node unit tests. Anything else that paints to a canvas at construction needs the same.
 - **Manual/scripted testing gotcha (discovery)**: the hero moray sits *nearly straight
   ahead of the spawn point, only slightly below center*, and its head deliberately peeks
   out in front of the coral mound (line of sight must be clear, or `DiscoverySystem`

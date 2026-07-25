@@ -31,6 +31,11 @@ test("Calm Mode preset updates the comfort toggles", async ({ page }) => {
 });
 
 test("discoveries and settings persist across a reload (save system)", async ({ page }) => {
+  // Boots the reef twice with a full discovery swim in between, so it does
+  // roughly double the work of any other spec. That is real coverage worth
+  // keeping, it just needs a budget to match on a software renderer.
+  test.slow();
+
   // Fresh dive, discover the straight-ahead moray.
   await page.goto("/?reset=1");
   await page.locator("#reef-canvas").click();

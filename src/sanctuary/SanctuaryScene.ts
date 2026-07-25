@@ -1,9 +1,7 @@
 import {
   AmbientLight,
-  Color,
   CylinderGeometry,
   DirectionalLight,
-  FogExp2,
   HemisphereLight,
   Mesh,
   MeshStandardMaterial,
@@ -13,6 +11,7 @@ import {
   type Object3D,
 } from "three";
 import { Moray } from "../creatures/morays/Moray";
+import { UnderwaterFog } from "../rendering/UnderwaterFog";
 import type { MoraySpeciesConfig } from "../creatures/morays/MoraySpeciesConfig";
 
 interface SanctuaryResident {
@@ -38,19 +37,32 @@ export class SanctuaryScene {
   private orbit = 0;
 
   constructor() {
-    const water = new Color(0x123a52);
-    this.scene.background = water.clone().multiplyScalar(0.5);
-    this.scene.fog = new FogExp2(water.getHex(), 0.02);
+    // The sanctuary is the reward for discovery, so it is lit as a warm, lamplit
+    // aquarium rather than the near-black tank it used to be. It borrows the
+    // reef's gradient backdrop for the same reason the reef needs one: without
+    // it the floor terminates on a hard line instead of fading into the water.
+    new UnderwaterFog({
+      color: 0x1d5b74,
+      density: 0.028,
+      surfaceColor: 0x63d0e0,
+      abyssColor: 0x0a2f3e,
+    }).applyTo(this.scene);
 
-    const key = new DirectionalLight(0xffe1b0, 1.3);
-    key.position.set(4, 12, 6);
-    const hemisphere = new HemisphereLight(0xbfe6ff, 0x1a2a33, 0.8);
-    const ambient = new AmbientLight(0x3a5a66, 0.4);
-    this.scene.add(key, hemisphere, ambient);
+    const key = new DirectionalLight(0xffe7c2, 2.1);
+    key.position.set(6, 14, 8);
+    // A second, cooler light from behind picks the moray silhouettes off the
+    // background; one key alone leaves their far side in flat shadow.
+    const rim = new DirectionalLight(0x9fd8ea, 0.9);
+    rim.position.set(-9, 6, -11);
+    const hemisphere = new HemisphereLight(0xcdeeff, 0x2a4450, 1.1);
+    const ambient = new AmbientLight(0x4d7f92, 0.55);
+    this.scene.add(key, rim, hemisphere, ambient);
 
+    // Wide enough that its rim is fully fogged out; a 16m disc showed a hard
+    // edge cutting across the water behind the residents.
     const floor = new Mesh(
-      new CylinderGeometry(16, 16, 0.6, 48),
-      new MeshStandardMaterial({ color: 0x1c3a4a, roughness: 0.9 }),
+      new CylinderGeometry(90, 90, 0.6, 64),
+      new MeshStandardMaterial({ color: 0x2c5f70, roughness: 0.9 }),
     );
     floor.position.y = -0.3;
     this.scene.add(floor);
@@ -70,15 +82,17 @@ export class SanctuaryScene {
     const count = configs.length;
     configs.forEach((config, index) => {
       const moray = new Moray(config);
-      moray.asset.root.scale.setScalar(1.7);
+      moray.asset.root.scale.setScalar(1.25);
       this.scene.add(moray.asset.root);
 
       const spread = count > 1 ? index / (count - 1) - 0.5 : 0;
       this.residents.push({
         moray,
-        centerX: spread * Math.min(18, count * 4),
+        // Tighter and more layered in depth than a straight line of animals:
+        // they should compose as a group rather than a specimen row.
+        centerX: spread * Math.min(12, count * 3),
         radius: 2.2 + (index % 2) * 0.8,
-        height: 2.2 + (index % 2) * 0.9,
+        height: 1.8 + (index % 3) * 1.3,
         speed: 0.3 + (index % 3) * 0.08,
         angle: index * 1.7,
       });
@@ -98,9 +112,9 @@ export class SanctuaryScene {
     const motion = reducedMotion ? 0.4 : 1;
     this.orbit += dt * 0.12 * motion;
 
-    const distance = 14;
-    this.camera.position.set(Math.sin(this.orbit) * distance, 4.5, Math.cos(this.orbit) * distance);
-    this.camera.lookAt(0, 2.2, 0);
+    const distance = 13;
+    this.camera.position.set(Math.sin(this.orbit) * distance, 4.2, Math.cos(this.orbit) * distance);
+    this.camera.lookAt(0, 2.6, 0);
 
     this.camera.getWorldPosition(this.playerProxy);
     for (const resident of this.residents) {

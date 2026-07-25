@@ -13,6 +13,7 @@ import { DiveController } from "../player/DiveController";
 import { CameraRig } from "../player/CameraRig";
 import { InputController } from "../player/InputController";
 import { CausticsSystem } from "../rendering/CausticsSystem";
+import { LightShafts } from "../rendering/LightShafts";
 import { Lighting } from "../rendering/Lighting";
 import { Particles } from "../rendering/Particles";
 import { UnderwaterFog } from "../rendering/UnderwaterFog";
@@ -39,6 +40,15 @@ export interface GameOptions {
   resetSave?: boolean;
 }
 
+/** A fixed viewpoint and settle time for a reproducible screenshot. */
+export interface CapturePose {
+  position?: [number, number, number];
+  yaw?: number;
+  pitch?: number;
+  /** Simulated seconds to advance from load before the frame is held. */
+  settle?: number;
+}
+
 type Mode = "reef" | "sanctuary";
 
 export class Game {
@@ -50,6 +60,7 @@ export class Game {
   private readonly reef = new Reef();
   private readonly collision: CollisionField;
   private readonly caustics = new CausticsSystem();
+  private readonly shafts: LightShafts;
   private readonly particles = new Particles();
   private readonly fish = new FishSchoolSystem();
 
@@ -79,6 +90,7 @@ export class Game {
   private hintLevel = -1;
   private lastTime = 0;
   private running = false;
+  private holding = false;
   private moved = false;
 
   constructor(
@@ -97,7 +109,10 @@ export class Game {
     this.renderer = new RendererAdapter(canvas);
 
     new UnderwaterFog().applyTo(this.scene);
-    new Lighting().addTo(this.scene);
+    const lighting = new Lighting();
+    lighting.addTo(this.scene);
+    this.shafts = new LightShafts(lighting.sun.position);
+    this.shafts.addTo(this.scene);
     this.caustics.addTo(this.scene);
     this.particles.addTo(this.scene);
     this.fish.addTo(this.scene);
@@ -170,6 +185,16 @@ export class Game {
     return this.mode;
   }
 
+  /**
+   * Read-only diver position. End-to-end tests swim by holding a key and need
+   * to know when the diver has actually arrived: the simulation only advances
+   * while frames render, so a wall-clock wait covers wildly different distances
+   * depending on how fast the machine is drawing.
+   */
+  get divePosition(): { x: number; y: number; z: number } {
+    return { x: this.dive.position.x, y: this.dive.position.y, z: this.dive.position.z };
+  }
+
   private readonly frame = (now: number): void => {
     if (!this.running) {
       return;
@@ -177,32 +202,43 @@ export class Game {
     const frameDelta = (now - this.lastTime) / 1000;
     this.lastTime = now;
 
+    this.advance(frameDelta);
+    this.renderFrame();
+    requestAnimationFrame(this.frame);
+  };
+
+  private advance(delta: number): void {
     if (this.mode === "sanctuary") {
-      this.sanctuary.update(frameDelta, this.settings.reducedMotion);
-      this.renderer.render(this.sanctuary.scene, this.sanctuary.camera);
-      requestAnimationFrame(this.frame);
+      this.sanctuary.update(delta, this.settings.reducedMotion);
       return;
     }
 
     const paused = this.settingsPanel.isOpen;
 
     if (!paused) {
-      const look = this.input.consumeLook(frameDelta);
+      const look = this.input.consumeLook(delta);
       if (look.yaw !== 0 || look.pitch !== 0) {
         this.rig.applyLook(look.yaw, look.pitch, this.settings.lookSensitivity);
       }
-      this.loop.advance(frameDelta, (step) => this.simulate(step));
+      this.loop.advance(delta, (step) => this.simulate(step));
     }
 
-    this.rig.update(frameDelta, this.dive.position, this.dive.velocity, this.settings);
-    this.caustics.update(frameDelta, this.settings.reducedMotion);
-    this.particles.update(frameDelta, this.settings.reducedMotion);
-    this.fish.update(paused ? 0 : frameDelta, this.settings.reducedMotion);
-    this.hud.update(frameDelta);
+    this.rig.update(delta, this.dive.position, this.dive.velocity, this.settings);
+    this.reef.update(paused ? 0 : delta, this.settings.reducedMotion);
+    this.caustics.update(delta, this.settings.reducedMotion);
+    this.shafts.update(delta, this.settings.reducedMotion);
+    this.particles.update(delta, this.settings.reducedMotion);
+    this.fish.update(paused ? 0 : delta, this.settings.reducedMotion);
+    this.hud.update(delta);
+  }
 
-    this.renderer.render(this.scene, this.camera);
-    requestAnimationFrame(this.frame);
-  };
+  private renderFrame(): void {
+    if (this.mode === "sanctuary") {
+      this.renderer.render(this.sanctuary.scene, this.sanctuary.camera);
+    } else {
+      this.renderer.render(this.scene, this.camera);
+    }
+  }
 
   private simulate(step: number): void {
     const input = this.input.diveInput;
@@ -358,6 +394,49 @@ export class Game {
     return hits.length > 0;
   }
 
+  /**
+   * Visual-QA hook. Stops the live loop, places the diver, then advances the
+   * world by whole fixed steps and holds the resulting frame on screen. With
+   * the seeded reef this makes a screenshot reproducible, which is the only
+   * way to compare an art-direction change against the shot it replaces.
+   */
+  capture(pose: CapturePose = {}): void {
+    this.running = false;
+    this.renderer.pinRenderScale(1);
+
+    if (pose.position) {
+      this.dive.position.set(...pose.position);
+    }
+    this.dive.velocity.set(0, 0, 0);
+    if (pose.yaw !== undefined) {
+      this.rig.yaw = pose.yaw;
+    }
+    if (pose.pitch !== undefined) {
+      this.rig.pitch = pose.pitch;
+    }
+
+    const step = 1 / 60;
+    const steps = Math.max(1, Math.round((pose.settle ?? 1.5) / step));
+    for (let i = 0; i < steps; i++) {
+      this.advance(step);
+    }
+
+    // Re-present the same frame every vsync: a WebGL drawing buffer is not
+    // preserved after compositing, so a one-shot render can screenshot blank.
+    if (!this.holding) {
+      this.holding = true;
+      requestAnimationFrame(this.holdFrame);
+    }
+  }
+
+  private readonly holdFrame = (): void => {
+    if (!this.holding) {
+      return;
+    }
+    this.renderFrame();
+    requestAnimationFrame(this.holdFrame);
+  };
+
   private readonly handleResize = (): void => {
     const width = this.canvas.clientWidth || window.innerWidth;
     const height = this.canvas.clientHeight || window.innerHeight;
@@ -369,6 +448,7 @@ export class Game {
 
   dispose(): void {
     this.running = false;
+    this.holding = false;
     window.removeEventListener("resize", this.handleResize);
     this.input.dispose();
     this.renderer.dispose();

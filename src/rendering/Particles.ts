@@ -6,6 +6,7 @@ import {
   PointsMaterial,
   type Scene,
 } from "three";
+import { Random, SEEDS } from "../util/Random";
 
 /**
  * Sparse drifting motes. Low density on purpose — the blueprint warns against
@@ -17,13 +18,14 @@ export class Particles {
   private readonly count: number;
   private time = 0;
 
-  constructor(count = 220, radius = 26) {
+  constructor(count = 220, radius = 26, seed: number = SEEDS.motes) {
     this.count = count;
     this.basePositions = new Float32Array(count * 3);
+    const random = new Random(seed);
     for (let i = 0; i < count; i++) {
-      this.basePositions[i * 3] = (Math.random() - 0.5) * radius * 2;
-      this.basePositions[i * 3 + 1] = Math.random() * 10 + 0.5;
-      this.basePositions[i * 3 + 2] = (Math.random() - 0.5) * radius * 2;
+      this.basePositions[i * 3] = random.signed(radius);
+      this.basePositions[i * 3 + 1] = random.range(0.5, 10.5);
+      this.basePositions[i * 3 + 2] = random.signed(radius);
     }
 
     const geometry = new BufferGeometry();
