@@ -208,6 +208,42 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
   the lens later. `SWEEP` is sixty degrees of arc and the stacks, bommies and grass are
   placed for it. `setSpecies` resets the sweep so the room always opens on its authored
   view — which is also what keeps shot E comparable between runs.
+- **The fish always had fog; fog was never the problem.** `MeshStandardMaterial` respects
+ `scene.fog` and the school always received it. It could not help, because fog only
+ interpolates toward the water and a lit fish started an order of magnitude above it —
+ measured off the composited frame, a shoal thirty metres out still put its brightest
+ tenth near 143 against water at 36. Three things were actually holding it up: a base
+ colour that was near white *before* the counter-shading multiplied it by a further 1.25
+ (a gain hidden in a vertex buffer), a warm 2.1-intensity key that turns a near-white
+ body cream — the "tan" in "tan paper scraps" — and metalness 0.15 at roughness 0.42,
+ which on flat-shaded facets gave hard specular pinpoints that supplied every extreme
+ pixel in the shots. The lever that fixes distance is `FOG_DISTANCE_GAIN`: one multiply
+ on `vFogDepth` in the vertex shader. Because the fog is exponential in the *square* of
+ depth, lengthening it is almost free near the lens and brutal far from it, which is
+ exactly the ask. Do not take metalness to zero to chase the pinpoints — with no
+ specular at all a fish near the lens is matte cardboard and loses the modelling that
+ says which way it faces. Spread the lobe instead.
+- **A fish close to the lens is the whole ballgame.** Everything above is about values,
+ and none of it matters if a shoal drifts through the diver: measured at the mid-depth
+ traverse, the nearest six instances sat between 0.8m and 1.8m out and the closest
+ spanned *thirty-one degrees of frame*. At that size a flat-shaded octahedron is three
+ grey facets and an outline, which is "paper scrap" in its purest form. `VIEWER_STANDOFF`
+ bends a shoal's course around the diver, which is also what reef fish do. Its value is a
+ balance, not a floor — it opens the band the school can be seen in and the fish fog
+ closes it, so raising it empties the frame.
+- **The school is judged in the upper frame, so it is easy to fly it out of shot.** The
+ canonical cameras are pitched slightly *down*: their top edge is only about thirty
+ degrees up, so a shoal cruising at nine metres and held at arm's length sits entirely
+ above the frame. That failure looks exactly like "there are no fish" and is not — the
+ school is right there. `scripts/probe-fish.mjs` counts what is actually inside the
+ frustum and within fog range, which is the only way to tell the two apart.
+- **One frame is not evidence about a school.** Where the shoals happen to be at second
+ three says nothing about second forty, and a moving subject can look perfect in the
+ canonical shot and be absent from every other moment. `probe-fish.mjs` walks shot B over
+ time the way `probe-sanctuary.mjs` walks its sweep, and it isolates the fish by
+ rendering each pose twice — once with the school hidden — so the difference is an exact
+ per-pixel mask. Read its p90/p99, never its mean: most of a fish's pixels are its shadow
+ side and its antialiased edge, and those average a real pop away to nothing.
 - **Finding the darker morays**: only the snowflake moray sits straight ahead of spawn. The
   ribbon (left), zebra (right) and dragon (deeper, forward-left) require turning and are
   intentionally harder to spot — the zebra/dragon heads are dark against their caves. Use

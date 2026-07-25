@@ -258,7 +258,9 @@ export class Game {
     // this frame.
     this.shafts.update(delta, this.settings.reducedMotion, this.camera.position);
     this.particles.update(delta, this.settings.reducedMotion);
-    this.fish.update(paused ? 0 : delta, this.settings.reducedMotion);
+    // Also after the rig, and for the same reason the shafts are: the shoals
+    // bend their course around the diver rather than swimming through them.
+    this.fish.update(paused ? 0 : delta, this.settings.reducedMotion, this.camera.position);
     this.hud.update(delta);
   }
 
