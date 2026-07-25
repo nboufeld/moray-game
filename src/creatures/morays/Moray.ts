@@ -10,6 +10,7 @@ import {
   Skeleton,
   SkinnedMesh,
   SphereGeometry,
+  SRGBColorSpace,
   Vector3,
 } from "three";
 import { requestAlbedo } from "../../rendering/AssetLibrary";
@@ -94,6 +95,34 @@ function addRimLight(material: MeshStandardMaterial): MeshStandardMaterial {
   return material;
 }
 
+/** What the nasal tubes keep of the accent's saturation, and of its value. */
+const NASAL_SATURATION = 0.72;
+const NASAL_VALUE = 0.78;
+
+/**
+ * The accent colour as tissue rather than as signage; see `nasalMaterial`.
+ *
+ * Hue is untouched, because the hue is the species — a ribbon moray's nostrils
+ * are yellow and a dragon's are orange, and that is a field mark. Only the two
+ * terms that make a colour look like moulded plastic come down.
+ *
+ * The conversion is pinned to sRGB rather than left to the working space. HSL
+ * has no meaning without one, and three's default here is linear-sRGB, where a
+ * given fraction of "lightness" is a far deeper cut than the same fraction of
+ * the value a painter — or the palette these colours were picked in — means by
+ * it.
+ */
+function softenAccent(accent: Color): Color {
+  const hsl = { h: 0, s: 0, l: 0 };
+  accent.getHSL(hsl, SRGBColorSpace);
+  return new Color().setHSL(
+    hsl.h,
+    hsl.s * NASAL_SATURATION,
+    hsl.l * NASAL_VALUE,
+    SRGBColorSpace,
+  );
+}
+
 /** Seconds of turn each joint lags the head by; see `update`. */
 const BANK_SECONDS = 0.4;
 /** Hard limit on that lag, in radians per joint. */
@@ -130,7 +159,6 @@ export class Moray {
   constructor(readonly config: MoraySpeciesConfig) {
     this.shape = ARCHETYPES[config.archetype];
 
-    const bodyColor = new Color(config.bodyColor);
     const accentColor = new Color(config.accentColor);
 
     // Markings, counter-shading, skin folds and wet sheen are all painted.
@@ -159,8 +187,16 @@ export class Moray {
       });
     }
 
-    const accentMaterial = addRimLight(
-      new MeshStandardMaterial({ color: accentColor, roughness: 0.5, metalness: 0 }),
+    // The nasal tubes are skin, not signage. They wear the species' accent, but
+    // the accent is authored to be *found* across ten metres of water on a fin
+    // margin, and at full strength on a bare untextured cone twenty centimetres
+    // from the eye it is the brightest, flattest thing on a painted face — a
+    // plastic horn stuck to an animal. Held down in saturation and value it
+    // keeps the hue that identifies the species and gives up the glow, and the
+    // roughness follows the fin's reasoning: a small convex shape against a
+    // dark crevice turns a tight specular lobe into a bead of light.
+    const nasalMaterial = addRimLight(
+      new MeshStandardMaterial({ color: softenAccent(accentColor), roughness: 0.78, metalness: 0 }),
     );
     // The fin wears the accent colour but not the accent's sheen. It is a broad
     // thin surface that the camera meets edge-on as often as not, and at the
@@ -247,15 +283,9 @@ export class Moray {
     upperJaw.add(upperJawMesh);
     head.add(upperJaw);
 
-    // Everything above wears `bodyMaterial` on the texture coordinates its own
-    // primitive generator authored, which smears the map's whole length across
-    // a head and rolls the counter-shading a quarter turn. Re-wrap them in the
-    // body's space, into the band of the map the neck continues from.
-    projectHeadUvs(head, [skull, snout, brow, upperJawMesh], rig.neckV);
-
     if (config.nasalAppendages) {
       for (const side of [-1, 1]) {
-        const tube = new Mesh(new ConeGeometry(0.05 * headScale, 0.22 * headScale, 6), accentMaterial);
+        const tube = new Mesh(new ConeGeometry(0.05 * headScale, 0.22 * headScale, 6), nasalMaterial);
         tube.position.set(side * 0.1 * headScale, 0.14 * headScale, 0.42 * headScale);
         tube.rotation.x = Math.PI / 2.4;
         upperJaw.add(tube);
@@ -264,18 +294,28 @@ export class Moray {
 
     const lowerJaw = new Object3D();
     lowerJaw.position.set(0, -0.08 * headScale, 0.5 * headScale);
-    const lowerJawMesh = new Mesh(
-      tube(0.08 * headScale, 0.17 * headScale, 0.4 * headScale),
-      // The jaw line is the bottom edge of the head's silhouette, so it carries
-      // the rim too — without it the head separates and its chin does not.
-      addRimLight(
-        new MeshStandardMaterial({ color: bodyColor.clone().multiplyScalar(0.75), roughness: 0.6 }),
-      ),
-    );
+    // The jaw wears the skin, like the rest of the head. It used to wear a flat
+    // three-quarter-value copy of the body colour, which was a fair stand-in
+    // beside a low-contrast procedural map and is not one beside a painted
+    // face: untextured, it is the largest single flat surface on the animal and
+    // the eye reads it as a plastic bib hung under the jaw line. `bodyMaterial`
+    // also carries the rim light the chin needs to keep the bottom edge of the
+    // silhouette, which the bespoke material was built to provide.
+    const lowerJawMesh = new Mesh(tube(0.08 * headScale, 0.17 * headScale, 0.4 * headScale), bodyMaterial);
     lowerJawMesh.scale.set(1, 0.55, 1);
     lowerJawMesh.position.z = 0.17 * headScale;
     lowerJaw.add(lowerJawMesh);
     head.add(lowerJaw);
+
+    // Every part above wears `bodyMaterial` on the texture coordinates its own
+    // primitive generator authored, which smears the map's whole length across
+    // a head and rolls the counter-shading a quarter turn. Re-wrap them in the
+    // body's space, into the band of the map the neck continues from. This runs
+    // once the head is fully assembled so the jaw is projected in the same pass
+    // and in the same frame as the skull it hangs from — a part's own offset
+    // and rotation inside the head is what the projection divides out, and the
+    // jaw's is a pivot, not a placement.
+    projectHeadUvs(head, [skull, snout, brow, upperJawMesh], rig.neckV, [lowerJawMesh]);
 
     const eyeGeometry = new SphereGeometry(0.06 * headScale, 10, 10);
     const eyeMaterial = new MeshStandardMaterial({

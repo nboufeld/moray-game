@@ -1,6 +1,18 @@
 import { Float32BufferAttribute, Matrix4, Vector3, type Mesh, type Object3D } from "three";
 
 /**
+ * The quarter turn from the belly, and as far around as an underside part is
+ * allowed to wrap.
+ *
+ * A cap rather than a fold back toward the belly: it is monotone, so nothing
+ * turns around and no crease appears anywhere the outside of the jaw can be
+ * seen, and what it holds the surface at is the tone of the flank it is
+ * continuous with. Everything it affects is inside the mouth, which the map has
+ * no pixels for and which no choice here can be right about.
+ */
+const FLANK_U = 0.25;
+
+/**
  * Wraps the head's parts in the front of the body's skin.
  *
  * The head is sculpted from primitives — a sphere for the cranium, a cylinder
@@ -17,6 +29,23 @@ import { Float32BufferAttribute, Matrix4, Vector3, type Mesh, type Object3D } fr
  *
  * So the head is re-projected into the same space the tube is built in
  * (`MorayBody`): `u` around the body's long axis and `v` along it.
+ *
+ * The lower jaw is projected with the rest of it, and held to the belly side of
+ * the wrap. It hangs below the axis, so the angle already measures most of it
+ * out at the bottom — `u` near 0 down the chin, out to about 0.18 at its widest
+ * — which is the belly side of the head's band and exactly where a moray's pale
+ * throat belongs. The exception is the hinge, which is fat enough to cross the
+ * axis: the crown of its rear ring sits a centimetre *above* the spine line and
+ * scores `u = 0.5`, while the same ridge at the front of the jaw scores 0, so
+ * the map's entire belly-to-spine sweep ran along the jaw's top over its own
+ * length. That is a fan of stretched pattern the width of the mouth, and it was
+ * plainly visible on the animal — an open jaw shows the eye a good deal of its
+ * upper surface. {@link FLANK_U} caps the wrap there instead.
+ *
+ * The jaw is also the one part of the head that moves: a mesh inside a pivot
+ * the ventilation rhythm rotates. That costs nothing here, because the
+ * projection is taken in the rest pose and written into the geometry once. UVs
+ * do not follow a bone, so the jaw carries its slice of the map open or shut.
  *
  * **`v` — a band at the front of the map.** The tube's `v` is linear in `z` and
  * reaches 0 at its own nose ring, which sits inside the skull; `neckV` is the
@@ -49,23 +78,33 @@ import { Float32BufferAttribute, Matrix4, Vector3, type Mesh, type Object3D } fr
  *
  * @param head The head group; every part is projected in this object's frame,
  * so a part's own offset and rotation inside the head are accounted for.
- * @param parts The meshes wearing the body material. The eyes, the catchlights
- * and the lower jaw have their own materials and are not among them.
+ * @param parts The meshes wearing the body material, in whatever frames they
+ * sit in inside the head. The eyes and their catchlights have their own
+ * materials and are not among them.
  * @param neckV The body tube's `v` where the head meets it; see
  * `MorayBodyGeometry.neckV`.
+ * @param underside Parts that hang below the tube's axis and are held to the
+ * belly side of the wrap; see {@link FLANK_U}. Projected in the same pass as
+ * the rest, so they share its `v` band and its nose.
  */
-export function projectHeadUvs(head: Object3D, parts: readonly Mesh[], neckV: number): void {
+export function projectHeadUvs(
+  head: Object3D,
+  parts: readonly Mesh[],
+  neckV: number,
+  underside: readonly Mesh[] = [],
+): void {
   head.updateMatrixWorld(true);
   const toHead = new Matrix4().copy(head.matrixWorld).invert();
-  const partToHead = parts.map((part) => new Matrix4().multiplyMatrices(toHead, part.matrixWorld));
+  const all = [...parts, ...underside];
+  const partToHead = all.map((part) => new Matrix4().multiplyMatrices(toHead, part.matrixWorld));
 
   const point = new Vector3();
 
   // One mapping for the whole head, so the parts agree with each other where
   // they overlap: the snout is set into the skull and the brow sits on it.
   let noseZ = 0;
-  for (let i = 0; i < parts.length; i++) {
-    const position = parts[i]!.geometry.getAttribute("position");
+  for (let i = 0; i < all.length; i++) {
+    const position = all[i]!.geometry.getAttribute("position");
     const matrix = partToHead[i]!;
     for (let vertex = 0; vertex < position.count; vertex++) {
       point.fromBufferAttribute(position, vertex).applyMatrix4(matrix);
@@ -76,10 +115,11 @@ export function projectHeadUvs(head: Object3D, parts: readonly Mesh[], neckV: nu
     return;
   }
 
-  for (let i = 0; i < parts.length; i++) {
-    const geometry = parts[i]!.geometry;
+  for (let i = 0; i < all.length; i++) {
+    const geometry = all[i]!.geometry;
     const position = geometry.getAttribute("position");
     const matrix = partToHead[i]!;
+    const limit = i < parts.length ? 0.5 : FLANK_U;
     const uvs = new Float32Array(position.count * 2);
 
     for (let vertex = 0; vertex < position.count; vertex++) {
@@ -87,7 +127,7 @@ export function projectHeadUvs(head: Object3D, parts: readonly Mesh[], neckV: nu
       // The tube puts the belly at -y and the spine at +y, so this is the same
       // angle it builds its ring from; the absolute value is the mirror.
       const angle = Math.abs(Math.atan2(point.x, -point.y));
-      uvs[vertex * 2] = angle / (Math.PI * 2);
+      uvs[vertex * 2] = Math.min(angle / (Math.PI * 2), limit);
       uvs[vertex * 2 + 1] = neckV * (1 - point.z / noseZ);
     }
 

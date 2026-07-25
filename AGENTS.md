@@ -111,14 +111,39 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
   flat wash, and a flat wash out to the last triangle is a bright polygon with a hard
   outline. The map's own window (`POOL_TEXTURE_FADE_*`) covers the ordinary case;
   `POOL_RIM_FADE` is the part filtering cannot reach.
-- **Authored assets live in `public/assets/`, and there are exactly four of them.**
-  `assets/creatures/moray-{snowflake,ribbon,zebra,dragon}-albedo.png` are painted body
+- **Authored assets live in `public/assets/`, and there are exactly six of them.** Four
+  animals and two surfaces, and every one of them is an albedo — that is the whole
+  contract. `assets/creatures/moray-{snowflake,ribbon,zebra,dragon}-albedo.png` are
+  painted body
   albedos, loaded by `src/rendering/AssetLibrary.ts` and swapped onto the moray body
   material in `Moray`'s constructor. Everything else on the animal stays generated: the
   swap replaces `map` only, because the wrinkles and the broken wet sheen live in
   `MorayPattern`'s normal and roughness maps and the painting has no channel for them.
   Which file a species wears is `albedoAsset` in `MoraySpeciesConfig`, so adding a
   species is still a data change.
+  - **`assets/world/{sand,rock}-albedo.png` are the terrain tiles**, requested with
+    `{ tile: true }` — mirrored repeat on both axes, which makes a generated image
+    seamless by construction. Both are painted shadow-free, because the light has to
+    move across the ripples and the strata, and both leave the procedural normal (and
+    the sand's roughness) exactly where they were.
+  - **A tile and a tint cannot both carry the colour.** The procedural maps are
+    authored to sit *under* the material colour, so they are near white; a painted
+    tile brings its own. Sand answers that by neutralising its tint to white on the
+    swap. Rock cannot: `createRockMaterial` takes a colour per rock family and one of
+    them is compositional — the `0x3a474a` foreground shoulder that crops shot A is
+    only a shoulder while it is darker than the reef behind it. So rock *scales* its
+    tint instead (`TINT_LIFT`), one multiply in linear space that gives back the
+    luminance the map stopped supplying. Ratios between rocks survive a uniform scale,
+    which is the entire point. Measure both means before changing either file — the
+    canonical shots hold their frame mean to within one part in 255 across the swap.
+  - **The rock tile's repeat is a physical scale, not a taste.** `boxProjectUvs` lays
+    0.22 of a UV unit per metre, so `TILE_REPEAT = 2` is a tile every 2.3 m, and one
+    repeat has to serve an eight-metre sea stack and a two-metre boulder because every
+    rock in the reef shares one material. It was picked by rendering 1, 2 and 4 at
+    three distances: 1 is a soft wash on anything you can swim up to, 4 averages back
+    to flat at sea-stack range, 2 holds at both. The normal map stays at one tile per
+    unit on purpose — its cracks are the rock's form, and colour finer than form is
+    what stone actually looks like.
   - **The UV contract a moray skin is painted to.** `u` wraps the circumference — 0 the
     belly, 0.5 the spine, 1 the belly again — so the image's left and right edges are
     both pale underside and its centre column is the back. `v` runs the length, 0 at the
@@ -176,6 +201,27 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
     own contrast (measured off the images); the snowflake's are not, but its
     pattern is a scatter of rosettes and one arrangement of those reads as
     another.
+  - **The lower jaw wears the skin too, on the belly side of that band.** It
+    used to be a bespoke material at three-quarters of the body colour, which
+    was a fair stand-in under a low-contrast procedural map and reads as a
+    plastic bib under a painted one — it is the largest flat surface on the
+    animal. It is projected in the same `projectHeadUvs` pass as the skull, in
+    the `underside` list: it hangs below the tube's axis, so the angle already
+    puts it at `u` 0 to about 0.18, the pale throat. The list exists for the
+    hinge, which is fat enough to cross the axis — the crown of its rear ring
+    scores `u = 0.5` while the same ridge at the front scores 0, so the map's
+    whole belly-to-spine sweep ran along the jaw's top and an open mouth showed
+    it. `FLANK_U` caps the wrap at the quarter turn. Adding the jaw did not move
+    `noseZ` (the upper jaw is a centimetre longer), so the other four parts'
+    UVs are unchanged to the bit — the render diff is jaw-only, which is how to
+    check it after touching any head primitive.
+  - **The nasal tubes are held below the accent colour.** They are the only
+    unmapped skin left on the head, and an accent picked to be *found* across
+    ten metres of water is, on a bare cone beside a painted face, the brightest
+    flattest thing in frame. `softenAccent` keeps the hue — a ribbon's nostrils
+    are yellow, that is the field mark — and takes saturation and value down,
+    in sRGB, because three's `getHSL`/`setHSL` default to the linear working
+    space where the same fraction is a far deeper cut.
   - Only texture coordinates are written. Positions and transforms are
     untouched, which is what keeps `getHeadWorldPosition` — and the focus cone,
     the sightline raycast and `tests/reefSightlines.test.ts` tuned against it —

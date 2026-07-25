@@ -1,4 +1,5 @@
 import { BufferAttribute, MeshStandardMaterial, type BufferGeometry } from "three";
+import { requestAlbedo } from "../rendering/AssetLibrary";
 import {
   buildColorTexture,
   buildNormalTexture,
@@ -9,6 +10,53 @@ import {
 import { Random, SEEDS } from "../util/Random";
 
 const SIZE = 512;
+
+/**
+ * How many times the painted tile repeats across one unit of box-projected UV.
+ *
+ * {@link boxProjectUvs} lays 0.22 of a UV unit down per metre, so one unit is
+ * 4.5 m of stone and this puts a tile every 2.3 m. One repeat has to serve an
+ * eight-metre sea stack and a two-metre boulder, since every rock in the reef
+ * shares one material, so it is chosen for the middle and checked at the ends:
+ * at 2.3 m a stack wears three and a half tiles across its face and a boulder
+ * most of one, which is variation on the big shapes without a boulder becoming
+ * a repeating pattern in its own right. It is also about 450 texels per metre,
+ * where 4.5 m would be 225 — and the player swims within a metre of these.
+ *
+ * The procedural normal map is deliberately left at one tile per unit. Its
+ * cracks are the rock's *form* and were tuned at that size against the
+ * silhouette; the painted tile is shadow-free colour, and colour finer than
+ * form is how stone actually looks.
+ */
+const TILE_REPEAT = 2;
+
+/**
+ * What the tint is multiplied by once the painted tile is carrying the colour.
+ *
+ * The procedural map is authored to sit *under* a tint — it is near white, and
+ * the material colour supplies the stone. The painted tile carries its own
+ * colour, so leaving the tint alone would multiply the two and land every rock
+ * at a third of the value it ships at today. Measured: the built texture
+ * averages 0.80 in linear luminance, the PNG 0.27, a ratio of 2.95. Sand had
+ * the same problem and answered it by neutralising the tint to white, which
+ * works there because there is one seabed.
+ *
+ * There is not one rock. `createRockMaterial` is called with a different colour
+ * per rock family, and one of them is doing compositional work: the foreground
+ * shoulder that crops shot A is `0x3a474a`, and a shoulder that is not darker
+ * than the reef behind it is not a shoulder. Blending the tints toward white
+ * would take that from 0.23 to 0.73 and flatten the frame.
+ *
+ * So the tint is *scaled* rather than washed out: a single multiply in linear
+ * space, giving back the luminance the map stopped supplying. Every rock keeps
+ * the value it has today and the ratios between them are untouched, because a
+ * uniform scale cannot change a ratio — which is the whole point, since the
+ * ratios are the rock-to-rock variation. It sits a little under the measured
+ * 2.95 because that is where the brightest channel of the brightest tint in the
+ * project — the boulders' green — comes to rest at 1.0 rather than above it.
+ * The four canonical shots hold their frame mean to within one part in 255.
+ */
+const TINT_LIFT = 2.85;
 
 let shared: { map: ReturnType<typeof buildColorTexture>; normal: ReturnType<typeof buildNormalTexture> } | undefined;
 
@@ -43,7 +91,7 @@ export function createRockMaterial(color: number): MeshStandardMaterial {
     normal: buildNormalTexture(SIZE, rockHeight, 0.07),
   };
 
-  return new MeshStandardMaterial({
+  const material = new MeshStandardMaterial({
     color,
     map: shared.map,
     normalMap: shared.normal,
@@ -53,6 +101,24 @@ export function createRockMaterial(color: number): MeshStandardMaterial {
     // Algae tinting is baked per-vertex from the surface normal.
     vertexColors: true,
   });
+
+  // Authored limestone tile, when present. Albedo only: the strata, the cracks
+  // and the Voronoi joints live in the procedural normal map, which is the
+  // rock's form and is not something a shadow-free colour tile can carry. The
+  // box-projected UVs are untouched as well — the tile is laid over them at
+  // {@link TILE_REPEAT}, so a swap moves no vertex and re-seams nothing.
+  requestAlbedo(
+    "world/rock-albedo.png",
+    (texture) => {
+      texture.repeat.set(TILE_REPEAT, TILE_REPEAT);
+      material.map = texture;
+      material.color.multiplyScalar(TINT_LIFT);
+      material.needsUpdate = true;
+    },
+    { tile: true },
+  );
+
+  return material;
 }
 
 /**
