@@ -39,6 +39,25 @@ describe("migrate", () => {
     expect(result.settings).toEqual({ reducedMotion: true, fieldOfView: 66 });
   });
 
+  it("keeps a saved sound volume, and leaves older saves without one alone", () => {
+    const withVolume = migrate({ version: 2, discovered: [], settings: { soundVolume: 0.25 } });
+    expect(withVolume.settings.soundVolume).toBe(0.25);
+
+    // A save written before the soundscape existed simply has no opinion on
+    // the level, and must fall through to the default rather than to zero.
+    const legacy = migrate({ version: 1, discovered: [], settings: { fieldOfView: 66 } });
+    expect("soundVolume" in legacy.settings).toBe(false);
+  });
+
+  it("drops a corrupt sound volume rather than passing NaN to a gain node", () => {
+    const result = migrate({
+      version: 2,
+      discovered: [],
+      settings: { soundVolume: "loud", reducedMotion: true },
+    });
+    expect(result.settings).toEqual({ reducedMotion: true });
+  });
+
   it("preserves accessibility settings across a content-only migration", () => {
     // A future/unknown version tag must not drop the player's settings.
     const result = migrate({ version: 999, discovered: [], settings: { autoLevel: true } });

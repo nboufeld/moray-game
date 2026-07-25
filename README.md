@@ -24,6 +24,9 @@ complete emotional and technical loop rather than a fleet of assets:
   illustrated **Codex**.
 - The **Dream Sanctuary** (press `V`): a calm aquarium where discovered morays drift gently,
   each with a species card.
+- A **synthesised soundscape** — a filtered-noise ambience bed that drifts and swells,
+  bubbles while you swim, an FM bell for each discovery and a warm pad in the sanctuary —
+  built entirely from oscillators and noise buffers, with no audio files to ship.
 - A versioned **save system** that persists discoveries and comfort settings.
 - A **Comfort & Accessibility** panel (press `O`) with a one-switch **Calm Mode** preset.
 
@@ -58,6 +61,7 @@ Append `?reset=1` to the URL to start a completely fresh dive (clears the save).
 | `npm run test` | Vitest unit tests (pure gameplay logic) |
 | `npm run test:e2e` | Playwright smoke, discovery and accessibility tests |
 | `npm run shots -- <tag>` | Capture the art-direction shot set into `visual-qa/` |
+| `node scripts/probe-audio.mjs <tag>` | Render each sound layer offline and print what it measures |
 
 The unit tests cover the pure gameplay logic (movement, focus/discovery, collisions,
 registry, hint ladder, game loop, sanctuary resource lifetime). The Playwright tests boot

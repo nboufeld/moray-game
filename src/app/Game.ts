@@ -4,6 +4,7 @@ import {
   DEFAULT_SETTINGS,
   type ComfortSettings,
 } from "../accessibility/AccessibilitySettings";
+import { ReefSoundscape } from "../audio/ReefSoundscape";
 import { FishSchoolSystem } from "../creatures/fish/FishSchoolSystem";
 import { Moray } from "../creatures/morays/Moray";
 import { MorayRegistry } from "../creatures/morays/MorayRegistry";
@@ -72,6 +73,7 @@ export class Game {
   private readonly dive: DiveController;
   private readonly rig: CameraRig;
   private readonly input: InputController;
+  private readonly soundscape = new ReefSoundscape();
 
   private readonly discovery: DiscoverySystem;
   private readonly pulse = new DiscoveryPulse();
@@ -167,6 +169,10 @@ export class Game {
     this.input.onRequestHint.push(() => this.showHint());
     this.input.onToggleSanctuary.push(() => this.toggleSanctuary());
     this.input.onToggleSettings.push(() => this.toggleSettings());
+    // Nothing is audible — and no context exists — until the player touches
+    // something. The reef comes up already knowing how loud it should be.
+    this.applyAudioSettings();
+    this.input.onFirstGesture.push(() => this.soundscape.start());
 
     window.addEventListener("resize", this.handleResize);
     this.handleResize();
@@ -187,6 +193,11 @@ export class Game {
 
   get currentMode(): Mode {
     return this.mode;
+  }
+
+  /** The soundscape, exposed for the audio probe the way `__reef` is. */
+  get audio(): ReefSoundscape {
+    return this.soundscape;
   }
 
   /**
@@ -219,12 +230,17 @@ export class Game {
       this.renderer.setGradePulse(this.pulse.advance(delta, this.settings.reducedMotion));
     }
 
+    // The soundscape rides the frame rather than the fixed step, for the same
+    // reason: it has to keep breathing in the sanctuary and behind the comfort
+    // panel, where the simulation does not run at all.
+    const paused = this.settingsPanel.isOpen;
+    this.soundscape.setPanelOpen(paused);
+    this.soundscape.update(delta, this.mode === "reef" && !paused && this.isSwimming());
+
     if (this.mode === "sanctuary") {
       this.sanctuary.update(delta, this.settings.reducedMotion);
       return;
     }
-
-    const paused = this.settingsPanel.isOpen;
 
     if (!paused) {
       const look = this.input.consumeLook(delta);
@@ -254,11 +270,9 @@ export class Game {
 
   private simulate(step: number): void {
     const input = this.input.diveInput;
-    if (input.forward || input.back || input.left || input.right || input.ascend || input.descend) {
-      if (!this.moved) {
-        this.moved = true;
-        this.hud.fadeControlsHelp();
-      }
+    if (this.isSwimming() && !this.moved) {
+      this.moved = true;
+      this.hud.fadeControlsHelp();
     }
 
     this.dive.update(step, input, this.rig.yaw);
@@ -292,11 +306,20 @@ export class Game {
     }
   }
 
+  /** Whether the player is holding any of the swim keys. */
+  private isSwimming(): boolean {
+    const input = this.input.diveInput;
+    return (
+      input.forward || input.back || input.left || input.right || input.ascend || input.descend
+    );
+  }
+
   private onDiscovered(speciesId: string): void {
     const config = this.registry.require(speciesId);
     this.recordInCodex(config);
     this.hud.showDiscovery(config.commonName, config.scientificName, this.settings.reducedMotion);
     this.pulse.trigger();
+    this.soundscape.playDiscovery();
     this.hud.setProgress(this.discovery.discoveredCount, this.discovery.totalCount);
     this.hud.setHint("Added to the Codex. Visit the sanctuary (V) to watch it swim.");
     this.hintLevel = -1;
@@ -386,8 +409,14 @@ export class Game {
     this.calmActive = isCalm(this.settings);
     this.camera.fov = this.settings.fieldOfView;
     this.camera.updateProjectionMatrix();
+    this.applyAudioSettings();
     this.settingsPanel.sync(this.settings, this.calmActive);
     this.save.saveSettings(this.settings);
+  }
+
+  private applyAudioSettings(): void {
+    this.soundscape.setVolume(this.settings.soundVolume);
+    this.soundscape.setReducedMotion(this.settings.reducedMotion);
   }
 
   private toggleCalmMode(): void {
@@ -408,6 +437,7 @@ export class Game {
   private toggleSanctuary(): void {
     if (this.mode === "reef") {
       this.mode = "sanctuary";
+      this.soundscape.setSanctuary(true);
       this.sanctuary.setSpecies(this.discoveredConfigs());
       this.sanctuaryOverlay.show(this.discoveredConfigs());
       this.hud.setDiveVisible(false);
@@ -415,6 +445,7 @@ export class Game {
       this.handleResize();
     } else {
       this.mode = "reef";
+      this.soundscape.setSanctuary(false);
       this.sanctuaryOverlay.hide();
       this.hud.setDiveVisible(true);
       this.lastTime = performance.now();
@@ -497,6 +528,7 @@ export class Game {
     this.holding = false;
     window.removeEventListener("resize", this.handleResize);
     this.input.dispose();
+    this.soundscape.dispose();
     this.renderer.dispose();
   }
 }

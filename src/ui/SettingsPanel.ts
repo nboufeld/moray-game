@@ -22,6 +22,8 @@ export class SettingsPanel {
   private readonly fovValue: HTMLElement;
   private readonly sensitivity: HTMLInputElement;
   private readonly sensitivityValue: HTMLElement;
+  private readonly volume: HTMLInputElement;
+  private readonly volumeValue: HTMLElement;
 
   constructor(
     private readonly callbacks: SettingsPanelCallbacks,
@@ -37,6 +39,8 @@ export class SettingsPanel {
     this.fovValue = requireElement(root, "opt-fov-value");
     this.sensitivity = requireElement(root, "opt-sensitivity") as HTMLInputElement;
     this.sensitivityValue = requireElement(root, "opt-sensitivity-value");
+    this.volume = requireElement(root, "opt-volume") as HTMLInputElement;
+    this.volumeValue = requireElement(root, "opt-volume-value");
 
     this.calmButton.addEventListener("click", () => this.callbacks.onCalmMode());
     this.bob.addEventListener("change", () => this.callbacks.onChange({ cameraBob: this.bob.checked }));
@@ -56,6 +60,11 @@ export class SettingsPanel {
       const value = Number(this.sensitivity.value);
       this.sensitivityValue.textContent = formatSensitivity(value);
       this.callbacks.onChange({ lookSensitivity: value });
+    });
+    this.volume.addEventListener("input", () => {
+      const value = Number(this.volume.value);
+      this.volumeValue.textContent = formatVolume(value);
+      this.callbacks.onChange({ soundVolume: value });
     });
 
     requireElement(root, "settings-close").addEventListener("click", () => this.close());
@@ -91,6 +100,8 @@ export class SettingsPanel {
     this.fovValue.textContent = String(settings.fieldOfView);
     this.sensitivity.value = String(settings.lookSensitivity);
     this.sensitivityValue.textContent = formatSensitivity(settings.lookSensitivity);
+    this.volume.value = String(settings.soundVolume);
+    this.volumeValue.textContent = formatVolume(settings.soundVolume);
     this.calmButton.classList.toggle("is-active", calmActive);
     this.calmButton.textContent = calmActive ? "Calm Mode on" : "Enable Calm Mode";
   }
@@ -98,4 +109,8 @@ export class SettingsPanel {
 
 function formatSensitivity(value: number): string {
   return value.toFixed(2).replace(/\.?0+$/, "");
+}
+
+function formatVolume(value: number): string {
+  return String(Math.round(value * 100));
 }

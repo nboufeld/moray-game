@@ -60,4 +60,13 @@ export const SEEDS = {
   sanctuaryGrass: 0x5a4d_0103,
   sanctuaryMotes: 0x5a4d_0104,
   sanctuaryShafts: 0x5a4d_0105,
+  // The soundscape synthesises its noise the same way the reef scatters its
+  // rocks: from a fixed stream, so the ambience bed and the reverb tail are
+  // the same waveform on every load and a re-tune is a change anyone can hear
+  // against the version before it.
+  audioBed: 0x5a4d_0201,
+  /** When a bubble happens, kept apart from what it sounds like. */
+  audioBubbles: 0x5a4d_0202,
+  audioBubbleVoice: 0x5a4d_0203,
+  audioReverb: 0x5a4d_0204,
 } as const;

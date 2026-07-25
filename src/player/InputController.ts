@@ -15,11 +15,18 @@ export class InputController {
   private mouseYaw = 0;
   private mousePitch = 0;
   private pointerLocked = false;
+  private gestured = false;
 
   readonly onToggleCodex: (() => void)[] = [];
   readonly onRequestHint: (() => void)[] = [];
   readonly onToggleSanctuary: (() => void)[] = [];
   readonly onToggleSettings: (() => void)[] = [];
+  /**
+   * Fired once, on the first click or keypress. Browsers will not let audio
+   * start before one of those, and both are already handled here — so the
+   * gesture the dive needs anyway is the gesture the soundscape waits for.
+   */
+  readonly onFirstGesture: (() => void)[] = [];
 
   private readonly keyTurnRate = 1.8; // radians / second
   private readonly mouseSensitivity = 0.0022;
@@ -67,8 +74,17 @@ export class InputController {
   }
 
   private readonly requestPointerLock = (): void => {
-    if (!this.pointerLocked) {
-      void this.target.requestPointerLock?.();
+    this.noteGesture();
+    if (this.pointerLocked) {
+      return;
+    }
+    // Pointer lock is a request, not a requirement: the dive is fully
+    // playable on the arrow keys without it. Chromium rejects it outright in
+    // some embeddings — a headless test run among them — and an unhandled
+    // rejection there would surface as a page error on the very first click.
+    const request: unknown = this.target.requestPointerLock?.();
+    if (request instanceof Promise) {
+      request.catch(() => {});
     }
   };
 
@@ -90,6 +106,8 @@ export class InputController {
     if (event.ctrlKey || event.metaKey || event.altKey) {
       return;
     }
+
+    this.noteGesture();
 
     const code = event.code.toLowerCase();
 
@@ -132,6 +150,14 @@ export class InputController {
   private readonly handleKeyUp = (event: KeyboardEvent): void => {
     this.keys.delete(event.code.toLowerCase());
   };
+
+  private noteGesture(): void {
+    if (this.gestured) {
+      return;
+    }
+    this.gestured = true;
+    this.onFirstGesture.forEach((fn) => fn());
+  }
 }
 
 const MOVEMENT_CODES = new Set([

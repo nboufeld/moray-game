@@ -54,12 +54,13 @@ export function migrate(raw: unknown): SaveData {
 }
 
 const BOOLEAN_SETTINGS = ["cameraBob", "cameraRoll", "autoLevel", "reducedMotion"] as const;
-const NUMERIC_SETTINGS = ["fieldOfView", "lookSensitivity"] as const;
+const NUMERIC_SETTINGS = ["fieldOfView", "lookSensitivity", "soundVolume"] as const;
 
 /**
  * Keeps only known fields of the expected type. `fieldOfView` reaches
  * `camera.fov` directly, so a corrupt save carrying a string there would
  * produce a NaN projection matrix and a blank screen the player cannot escape.
+ * `soundVolume` reaches a gain node, where a NaN is a silent graph.
  */
 function sanitizeSettings(raw: Record<string, unknown>): Partial<ComfortSettings> {
   const settings: Partial<ComfortSettings> = {};

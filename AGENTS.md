@@ -18,6 +18,8 @@ comfort/accessibility settings panel with Calm Mode, and the Dream Sanctuary aqu
   the `ColorGradeShader` used by the post chain, the `DiscoveryPulse` that drives its
   swell, and `ProceduralTexture` (the noise and map-building toolkit every surface is
   textured with).
+- `src/audio/` — `AudioEngine` (context + master, armed by the first gesture), `synth.ts`
+  (every voice, all synthesised), `BubbleScheduler` (pure), `ReefSoundscape` (the layers).
 - `src/util/Random.ts` — seeded PRNG and the per-subsystem `SEEDS`.
 - `src/sanctuary/` — `SanctuaryScene` (separate scene rendered when in sanctuary mode).
 - `src/save/` — `SaveSystem` + `SaveMigration` (versioned localStorage).
@@ -25,7 +27,7 @@ comfort/accessibility settings panel with Calm Mode, and the Dream Sanctuary aqu
 - `src/accessibility/` — comfort settings + Calm Mode preset.
 - `tests/` — Vitest unit tests (pure gameplay logic, no WebGL).
 - `tests-e2e/` — Playwright tests (render, codex, discovery, sanctuary, calm mode, save,
-  comfort-panel keyboard access).
+  comfort-panel keyboard access, the audio graph probe).
 
 ## Commands
 
@@ -190,5 +192,34 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
   intentionally harder to spot — the zebra/dragon heads are dark against their caves. Use
   the `H` hint ladder (it targets the nearest undiscovered moray). All four are verified
   discoverable; placement/facing live in `SPOT_PLACEMENTS` in `src/world/Reef.ts`.
+- **The soundscape is synthesised, like everything else here.** `src/audio/` holds the
+  lifecycle (`AudioEngine`), the voices (`synth.ts` — ambience bed, bubble, FM chime,
+  sanctuary pad), the timing of the one random layer (`BubbleScheduler`, pure and unit
+  tested) and the orchestration (`ReefSoundscape`). There are no audio files and there is
+  no reason to add any. `Game` drives it from state it already has: swim keys held,
+  `onDiscovered`, sanctuary toggle, comfort panel open.
+- **Nothing exists before the first gesture.** Browsers refuse to run a context that was
+  not asked for, so `AudioEngine` holds two numbers until `start()`, and `start()` runs
+  from `InputController.onFirstGesture` (canvas click or first keydown, whichever lands
+  first). Every method is safe to call before that, which is what lets the game drive the
+  soundscape without asking whether anyone is listening — and what lets `tests/audioEngine.test.ts`
+  drive the whole thing in plain Node, where `window` does not exist. Keep it that way:
+  no `AudioContext` and no `window` at module scope or in a constructor.
+- **Sound cannot be reviewed from a screenshot**, so it reports on itself. `window.__reefAudio`
+  is the soundscape (beside `__reef`), exposing bus levels, the bed's base cutoff and
+  counters, which `tests-e2e/audio.spec.ts` asserts on; `probeRms` renders the same
+  builders through an `OfflineAudioContext`. `node scripts/probe-audio.mjs <tag>` goes
+  further and measures each layer — spectral tilt of the bed, the bell's decay ratio, the
+  bubble's sweep, the size of the noise loop's seam — the way `measure-frames.mjs`
+  measures a frame. Run it before and after a tuning change.
+- **Audio gotchas that were paid for once already**: an exponential ramp cannot reach zero,
+  so every envelope ends at `SILENT` rather than at 0. An LFO connected to an `AudioParam`
+  *adds* to that param's automation, which is why the sanctuary can ramp the bed's cutoff
+  while the drift keeps riding on top of it, and why `.value` reads the base and not what
+  you would hear. The noise buffer's tail is crossfaded with material from just past its
+  end, so shortening it or "cleaning up" that wrap puts a click in the loop every ten
+  seconds. The chime's modulator has to decay faster than its carrier or the bell becomes
+  an electric piano. And suspending the context at volume 0 must wait out the fade —
+  suspending stops the clock the fade is riding on.
 - The Vite build prints a >500 kB chunk warning (Three.js in one bundle). This is expected
   and is not an error.
