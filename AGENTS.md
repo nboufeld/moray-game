@@ -150,15 +150,36 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
     and handed to every reef moray, sanctuary resident and portrait alike, so nothing may
     dispose them per instance — the same rule the `MorayPattern` cache has, and the
     reason `disposeSubtree` releases geometries, materials and skeletons but not maps.
-  - **The head still wears the body's texture on its own UVs**, and always has. The
-    skull is a sphere poled along Y and the snout is a cylinder a third of a metre long,
-    so between them they smear the whole length of the map across the head and roll its
-    counter-shading a quarter turn. With a low-contrast procedural map that read as
-    skin; with a painted one the head is visibly finer and busier than the neck it joins
-    — most obvious on the zebra. It is unchanged by the authored maps (the procedural
-    fallback does exactly the same thing) and fixing it means re-projecting the head
-    parts' UVs cylindrically about the body axis into a band near `v = 0`, which is a
-    change to the hero creature and wants its own pass.
+  - **The head wears a band at the front of the map, and mirrors it around.**
+    The skull, snout, brow and upper jaw share `bodyMaterial`, and they used to
+    wear it on the UVs their own primitives were born with — a sphere's `v` runs
+    pole to pole, so between them they smeared the map's whole snout-to-tail
+    length across twenty centimetres of head and rolled the counter-shading a
+    quarter turn with it. `projectHeadUvs` (`MorayHeadUv.ts`) re-wraps them in
+    the body's space instead, and `Moray` calls it once the head is assembled.
+    `v` runs 0 at the frontmost point of the head to `MorayBodyGeometry.neckV`
+    at the body root — the tube's own value there, 0.042 to 0.078 depending on
+    the archetype — so the head reads as the head end of the map and agrees with
+    the neck where they meet. The head is about three times longer than the
+    slice it now wears, so its markings come out coarser than the body's; that
+    is the trade, and it is the same one the maps already make along `v`.
+  - **The head's `u` is mirrored, not wound**, and that is not a shortcut. It is
+    the tube's own angle (0 belly, 0.5 spine) with the sign thrown away, so the
+    two flanks are mirror images. A wound `u` has to jump from 1 back to 0 along
+    a line running nose to neck, and a sphere poled along Y has no vertex column
+    anywhere along that line — its own duplicated seam runs spine to belly
+    instead — so the jump would land *inside* a quad and squeeze the entire map
+    into a hand's width of garbage down the underside of every skull. Mirroring
+    has no jump anywhere: `u` turns around at the belly and at the spine, which
+    are the two lines a map painted to this contract is symmetric about. Three
+    of the four are symmetric about `u = 0.5` to within about a sixth of their
+    own contrast (measured off the images); the snowflake's are not, but its
+    pattern is a scatter of rosettes and one arrangement of those reads as
+    another.
+  - Only texture coordinates are written. Positions and transforms are
+    untouched, which is what keeps `getHeadWorldPosition` — and the focus cone,
+    the sightline raycast and `tests/reefSightlines.test.ts` tuned against it —
+    exact.
 - **Texturing goes through `ProceduralTexture`**, which builds `DataTexture`s from typed
   arrays rather than painting canvases. That is deliberate: it needs no DOM, so maps work
   unchanged in the Node unit tests, and it is bit-identical across environments, which
@@ -295,6 +316,20 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
  exactly the ask. Do not take metalness to zero to chase the pinpoints — with no
  specular at all a fish near the lens is matte cardboard and loses the modelling that
  says which way it faces. Spread the lobe instead.
+- **A fish's tail fork rides on a merge that can fail silently.**
+ `createFishGeometry` merges an octahedron body with two cone blades, and
+ `mergeGeometries` takes its indexing from the first geometry and then rejects
+ every other one that disagrees. `PolyhedronGeometry` builds bare triangles with
+ no index; `ConeGeometry` builds a vertex grid with one. So the merge returned
+ null, the `?? body` fallback quietly handed back a bare diamond, and for a
+ while every fish in the reef swam with no tail — behind a single console error
+ and nothing the frame could tell you, because a diamond ten metres out still
+ reads as a fish. The blades are `toNonIndexed()` now. Nothing is lost by it:
+ the material is flat-shaded, so the vertices an index shares would have to be
+ split for their face normals anyway. The counter-shading is read across the
+ *body's* vertical extent and clamped, rather than re-read per part — a blade a
+ centimetre and a half tall would otherwise run the whole dark-back-to-pale-belly
+ ramp across itself and hang a belly-bright edge off the top of the tail.
 - **A fish close to the lens is the whole ballgame.** Everything above is about values,
  and none of it matters if a shoal drifts through the diver: measured at the mid-depth
  traverse, the nearest six instances sat between 0.8m and 1.8m out and the closest

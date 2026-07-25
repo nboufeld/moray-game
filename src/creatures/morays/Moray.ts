@@ -14,6 +14,7 @@ import {
 } from "three";
 import { requestAlbedo } from "../../rendering/AssetLibrary";
 import { buildMorayBody } from "./MorayBody";
+import { projectHeadUvs } from "./MorayHeadUv";
 import { createMoraySkin } from "./MorayPattern";
 import type { BodyArchetype, MoraySpeciesConfig } from "./MoraySpeciesConfig";
 
@@ -245,6 +246,12 @@ export class Moray {
     upperJawMesh.position.z = 0.17 * headScale;
     upperJaw.add(upperJawMesh);
     head.add(upperJaw);
+
+    // Everything above wears `bodyMaterial` on the texture coordinates its own
+    // primitive generator authored, which smears the map's whole length across
+    // a head and rolls the counter-shading a quarter turn. Re-wrap them in the
+    // body's space, into the band of the map the neck continues from.
+    projectHeadUvs(head, [skull, snout, brow, upperJawMesh], rig.neckV);
 
     if (config.nasalAppendages) {
       for (const side of [-1, 1]) {

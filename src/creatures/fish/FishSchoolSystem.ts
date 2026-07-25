@@ -131,21 +131,64 @@ const VIEWER_MAX_RATE = 0.45;
 function createFishGeometry(): BufferGeometry {
   const body = new OctahedronGeometry(0.13, 0);
   body.scale(0.55, 0.82, 2.1);
-  countershade(body);
 
   // Two thin blades splayed into a fork, set behind the body.
+  //
+  // `toNonIndexed` is what makes the merge work at all, and its absence is why
+  // every fish in the reef swam without a tail for a while: `mergeGeometries`
+  // takes the indexing of the *first* geometry and then requires every other
+  // one to match, and these two do not match by construction. A cone is built
+  // as a vertex grid with an index buffer over it; an octahedron comes out of
+  // `PolyhedronGeometry` as bare triangles with no index at all. So the merge
+  // rejected the fork, returned null, and the fallback below quietly handed
+  // back a body — a shape which, being a diamond, still looks enough like a
+  // fish from ten metres that nothing about the frame said the tail was gone.
+  // Dropping the cones' index is the cheap direction to reconcile it, and it
+  // costs nothing here: the material is flat-shaded, so the shared vertices an
+  // index buys would have to be split for their face normals anyway.
   const upper = new ConeGeometry(0.075, 0.16, 3);
   upper.rotateX(-Math.PI / 2);
   upper.rotateZ(Math.PI / 2);
   upper.scale(0.28, 1, 1);
   upper.translate(0, 0.055, -0.3);
+  const upperBlade = upper.toNonIndexed();
 
-  const lower = upper.clone();
-  lower.translate(0, -0.11, 0);
-  countershade(upper);
-  countershade(lower);
+  const lowerBlade = upperBlade.clone();
+  lowerBlade.translate(0, -0.11, 0);
 
-  return mergeGeometries([body, upper, lower]) ?? body;
+  // All three shaded against the body's own extent, so the fork continues the
+  // gradient rather than restarting it. Read per part, a blade a centimetre and
+  // a half tall would run the whole dark-back-to-pale-belly ramp across itself
+  // and hang a belly-bright edge off the top of the tail.
+  const shading = verticalExtent(body);
+  countershade(body, shading);
+  countershade(upperBlade, shading);
+  countershade(lowerBlade, shading);
+
+  // The fallback is kept because a merge can only fail by the attributes not
+  // lining up, which is a build-time mistake and not a reason to have no fish.
+  return mergeGeometries([body, upperBlade, lowerBlade]) ?? body;
+}
+
+/** The vertical span the counter-shading gradient is read across. */
+interface VerticalExtent {
+  readonly min: number;
+  readonly span: number;
+}
+
+function verticalExtent(geometry: BufferGeometry): VerticalExtent {
+  const position = geometry.attributes.position;
+  if (!position) {
+    return { min: 0, span: 1 };
+  }
+
+  let min = Infinity;
+  let max = -Infinity;
+  for (let i = 0; i < position.count; i++) {
+    min = Math.min(min, position.getY(i));
+    max = Math.max(max, position.getY(i));
+  }
+  return { min, span: Math.max(1e-5, max - min) };
 }
 
 /**
@@ -161,24 +204,21 @@ function createFishGeometry(): BufferGeometry {
  * ratio below is the one it always had, so the cue is unchanged; what moved is
  * that the material's colour is now the animal's brightest point rather than
  * something four fifths of the way up it.
+ *
+ * The gradient is clamped at both ends for the same reason it is capped at 1:
+ * the tail fork reaches a little above and below the body it is shaded against,
+ * and an unclamped ramp would take the underside of the lower blade back over
+ * that ceiling.
  */
-function countershade(geometry: BufferGeometry): void {
+function countershade(geometry: BufferGeometry, { min, span }: VerticalExtent): void {
   const position = geometry.attributes.position;
   if (!position) {
     return;
   }
 
-  let min = Infinity;
-  let max = -Infinity;
-  for (let i = 0; i < position.count; i++) {
-    min = Math.min(min, position.getY(i));
-    max = Math.max(max, position.getY(i));
-  }
-
-  const span = Math.max(1e-5, max - min);
   const colors = new Float32Array(position.count * 3);
   for (let i = 0; i < position.count; i++) {
-    const t = (position.getY(i) - min) / span;
+    const t = Math.min(1, Math.max(0, (position.getY(i) - min) / span));
     const shade = 1 - t * 0.58;
     colors[i * 3] = shade * 0.95;
     colors[i * 3 + 1] = shade;

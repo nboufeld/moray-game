@@ -137,6 +137,15 @@ export interface MorayBodyGeometry {
   readonly fin: BufferGeometry;
   /** Bounds wide enough for every pose the rig can reach; see {@link BOUNDS_SLACK}. */
   readonly bounds: Sphere;
+  /**
+   * The `v` the tube samples at the body root — the plane the head group stands
+   * on, and so the value the head's own band has to end at if the two are to
+   * agree where they meet. It is not 0: the tube runs {@link NECK_OVERLAP}
+   * joints further forward than that, up inside the skull, and it is *there*
+   * that its `v` reaches 0. Depends on the length of the animal, so every
+   * archetype has its own; see `projectHeadUvs`.
+   */
+  readonly neckV: number;
 }
 
 /** One cross-section of the animal, and the joints it is carried by. */
@@ -178,6 +187,9 @@ export function buildMorayBody({
       new Vector3(0, 0, (front.z + back.z) / 2),
       halfLength * BOUNDS_SLACK + front.radius,
     ),
+    // `v` is linear in `z` from 0 at the front station to 1 at the back one, so
+    // the value at `z = 0` is where the root falls between the two ends.
+    neckV: front.z / (front.z - back.z),
   };
 }
 
