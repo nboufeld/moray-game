@@ -305,18 +305,60 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
     initialises it on `MeshToonMaterial`, so the constructor drops it — but the renderer
     reads it off the material generically and `getProgramCacheKeyBooleans` hashes it, so
     assignment works and caches correctly. `createToonMaterial` does it, behind a module
-    augmentation of the three types.
+    augmentation of the three types. It assigns `false` and takes no option: since WP-G3
+    nothing lit in this project is faceted, and the augmentation stays so the flag can be
+    written at all rather than left as a property three never defines.
   - **Normal maps run at half strength** (`TOON_NORMAL_SCALE`). Under a BRDF a normal map
     modulates a gradient; under a ramp it modulates *where the step falls*, and at full
     strength the band boundary breaks into noise and the form stops reading.
-- **Flat shading is kept on purpose.** Normal maps compose correctly with it, so the reef
-  reads as textured facets — chiselled, not smoothly rendered CG. The fix for a surface
-  that looks like a platonic solid is geometry (`weatherRock`), not smooth normals. It
-  matters more under a ramp than it did under a BRDF: a facet is what gives a stepped
-  light an edge to land on.
+- **Nothing in the reef is faceted any more, and turning the flag off was the small half
+  of that.** Flat shading used to be deliberate — chiselled, not smoothly rendered CG —
+  and chiselled is a photograph's rock. Two things had to change together, because the
+  facets live in the *buffers* as much as in the materials: everything out of
+  `PolyhedronGeometry` is non-indexed, so `computeVertexNormals` writes a face normal to
+  every vertex and a smooth-shaded icosahedron is still a cut gem.
+  `src/rendering/SmoothNormals.ts` welds normals by quantised position — 0.1mm, because
+  the two copies of a shared edge are floats arrived at along different arithmetic paths
+  — and touches no position and no index, which is what makes it safe on geometry the
+  game raycasts. `weatherRock` calls it, and so do the coral boulder and the rubble
+  pebble, which do not go through `weatherRock`.
+  - **The order inside `weatherRock` is load-bearing**: displace, `computeVertexNormals`
+    (flat), `boxProjectUvs`, *then* weld. Box projection picks its axis from the normal,
+    so it needs all three corners of a triangle to agree; weld first and neighbouring
+    corners choose different planes, which warps the map inside the triangle instead of
+    at its edge.
+  - **The crevices are exempt from the geometry half, by construction.** The four hiding
+    spots' mounds and flanks pass `preserveProfile`, which keeps the old displacement
+    field and therefore every vertex position they have ever had. They are placed to the
+    centimetre against the discovery raycast, and a rounder mound is a gameplay change
+    that no screenshot can distinguish from an art one. They take the smooth normals,
+    which is the half the camera reads. If you ever do move them, `weatherRock` on a
+    crevice mound must still stay `inwardOnly` (see below).
+  - **A round rock is low-frequency and high-amplitude.** `ROUND_PERIOD` 3 at two
+    octaves, and a third more displacement to pay for the fine octaves that are gone:
+    the outline used to be nibbled everywhere by four scales of noise, and two octaves
+    at the old amount is most of the way back to a marble.
 - **Rock UVs are box-projected at build time**, not triplanar. Triplanar would cost three
-  fetches per map on the largest surfaces; box projection is one, and its seams land on
-  facet edges where flat shading has already broken the normal.
+  fetches per map on the largest surfaces; box projection is one. Flat shading used to
+  break the normal along the same edges its seams land on and hide them; on a smooth
+  boulder the seam is a visible change of grain direction where the wash swings axis.
+  Measured across the canonical shots it is not worth a second texture fetch — the maps
+  it lays are low-contrast noise, and noise has no direction to contradict.
+- **The garden and the meadow are round for the same reason the rocks are.** Coral
+  branches are `CapsuleGeometry` rather than cones — a spray of points is a sea urchin,
+  and the extent is matched to the cone's (1.1 of trunk between two 0.16 caps against the
+  cone's 1.5) precisely so every `addBranching` transform still plants its foot in the
+  sand. Grass blades are 0.182 wide, two fifths up from a wire, and curl to `t*t*0.35`,
+  which is the only reason the blade is tessellated; the palette is bright spring greens,
+  because the old bottom end (0x2f7a58) was mixed against water that had a photograph's
+  darkness in it and reads as a shadow against WP-G1's turquoise. Widening a blade costs
+  nothing measurable — the instance count, the draw call and the vertex work are all
+  unchanged — and it is the cheapest lushness in the project.
+- **The seabed is now the flattest thing in frame, and that is WP-G6's job.** WP-G2 took
+  the ripples out (a normal map cannot shade inside a toon band), and rounding the rocks,
+  the coral and the grass around it has made the bare sand plane conspicuous rather than
+  neutral: it is the one surface left that reads as a render. Do not answer it with
+  geometry or with the shading ramp — the sand wash is what it is waiting for.
 - **The stage is authored for the canonical cameras.** `PINNACLES`,
   `FOREGROUND_SHOULDER` and `FOREGROUND_CLUMPS` in `src/world/Reef.ts`, and the coral
   `SITES` in `CoralField`, are placed for shots A and B — a gate of sea stacks either
@@ -459,24 +501,43 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
  because 0.42 of the belly was authored against water that sat near a fifth of white and
  WP-G1's water does not. Measure before believing the frame here.
 - **A fish's tail fork rides on a merge that can fail silently.**
- `createFishGeometry` merges an octahedron body with two cone blades, and
- `mergeGeometries` takes its indexing from the first geometry and then rejects
- every other one that disagrees. `PolyhedronGeometry` builds bare triangles with
- no index; `ConeGeometry` builds a vertex grid with one. So the merge returned
- null, the `?? body` fallback quietly handed back a bare diamond, and for a
- while every fish in the reef swam with no tail — behind a single console error
- and nothing the frame could tell you, because a diamond ten metres out still
- reads as a fish. The blades are `toNonIndexed()` now. Nothing is lost by it:
- the material is flat-shaded, so the vertices an index shares would have to be
- split for their face normals anyway. The counter-shading is read across the
- *body's* vertical extent and clamped, rather than re-read per part — a blade a
- centimetre and a half tall would otherwise run the whole dark-back-to-pale-belly
- ramp across itself and hang a belly-bright edge off the top of the tail.
+ `createFishGeometry` merges a body with two cone blades, and `mergeGeometries`
+ takes its indexing from the first geometry and then rejects every other one
+ that disagrees. The body was an octahedron — `PolyhedronGeometry` builds bare
+ triangles with no index — and `ConeGeometry` builds a vertex grid with one. So
+ the merge returned null, the `?? body` fallback quietly handed back a bare
+ diamond, and for a while every fish in the reef swam with no tail, behind a
+ single console error and nothing the frame could tell you. The rule has not
+ changed, only which side gives way: the body is a `SphereGeometry` since WP-G3
+ and both sides are indexed grids that agree as built. Keeping the index is also
+ where the round body is paid for — 42 vertices against 144 — and it is why the
+ blades wear the cone's own smooth normals, which at sixteen centimetres on an
+ animal that is never near the lens is not a visible thing. The counter-shading
+ is read across the *body's* vertical extent and clamped, rather than re-read
+ per part — a blade a centimetre and a half tall would otherwise run the whole
+ dark-back-to-pale-belly ramp across itself and hang a belly-bright edge off the
+ top of the tail. Its belly end is tilted a few percent warm and its back end a
+ few percent cool, which is where the art plan's cream lives; on the albedo it
+ is the cream body WP-G2 measured and threw out.
+- **A school is 170 instances, so its triangle count is a frame cost and not a
+ detail setting.** The body is `SphereGeometry(0.13, 6, 5)` and not the 8×6 it
+ was drawn as: measured at the resolution the adaptive scaler settles on, the
+ school costs 2.3ms as the old diamond, 3.0ms at 48 triangles and 5.5ms at 80,
+ and the two spheres cannot be told apart at any size this animal is drawn.
+ Also worth knowing before measuring anything: `measure-frames.mjs` samples rAF
+ deltas, so it can only report **multiples of 16.66ms** — a 3ms regression and a
+ 16ms one look identical, and a change can appear to cost 16ms purely by
+ straddling a tick. To attribute a cost, time `renderFrame()` directly with a
+ one-pixel `readPixels` after it as a barrier (`gl.finish` returns as soon as
+ the commands are queued), with `pinRenderScale` set so every sample is at one
+ resolution.
 - **A fish close to the lens is the whole ballgame.** Everything above is about values,
  and none of it matters if a shoal drifts through the diver: measured at the mid-depth
  traverse, the nearest six instances sat between 0.8m and 1.8m out and the closest
- spanned *thirty-one degrees of frame*. At that size a flat-shaded octahedron is three
- grey facets and an outline, which is "paper scrap" in its purest form. `VIEWER_STANDOFF`
+ spanned *thirty-one degrees of frame*. At that size the old octahedron was three grey
+ facets and an outline — "paper scrap" in its purest form — and the round body is a
+ featureless lozenge with no eye, no gill and no pattern, which is the same failure with
+ softer edges. Distance is what the whole design of the animal assumes. `VIEWER_STANDOFF`
  bends a shoal's course around the diver, which is also what reef fish do. Its value is a
  balance, not a floor — it opens the band the school can be seen in and the fish fog
  closes it, so raising it empties the frame.

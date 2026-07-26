@@ -4,7 +4,7 @@ import {
   InstancedMesh,
   Matrix4,
   Object3D,
-  OctahedronGeometry,
+  SphereGeometry,
   type BufferGeometry,
   type Scene,
   type Vector3,
@@ -95,36 +95,66 @@ const VIEWER_GAIN = 0.9;
 const VIEWER_MAX_RATE = 0.45;
 
 /**
- * A tapered body with a forked tail, nose along +Z.
+ * How much of its girth the body has left by the tail.
  *
- * Shape matters more than size here: a bare diamond reads as a flying saucer
- * the moment the diver gets close enough to see it end-on, and a school of
- * those looks like drifting litter rather than life.
+ * An ellipsoid is symmetric end to end, and a fish is not: the fork has to hang
+ * off something that has narrowed to meet it, or the animal reads as a blimp
+ * with fins glued on. The taper is eased in over the back half only, so the
+ * head stays the full round shape the whole change is for.
+ */
+const TAIL_TAPER = 0.42;
+
+/**
+ * A rounded teardrop with a forked tail, nose along +Z.
+ *
+ * It was an octahedron, which is where "paper scraps" came from as much as any
+ * value in the material did: eight flat faces read as a shard of something at
+ * any distance where they can be told apart at all, and a school of shards is
+ * drifting litter. A sphere is the fix, and this is the one place in the reef
+ * where a round shape has to survive being a dozen pixels across.
+ *
+ * 6×5 rather than the 8×6 that was drawn up, and the reason is that a school is
+ * 170 of these: measured on the software rasteriser at the resolution the
+ * adaptive scaler actually settles on, the school costs 3.0ms of an 85ms frame
+ * at 48 triangles and 5.5ms at 80, against 2.3ms for the diamond it replaces.
+ * The two spheres are indistinguishable at the size this animal is ever drawn —
+ * it is held at arm's length by `VIEWER_STANDOFF` and shrunk further by the
+ * near-field cap — so the extra 32 triangles buy nothing but the frame.
+ *
+ * Every part of it stays *indexed* for the same reason. A sphere shares each of
+ * its vertices between six faces, so keeping the index is the difference
+ * between 42 vertices and 144, and it is why the fork is no longer flattened to
+ * meet the body.
  */
 function createFishGeometry(): BufferGeometry {
-  const body = new OctahedronGeometry(0.13, 0);
-  body.scale(0.55, 0.82, 2.1);
+  const body = new SphereGeometry(0.13, 6, 5);
+  body.scale(0.5, 0.75, 1.9);
+  taperTail(body);
+  // Indexed, so this averages across the shared vertices rather than splitting
+  // them: the taper's normals come back smooth, which is the point of it.
+  body.computeVertexNormals();
 
   // Two thin blades splayed into a fork, set behind the body.
   //
-  // `toNonIndexed` is what makes the merge work at all, and its absence is why
-  // every fish in the reef swam without a tail for a while: `mergeGeometries`
-  // takes the indexing of the *first* geometry and then requires every other
-  // one to match, and these two do not match by construction. A cone is built
-  // as a vertex grid with an index buffer over it; an octahedron comes out of
-  // `PolyhedronGeometry` as bare triangles with no index at all. So the merge
-  // rejected the fork, returned null, and the fallback below quietly handed
-  // back a body — a shape which, being a diamond, still looks enough like a
-  // fish from ten metres that nothing about the frame said the tail was gone.
-  // Dropping the cones' index is the cheap direction to reconcile it, and it
-  // costs nothing here: the material is flat-shaded, so the shared vertices an
-  // index buys would have to be split for their face normals anyway.
-  const upper = new ConeGeometry(0.075, 0.16, 3);
-  upper.rotateX(-Math.PI / 2);
-  upper.rotateZ(Math.PI / 2);
-  upper.scale(0.28, 1, 1);
-  upper.translate(0, 0.055, -0.3);
-  const upperBlade = upper.toNonIndexed();
+  // The indexing has to match, and its mismatching is why every fish in the
+  // reef swam without a tail for a while: `mergeGeometries` takes the indexing
+  // of the *first* geometry and then rejects every other one that disagrees.
+  // A cone is built as a vertex grid with an index over it and an octahedron
+  // came out of `PolyhedronGeometry` as bare triangles with none, so the merge
+  // returned null, the fallback below quietly handed back a bare body, and
+  // nothing about the frame said the tail was gone. The rule has not changed,
+  // only which side gave way: with a sphere for a body both are indexed grids
+  // and they agree as built.
+  //
+  // The blades keep the cone's own smooth normals with it. That used to be
+  // impossible — everything here was flat-shaded — and it is invisible now:
+  // a blade is sixteen centimetres long on an animal that is deliberately
+  // never close to the lens.
+  const upperBlade = new ConeGeometry(0.075, 0.16, 3);
+  upperBlade.rotateX(-Math.PI / 2);
+  upperBlade.rotateZ(Math.PI / 2);
+  upperBlade.scale(0.28, 1, 1);
+  upperBlade.translate(0, 0.055, -0.3);
 
   const lowerBlade = upperBlade.clone();
   lowerBlade.translate(0, -0.11, 0);
@@ -141,6 +171,37 @@ function createFishGeometry(): BufferGeometry {
   // The fallback is kept because a merge can only fail by the attributes not
   // lining up, which is a build-time mistake and not a reason to have no fish.
   return mergeGeometries([body, upperBlade, lowerBlade]) ?? body;
+}
+
+/**
+ * Narrows the back of the body toward the tail, in place.
+ *
+ * Only x and y move: the length is what the swim shader's `tailward` weighting
+ * and the fork's own placement are both read against, and neither should have
+ * to know that the body changed shape.
+ */
+function taperTail(geometry: BufferGeometry): void {
+  const position = geometry.attributes.position;
+  if (!position) {
+    return;
+  }
+
+  let half = 0;
+  for (let i = 0; i < position.count; i++) {
+    half = Math.max(half, Math.abs(position.getZ(i)));
+  }
+  if (half <= 0) {
+    return;
+  }
+
+  for (let i = 0; i < position.count; i++) {
+    const z = position.getZ(i);
+    // 0 everywhere forward of the middle, 1 at the tail tip.
+    const back = Math.min(1, Math.max(0, -z / half));
+    const narrow = 1 - TAIL_TAPER * back * back;
+    position.setXYZ(i, position.getX(i) * narrow, position.getY(i) * narrow, z);
+  }
+  position.needsUpdate = true;
 }
 
 /** The vertical span the counter-shading gradient is read across. */
@@ -202,9 +263,14 @@ function countershade(geometry: BufferGeometry, { min, span }: VerticalExtent): 
   for (let i = 0; i < position.count; i++) {
     const t = Math.min(1, Math.max(0, (position.getY(i) - min) / span));
     const shade = 1 - t * 0.4;
-    colors[i * 3] = shade * 0.95;
+    // The hue turns over with the value: a shade of warm cream along the belly
+    // and the cool of the water along the back, which is what counter-shading
+    // looks like when a painter does it rather than a physicist. It is a tilt
+    // of a few percent between channels on an albedo that stays cool overall —
+    // the cream is the direction, not the colour.
+    colors[i * 3] = shade * (1.02 - t * 0.07);
     colors[i * 3 + 1] = shade;
-    colors[i * 3 + 2] = shade * 1.04;
+    colors[i * 3 + 2] = shade * (0.97 + t * 0.09);
   }
   geometry.setAttribute("color", new BufferAttribute(colors, 3));
 }
@@ -307,8 +373,13 @@ export class FishSchoolSystem {
       // that made a school of 170 pop out of the water, and there is none left
       // to model a near fish either — which the ramp does instead, in flat
       // steps, which is what a storybook fish is.
+      //
+      // Still cool, and deliberately so even though the body is round now. The
+      // warmth the art plan asks for is in the counter-shading's belly end,
+      // where it is a few parts in 255 on the brightest strip of a small
+      // animal; carried by the albedo it is the cream body WP-G2 measured and
+      // threw out, because the warm key lands that on salmon.
       color: 0xdfeef2,
-      flatShading: true,
       vertexColors: true,
     });
     // Tail sway in the vertex shader, phased per instance. At this size a fish
@@ -403,8 +474,8 @@ export class FishSchoolSystem {
         // Smaller than they were, and this matters more than it sounds. The
         // body is about 0.85m at scale 1, so the old top end put metre-long
         // animals in a school of ambient background fish — and a metre-long
-        // flat-shaded octahedron ten metres from the lens does not resolve into
-        // a fish, it resolves into three grey facets and an outline. The
+        // featureless body ten metres from the lens does not resolve into a
+        // fish, it resolves into a smooth grey lozenge and an outline. The
         // counter-shading above is built on the assumption that the whole
         // animal is a handful of pixels; this is the range that keeps that true
         // even when a shoal wanders close.
@@ -460,9 +531,11 @@ export class FishSchoolSystem {
       const bank = -Math.sin(weave) * fish.bankAmp;
       const pitch = -Math.cos(weave * 0.7) * fish.riseAmp * 0.5;
 
-      // Near-field cap. The faceted mesh only fails when it is large in
-      // frame: at distance it is a perfect fish, within a few metres it is
-      // three flat facets and an outline. The standoff bends shoal courses
+      // Near-field cap. A background animal only fails when it is large in
+      // frame — it was three flat facets and an outline at a metre when it was
+      // a diamond, and it is a bare round body with no eye, no gill and no
+      // pattern now, which is the same failure with softer edges. Distance is
+      // what the whole design of it assumes. The standoff bends shoal courses
       // away from the diver, but it is a steering force — a fish already
       // inside the bubble when a capture teleports the camera stays there
       // for the settle. So the render itself shrinks close fish toward the

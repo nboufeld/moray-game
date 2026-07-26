@@ -116,9 +116,14 @@ export const TOON_NORMAL_SCALE = 0.5;
  * and its constructor does not initialise it — but the renderer reads it off
  * whatever material it is handed when it builds the program defines, and
  * `getProgramCacheKeyBooleans` hashes it, so a faceted toon material compiles
- * its own program and keeps it. The gap is in the declaration, not the feature,
- * and the reef needs the feature: rock, coral, rubble and fish are all faceted
- * on purpose, and facets are what give a stepped light something to step over.
+ * its own program and keeps it. The gap is in the declaration, not the feature.
+ *
+ * The reef used to need the feature — rock, coral, rubble and fish were all
+ * faceted on purpose — and now nothing does: a chiselled surface is a
+ * photograph's surface, and the shapes were rounded rather than merely
+ * smoothed. It stays declared so the flag can be *written*, because the one
+ * thing worse than a faceted reef is a material whose shading model depends on
+ * a property three leaves undefined.
  */
 declare module "three" {
   interface MeshToonMaterial {
@@ -193,7 +198,6 @@ export interface ToonMaterialOptions {
   /** Defaults to {@link TOON_NORMAL_SCALE}; only meaningful with a normal map. */
   readonly normalScale?: number;
   readonly vertexColors?: boolean;
-  readonly flatShading?: boolean;
   readonly emissive?: ColorRepresentation;
   readonly emissiveIntensity?: number;
   readonly side?: Side;
@@ -215,9 +219,11 @@ export function createToonMaterial(options: ToonMaterialOptions = {}): MeshToonM
     gradientMap: toonGradientMap(),
     vertexColors: options.vertexColors ?? false,
   });
-  // Assigned rather than passed to the constructor, which would drop it: see
-  // the module augmentation above.
-  material.flatShading = options.flatShading ?? false;
+  // Assigned rather than passed to the constructor, which would drop it, and
+  // assigned at all rather than left undefined: see the module augmentation
+  // above. Nothing lit in this project is faceted, and this is where that is
+  // said once instead of in nine files.
+  material.flatShading = false;
 
   if (options.color !== undefined) {
     material.color = new Color(options.color);

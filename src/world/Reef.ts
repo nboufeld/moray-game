@@ -16,6 +16,7 @@ import {
 import { Random, SEEDS } from "../util/Random";
 import type { ReefBounds, SphereCollider } from "./CollisionField";
 import { buildColorTexture, buildScalarTexture, fbm } from "../rendering/ProceduralTexture";
+import { smoothNormals } from "../rendering/SmoothNormals";
 import { createToonMaterial } from "../rendering/ToonShading";
 import { CoralField } from "./CoralField";
 import { createRockMaterial, weatherRock } from "./RockMaterial";
@@ -266,7 +267,7 @@ export class Reef {
 
     for (const [index, p] of placements.entries()) {
       const geometry = new IcosahedronGeometry(p.scale, 2);
-      weatherRock(geometry, SEEDS.rock + index * 131, 0.17);
+      weatherRock(geometry, SEEDS.rock + index * 131, { amount: 0.17 });
       const rock = new Mesh(geometry, material);
       rock.position.set(p.x, p.scale * 0.55 + seabedHeight(p.x, p.z), p.z);
       rock.rotation.set(this.random.next(), this.random.next(), this.random.next());
@@ -300,7 +301,7 @@ export class Reef {
 
       for (const [order, segment] of pinnacle.segments.entries()) {
         const geometry = new IcosahedronGeometry(segment.radius, 2);
-        weatherRock(geometry, SEEDS.pinnacle + (index * 7 + order) * 131, 0.3);
+        weatherRock(geometry, SEEDS.pinnacle + (index * 7 + order) * 131, { amount: 0.3 });
         const block = new Mesh(geometry, this.boulderMaterial);
         block.position.set(
           pinnacle.x + leanX * segment.lean,
@@ -335,7 +336,7 @@ export class Reef {
 
     const shoulder = FOREGROUND_SHOULDER;
     const geometry = new IcosahedronGeometry(shoulder.radius, 2);
-    weatherRock(geometry, SEEDS.pinnacle ^ 0x5c0d, 0.32);
+    weatherRock(geometry, SEEDS.pinnacle ^ 0x5c0d, { amount: 0.32 });
     const rock = new Mesh(geometry, this.silhouetteMaterial);
     rock.position.set(
       shoulder.x,
@@ -370,8 +371,18 @@ export class Reef {
     const right = new Vector3(forward.z, 0, -forward.x);
 
     // Coral mound behind the head (along the body/deeper direction).
+    //
+    // Every vertex of it stands exactly where it stood before the reef went
+    // round: `preserveProfile` keeps the old displacement field, so this shape
+    // is bit-identical and the line of sight through the crevice cannot have
+    // moved. What it does take is the new smooth normals, which is the half of
+    // "chiselled" the camera actually sees.
     const moundGeometry = new DodecahedronGeometry(3.0, 1);
-    weatherRock(moundGeometry, SEEDS.rock ^ hashSpecies(placement.speciesId), 0.2, true);
+    weatherRock(moundGeometry, SEEDS.rock ^ hashSpecies(placement.speciesId), {
+      amount: 0.2,
+      inwardOnly: true,
+      preserveProfile: true,
+    });
     const mound = new Mesh(moundGeometry, this.rockMaterial);
     mound.position.copy(position).addScaledVector(back, 3.9);
     mound.position.y = position.y + 1.0;
@@ -410,10 +421,20 @@ export class Reef {
     // face, so however much it is weathered it stays a box with a bevel — six
     // flat faces and twelve straight edges, standing beside the moray's head
     // where the camera is closest to it and reading as laid masonry. At four
-    // it breaks into facets like every other stone in the reef.
+    // it breaks up like every other stone in the reef.
+    //
+    // These hold the old profile for the same reason the mound does. They
+    // stand a body's width either side of the head and narrow the view into the
+    // crevice on purpose, which is the one thing the sightline test measures
+    // and does not fully pin down: it asks that three quarters of the approach
+    // be clear, and a stone free to bulge a third further out is free to spend
+    // that margin. Smooth normals round them off without spending anything.
     for (const sign of [-1, 1]) {
       const flankGeometry = new BoxGeometry(1.1, 1.7, 1.5, 4, 4, 4);
-      weatherRock(flankGeometry, SEEDS.rock ^ hashSpecies(placement.speciesId + sign), 0.3);
+      weatherRock(flankGeometry, SEEDS.rock ^ hashSpecies(placement.speciesId + sign), {
+        amount: 0.3,
+        preserveProfile: true,
+      });
       const flank = new Mesh(flankGeometry, this.rockMaterial);
       flank.position
         .copy(position)
@@ -453,9 +474,14 @@ export class Reef {
       // Close to the sand it lies on. Stones darker than this read as holes
       // punched in the seabed rather than as pebbles resting on it.
       color: 0xc4baa0,
-      flatShading: true,
     });
-    const stones = new InstancedMesh(new DodecahedronGeometry(0.24, 0), material, count);
+    // Smooth, like every other stone in the reef now — and here that is the
+    // whole of the change, because a dodecahedron at detail 0 is already
+    // carrying face normals in its buffer and the material flag was doing
+    // nothing. Welding them turns twelve pentagons into one worn pebble.
+    const stoneGeometry = new DodecahedronGeometry(0.24, 0);
+    smoothNormals(stoneGeometry);
+    const stones = new InstancedMesh(stoneGeometry, material, count);
     stones.receiveShadow = true;
     // No cast shadow: at this size the contact shadow is larger than the stone
     // and turns a scattering of pebbles into a scattering of dark smudges.

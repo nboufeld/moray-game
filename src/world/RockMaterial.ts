@@ -7,6 +7,7 @@ import {
   ridged,
   voronoi,
 } from "../rendering/ProceduralTexture";
+import { smoothNormals } from "../rendering/SmoothNormals";
 import { createToonMaterial } from "../rendering/ToonShading";
 import { Random, SEEDS } from "../util/Random";
 
@@ -76,10 +77,12 @@ function rockHeight(u: number, v: number): number {
 /**
  * Stone surface, shared by every rock, mound and flank in the reef.
  *
- * Flat shading is kept deliberately. A normal map composes correctly with it —
- * the derivative-based tangent frame perturbs the face normal — so the result
- * is textured facets, chiselled rather than smoothly rendered, which is the
- * look the rest of the reef is built around.
+ * Nothing here is flat-shaded any more. A faceted stone is a *chiselled* one,
+ * and chiselled is the shape language this pivot exists to leave behind: the
+ * target is a boulder a picture book would draw, which is a big soft lump with
+ * two or three broad values across it. The facets went out of the material and
+ * out of the buffer together — see {@link weatherRock} — because turning the
+ * material flag off on its own would have changed nothing.
  */
 export function createRockMaterial(color: number): MeshToonMaterial {
   shared ??= {
@@ -96,7 +99,6 @@ export function createRockMaterial(color: number): MeshToonMaterial {
     color,
     map: shared.map,
     normalMap: shared.normal,
-    flatShading: true,
     // Algae tinting is baked per-vertex from the surface normal.
     vertexColors: true,
   });
@@ -121,24 +123,77 @@ export function createRockMaterial(color: number): MeshToonMaterial {
 }
 
 /**
- * Roughens a platonic solid into something that reads as stone, and gives it
- * usable UVs and an algae tint.
+ * The displacement field a round rock is knocked out of shape with.
  *
- * The d20/d12 silhouette was half the reason the rocks looked like programmer
- * art; no amount of surface detail fixes an obviously regular solid. Radial
- * FBM displacement breaks the regularity while keeping the faceted style.
+ * The old one — a period of 6 at four octaves — was detail: four scales of
+ * noise laid over each other put a wrinkle on every facet, and that is a
+ * *chiselled* rock, weathered stone read off a photograph. What a picture-book
+ * boulder has instead is one scale of lump and nothing finer, so this halves
+ * the period (fewer, wider lumps around the body) and takes the octaves down to
+ * two (a lump, and a suggestion of a second one on it).
+ *
+ * Amplitude has to go up to pay for it. The old profile got its silhouette from
+ * the fine octaves, which nibble the outline everywhere; two octaves at the
+ * same amount is most of the way back to a sphere, and a sphere is the other
+ * failure — a marble, not a potato. A third again is where the outline is
+ * clearly hand-made and still clearly one soft mass.
  */
-export function weatherRock(
-  geometry: BufferGeometry,
-  seed: number,
-  amount = 0.16,
+const ROUND_PERIOD = 3;
+const ROUND_OCTAVES = 2;
+const ROUND_AMOUNT_GAIN = 1.3;
+
+/** The profile the crevice geometry was tuned against; see `preserveProfile`. */
+const CHISELLED_PERIOD = 6;
+const CHISELLED_OCTAVES = 4;
+
+export interface WeatherOptions {
+  /** Peak radial displacement, as a fraction of the radius. */
+  readonly amount?: number;
   /**
    * Only ever shrink the surface. The crevice mounds sit a few centimetres
    * behind a moray's head and are raycast for line of sight, so a mound that
    * can bulge outward can silently swallow the creature the whole game is
    * about. Inward-only displacement makes that impossible by construction.
    */
-  inwardOnly = false,
+  readonly inwardOnly?: boolean;
+  /**
+   * Keep the old displacement field, and with it every vertex position this
+   * geometry has today.
+   *
+   * The four crevices are not scenery. Their mounds and flanks are placed to
+   * the centimetre so that a moray's head is occluded from the wrong angles and
+   * clear from the right ones, and `tests/reefSightlines.test.ts` and the
+   * discovery e2e are both tuned against the shapes they have now. Rounding
+   * them off is a shape change *and* a gameplay change, and the two cannot be
+   * told apart from a screenshot. So they take the new normals — which is what
+   * the eye is actually reading — and none of the new geometry: with the field
+   * unchanged the displacement is bit-identical, and the invariant holds by
+   * construction rather than by a passing test.
+   */
+  readonly preserveProfile?: boolean;
+}
+
+/**
+ * Roughens a platonic solid into something that reads as stone, and gives it
+ * usable UVs and an algae tint.
+ *
+ * The d20/d12 silhouette was half the reason the rocks looked like programmer
+ * art; no amount of surface detail fixes an obviously regular solid. Radial FBM
+ * displacement breaks the regularity — at {@link ROUND_PERIOD}, into big soft
+ * lumps rather than into strata.
+ *
+ * The order of the last four lines is load-bearing. `computeVertexNormals`
+ * leaves a face normal on every vertex of these non-indexed shapes, which is
+ * exactly what {@link boxProjectUvs} wants — all three corners of a triangle
+ * agree on which way to project, so the mapping is coherent across it. Only
+ * then are the normals welded smooth. Run the weld first and neighbouring
+ * corners choose different projection planes, which warps the map inside the
+ * triangle rather than at its edges.
+ */
+export function weatherRock(
+  geometry: BufferGeometry,
+  seed: number,
+  { amount = 0.16, inwardOnly = false, preserveProfile = false }: WeatherOptions = {},
 ): void {
   const position = geometry.attributes.position;
   if (!position) {
@@ -148,6 +203,9 @@ export function weatherRock(
   const random = new Random(seed);
   const offsetX = random.range(0, 100);
   const offsetY = random.range(0, 100);
+  const period = preserveProfile ? CHISELLED_PERIOD : ROUND_PERIOD;
+  const octaves = preserveProfile ? CHISELLED_OCTAVES : ROUND_OCTAVES;
+  const reach = preserveProfile ? amount : amount * ROUND_AMOUNT_GAIN;
 
   for (let i = 0; i < position.count; i++) {
     const x = position.getX(i);
@@ -159,15 +217,16 @@ export function weatherRock(
     // the surface stays closed.
     const u = (Math.atan2(z, x) / (Math.PI * 2) + 0.5 + offsetX) % 1;
     const v = (Math.asin(Math.max(-1, Math.min(1, y / length))) / Math.PI + 0.5 + offsetY) % 1;
-    const n = fbm(u, v, { seed, period: 6, octaves: 4 });
+    const n = fbm(u, v, { seed, period, octaves });
 
-    const scale = inwardOnly ? 1 - n * amount : 1 + (n - 0.5) * 2 * amount;
+    const scale = inwardOnly ? 1 - n * reach : 1 + (n - 0.5) * 2 * reach;
     position.setXYZ(i, x * scale, y * scale, z * scale);
   }
 
   position.needsUpdate = true;
   geometry.computeVertexNormals();
   boxProjectUvs(geometry);
+  smoothNormals(geometry);
   tintByFacing(geometry);
 }
 
@@ -176,8 +235,14 @@ export function weatherRock(
  *
  * Platonic geometries have unusable UVs, and the textbook fix — runtime
  * triplanar sampling — costs three fetches per map on surfaces this large.
- * Box projection is one fetch and free, and its seams land on facet edges where
- * flat shading has already broken the normal, so they are invisible.
+ * Box projection is one fetch and free, and its seams land where a triangle's
+ * dominant axis changes.
+ *
+ * Flat shading used to break the normal along those same edges and hide them.
+ * It no longer does, so on a smooth-shaded boulder the seam is a visible change
+ * of grain direction where the wash swings from one axis to another. It is
+ * cheap to see and almost impossible to read as anything but rock: the maps it
+ * lays down are low-contrast noise, and noise has no direction to contradict.
  */
 function boxProjectUvs(geometry: BufferGeometry): void {
   const position = geometry.attributes.position;

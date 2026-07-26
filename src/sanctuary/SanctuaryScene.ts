@@ -349,7 +349,7 @@ export class SanctuaryScene {
 
       for (const [order, segment] of placement.segments.entries()) {
         const geometry = new IcosahedronGeometry(segment.radius, 2);
-        weatherRock(geometry, SEEDS.sanctuaryRock + (index * 7 + order) * 131, 0.32);
+        weatherRock(geometry, SEEDS.sanctuaryRock + (index * 7 + order) * 131, { amount: 0.32 });
         const block = new Mesh(geometry, material);
         block.position.set(
           placement.x + leanX * segment.lean,

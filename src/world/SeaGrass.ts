@@ -15,7 +15,16 @@ import { Random, SEEDS } from "../util/Random";
 import { seabedHeight } from "./Seabed";
 
 const BLADE_HEIGHT = 1.25;
-const BLADE_WIDTH = 0.13;
+/**
+ * Two fifths wider than it was.
+ *
+ * A blade of this height at 0.13 is a wire: seen from anywhere but square on it
+ * is a line, and a meadow of lines is a hatched texture rather than a plant.
+ * Widening it is also the cheapest lushness there is — the instance count, the
+ * draw call and the vertex work are all untouched, and what changes is how much
+ * of the frame the meadow actually covers.
+ */
+const BLADE_WIDTH = 0.182;
 
 /** Meadow patches read as habitat; blades sprinkled evenly read as a texture. */
 const PATCH_COUNT = 26;
@@ -25,7 +34,18 @@ const PATCH_RADIUS = 3.2;
 /** Squared distance a blade must keep from a crevice mouth. */
 const CLEARANCE_SQ = 16;
 
-const PALETTE = [0x4f9d6b, 0x3f8a5e, 0x63ab6d, 0x2f7a58, 0x76b877];
+/**
+ * Bright spring greens, where these used to be a stand of deep sea-green.
+ *
+ * The old palette was mixed for water that had a photograph's darkness in it,
+ * and against WP-G1's turquoise its bottom end (0x2f7a58) read as a shadow
+ * rather than as a leaf — a meadow of near-black spikes on bright sand. These
+ * are the same family lifted into the light: a mid green, a pale sunlit one and
+ * a deeper one to keep the clumps from flattening into a single wash. The value
+ * spread the eye reads as depth comes from the multiplier below, which is wide
+ * on purpose; the hues only have to stay in one key.
+ */
+const PALETTE = [0x69c184, 0x8fd98a, 0x4da96f];
 
 /**
  * A hand-placed patch, for the few clumps that are composition rather than
@@ -191,8 +211,19 @@ function bladeTexture(): DataTexture {
 }
 
 /**
- * A blade: narrow at the tip, widest near the base, curled slightly forward so
- * a patch never collapses into a row of flat cards.
+ * How far the tip leans out of the blade's own plane, at full height.
+ *
+ * The curl is the difference between a leaf and a blade of a saw. It was 0.22 —
+ * about a fifth of the blade's length, which reads as a lean rather than a
+ * curve — and at 0.35 the top third of the blade turns over far enough to catch
+ * the light on its face while the root is still edge-on to it. That turn is the
+ * whole reason the geometry is tessellated at all.
+ */
+const TIP_CURL = 0.35;
+
+/**
+ * A blade: narrow at the tip, widest near the base, curled forward so a patch
+ * never collapses into a row of flat cards.
  */
 function createBladeGeometry(): PlaneGeometry {
   const segments = 4;
@@ -205,7 +236,7 @@ function createBladeGeometry(): PlaneGeometry {
     const t = (y + BLADE_HEIGHT / 2) / BLADE_HEIGHT;
     position.setX(i, position.getX(i) * (1 - t * 0.82));
     position.setY(i, y + BLADE_HEIGHT / 2);
-    position.setZ(i, t * t * 0.22);
+    position.setZ(i, t * t * TIP_CURL);
   }
   position.needsUpdate = true;
   geometry.computeVertexNormals();

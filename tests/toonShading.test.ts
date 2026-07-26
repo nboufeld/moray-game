@@ -89,8 +89,13 @@ describe("toon materials", () => {
     }
   });
 
-  it("keeps the faceting the reef is built out of", () => {
-    expect(createRockMaterial(0x8b9184).flatShading).toBe(true);
+  it("shades every surface smoothly, facets and all", () => {
+    // The reef used to be chiselled on purpose and is round on purpose now: a
+    // faceted boulder is a photograph's rock, and the fix for a shape that
+    // looks like a platonic solid is geometry rather than a shading flag. What
+    // faceting survives is in the buffers — see `SmoothNormals` — and no
+    // material asks for more of it.
+    expect(createRockMaterial(0x8b9184).flatShading).toBe(false);
     expect(createSandMaterial().flatShading).toBe(false);
   });
 });

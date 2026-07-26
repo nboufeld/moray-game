@@ -1,7 +1,7 @@
 import {
   BufferAttribute,
+  CapsuleGeometry,
   Color,
-  ConeGeometry,
   CylinderGeometry,
   Group,
   IcosahedronGeometry,
@@ -14,6 +14,7 @@ import {
   type WebGLProgramParametersWithUniforms,
 } from "three";
 import { buildColorTexture, buildNormalTexture, fbm, voronoi } from "../rendering/ProceduralTexture";
+import { smoothNormals } from "../rendering/SmoothNormals";
 import { createToonMaterial } from "../rendering/ToonShading";
 import { Random, SEEDS } from "../util/Random";
 import { seabedHeight } from "./Seabed";
@@ -140,7 +141,20 @@ export class CoralField {
     }
 
     const geometries: Record<ShapeKind, BufferGeometry> = {
-      branch: new ConeGeometry(0.17, 1.5, 6),
+      /**
+       * A finger, not a spike. The cone this replaces came to a point, and a
+       * spray of points is a sea urchin or a set of traffic cones depending on
+       * how it is coloured — either way it is the one silhouette in the garden
+       * that reads as a hazard rather than as a plant. A capsule is the same
+       * staghorn gesture with the ends rounded off, which is what the living
+       * tissue on a branch tip actually looks like.
+       *
+       * Its extent is matched to the cone's rather than to its own numbers:
+       * 1.1 of trunk between two 0.16 caps stands 1.42 tall against the cone's
+       * 1.5, and both are centred, so every `addBranching` transform below
+       * still plants its foot in the sand.
+       */
+      branch: new CapsuleGeometry(0.16, 1.1, 2, 6),
       boulder: boulderGeometry(),
       polyp: new SphereGeometry(0.1, 6, 5),
       tableTop: plateGeometry(),
@@ -167,7 +181,15 @@ function buildInstances(
 ): InstancedMesh {
   const skin = coralSkin(kind);
   const material = createToonMaterial({
-    flatShading: true,
+    // No facets, on any of the five shapes. The garden is the closest thing in
+    // the reef to a bed of flowers and it was reading as cut glass: a
+    // six-segment cone, a subdivided icosahedron and a fifteen-sided plate all
+    // shade as the polygons they are the moment the light is stepped. What
+    // carries the surface instead is the map below, which is corallite
+    // structure — the detail a colony actually has, at the scale it has it.
+    // The plate keeps its crisp rim regardless: a cylinder duplicates the
+    // vertices where its cap meets its side, so there is nothing there to
+    // smooth across.
     // The maps stay light and hue-neutral so the per-instance colour below
     // keeps carrying the variation across the garden; what they do carry is
     // baked occlusion, which is a multiplier on whatever hue lands on them.
@@ -438,6 +460,10 @@ function boulderGeometry(): BufferGeometry {
 
   position.needsUpdate = true;
   geometry.computeVertexNormals();
+  // An icosahedron is non-indexed, so the line above writes a face normal to
+  // every vertex and the head comes out as a cut gem however it is textured.
+  // Welding them is what makes it a dome with corallites on it.
+  smoothNormals(geometry);
   return geometry;
 }
 
