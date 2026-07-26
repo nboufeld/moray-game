@@ -23,3 +23,25 @@ export async function waitForAssets(page, capMs = CAP_MS) {
     console.warn(`  authored assets unsettled after ${capMs}ms — capturing anyway`);
   }
 }
+
+/**
+ * Fails every authored asset request, so the page builds the world it would
+ * build with no `public/assets` directory at all.
+ *
+ * That build is a shipping configuration, not a curiosity — the loaders never
+ * throw and every surface keeps the procedural map it was constructed with — so
+ * it has to be looked at whenever the painted ones change, and it is the only
+ * way to see the fallbacks at all now that every one of them is covered by a
+ * file. Blocking at the network is how to look without moving anything on disk:
+ * nothing is renamed, the next run needs no cleanup, and an aborted request is
+ * exactly the error path the library already handles.
+ *
+ * Set `SHOT_NO_ASSETS=1` to turn it on in `capture-shots.mjs` and
+ * `measure-frames.mjs`.
+ */
+export async function blockAssets(page) {
+  await page.route("**/assets/**", (route) => route.abort());
+}
+
+/** Whether the harnesses should run in that mode. */
+export const noAssets = process.env.SHOT_NO_ASSETS === "1";

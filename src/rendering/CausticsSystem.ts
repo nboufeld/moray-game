@@ -3,12 +3,13 @@ import {
   BufferAttribute,
   Mesh,
   MeshBasicMaterial,
-  type DataTexture,
   type PlaneGeometry,
   type Scene,
+  type Texture,
 } from "three";
 import { SEEDS } from "../util/Random";
 import { createSeabedGeometry } from "../world/Seabed";
+import { requestAlbedo } from "./AssetLibrary";
 import { buildColorTexture, fbm, voronoi } from "./ProceduralTexture";
 
 /** Edge length of the tiling caustics pattern, in texels. */
@@ -65,8 +66,10 @@ function smoothstep01(t: number): number {
  * Animated caustics: two tiling sheets of refracted light drifting across the
  * seabed at different rates.
  *
- * The pattern is a scatter of soft round dapples, and that is a deliberate
- * reversal. A Voronoi filament web is what a photograph of a reef floor holds —
+ * The pattern is a scatter of soft round dapples — painted ones where the
+ * asset is on disk, and the generated ones below where it is not — and that is
+ * a deliberate reversal. A Voronoi filament web is what a photograph of a reef
+ * floor holds —
  * the cell walls of a wavefront focusing on itself, bright thin filaments
  * meeting at nodes — and rendered at this scale it reads as a net laid over the
  * sand. A picture book paints the same light as a handful of round blobs of
@@ -79,7 +82,8 @@ export class CausticsSystem {
 
   private readonly layers: {
     material: MeshBasicMaterial;
-    texture: DataTexture;
+    texture: Texture;
+    repeat: number;
     drift: number;
     weight: number;
   }[] = [];
@@ -94,7 +98,7 @@ export class CausticsSystem {
       buildLayerMaterial(SEEDS.caustics, repeatFor(size, TILE_METRES[0])),
     );
     this.mesh.renderOrder = 1;
-    this.registerLayer(this.mesh, 1);
+    this.registerLayer(this.mesh, repeatFor(size, TILE_METRES[0]), 1);
 
     // The second sheet sits a hair higher, with larger dapples and its own
     // drift, so the two scatters beat against each other.
@@ -106,12 +110,45 @@ export class CausticsSystem {
     this.mesh.add(second);
     // Deliberately fainter than the first. Two scatters at equal strength stop
     // reading as one light shimmering and start reading as twice as many spots.
-    this.registerLayer(second, -0.62, 0.5);
+    this.registerLayer(second, repeatFor(size, TILE_METRES[1]), -0.62, 0.5);
+
+    this.requestPaintedDapples();
   }
 
-  private registerLayer(mesh: Mesh, drift: number, weight = 1): void {
+  private registerLayer(mesh: Mesh, repeat: number, drift: number, weight = 1): void {
     const material = mesh.material as MeshBasicMaterial;
-    this.layers.push({ material, texture: material.map as DataTexture, drift, weight });
+    this.layers.push({ material, texture: material.map as Texture, repeat, drift, weight });
+  }
+
+  /**
+   * Swaps in the painted dapples, keeping the generated ones until they land.
+   *
+   * Each layer takes its own `clone()` of the one loaded texture, and that is
+   * not a copy: clones share a `Source`, so this is still one image and one
+   * upload. What they need their own of is the `offset` — the two sheets drift
+   * across each other at different rates, and a shared texture would slide them
+   * together and turn the beat into a single pattern moving.
+   *
+   * The generated map each layer was wearing is disposed, because a layer owns
+   * its procedural texture. The painted one is *not* ever disposed: the asset
+   * library owns it, hands the same object to every caller, and disposing a
+   * clone would take the shared source down with it.
+   */
+  private requestPaintedDapples(): void {
+    requestAlbedo(
+      "world/caustic-dapple.png",
+      (texture) => {
+        for (const layer of this.layers) {
+          const painted = texture.clone();
+          painted.repeat.set(layer.repeat, layer.repeat);
+          layer.material.map = painted;
+          layer.material.needsUpdate = true;
+          layer.texture.dispose();
+          layer.texture = painted;
+        }
+      },
+      { tile: true },
+    );
   }
 
   addTo(scene: Scene): void {
@@ -126,14 +163,20 @@ export class CausticsSystem {
         Math.sin(this.time * 0.07 * layer.drift) * 0.12,
         this.time * 0.021 * layer.drift,
       );
-      // Measured rather than judged: at the 0.16 this started WP-G4 at, the
-      // dapples moved the sand by four parts in 255 at their own median and
-      // eleven at their p90, against a frame sitting at 137 — present in the
-      // pixels and invisible in the picture. This is the only warm light that
-      // reaches the seabed and the package asks for it to be *read*, so it is
-      // allowed to be seen.
+      // Measured rather than judged, twice. At the 0.16 this started WP-G4 at,
+      // the generated dapples moved the sand by four parts in 255 at their own
+      // median and eleven at their p90, against a frame sitting at 137 —
+      // present in the pixels and invisible in the picture — so they went to
+      // 0.26. The painted ones are a far stronger mark at the same opacity:
+      // measured against the generated sheet through `probe-light.mjs`, they
+      // cover slightly *less* of the frame (23% against 25% in shot A) and hit
+      // two and a half times harder at the p90, 58 against 23, because the
+      // painting spends its light on a few big bright cores instead of spreading
+      // it. Left there they lifted the opening shot's median by eleven parts,
+      // which is the seabed going pale. Two thirds of the way back holds the
+      // median where the generated sheet had it and keeps the cores.
       layer.material.opacity =
-        ((reducedMotion ? 0.18 : 0.26) + Math.sin(this.time * 0.5 * layer.drift) * 0.03) *
+        ((reducedMotion ? 0.12 : 0.17) + Math.sin(this.time * 0.5 * layer.drift) * 0.02) *
         layer.weight;
     }
   }

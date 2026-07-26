@@ -12,7 +12,7 @@
 import { chromium } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
-import { waitForAssets } from "./wait-for-assets.mjs";
+import { blockAssets, noAssets, waitForAssets } from "./wait-for-assets.mjs";
 
 const BASE_URL = process.env.SHOT_URL ?? "http://localhost:5173";
 const OUT_DIR = path.resolve("visual-qa");
@@ -80,6 +80,11 @@ const page = await context.newPage();
 page.setDefaultNavigationTimeout(NAV_TIMEOUT_MS);
 page.setDefaultTimeout(NAV_TIMEOUT_MS);
 page.on("pageerror", (error) => console.error(`  page error: ${error.message}`));
+
+if (noAssets) {
+  console.info("SHOT_NO_ASSETS=1 — capturing the procedural fallback build");
+  await blockAssets(page);
+}
 
 // Warm-up load: a cold dev server can re-optimize dependencies and reload the
 // page mid-capture, which screenshots as a blank canvas.

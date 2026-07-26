@@ -33,15 +33,14 @@ const SIZE = 512;
 const TILE_REPEAT = 2;
 
 /**
- * What the tint is multiplied by once the painted tile is carrying the colour.
+ * What the tint is multiplied by once the painted wash is carrying the colour.
  *
  * The procedural map is authored to sit *under* a tint — it is near white, and
- * the material colour supplies the stone. The painted tile carries its own
+ * the material colour supplies the stone. A painted tile carries its own
  * colour, so leaving the tint alone would multiply the two and land every rock
- * at a third of the value it ships at today. Measured: the built texture
- * averages 0.80 in linear luminance, the PNG 0.27, a ratio of 2.95. Sand had
- * the same problem and answered it by neutralising the tint to white, which
- * works there because there is one seabed.
+ * well below the value it ships at. Sand had the same problem and answered it
+ * by neutralising the tint to white, which works there because there is one
+ * seabed.
  *
  * There is not one rock. `createRockMaterial` is called with a different colour
  * per rock family, and one of them is doing compositional work: the foreground
@@ -53,17 +52,32 @@ const TILE_REPEAT = 2;
  * space, giving back the luminance the map stopped supplying. Every rock keeps
  * the value it has today and the ratios between them are untouched, because a
  * uniform scale cannot change a ratio — which is the whole point, since the
- * ratios are the rock-to-rock variation. It sits a little under the measured
- * 2.95 because that is where the brightest channel of the brightest tint in the
- * project — the boulders' green — comes to rest at 1.0 rather than above it.
- * The four canonical shots hold their frame mean to within one part in 255.
+ * ratios are the rock-to-rock variation.
+ *
+ * The number moved with the file. It was 2.85 for a limestone tile that
+ * measured 0.27 in linear luminance against the built texture's 0.80; the
+ * gouache wash that replaces it measures 0.386, which asks for 2.07. The
+ * families' own colours need no other adjustment — they were already all but
+ * neutral (`0x8b9184` is four parts of saturation), which is what lets the
+ * wash's grey-lavender-sage through as the stone's actual hue instead of
+ * multiplying it into the olive the old tile was.
  */
-const TINT_LIFT = 2.85;
+const TINT_LIFT = 2.07;
 
 let shared: { map: ReturnType<typeof buildColorTexture>; normal: ReturnType<typeof buildNormalTexture> } | undefined;
 
-/** Layered strata plus cracks — the height field the maps are derived from. */
-function rockHeight(u: number, v: number): number {
+/**
+ * Layered strata plus cracks, as the two things they are used for.
+ *
+ * `form` is the rock's shape and drives the normal map — the fractures and the
+ * blocky splits belong there, because that is where light actually reads them.
+ * `wash` is what the colour map is painted from, and it is the same field with
+ * the cracks and the joints at half: a drawn rock has its breaks in its
+ * *drawing*, not in its local colour, and a crack that is dark as well as
+ * creased is a crack read off a photograph. Both come out of one evaluation,
+ * because the maps are built texel by texel over a 512² grid.
+ */
+function rockTerms(u: number, v: number): { form: number; wash: number } {
   const strata = fbm(u, v * 3.1, { seed: SEEDS.rock ^ 0x41, period: 5, octaves: 4 });
   const grain = fbm(u, v, { seed: SEEDS.rock ^ 0x93, period: 40, octaves: 3 });
   // Ridged noise carves the fractures; Voronoi walls add the blockier splits.
@@ -71,8 +85,28 @@ function rockHeight(u: number, v: number): number {
   const { f1, f2 } = voronoi(u, v, 6, SEEDS.rock ^ 0xb7);
   const joints = Math.min(1, (f2 - f1) / 0.05);
 
-  return strata * 0.44 + grain * 0.2 + Math.pow(cracks, 3) * 0.22 + joints * 0.14;
+  const bed = strata * 0.44 + grain * 0.2;
+  const breaks = Math.pow(cracks, 3) * 0.22 + joints * 0.14;
+  return { form: bed + breaks, wash: bed + breaks * 0.5 };
 }
+
+/** The height field the normal map is derived from. */
+function rockHeight(u: number, v: number): number {
+  return rockTerms(u, v).form;
+}
+
+/**
+ * The hue of stone when there is no wash on disk, normalised so its largest
+ * channel is 1 and it can only take colour out.
+ *
+ * The procedural map is authored to sit under a tint, and the tints are all but
+ * neutral, so before this the fallback rock had no hue but the faint warm one
+ * written into the map — which was mixed to look like limestone. The painted
+ * wash is a grey-lavender-sage, and a build with no assets should be the same
+ * world in flatter paint rather than a different, browner one, so the map
+ * carries that hue instead.
+ */
+const WASH_HUE = [0x9a / 0xa8, 0xa4 / 0xa8, 1] as const;
 
 /**
  * Stone surface, shared by every rock, mound and flank in the reef.
@@ -87,10 +121,10 @@ function rockHeight(u: number, v: number): number {
 export function createRockMaterial(color: number): MeshToonMaterial {
   shared ??= {
     map: buildColorTexture(SIZE, (u, v) => {
-      const h = rockHeight(u, v);
-      const tone = 0.68 + h * 0.5;
-      // Faintly cooler in the crevices, where less light reaches.
-      return [tone, tone * (0.97 + h * 0.03), tone * (0.93 + h * 0.06)];
+      // Half the swing it had, at the same mean, for the reason the sand's
+      // fallback lost half of its: this map stands in for a wash now.
+      const tone = 0.78 + rockTerms(u, v).wash * 0.25;
+      return [tone * WASH_HUE[0], tone * WASH_HUE[1], tone * WASH_HUE[2]];
     }),
     normal: buildNormalTexture(SIZE, rockHeight, 0.07),
   };
@@ -103,13 +137,13 @@ export function createRockMaterial(color: number): MeshToonMaterial {
     vertexColors: true,
   });
 
-  // Authored limestone tile, when present. Albedo only: the strata, the cracks
-  // and the Voronoi joints live in the procedural normal map, which is the
-  // rock's form and is not something a shadow-free colour tile can carry. The
-  // box-projected UVs are untouched as well — the tile is laid over them at
+  // The painted wash, when present. Albedo only: the strata, the cracks and the
+  // Voronoi joints live in the procedural normal map, which is the rock's form
+  // and is not something a shadow-free colour tile can carry. The box-projected
+  // UVs are untouched as well — the wash is laid over them at
   // {@link TILE_REPEAT}, so a swap moves no vertex and re-seams nothing.
   requestAlbedo(
-    "world/rock-albedo.png",
+    "world/rock-wash.png",
     (texture) => {
       texture.repeat.set(TILE_REPEAT, TILE_REPEAT);
       material.map = texture;

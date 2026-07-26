@@ -117,7 +117,7 @@ export class Game {
     this.camera = new PerspectiveCamera(this.settings.fieldOfView, 1, 0.1, 160);
     this.renderer = new RendererAdapter(canvas);
 
-    new UnderwaterFog().applyTo(this.scene);
+    new UnderwaterFog({ backdropAsset: "world/backdrop.png" }).applyTo(this.scene);
     const lighting = new Lighting();
     lighting.addTo(this.scene);
     this.shafts = new LightShafts(lighting.sun.position);

@@ -20,8 +20,11 @@ comfort/accessibility settings panel with Calm Mode, and the Dream Sanctuary aqu
  the `ColorGradeShader` used by the post chain (paper grain and watercolour pooling
  included), the `DiscoveryPulse` that drives its
  swell, `ProceduralTexture` (the noise and map-building toolkit every surface is
- textured with) and `AssetLibrary` (the one door authored art comes in through).
-- `public/assets/` — the only authored art in the project: four painted moray albedos.
+ textured with), `AssetLibrary` (the one door authored art comes in through) and
+ `ImagePixels` (the only place an authored image is read back rather than uploaded).
+- `public/assets/` — the only authored art in the project: four painted moray albedos,
+ a sand and a rock wash, a grass blade strip, a caustic dapple sheet and the painted
+ water column.
 - `src/audio/` — `AudioEngine` (context + master, armed by the first gesture), `synth.ts`
   (every voice, all synthesised), `BubbleScheduler` (pure), `ReefSoundscape` (the layers).
 - `src/util/Random.ts` — seeded PRNG and the per-subsystem `SEEDS`.
@@ -255,9 +258,12 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
  and no value reads against itself. The thickness is 12mm in the animal's *local*
  space, so it thickens with the reef's 1.5× morays and thins with the sanctuary's,
  which is what a drawn contour does.
-- **Authored assets live in `public/assets/`, and there are exactly six of them.** Four
-  animals and two surfaces, and every one of them is an albedo — that is the whole
-  contract. `assets/creatures/moray-{snowflake,ribbon,zebra,dragon}-albedo.png` are
+- **Authored assets live in `public/assets/`, and there are exactly nine of them.** Four
+  animals, three surfaces, one light and one sky (WP-G6 added five and retired the two
+  photographic terrain tiles). Every one of them is a colour image and none of them is a
+  normal, roughness or alpha map — that is the whole contract, and it is what keeps the
+  form procedural and the paint authored.
+  `assets/creatures/moray-{snowflake,ribbon,zebra,dragon}-albedo.png` are
   painted body
   albedos, loaded by `src/rendering/AssetLibrary.ts` and swapped onto the moray body
   material in `Moray`'s constructor. Everything else on the animal stays generated: the
@@ -266,21 +272,50 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
   animal's broken specular; ramp shading has no specular to break, so it is gone.)
   Which file a species wears is `albedoAsset` in `MoraySpeciesConfig`, so adding a
   species is still a data change.
-  - **`assets/world/{sand,rock}-albedo.png` are the terrain tiles**, requested with
-    `{ tile: true }` — mirrored repeat on both axes, which makes a generated image
-    seamless by construction.     Both are painted shadow-free, because the light has to
-    move across the ripples and the strata, and both leave the procedural normal exactly
+  - **`assets/world/{sand,rock}-wash.png` are the terrain tiles**, requested with
+    `{ tile: true }`. Both are painted shadow-free, because the light has to move
+    across the ripples and the strata, and both leave the procedural normal exactly
     where it was.
+  - **`tile` means plain repeat, and that is a measurement rather than a default.**
+    It used to mirror, on the argument that a generated image never wraps perfectly.
+    The argument was never tested, and the painted washes wrap to within about one
+    part in 255 — the step across the join against the step between neighbouring
+    columns inside the image, which is how to check any tile that arrives. What
+    mirroring costs is not hypothetical: a mirror is invisible only on material with
+    no direction in it, and a wash of ripples is nothing but direction, so every band
+    turned around at the join and put a crease down the seabed at the tile's spacing.
+    It was clearly visible in shot C at `SAND_WASH_REPEAT`.
   - **A tile and a tint cannot both carry the colour.** The procedural maps are
     authored to sit *under* the material colour, so they are near white; a painted
     tile brings its own. Sand answers that by neutralising its tint to white on the
-    swap. Rock cannot: `createRockMaterial` takes a colour per rock family and one of
-    them is compositional — the `0x3a474a` foreground shoulder that crops shot A is
-    only a shoulder while it is darker than the reef behind it. So rock *scales* its
-    tint instead (`TINT_LIFT`), one multiply in linear space that gives back the
-    luminance the map stopped supplying. Ratios between rocks survive a uniform scale,
-    which is the entire point. Measure both means before changing either file — the
-    canonical shots hold their frame mean to within one part in 255 across the swap.
+    swap and levelling the *image* instead — the wash is painted at 0.77 in linear
+    luminance against the 0.39 the seabed ships at, so `WASH_LEVEL` takes it back, and
+    it is per-channel because the painting is a more saturated yellow than this water
+    can carry (flat, the seabed came out sixteen parts short of blue and took the
+    whole frame a dozen parts warm with it). Rock cannot neutralise:
+    `createRockMaterial` takes a colour per rock family and one of them is
+    compositional — the `0x3a474a` foreground shoulder that crops shot A is only a
+    shoulder while it is darker than the reef behind it. So rock *scales* its tint
+    instead (`TINT_LIFT`), one multiply in linear space that gives back the luminance
+    the map stopped supplying; it went 2.85 → 2.07 when the tile went from a 0.27
+    limestone photograph to a 0.386 gouache wash. Ratios between rocks survive a
+    uniform scale, which is the entire point. Measure both means before changing
+    either file — the canonical shots hold their frame mean to within three parts in
+    255 across the whole package.
+  - **The rock families needed no colour change and that is the point.** They were
+    already all but neutral (`0x8b9184` is four parts of saturation), so the wash's
+    grey-lavender-sage arrives as the stone's actual hue instead of being multiplied
+    into the olive the old tile was. If a family is ever given a real colour again it
+    will fight the painting, not tint it.
+  - **The sand wash is laid at half the procedural rate** (`SAND_WASH_REPEAT` 7
+    against `SAND_REPEAT` 14) and its contrast is opened 2.6× around its own mean at
+    load, in `openWash`. Both are answers to the same fact: the normal map's ripples
+    were tuned as *surface* and the wash's are the *drawing*. At 14 a painted ripple
+    is 70cm across and gone into the mip chain by the middle distance; at 7 it is a
+    metre and a half. And the file swings about 4% peak to trough, which on a surface
+    sitting near 200 in the frame is two parts in 255 — under the dither, by the same
+    arithmetic WP-G5's paper grain was sized with. The boost is mean-preserving, so
+    the level above still means what it says.
   - **The rock tile's repeat is a physical scale, not a taste.** `boxProjectUvs` lays
     0.22 of a UV unit per metre, so `TILE_REPEAT = 2` is a tile every 2.3 m, and one
     repeat has to serve an eight-metre sea stack and a two-metre boulder because every
@@ -289,6 +324,60 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
     to flat at sea-stack range, 2 holds at both. The normal map stays at one tile per
     unit on purpose — its cracks are the rock's form, and colour finer than form is
     what stone actually looks like.
+  - **`assets/world/backdrop.png` is the water column, and the fog is read off it.**
+    It goes through `requestBackdrop`, which is the one place `flipY` keeps the
+    loader's default: a panorama's `v` is altitude and three's `equirectUv` reads
+    `v = 1` overhead, which is where the painting's surface is. On arrival
+    `UnderwaterFog.adoptBackdrop` hangs it, disposes the gradient it replaces, turns
+    it so its painted sun (`PAINTED_SUN_U`, measured as the brightest column of the
+    top eighth) sits over the world's actual sun, and — the part that matters —
+    samples a sixteen-row strip at the horizon and makes that the fog colour. Fog
+    fades geometry toward `scene.fog.color` and the pixels behind it are the
+    painting, so any difference between them is a band along the horizon; sampling
+    makes the two one quantity, and the file can be repainted without anyone
+    remembering to re-pick a number. Both sides live in the same linear render
+    target, with the tone curve and the grade downstream of both, which is why an
+    sRGB average set as a linear colour is the exact match. Measured on shot A the
+    sand emerges out of the water by warming four parts over six rows, with green and
+    blue continuous to within one.
+  - **`BACKDROP_EXPOSURE` is the one number allowed between the painting and the
+    world.** The panorama is painted half a stop above this reef's key — its horizon
+    is #68dbd9, very nearly the hue the fog was already tuned to and much brighter —
+    and hung as it comes it lifted the canonical shots twelve parts at the mean and
+    eighteen at the p90, turning luminous turquoise into haze. It is applied to
+    `scene.backgroundIntensity` *and* to the sampled horizon, so the agreement above
+    survives it. At 0.64 the derived fog lands within a part of the `0x53b2bb` it
+    replaces on every channel: the painter and WP-G1 agreed about the colour and
+    differed only about the exposure.
+  - **The sanctuary keeps its gradient**, and that is the one place the room does not
+    follow the reef. Hanging the painting there was tried and measured across the
+    sweep — same 83.3ms, slightly deeper water — but the fog comes off the same file,
+    so the bay ends up in the reef's ocean exactly, and a shade of warmth was the only
+    thing that ever said it was somewhere else. Compare `tmp_S-sanctuary-t*` under the
+    `g6-gradient` and `g6-backdrop` tags.
+  - **`assets/world/caustic-dapple.png` beat the generated dapples on both counts.**
+    Measured through `probe-light.mjs` with nothing else changed, the painted sheet
+    covers slightly *less* of the frame (23% against 25% in shot A) and hits two and a
+    half times harder at the p90, 58 against 23 — it spends its light on a few big
+    cores instead of spreading it — and it measures genuinely warm, R−B +6.2 against
+    +0.5, which is the trap the generated one never escaped: sand is a warm surface,
+    so adding warm light in the proportion you want to see comes out neutral in sRGB.
+    A painting mixes it thicker. The layer opacity came down a third (0.26 → 0.17) to
+    pay for it, because at the old figure the opening shot's median rose eleven parts
+    — the seabed going pale. Both layers `clone()` the one loaded texture, sharing its
+    `Source` and so its upload, because each needs its own drifting `offset`; nothing
+    disposes a clone, since that would take the library's shared source with it.
+  - **`assets/world/grass-blade.png` is unpacked, not alpha-tested.** It is painted as
+    a tapering blade on black, and the obvious use — an alpha map — is the wrong one:
+    the geometry is already a tapered curled blade, so a cut-out buys no silhouette,
+    and a mostly-black image mipped down to the two pixels a distant blade covers
+    averages to black and puts a dark meadow at the back of the frame. `fullBleed`
+    stretches each row's painted span out to the full width instead, bottom row first
+    because the strip is painted tip-up and a blade's `v` runs root to tip, and
+    `levelToBlade` scales the result per channel onto the generated map's own mean.
+    That second step is what keeps the per-instance palette working: the greens and
+    their wide value spread are the meadow's variety, and a painting laid over them
+    unlevelled is a stand of near-black weed.
   - **The UV contract a moray skin is painted to.** `u` wraps the circumference — 0 the
     belly, 0.5 the spine, 1 the belly again — so the image's left and right edges are
     both pale underside and its centre column is the back. `v` runs the length, 0 at the
@@ -304,6 +393,14 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
     3:1 wide. That ratio is exact for the dragon and generous for the shorter, fatter
     snowflake, whose rosettes land a little banded — it is one image per species, not one
     per rig, so this is a compromise by construction.
+  - **Three of them are read on the CPU as well as uploaded**, through
+    `src/rendering/ImagePixels.ts`: the backdrop's horizon strip, the sand wash's
+    contrast, the grass strip's unpack. It is inert without a `document`, like the
+    library itself, and it never scales an image while reading it — a 1:1 `drawImage`
+    plus `getImageData` is an exact copy of the decoded file, which is what keeps two
+    runs of the same browser bit-identical. A transform always produces a *second*
+    texture and every caller memoises it, because the source is shared by path and
+    the copy is a second upload.
   - **A missing file is not an error.** Loads never throw and never reject; a failure
     logs one `console.warn` and leaves the procedural skin exactly where it was, so the
     game still boots and still ships with no `public/` directory at all. The smoke spec
@@ -320,6 +417,25 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
     and handed to every reef moray, sanctuary resident and portrait alike, so nothing may
     dispose them per instance — the same rule the `MorayPattern` cache has, and the
     reason `disposeSubtree` releases geometries, materials and skeletons but not maps.
+    What a *caller* owns is the procedural map it was constructed with, which is why
+    `CausticsSystem` disposes its generated sheet on the swap and nothing disposes the
+    painted one.
+  - **The no-assets build is a shipping configuration, so look at it.** Every surface
+    is covered by a file now, which means the procedural maps are only ever seen with
+    `public/assets` missing — and a fallback nobody looks at drifts back toward the
+    photographic frame this pivot left. `SHOT_NO_ASSETS=1 npm run shots -- <tag>`
+    builds exactly that world by failing the requests at the network, so nothing on
+    disk moves and there is no cleanup; `measure-frames.mjs` takes the same flag and
+    it is the cheapest same-session baseline for what the paint costs. WP-G6 retuned
+    all three fallbacks to match what the paintings actually land on: the sand's base
+    is a pastel `0xd9c9a3` with every tone term halved, the rock map is half its old
+    swing with the cracks and joints at half again (`rockTerms` splits `form` from
+    `wash` for exactly that — a drawn rock has its breaks in the drawing, not in its
+    local colour) and wears the wash's own grey-lavender-sage, and `MorayPattern`'s
+    counter-shading runs 0.86–1.14 where it ran 0.72–1.22. That last one is the same
+    mistake as a roughness map under a ramp: modelling the light on a cylinder on top
+    of shading that already models the light on a cylinder, which gives the eel a dark
+    back it never recovers from. Painted counter-shading is a *marking*.
   - **The head wears a band at the front of the map, and mirrors it around.**
     The skull, snout, brow and upper jaw share `bodyMaterial`, and they used to
     wear it on the UVs their own primitives were born with — a sphere's `v` runs
@@ -499,11 +615,13 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
   darkness in it and reads as a shadow against WP-G1's turquoise. Widening a blade costs
   nothing measurable — the instance count, the draw call and the vertex work are all
   unchanged — and it is the cheapest lushness in the project.
-- **The seabed is now the flattest thing in frame, and that is WP-G6's job.** WP-G2 took
-  the ripples out (a normal map cannot shade inside a toon band), and rounding the rocks,
-  the coral and the grass around it has made the bare sand plane conspicuous rather than
-  neutral: it is the one surface left that reads as a render. Do not answer it with
-  geometry or with the shading ramp — the sand wash is what it is waiting for.
+- **The seabed's marks all come out of one image now** (WP-G6). WP-G2 took the ripples
+ out — a normal map cannot shade inside a toon band — and rounding the rocks, the coral
+ and the grass around it left the bare sand plane as the one surface that read as a
+ render. The answer was not geometry and not the ramp: it is `sand-wash.png`, laid at
+ half the procedural rate and opened up. A flat plane sits in a single shading band from
+ here to the fog line, so whatever is painted in that file is the entire drawing of the
+ largest surface in the game; if the floor ever goes blank again, that is where to look.
 - **The stage is authored for the canonical cameras.** `PINNACLES`,
   `FOREGROUND_SHOULDER` and `FOREGROUND_CLUMPS` in `src/world/Reef.ts`, and the coral
   `SITES` in `CoralField`, are placed for shots A and B — a gate of sea stacks either

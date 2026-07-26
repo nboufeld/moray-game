@@ -7,8 +7,11 @@ import {
   PlaneGeometry,
   Vector2,
   type DataTexture,
+  type Texture,
   type WebGLProgramParametersWithUniforms,
 } from "three";
+import { requestAlbedo } from "../rendering/AssetLibrary";
+import { readImage, textureFromPixels } from "../rendering/ImagePixels";
 import { buildColorTexture, fbm } from "../rendering/ProceduralTexture";
 import { createToonMaterial } from "../rendering/ToonShading";
 import { Random, SEEDS } from "../util/Random";
@@ -80,6 +83,13 @@ export class SeaGrass {
       // green blade reads as a cactus spine; the gradient is what makes it read
       // as a leaf.
       map: bladeTexture(),
+    });
+    requestAlbedo("world/grass-blade.png", (texture) => {
+      const painted = unpackBlade(texture);
+      if (painted) {
+        material.map = painted;
+        material.needsUpdate = true;
+      }
     });
     material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
       shader.uniforms.uSway = this.sway;
@@ -190,6 +200,123 @@ export class SeaGrass {
     this.sway.value += dt * (reducedMotion ? 0.35 : 1);
     this.windStrength.value = reducedMotion ? 0.45 : 1;
   }
+}
+
+/**
+ * The painted blade strip, unpacked from its black field and levelled onto the
+ * map it replaces.
+ *
+ * Two things have to happen to `grass-blade.png` before it can be a blade's
+ * map, and both are one-off arithmetic at load.
+ *
+ * It is painted as a silhouette: one tapering blade on black, tip at the top
+ * row. The obvious use for that is an alpha map, and it is the wrong one here —
+ * the geometry is *already* a tapered curved blade, so a cut-out silhouette
+ * would buy nothing but a per-fragment discard, and a mostly-black image
+ * mipmapped down to the two or three pixels a distant blade covers averages to
+ * black and puts a dark meadow at the back of the frame. So instead every row
+ * is stretched from the painted span out to the full width: the file becomes
+ * solid leaf, the geometry keeps the silhouette, and the mip chain is all
+ * blade. The rows are written bottom-up as they go, because the strip is
+ * painted tip-up and the blade's `v` runs root to tip.
+ *
+ * And it is painted at its own colour, where the map it replaces is authored to
+ * sit *under* the per-instance palette — three greens with a wide value spread,
+ * which is where the meadow's variety comes from. Multiplying one by the other
+ * gives a stand of near-black weed. So the unpacked strip is scaled per channel
+ * onto the generated map's own mean, measured from both rather than picked:
+ * the meadow keeps exactly the colour and value it had, and what the painting
+ * changes is the *variation* — a green root running to a sunlit yellow tip,
+ * with brush fibre along it, in place of a linear ramp and some noise.
+ */
+const BLADE_INSET = 0.12;
+
+let paintedBlade: Texture | undefined | null;
+function unpackBlade(texture: Texture): Texture | null {
+  if (paintedBlade !== undefined) {
+    return paintedBlade;
+  }
+
+  const source = readImage(texture);
+  paintedBlade = source ? textureFromPixels(levelToBlade(fullBleed(source)), texture) : null;
+  return paintedBlade;
+}
+
+/** Stretches each row's painted span across the full width, root row first. */
+function fullBleed(source: ImageData): ImageData {
+  const { width, height, data } = source;
+  const out = new ImageData(width, height);
+  const luma = (i: number): number =>
+    0.2126 * (data[i] ?? 0) + 0.7152 * (data[i + 1] ?? 0) + 0.0722 * (data[i + 2] ?? 0);
+
+  for (let y = 0; y < height; y++) {
+    // The strip is painted tip-up; `v = 0` is the root.
+    const row = height - 1 - y;
+    let lo = -1;
+    let hi = -1;
+    for (let x = 0; x < width; x++) {
+      if (luma((row * width + x) * 4) > 24) {
+        if (lo < 0) {
+          lo = x;
+        }
+        hi = x;
+      }
+    }
+    if (lo < 0) {
+      // Above the painted point. Repeat the row below rather than leave black.
+      const previous = (y - 1) * width * 4;
+      out.data.copyWithin(y * width * 4, previous, previous + width * 4);
+      continue;
+    }
+
+    // Inset, because the painted edge is antialiased against the black and the
+    // outermost column of every span is half field.
+    const margin = (hi - lo) * BLADE_INSET;
+    const from = lo + margin;
+    const span = Math.max(1e-3, hi - lo - margin * 2);
+
+    for (let x = 0; x < width; x++) {
+      const at = from + ((x + 0.5) / width) * span;
+      const left = Math.floor(at);
+      const t = at - left;
+      const a = (row * width + Math.max(0, Math.min(width - 1, left))) * 4;
+      const b = (row * width + Math.max(0, Math.min(width - 1, left + 1))) * 4;
+      const target = (y * width + x) * 4;
+      for (let c = 0; c < 3; c++) {
+        out.data[target + c] = (data[a + c] ?? 0) * (1 - t) + (data[b + c] ?? 0) * t;
+      }
+      out.data[target + 3] = 255;
+    }
+  }
+
+  return out;
+}
+
+/** Scales a strip onto the generated map's mean, per channel. */
+function levelToBlade(strip: ImageData): ImageData {
+  const generated = meanOf(bladeTexture().image.data, 4);
+  const painted = meanOf(strip.data, 4);
+
+  for (let c = 0; c < 3; c++) {
+    const scale = (generated[c] ?? 0) / Math.max(1, painted[c] ?? 1);
+    for (let i = c; i < strip.data.length; i += 4) {
+      const value = (strip.data[i] ?? 0) * scale;
+      strip.data[i] = value > 255 ? 255 : value;
+    }
+  }
+
+  return strip;
+}
+
+function meanOf(data: ArrayLike<number>, stride: number): number[] {
+  const total = [0, 0, 0];
+  for (let i = 0; i < data.length; i += stride) {
+    for (let c = 0; c < 3; c++) {
+      total[c] = (total[c] ?? 0) + (data[i + c] ?? 0);
+    }
+  }
+  const count = data.length / stride;
+  return total.map((sum) => sum / count);
 }
 
 /**

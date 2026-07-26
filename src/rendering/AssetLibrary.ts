@@ -1,8 +1,9 @@
 /// <reference types="vite/client" />
 import {
   ClampToEdgeWrapping,
+  EquirectangularReflectionMapping,
+  LinearFilter,
   LinearMipmapLinearFilter,
-  MirroredRepeatWrapping,
   RepeatWrapping,
   SRGBColorSpace,
   TextureLoader,
@@ -61,10 +62,22 @@ let loader: TextureLoader | null = null;
  */
 export interface AlbedoOptions {
   /**
-   * For terrain maps that repeat many times across a surface. Mirrored rather
-   * than plain repeat: a generated image never wraps perfectly, and mirroring
-   * makes every edge seamless by construction — invisible on isotropic
-   * material like sand grain, where there is no direction to betray it.
+   * For terrain maps that repeat many times across a surface: `v` wraps as well
+   * as `u`, so the tile can be laid in a grid.
+   *
+   * It used to mirror, on the argument that a generated image never wraps
+   * perfectly and mirroring makes every edge seamless by construction. That
+   * argument was never tested and it does not survive being tested: the painted
+   * washes wrap to within about one part in 255 — measured as the step across
+   * the join against the step between neighbouring columns inside the image —
+   * which is under the frame's own dither.
+   *
+   * What mirroring costs, meanwhile, is visible. A mirror is only invisible on
+   * material with no direction in it, and a wash of ripples is nothing but
+   * direction: every band turns around at the join, which reads as a crease
+   * down the seabed at exactly the spacing of the tile. Plain repeat has no
+   * crease and pays for it with a pattern that recurs at one tile instead of
+   * two — cheap, in an image whose whole content is soft broad marks.
    */
   readonly tile?: boolean;
 }
@@ -73,6 +86,35 @@ export function requestAlbedo(
   assetPath: string,
   onReady: (texture: Texture) => void,
   options?: AlbedoOptions,
+): void {
+  request(assetPath, onReady, (texture) => configureAlbedo(texture, options?.tile === true));
+}
+
+/**
+ * Asks for the painted water column that hangs behind everything.
+ *
+ * Same delivery contract as {@link requestAlbedo} — the gradient backdrop stays
+ * up until this lands, and stays up forever if it never does — but a different
+ * sampling one, because this image is not a surface. It is an equirectangular
+ * panorama, so `flipY` keeps the loader's default: unlike a moray skin, whose
+ * `v` is authored to a body, a panorama's `v` is up, and three's own
+ * `equirectUv` reads `v = 1` overhead. The image is painted surface-at-the-top,
+ * which is what a flipped upload puts there.
+ *
+ * No mipmaps, and `LinearFilter` with them. Three does not sample an equirect
+ * background directly: `WebGLCubeMaps` renders it once into a cube target the
+ * height of the source image and samples that from then on, at roughly one
+ * texel per texel. A mip chain on the source would be built, uploaded and never
+ * read.
+ */
+export function requestBackdrop(assetPath: string, onReady: (texture: Texture) => void): void {
+  request(assetPath, onReady, configureBackdrop);
+}
+
+function request(
+  assetPath: string,
+  onReady: (texture: Texture) => void,
+  configure: (texture: Texture) => void,
 ): void {
   if (typeof window === "undefined") {
     return;
@@ -107,7 +149,7 @@ export function requestAlbedo(
   loader.load(
     url,
     (texture) => {
-      configureAlbedo(texture, options?.tile === true);
+      configure(texture);
       loaded.set(assetPath, texture);
       for (const callback of waiting.get(assetPath) ?? []) {
         callback(texture);
@@ -167,10 +209,22 @@ function finish(assetPath: string, settle: () => void): void {
 function configureAlbedo(texture: Texture, tile: boolean): void {
   texture.flipY = false;
   texture.colorSpace = SRGBColorSpace;
-  texture.wrapS = tile ? MirroredRepeatWrapping : RepeatWrapping;
-  texture.wrapT = tile ? MirroredRepeatWrapping : ClampToEdgeWrapping;
+  texture.wrapS = RepeatWrapping;
+  texture.wrapT = tile ? RepeatWrapping : ClampToEdgeWrapping;
   texture.generateMipmaps = true;
   texture.minFilter = LinearMipmapLinearFilter;
   texture.anisotropy = ANISOTROPY;
+  texture.needsUpdate = true;
+}
+
+/** See {@link requestBackdrop}: a panorama, not a surface. */
+function configureBackdrop(texture: Texture): void {
+  texture.colorSpace = SRGBColorSpace;
+  texture.mapping = EquirectangularReflectionMapping;
+  // Azimuth wraps and altitude does not, exactly as the gradient's does.
+  texture.wrapS = RepeatWrapping;
+  texture.wrapT = ClampToEdgeWrapping;
+  texture.generateMipmaps = false;
+  texture.minFilter = LinearFilter;
   texture.needsUpdate = true;
 }

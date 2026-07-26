@@ -54,17 +54,29 @@ export function createMoraySkin(config: MoraySpeciesConfig): MoraySkin {
       const dorsal = 0.5 - 0.5 * Math.cos(u * Math.PI * 2);
       const marking = markingMask(config, u, v, seed);
 
-      // Counter-shading: back toward shadow, belly lifted toward pale.
-      const shade = 0.72 + (1 - dorsal) * 0.5;
+      // Counter-shading: back toward shadow, belly lifted toward pale — and
+      // half the range it used to run, lifted so the back is no longer in
+      // shadow at all.
+      //
+      // This map is what a moray wears when there is no painted skin on disk,
+      // and that is the whole reason for the change. A range of 0.72 to 1.22 is
+      // a photographic animal: it models the light falling on a cylinder, on
+      // top of a ramp that is already modelling the light falling on a
+      // cylinder, and the two together give the eel a dark back it never
+      // recovers from. A painted one has counter-shading as a *marking* — a
+      // pale belly the illustrator drew — which is what a narrower band around
+      // the body colour reads as.
+      const shade = 0.86 + (1 - dorsal) * 0.28;
       const r = body.r * shade;
       const g = body.g * shade;
       const b = body.b * shade;
 
-      return [
-        r + (pattern.r - r) * marking,
-        g + (pattern.g - g) * marking,
-        b + (pattern.b - b) * marking,
-      ];
+      // The marking never quite reaches its own colour. A mask that lands on 1
+      // is a printed edge, and every one of these species is described in the
+      // codex as painted — dusted, wrapped, ornate. Nine tenths keeps the
+      // pattern's shape and takes the print off it.
+      const ink = marking * 0.9;
+      return [r + (pattern.r - r) * ink, g + (pattern.g - g) * ink, b + (pattern.b - b) * ink];
     }),
 
     // Fine skin wrinkles, tightening toward the head where the folds gather.

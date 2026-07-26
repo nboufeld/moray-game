@@ -303,6 +303,15 @@ export class SanctuaryScene {
       // Its own key, not the reef's sun: the backdrop has to brighten on the
       // side the light in this room actually comes from.
       sunDirection: KEY_POSITION,
+      // And no `backdropAsset`, which is the one place this room does not
+      // follow the reef. Hanging the painted water column here was tried and
+      // measured across the sweep: it costs nothing (83.3ms either way) and it
+      // is a slightly deeper, cooler water — but the fog colour comes off the
+      // same painting, so the room ends up in the *reef's* ocean exactly, and
+      // the shade of warmth above is the only thing that ever said this was
+      // somewhere else. A calmer, greener bay behind the animals is also the
+      // better field to read a subject against. See `tmp_S-sanctuary-t*` under
+      // the `g6-gradient` and `g6-backdrop` tags.
     }).applyTo(this.scene);
 
     // Held to the reef's key ratio: enough to say which side the light is on,

@@ -1,13 +1,69 @@
-import { type MeshToonMaterial } from "three";
+import { type MeshToonMaterial, type Texture } from "three";
 import { requestAlbedo } from "../rendering/AssetLibrary";
+import { readImage, textureFromPixels } from "../rendering/ImagePixels";
 import { buildColorTexture, buildNormalTexture, fbm } from "../rendering/ProceduralTexture";
 import { createToonMaterial } from "../rendering/ToonShading";
 import { SEEDS } from "../util/Random";
 
 const SIZE = 512;
 
-/** How many times the maps repeat across the 90m seabed. */
-export const SAND_REPEAT = 14;
+/** How many times the procedural maps repeat across the 90m seabed. */
+const SAND_REPEAT = 14;
+
+/**
+ * How many times the painted wash repeats across the same 90m.
+ *
+ * Half the procedural rate, and the reason is that the two maps are carrying
+ * different things. The normal map's ripples were tuned at 14 as surface —
+ * grain you read at a metre — and there is no argument for moving them. The
+ * wash's ripples are the *drawing*: since the shading became a ramp the seabed
+ * has no shading of its own to speak of (a flat plane sits in one band from
+ * here to the fog line), so every mark on the largest surface in the frame now
+ * comes out of this image. At 14 a painted ripple is 70cm across, which is two
+ * or three pixels at the far end of shot B and gone into the mip chain; at 7 it
+ * is a metre and a half and reads as a brush mark from anywhere in the scene.
+ *
+ * Mirrored repeat is what makes halving it safe: the tile meets itself at every
+ * edge by construction, so the only thing a bigger tile risks is the mirror
+ * *itself* becoming visible — and the wash has no line, edge or figure in it
+ * for a reflection to be read off.
+ */
+const SAND_WASH_REPEAT = 7;
+
+/**
+ * What the painted wash is scaled by, and how far its marks are opened up.
+ *
+ * The wash is painted as a pale saturated yellow — #f8e39d, 0.77 in linear
+ * luminance, where the tile it replaces averaged 0.39 — so laid down as it
+ * comes it doubles the value of the largest surface in the frame. The level is
+ * the scale that takes it back.
+ *
+ * It is very nearly neutral, and the exception is deliberate. Red and green are
+ * held together, so the painting keeps its own hue and stays a warmer, more
+ * golden sand than the tile's grey-gold. Blue is let up by a tenth, because at
+ * a flat level the seabed measured sixteen parts short of the tile's blue and
+ * carried the whole frame with it — the canonical shots came back a dozen parts
+ * warm at the mean, and the near sand in shot C was mustard rather than sand.
+ * This is the old warning about a saturated base under a warm key arriving from
+ * the asset's side: the painting is more saturated than this water can carry.
+ *
+ * {@link WASH_CONTRAST} is the other half, and it is what the seabed actually
+ * needed. The wash's ripples swing about 4% of value peak to trough where the
+ * tile they replace swung 24%, and 4% of a surface sitting near 200 in the
+ * frame is two parts in 255 — under the frame's own dither, by the same
+ * arithmetic WP-G5's paper grain was sized with. Since WP-G2 there is nothing
+ * else left to draw the floor: a ramp gives a flat plane one band from here to
+ * the fog line, so the marks in this image are the only marks the seabed has.
+ * Opening them up around the image's own mean scales the marks and leaves the
+ * exposure where the level put it.
+ *
+ * Both are applied to the painted bytes rather than to linear light, which is
+ * the space the image was painted in and the space the swing was read in. The
+ * distinction is worth less than a part in 255 here: the whole file lies
+ * between 217 and 235, where the sRGB curve is a straight line.
+ */
+const WASH_LEVEL = [0.75, 0.75, 0.84] as const;
+const WASH_CONTRAST = 2.6;
 
 /**
  * The seabed material: ripples, grain and damp patches.
@@ -27,9 +83,16 @@ export function createSandMaterial(): MeshToonMaterial {
   const height = sandHeight;
 
   const material = createToonMaterial({
-    // Desaturated toward grey-gold. Coral sand is far less yellow than it
-    // looks, and a saturated base under warm light tips the whole frame ochre.
-    color: 0xa2957c,
+    // The colour of the seabed when there is no wash on disk, and it is a
+    // pastel rather than the grey-gold it was. A build with no `public/assets`
+    // has to be the same world in flatter paint — not the photographic one this
+    // pivot started from — so the fallback is aimed at where the painted wash
+    // actually lands (a mean of about #bab08a on the shipped path) instead of
+    // at the darker tile it was mixed against. Still desaturated toward the
+    // grey side of gold: a saturated base under a warm key tips the whole frame
+    // ochre, which the wash's own level correction is fighting for the same
+    // reason.
+    color: 0xd9c9a3,
     map: buildSandAlbedo(),
     normalMap: buildNormalTexture(SIZE, height, 0.028),
     // Vertex colours carry the baked occlusion: dune troughs and contact
@@ -41,15 +104,17 @@ export function createSandMaterial(): MeshToonMaterial {
     map?.repeat.set(SAND_REPEAT, SAND_REPEAT);
   }
 
-  // Authored grain tile, when present. The painted image carries its own
-  // colour, unlike the procedural map that is authored to sit under the
-  // material tint — so the tint neutralises on swap. Ripples stay in the
-  // procedural normal map either way; the tile is painted shadow-free.
+  // The painted wash, when present. Albedo only, as every authored tile here
+  // is: the ripples stay in the procedural normal map, and the wash is painted
+  // shadow-free so the sun can move across it.
   requestAlbedo(
-    "world/sand-albedo.png",
+    "world/sand-wash.png",
     (texture) => {
-      texture.repeat.set(SAND_REPEAT, SAND_REPEAT);
-      material.map = texture;
+      const opened = openWash(texture);
+      opened.repeat.set(SAND_WASH_REPEAT, SAND_WASH_REPEAT);
+      material.map = opened;
+      // The wash carries its own colour, unlike the procedural map, which is
+      // authored to sit under the tint. So the tint gets out of its way.
       material.color.set(0xffffff);
       material.needsUpdate = true;
     },
@@ -57,6 +122,55 @@ export function createSandMaterial(): MeshToonMaterial {
   );
 
   return material;
+}
+
+/**
+ * The wash, levelled and opened up — see {@link WASH_LEVEL}.
+ *
+ * Memoised, because the reef's seabed and the sanctuary's floor both ask for
+ * it and this is a megapixel of arithmetic. Both of them then set `repeat` on
+ * the one texture they share, which is the arrangement the loaded tile already
+ * had and is harmless while they agree on the number.
+ *
+ * The source is never edited: it belongs to the asset library, which hands the
+ * same object to everyone. Without a DOM there is nothing to remap into and the
+ * file is used as painted, which cannot happen in practice — nothing loads at
+ * all without a `window` — but is what keeps this a pure function of its input.
+ */
+let openedWash: Texture | undefined;
+function openWash(texture: Texture): Texture {
+  if (openedWash) {
+    return openedWash;
+  }
+
+  const pixels = readImage(texture);
+  if (!pixels) {
+    return texture;
+  }
+
+  const data = pixels.data;
+  const count = data.length / 4;
+  let meanR = 0;
+  let meanG = 0;
+  let meanB = 0;
+  for (let i = 0; i < data.length; i += 4) {
+    meanR += data[i] ?? 0;
+    meanG += data[i + 1] ?? 0;
+    meanB += data[i + 2] ?? 0;
+  }
+  const centres = [meanR / count, meanG / count, meanB / count];
+
+  for (let i = 0; i < data.length; i += 4) {
+    for (let c = 0; c < 3; c++) {
+      const centre = centres[c] ?? 0;
+      const value =
+        (centre + ((data[i + c] ?? 0) - centre) * WASH_CONTRAST) * (WASH_LEVEL[c] ?? 1);
+      data[i + c] = value < 0 ? 0 : value > 255 ? 255 : value;
+    }
+  }
+
+  openedWash = textureFromPixels(pixels, texture) ?? texture;
+  return openedWash;
 }
 
 /**
@@ -83,13 +197,17 @@ function buildSandAlbedo() {
     const mottle = fbm(u, v, { seed: SEEDS.sand ^ 0x05, period: 6, octaves: 4 });
     const flecks = fbm(u, v, { seed: SEEDS.sand ^ 0x9a, period: 96, octaves: 2 });
 
-    // Ripple crests are dry and pale, troughs hold darker wet sand. Kept
-    // gentle: strong banding here plus the ripple normals reads as woven cloth
-    // rather than as sand.
-    let tone = 0.88 + h * 0.17 + (mottle - 0.5) * 0.11;
+    // Ripple crests are dry and pale, troughs hold darker wet sand. Every term
+    // is half what it was: this map is the fallback now, and its job changed
+    // with that. It used to be the seabed's whole surface and was pushed as far
+    // as it could go without reading as woven cloth; what it stands in for now
+    // is a gouache wash, which is broad soft marks and no grain at all. Half is
+    // where the ripples still say the ground has a scale and the grit stops
+    // being a photograph of sand.
+    let tone = 0.88 + h * 0.085 + (mottle - 0.5) * 0.055;
     // Sparse shell grit.
     if (flecks > 0.84) {
-      tone += (flecks - 0.84) * 1.4;
+      tone += (flecks - 0.84) * 0.7;
     }
 
     // Near-neutral on purpose. The material's base colour carries the hue, and

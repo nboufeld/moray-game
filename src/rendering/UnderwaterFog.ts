@@ -6,8 +6,11 @@ import {
   SRGBColorSpace,
   Vector3,
   type Scene,
+  type Texture,
 } from "three";
 import { Random, SEEDS } from "../util/Random";
+import { requestBackdrop } from "./AssetLibrary";
+import { readImageRows } from "./ImagePixels";
 import { SUN_POSITION } from "./Lighting";
 
 export interface UnderwaterFogOptions {
@@ -21,10 +24,60 @@ export interface UnderwaterFogOptions {
   abyssColor?: number;
   /** Which way the light arrives from, so the backdrop can brighten toward it. */
   sunDirection?: Vector3;
+  /**
+   * A painted water column to hang behind the world in place of the gradient,
+   * if the file is there. The gradient is painted either way and stays up until
+   * this lands — and forever if it never does.
+   */
+  backdropAsset?: string;
 }
 
 /** Where the horizon colour sits in the vertical gradient (0 down, 1 up). */
 const HORIZON = 0.52;
+
+/**
+ * How tall a strip of the painted backdrop the fog colour is averaged from, in
+ * image rows, centred on {@link HORIZON}.
+ *
+ * Wide enough that a brush mark or a stray light band cannot decide the colour
+ * of every distant thing in the game, and narrow enough that it is still the
+ * horizon it measures: sixteen rows of a 1024-row painting is about a degree
+ * and a half of altitude, where the painted column moves by roughly one part in
+ * 255 per row.
+ */
+const HORIZON_ROWS = 16;
+
+/**
+ * Where the sun is painted in `backdrop.png`, as a fraction of its width.
+ *
+ * Measured off the file — the brightest column of its top eighth — rather than
+ * guessed, and used to turn the panorama so that its glow sits over the world's
+ * actual sun. Without it the painting arrives with the light coming from
+ * whichever direction the painter happened to choose, and the water is bright
+ * on one side of the frame while the shafts fall on the other.
+ */
+const PAINTED_SUN_U = 0.287;
+
+/**
+ * What the painting is exposed at, in linear light.
+ *
+ * The panorama arrives painted brighter than this world is lit: its horizon
+ * measures #68dbd9, which is very nearly the hue the fog was already tuned to
+ * and a little over half a stop above its value. Dropped in as it comes it
+ * lifted the canonical shots by twelve parts in 255 at the mean and eighteen at
+ * the ninetieth — the water stopped being luminous turquoise and became haze,
+ * and every distant rock lost its form into it.
+ *
+ * The fix has to be a *single* number applied to both sides, and this is it:
+ * three multiplies the background by `backgroundIntensity` in linear light, and
+ * the colour sampled off the same painting is multiplied by the same figure
+ * before it becomes the fog. The horizon therefore still cannot band — the two
+ * quantities are one quantity — while the frame keeps the value key WP-G1 set.
+ * At 0.64 the derived fog lands within a part of the `0x53b2bb` it replaces on
+ * every channel, which is the measurement that says the painter and the tuning
+ * agreed about the *colour* all along and differed only about the exposure.
+ */
+const BACKDROP_EXPOSURE = 0.64;
 
 /**
  * Wide enough to resolve a smooth horizontal lobe. It used to be 8 columns,
@@ -98,6 +151,7 @@ export class UnderwaterFog {
   private readonly surfaceColor: Color;
   private readonly abyssColor: Color;
   private readonly sunDirection: Vector3;
+  private readonly backdropAsset: string | undefined;
 
   constructor(options: UnderwaterFogOptions = {}) {
     // Every one of these carries far more red than a photograph of this water
@@ -110,13 +164,102 @@ export class UnderwaterFog {
     this.surfaceColor = new Color(options.surfaceColor ?? 0xd4f4ea);
     this.abyssColor = new Color(options.abyssColor ?? 0x2b7f91);
     this.sunDirection = (options.sunDirection ?? SUN_POSITION).clone().normalize();
+    this.backdropAsset = options.backdropAsset;
   }
 
   applyTo(scene: Scene): void {
-    scene.fog = new FogExp2(this.color.getHex(), this.density);
+    const fog = new FogExp2(this.color.getHex(), this.density);
+    fog.color.copy(this.color);
+    scene.fog = fog;
+
     // Falls back to a flat backdrop where there is no DOM to paint into, which
     // is how the scene classes stay constructible in plain Node unit tests.
-    scene.background = this.createGradient() ?? this.color.clone().multiplyScalar(0.6);
+    const gradient = this.createGradient();
+    scene.background = gradient ?? this.color.clone().multiplyScalar(0.6);
+
+    if (this.backdropAsset !== undefined) {
+      requestBackdrop(this.backdropAsset, (texture) => {
+        this.adoptBackdrop(scene, texture, gradient);
+      });
+    }
+  }
+
+  /**
+   * Hangs the painting behind the world and makes the water agree with it.
+   *
+   * The agreement is the point, and it is why the fog colour is *read off the
+   * painting* rather than left as a number someone matched by eye. Fog fades
+   * distant geometry toward `scene.fog.color`; the pixels behind it come from
+   * the backdrop. Where those two differ the seabed ends on a visible line, and
+   * a painted backdrop is exactly the case where they drift apart — the file
+   * can be repainted without anyone thinking to re-pick the fog. Sampling the
+   * horizon strip makes the two the same quantity by construction, so the
+   * horizon cannot band however the panorama is repainted.
+   *
+   * Both sides of that claim have to be in the same space for it to hold, and
+   * they are: the whole scene renders into a linear render target, where the
+   * background is the decoded painting and fogged geometry approaches the fog
+   * colour, and the tone curve and the grade run afterwards over both alike.
+   * A colour read as sRGB and set as linear is therefore the exact match, and
+   * WP-G5's pooling — which takes its pigment off `scene.fog` every frame —
+   * picks the new water up on the next frame with nothing to plumb.
+   */
+  private adoptBackdrop(scene: Scene, texture: Texture, gradient: CanvasTexture | null): void {
+    const horizon = this.sampleHorizon(texture)?.multiplyScalar(BACKDROP_EXPOSURE);
+    if (horizon) {
+      this.color.copy(horizon);
+      scene.fog?.color.copy(horizon);
+    }
+
+    scene.background = texture;
+    scene.backgroundIntensity = BACKDROP_EXPOSURE;
+    // The painted sun is turned onto the real one. `equirectUv` measures
+    // azimuth as atan2(z, x) and three negates the background rotation before
+    // handing it to the shader, so the sampled azimuth is the view's plus this.
+    const sunAzimuth = Math.atan2(this.sunDirection.z, this.sunDirection.x);
+    scene.backgroundRotation.y = (PAINTED_SUN_U - 0.5) * Math.PI * 2 - sunAzimuth;
+
+    // The gradient it replaces has no other owner and will never be shown again.
+    gradient?.dispose();
+  }
+
+  /**
+   * The painting's own colour at the horizon, averaged over a strip.
+   *
+   * Image rows run down from the top and the backdrop is uploaded flipped — a
+   * panorama's `v` is altitude, so the loader's default flip is what puts the
+   * painted surface overhead — which is why the row is measured from the top
+   * as `1 - HORIZON`.
+   */
+  private sampleHorizon(texture: Texture): Color | null {
+    const height: unknown = (texture.image as { height?: unknown } | null)?.height;
+    if (typeof height !== "number") {
+      return null;
+    }
+
+    const pixels = readImageRows(
+      texture,
+      (1 - HORIZON) * height - HORIZON_ROWS / 2,
+      HORIZON_ROWS,
+    );
+    if (!pixels || pixels.width === 0 || pixels.height === 0) {
+      return null;
+    }
+
+    let r = 0;
+    let g = 0;
+    let b = 0;
+    const data = pixels.data;
+    for (let i = 0; i < data.length; i += 4) {
+      r += data[i] ?? 0;
+      g += data[i + 1] ?? 0;
+      b += data[i + 2] ?? 0;
+    }
+
+    const count = data.length / 4;
+    // Averaged in the space it was painted in, then handed over as sRGB so the
+    // conversion into the linear working space is three's own.
+    return new Color().setRGB(r / count / 255, g / count / 255, b / count / 255, SRGBColorSpace);
   }
 
   /**
