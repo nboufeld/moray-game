@@ -17,7 +17,7 @@ export interface UnderwaterFogOptions {
   density?: number;
   /** Bright water looking up toward the surface. */
   surfaceColor?: number;
-  /** The dark below, where the light has stopped reaching. */
+  /** The deepest water in the world — the darkest note, and still luminous. */
   abyssColor?: number;
   /** Which way the light arrives from, so the backdrop can brighten toward it. */
   sunDirection?: Vector3;
@@ -85,10 +85,12 @@ function bytes(color: Color): [number, number, number] {
  * instead of dissolving into the water. This carries most of the "remembered
  * ocean" atmosphere cheaply, without volumetric rendering.
  *
- * The fog colour is well below the midtone the reef sits in, which is what
- * makes distance read as distance: geometry does not just lose contrast with
- * range, it gets darker and colder, and a rock thirty metres out can no longer
- * be confused with the same rock five metres out.
+ * The fog colour sits *above* the midtone most of the reef occupies, which is
+ * how distance reads in a painted background rather than in a photograph:
+ * geometry does not sink into a dark, cold deep, it dissolves upward into
+ * milky turquoise light. Range is still unambiguous — a rock thirty metres out
+ * has lost nearly all its contrast and all its local colour — but the frame
+ * never gains a dark corner in the process, which is the whole value plan.
  */
 export class UnderwaterFog {
   readonly color: Color;
@@ -98,10 +100,15 @@ export class UnderwaterFog {
   private readonly sunDirection: Vector3;
 
   constructor(options: UnderwaterFogOptions = {}) {
-    this.color = new Color(options.color ?? 0x0b4152);
-    this.density = options.density ?? 0.038;
-    this.surfaceColor = new Color(options.surfaceColor ?? 0x4fc3d9);
-    this.abyssColor = new Color(options.abyssColor ?? 0x02141c);
+    // Every one of these carries far more red than a photograph of this water
+    // would. That is the difference between a turquoise mixed from pigment and
+    // one left over from a blue channel: with red near zero the water is an
+    // electric cyan that no paint box contains, and the whole frame goes
+    // plastic. Read the red first when retuning any of them.
+    this.color = new Color(options.color ?? 0x53b2bb);
+    this.density = options.density ?? 0.028;
+    this.surfaceColor = new Color(options.surfaceColor ?? 0xd4f4ea);
+    this.abyssColor = new Color(options.abyssColor ?? 0x2b7f91);
     this.sunDirection = (options.sunDirection ?? SUN_POSITION).clone().normalize();
   }
 

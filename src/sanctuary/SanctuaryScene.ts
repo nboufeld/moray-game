@@ -268,18 +268,23 @@ export class SanctuaryScene {
     // reef's gradient backdrop for the same reason the reef needs one: without
     // it the floor terminates on a hard line instead of fading into the water.
     new UnderwaterFog({
-      color: 0x1d5b74,
+      // The reef's family, turned a few degrees toward green and gold. This is
+      // the same remembered water seen indoors, so it may be a shade warmer and
+      // a shade calmer than the open reef but it may not be a different ocean.
+      color: 0x5cb5b0,
       // Dense enough that the far rim of a sixty-metre floor is gone before it
       // gets there. The bay has to end in water, not in an edge.
-      density: 0.046,
-      surfaceColor: 0x63d0e0,
-      abyssColor: 0x0a2f3e,
+      density: 0.042,
+      surfaceColor: 0xdcf3e2,
+      abyssColor: 0x2f8288,
       // Its own key, not the reef's sun: the backdrop has to brighten on the
       // side the light in this room actually comes from.
       sunDirection: KEY_POSITION,
     }).applyTo(this.scene);
 
-    const key = new DirectionalLight(0xffe7c2, 2.2);
+    // Held to the reef's key ratio: enough to say which side the light is on,
+    // not enough to be the exposure. The room's brightness is its water.
+    const key = new DirectionalLight(0xfff0d2, 1.7);
     key.position.copy(KEY_POSITION);
     // The animals are the subject and they are off the ground, so nothing but a
     // cast shadow attaches them to it — the sand's baked occlusion can only
@@ -299,10 +304,13 @@ export class SanctuaryScene {
     // A cooler fill from the camera's side of the room. With the key behind the
     // set the animals would otherwise face the lens in silhouette, which is
     // drama the codex portraits already provide and this room does not want.
-    const fill = new DirectionalLight(0xb3e2ef, 1.3);
+    const fill = new DirectionalLight(0xbfe8f2, 0.5);
     fill.position.set(-9, 5, 11);
-    const hemisphere = new HemisphereLight(0xcdeeff, 0x2a4450, 1.0);
-    const ambient = new AmbientLight(0x4d7f92, 0.5);
+    // The ground half was a dark slate, which is a floor bouncing nothing. It
+    // is warm sand here for the same reason the reef's is. Sky under ambient,
+    // for the same reason as the reef: see `Lighting`.
+    const hemisphere = new HemisphereLight(0xb2e6de, 0xf7e2b6, 0.44);
+    const ambient = new AmbientLight(0xb391d6, 0.78);
     this.scene.add(key, key.target, fill, hemisphere, ambient);
 
     const contacts: ContactPatch[] = [];

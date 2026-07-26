@@ -18,16 +18,21 @@ export const SUN_POSITION = new Vector3(17, 24, 13);
 /**
  * A deliberately simple lighting vocabulary: one warm "sun" raking down through
  * the surface, a hemisphere that carries both the blue of the water above and
- * the bounce off the bright sand below, and a little ambient to keep the deep
- * shadows from going dead. Additional lights add rendering cost, so painted
- * materials are expected to carry much of the mood.
+ * the bounce off the bright sand below, and an ambient whose *colour* is the
+ * point. Additional lights add rendering cost, so painted materials are
+ * expected to carry much of the mood.
  *
- * The balance is deliberately key-heavy. Fill light is what flattens a frame:
- * with a generous hemisphere and ambient every surface got lit from every
- * direction, so nothing had a shadow side and the whole reef sat in one band of
- * midtones. The sun does most of the work now and what fill remains is cold, so
- * the side of a rock facing away from the sun goes blue and dark rather than
- * grey and merely dimmer.
+ * The balance is fill-heavy on purpose, which is the opposite of a photographic
+ * key. In shallow water lit through a moving surface the water itself is the
+ * source: light arrives from everywhere, and a shadow is not an absence of
+ * light but a *different, cooler* light. So the sun is only strong enough to
+ * pick a lit plane out from an unlit one, and the fill it is measured against
+ * is large, bright, and split — cyan sky, warm sand bounce, violet ambient.
+ *
+ * The violet is what makes a shadow read as painted rather than as unlit. A
+ * shadow side here receives sky and ambient only, so their combined hue *is*
+ * the hue of every shadow in the frame; a blue-violet fill lands shadows on the
+ * cool side of the sand's warmth without ever letting them approach black.
  */
 export class Lighting {
   readonly group = new Group();
@@ -36,11 +41,12 @@ export class Lighting {
   constructor() {
     // Off-axis rather than straight overhead: a steep sun is physically right
     // for shallow water but leaves everything flat and shadowless.
-    // Strong enough that a sunlit face lands above the grade's contrast pivot
-    // while a shadow side stays below it. That crossing is what turns one light
-    // into two value groups; at half this the whole reef sat on one side of the
-    // pivot and every grade adjustment moved all of it together.
-    this.sun = new DirectionalLight(0xfff1d0, 2.1);
+    // It only has to separate a lit plane from an unlit one by a step of value,
+    // not to carry the exposure — but it is also the only warm light that
+    // reaches an up-facing surface, so it is what keeps the sand a cream and
+    // not an olive. Both halves of that are why it landed here and not lower:
+    // at 1.15 the shadow read was right and the floor had gone green.
+    this.sun = new DirectionalLight(0xfff0c6, 1.5);
     this.sun.position.copy(SUN_POSITION);
     this.sun.castShadow = true;
     // 1024 over a frustum this tight resolves contact shadows well; 2048 cost
@@ -58,10 +64,22 @@ export class Lighting {
 
     // Warm ground colour is the sand bouncing light back up, which is what
     // keeps the undersides of the rocks and morays from reading as black. The
-    // sky half is colder than the water it stands in on purpose: it is the only
-    // light a shadow side receives, so its hue is the hue of every shadow.
-    const hemisphere = new HemisphereLight(0x7fb8cc, 0xc2a172, 0.38);
-    const ambient = new AmbientLight(0x2f6b78, 0.1);
+    // sky half is a pale aqua rather than a deep blue: it stands for the whole
+    // luminous ceiling of water, not for a slice of dark sea.
+    //
+    // It is held well below the ambient below it, which is not what the fill
+    // budget wants but is what the shadows want. A hemisphere's sky colour
+    // lands on every *up-facing* surface, so it falls on the whole seabed —
+    // turn it up far enough to be the fill and the sand goes the colour of the
+    // sky, and a cast shadow on it is merely that same cyan with the sun taken
+    // away. The violet has to be the larger half for a shadow to be violet.
+    const hemisphere = new HemisphereLight(0xa9dfe8, 0xf7dfae, 0.44);
+    // Omnidirectional and blue-violet — red *above* green, which is the whole
+    // difference between a violet and the ordinary cool blue a water scene
+    // falls into on its own. It reaches the faces the hemisphere's two poles
+    // miss, it is the only light inside a shadow that the sky does not also
+    // supply, and it is the floor under every value in the frame.
+    const ambient = new AmbientLight(0xb083dd, 0.8);
 
     this.group.add(this.sun, this.sun.target, hemisphere, ambient);
   }

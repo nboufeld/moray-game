@@ -1,5 +1,5 @@
 import {
-  ACESFilmicToneMapping,
+  NeutralToneMapping,
   PCFSoftShadowMap,
   SRGBColorSpace,
   Vector2,
@@ -68,8 +68,15 @@ export class RendererAdapter {
       powerPreference: "high-performance",
     });
     this.renderer.outputColorSpace = SRGBColorSpace;
-    this.renderer.toneMapping = ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    // Neutral rather than ACES. ACES is a film curve: it has a long toe that
+    // pulls everything under the midtone toward black and a saturating shoulder
+    // that warms and crushes the top. Both are wrong for a painted key — the
+    // toe manufactures exactly the near-black this pivot is removing, and the
+    // shoulder turns bright turquoise water grey-cyan as it rolls off. Neutral
+    // (Khronos PBR Neutral) is close to linear until it has to compress, so a
+    // value chosen in the grade survives to the screen as the value chosen.
+    this.renderer.toneMapping = NeutralToneMapping;
+    this.renderer.toneMappingExposure = 1.2;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = PCFSoftShadowMap;
 
@@ -88,13 +95,14 @@ export class RendererAdapter {
 
     // The threshold has to sit between the brightest sand and the light sources
     // themselves, and both of those are properties of this scene rather than
-    // round numbers. Measured off the shots: sunlit sand tops out near 0.31 in
-    // this buffer and a light pool's core reaches about 0.93, so 0.55 catches
-    // every light and no sand. Above the pool's peak — where it started — bloom
-    // has no input at all and the whole pass may as well be switched off; only
-    // a little below, and the sand hazes over, which is the flatness the grade
-    // was opened up to fix.
-    this.bloomPass = new UnrealBloomPass(new Vector2(1, 1), 0.42, 0.65, 0.55);
+    // round numbers — and the pivot moved both. The fill-heavy key lifted the
+    // sunlit sand a long way up this buffer, so the old 0.55 now sits *inside*
+    // the floor and hazes it over; the threshold has to climb with it. What
+    // bloom is for here also changed: not a highlight effect on light sources
+    // but the soft bleed of a wet-in-wet edge. So it passes far less of the
+    // frame than it used to and spreads what it does pass much wider, which is
+    // what the extra strength is spent on rather than on a brighter halo.
+    this.bloomPass = new UnrealBloomPass(new Vector2(1, 1), 0.55, 0.9, 0.82);
     this.composer.addPass(this.bloomPass);
 
     // `ShaderPass` clones the shader's uniforms, so the live grade is driven
@@ -273,7 +281,7 @@ function toDataUrl(
       rgb[0] = (pixels[read] ?? 0) / 255;
       rgb[1] = (pixels[read + 1] ?? 0) / 255;
       rgb[2] = (pixels[read + 2] ?? 0) / 255;
-      acesFilmic(rgb, exposure);
+      neutralToneMap(rgb, exposure);
       image.data[write] = Math.round(sRgbTransfer(rgb[0]) * 255);
       image.data[write + 1] = Math.round(sRgbTransfer(rgb[1]) * 255);
       image.data[write + 2] = Math.round(sRgbTransfer(rgb[2]) * 255);
@@ -295,31 +303,43 @@ function toDataUrl(
 }
 
 /**
- * Three's ACES filmic curve, in place. Ported rather than approximated: the
+ * Three's Khronos PBR Neutral curve, in place, and it has to stay a port of
+ * whatever `renderer.toneMapping` is set to rather than a curve of its own: the
  * portrait sits beside the live reef in the same UI, and a different shoulder
- * would show up as a different animal.
+ * would show up as a different animal. This is
+ * `NeutralToneMapping` from `tonemapping_pars_fragment.glsl.js`, line for line.
  */
-function acesFilmic(rgb: [number, number, number], exposure: number): void {
-  const scale = exposure / 0.6;
-  const r = rgb[0] * scale;
-  const g = rgb[1] * scale;
-  const b = rgb[2] * scale;
+function neutralToneMap(rgb: [number, number, number], exposure: number): void {
+  const startCompression = 0.8 - 0.04;
+  const desaturation = 0.15;
 
-  const inR = 0.59719 * r + 0.35458 * g + 0.04823 * b;
-  const inG = 0.076 * r + 0.90834 * g + 0.01566 * b;
-  const inB = 0.0284 * r + 0.13383 * g + 0.83777 * b;
+  let r = rgb[0] * exposure;
+  let g = rgb[1] * exposure;
+  let b = rgb[2] * exposure;
 
-  const fitR = rrtAndOdtFit(inR);
-  const fitG = rrtAndOdtFit(inG);
-  const fitB = rrtAndOdtFit(inB);
+  const x = Math.min(r, g, b);
+  const offset = x < 0.08 ? x - 6.25 * x * x : 0.04;
+  r -= offset;
+  g -= offset;
+  b -= offset;
 
-  rgb[0] = clamp01(1.60475 * fitR - 0.53108 * fitG - 0.07367 * fitB);
-  rgb[1] = clamp01(-0.10208 * fitR + 1.10813 * fitG - 0.00605 * fitB);
-  rgb[2] = clamp01(-0.00327 * fitR - 0.07276 * fitG + 1.07602 * fitB);
-}
+  const peak = Math.max(r, g, b);
+  if (peak >= startCompression) {
+    const d = 1 - startCompression;
+    const newPeak = 1 - (d * d) / (peak + d - startCompression);
+    const scale = newPeak / peak;
+    r *= scale;
+    g *= scale;
+    b *= scale;
+    const t = 1 - 1 / (desaturation * (peak - newPeak) + 1);
+    r += (newPeak - r) * t;
+    g += (newPeak - g) * t;
+    b += (newPeak - b) * t;
+  }
 
-function rrtAndOdtFit(v: number): number {
-  return (v * (v + 0.0245786) - 0.000090537) / (v * (0.983729 * v + 0.432951) + 0.238081);
+  rgb[0] = clamp01(r);
+  rgb[1] = clamp01(g);
+  rgb[2] = clamp01(b);
 }
 
 function sRgbTransfer(value: number): number {

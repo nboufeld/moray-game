@@ -226,6 +226,35 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
     untouched, which is what keeps `getHeadWorldPosition` — and the focus cone,
     the sightline raycast and `tests/reefSightlines.test.ts` tuned against it —
     exact.
+- **The value key is a painted one, and it is held in four places at once.** The target is
+  a picture-book memory of shallow water, not a photograph of it: bright mid-key
+  turquoise, shadows that are blue-violet, distance that goes *milky-bright* rather than
+  dark, and nothing anywhere near black. It is spread across `UnderwaterFog` (the water's
+  own colour), `Lighting` (the ratio between key and fill), `ColorGradeShader` (the floor
+  and the split) and `RendererAdapter` (the curve), so any one of them changed on its own
+  will fight the other three. Four things about it were paid for by measurement:
+  - **The fog colour sits above the reef's midtone, not below it.** Distance loses
+    contrast and local colour — it does not gain darkness. This is the one inversion the
+    whole look rests on, and it is why the `UnderwaterFog` defaults are so light.
+  - **Read the red channel first.** A turquoise mixed from pigment carries far more red
+    than the same hue read off a photograph. Take red toward zero anywhere — in the fog
+    colours, in the shadow tint, or by pushing `uSaturation` up on an already cyan frame —
+    and the water turns an electric poster-paint cyan that no paint box contains. That
+    failure looks like "too saturated" and is actually "one channel is missing".
+  - **A hemisphere's sky colour lands on the whole seabed**, because the seabed faces up.
+    So the cyan half of the hemisphere is not fill, it is floor paint, and a cast shadow
+    on it is only that same cyan with the sun subtracted — an ordinary cool blue-green
+    shadow, which is exactly what the pivot is trying to get away from. For a shadow to
+    be *violet* the violet `AmbientLight` has to be the larger of the two, and its red has
+    to sit above its green. Fill was moved from the hemisphere into the ambient to buy
+    that, at constant total light, and `uShadowTint` holds red at 1.0 for the same reason:
+    with red below green it quietly took the violet back out again.
+  - **There is a floor and there is no toe.** `SHADOW_LIFT` in `ColorGradeShader` adds a
+    blue-violet constant to whatever is darkest, so the darkest thing in the world is a
+    colour rather than the absence of one. It replaced a toe that did the exact opposite.
+    `uContrast` is deliberately *below* 1: a gouache painting has a shorter value range
+    than a photograph, and above 1 the grade spends that range separating sunlit sand
+    from water — the very split this look exists to close.
 - **Texturing goes through `ProceduralTexture`**, which builds `DataTexture`s from typed
   arrays rather than painting canvases. That is deliberate: it needs no DOM, so maps work
   unchanged in the Node unit tests, and it is bit-identical across environments, which
@@ -282,8 +311,10 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
 - **Off-screen renders skip tone mapping.** Three sets `NoToneMapping` and linear output
   whenever the destination is a render target, so pixels read back from one are raw
   scene-linear and look milky if shown as-is. `RendererAdapter.captureToDataUrl` applies
-  the same ACES curve and sRGB transfer the screen gets, on the CPU. Change the
-  renderer's tone mapping and that port has to follow.
+  the same curve and sRGB transfer the screen gets, on the CPU — currently a hand port of
+  three's `NeutralToneMapping`, line for line off
+  `tonemapping_pars_fragment.glsl.js`. Change the renderer's tone mapping and that port
+  has to follow, or every codex plate is a different animal from the one in the water.
 - **A codex portrait costs ~330ms** on the headless software rasteriser, and it is not
   fill-rate: rendering the same species again is just as slow, and quartering the pixels
   saves 14ms, while an empty scene through the identical path costs 7ms. So it is never
