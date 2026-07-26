@@ -52,10 +52,18 @@ function caveFalloff(): DataTexture {
  * What is actually inside the crevice, shared by all four of them.
  *
  * A single flat colour behind the alpha falloff read as a sticker: the mouth
- * had no interior, just a tint. A radial ramp gives it one — all but black
- * where the passage runs deepest, lifting to a hint of cool, broken rock near
- * the rim where the light still reaches. The noise is faint on purpose; the
- * mouth has to read as depth, and detail is what depth does not have.
+ * had no interior, just a tint. A radial ramp gives it one — deepest where the
+ * passage runs furthest back, lifting toward broken rock near the rim where the
+ * light still reaches. The noise is faint on purpose; the mouth has to read as
+ * depth, and detail is what depth does not have.
+ *
+ * The throat used to be all but black, which is the one thing WP-G1 says this
+ * world does not contain: the darkest thing in it is a colour, not the absence
+ * of one, and a hole punched in the reef is where the eye goes first. It is a
+ * deep violet-blue now, the same family the ambient casts its shadows in, so
+ * the crevice reads as the darkest *shadow* in the frame rather than as a gap
+ * in it. The animals in these mouths were tuned against the black — see the
+ * WP-G4 note in AGENTS.md for how their legibility was re-checked.
  */
 let caveInteriorTexture: DataTexture | undefined;
 function caveInterior(): DataTexture {
@@ -65,7 +73,10 @@ function caveInterior(): DataTexture {
     const outward = smoothStep(0.1, 1.05, distance);
     const detail = fbm(u, v, { seed: SEEDS.cave, period: 5, octaves: 2 }) * 0.15;
     const lift = outward * (0.055 + detail);
-    return [0.004 + lift * 0.62, 0.039 + lift, 0.055 + lift * 1.05];
+    // Red is held above the old ramp's proportion for the same reason
+    // `uShadowTint` holds it at 1.0: with red below green this stops being
+    // violet and goes straight back to being a cool blue hole.
+    return [0.165 + lift * 0.72, 0.227 + lift, 0.408 + lift * 0.8];
   });
   return caveInteriorTexture;
 }

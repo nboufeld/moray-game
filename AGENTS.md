@@ -84,6 +84,17 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
  heads instead — one pose per crevice, down the approach corridor `Reef` keeps clear for it. It
  plants a completed save first, because two seconds of a centred reticle is a discovery and the
  ceremony's plate covers the animal it is celebrating.
+ The four additive light layers have `node scripts/probe-light.mjs <tag>`, and they need one:
+ caustics, shafts, bubbles and motes are faint marks spread over a bright frame, and a
+ screenshot cannot tell "too faint to see" from "not drawing at all" — both are sand. It
+ renders each pose twice, once with the layer hidden, and reports what the difference
+ actually is in parts of 255, plus how warm it is and how much of the frame it touches. It
+ also walks the opening shot through simulated time, because two of those layers only exist
+ in motion. `node scripts/frame-stats.mjs <before.png> <after.png>` does the other half:
+ value statistics for two archived shots and the difference between them, which is how a
+ claim like "held the frame mean to within one part in 255" gets made at all. Watch its
+ tenth percentile — a veil of additive light shows up there first, because it lifts the
+ darks and leaves the highlights alone.
 - **Render cost gotchas** (all of these were measured, not guessed): coral is flattened
   into a handful of instanced meshes because ~200 individual draw calls dominated the
   frame; grass and fish deliberately do not cast shadows; the light shafts are
@@ -109,8 +120,63 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
   wide, nearly horizontal disc viewed from close to the ground, which is the worst case
   for minification: the rim samples a mip coarse enough to average the falloff into a
   flat wash, and a flat wash out to the last triangle is a bright polygon with a hard
-  outline. The map's own window (`POOL_TEXTURE_FADE_*`) covers the ordinary case;
+  outline.   The map's own window (`POOL_TEXTURE_FADE_*`) covers the ordinary case;
   `POOL_RIM_FADE` is the part filtering cannot reach.
+- **The light effects are painted marks now, not simulated ones** (WP-G4). Caustics are
+  round dapples rather than a filament web, shafts are a few wide soft warm ribbons rather
+  than eight narrow cool ones, motes twinkle, and bubbles rise from vents in the sand. The
+  test for all four is the same: a photograph of a real reef is the wrong answer. Six
+  things about it were paid for by measurement rather than judged:
+  - **A dapple's warmth has to be over-mixed, because it lands on sand.** Sand is a warm
+    surface, so its blue channel sits low and its red high, and sRGB's curve is steepest
+    where a channel is darkest — add light in the proportion you want to see and blue
+    moves further in the encoded frame than red does. A (1.0, 0.98, 0.88) dapple measured
+    *neutral* to within half a part in 255 on the composited frame. Pulling blue to four
+    fifths is what buys back the warmth. The same trap is waiting for anything additive
+    laid on the seabed.
+  - **The caustics' reach is measured from the world origin, and the opening camera is 22m
+    out.** It ended at 14m while the pattern was filaments, which put the entire foreground
+    of the game's first frame outside it — the largest surface in the shot, bare. The old
+    argument for stopping early (scattered light cannot focus into filaments) died with the
+    filaments: a soft round blob is exactly what scattered light leaves.
+  - **Screen width is width over distance, and one canonical camera stands six metres from
+    a beam.** Widening every shaft by the same three fifths gave the mid-depth traverse a
+    curtain across 99% of its frame, its tenth percentile up eight parts and its red mean
+    up twenty. That is the veil the (11, 15) beam was moved out for, arriving from the
+    other direction. The three staged beams take the full widening; the beam at (5.5, 8.5)
+    and the distant three do not.
+  - **A warm additive costs more than its luminance says.** This water has very little red
+    in it, so the same brightness of warm light is far more visible than of cool — which is
+    the value key's own "read the red channel first" rule, seen from the light's side. The
+    shafts' base opacity came down a third when their tint went warm, and that is most of
+    what paid for the wider, flatter beams.
+  - **The motes twinkle without a shader patch.** Under additive blending brightness and
+    opacity are the same quantity, so the swell rides in a per-point colour attribute
+    written by the CPU loop that was already moving them. `PointsMaterial` has one `size`
+    for the whole cloud and patching `gl_PointSize` would mean string-matching a literal in
+    three's points shader; a colour attribute is a documented path and costs one multiply
+    per mote. The phases are drawn *after* every position so that adding them left the
+    drift field bit-identical.
+  - **Bubbles are the one thing here that is added rather than retuned, and their cost is
+    their size.** `Bubbles` is a single `InstancedMesh` — one draw call, four dozen
+    camera-facing quads wearing a shared ring sprite, a matrix per bubble rebuilt on the
+    CPU. Measured at 2.6ms of a 281ms frame, and covering four tenths of one percent of
+    the opening shot, which is what makes the count a free parameter and the radius an
+    expensive one. Three things are deliberate: it fades at both ends of its climb by
+    *scale* rather than opacity, so every instance can share one material; it is
+    `fog: false` like the shafts, because fog on an additive surface brightens distance
+    instead of closing it; and `frustumCulled` is false, because every instance moves every
+    frame and a bounding sphere computed from the matrices is stale before it is read. The
+    vents are authored, not scattered, and they stay out of the morays' approach corridors
+    — a bubble cannot obstruct a sightline, but this game asks the player to hold still and
+    look at a dark head, and a bright thread drifting over it is something to look past.
+  - **The crevice mouths are violet-blue** (`caveInterior` in `Reef.ts`), not the near-black
+    they were: the darkest thing in this world is a colour, and a hole punched in the reef
+    is where the eye goes first. The zebra and the dragon were tuned to read against the
+    black, so both were re-checked at `probe-moray.mjs` range afterwards — they read
+    *better*, because violet is the complement of the dragon's orange, and the discovery
+    spec is green. If a future skin does vanish into it, that is the skin's problem and not
+    the detection code's.
 - **Authored assets live in `public/assets/`, and there are exactly six of them.** Four
   animals and two surfaces, and every one of them is an albedo — that is the whole
   contract. `assets/creatures/moray-{snowflake,ribbon,zebra,dragon}-albedo.png` are
@@ -277,7 +343,8 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
   The two things that are deliberately *not* toon are the eyes' catchlight spheres and
   every `MeshBasicMaterial` (shafts, caustics, cave-mouth stickers, motes): none of them
   is a shaded surface, they are emissive marks, and stepping them would only risk the one
-  spark the discovery moment is built around.
+  spark the discovery moment is built around. The bubbles joined that list in WP-G4 for the
+  same reason.
   - **The ramp is authored against the normals this reef actually has.** Its lookup is
     `dot(n, l) * 0.5 + 0.5`, and with the sun 48° up, every up-facing plane in the scene
     piles up between 0.80 and 0.88 while everything facing away falls below 0.5, with
@@ -452,16 +519,22 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
  of the session. Reef and
   sanctuary morays are separate `Moray` instances with their own resources, so disposing
   sanctuary residents never touches the reef. **The set is not part of that path**: the
-  sand, the two stacks, the coral, the grass, the shafts, the caustics and the motes are
-  all built once in the constructor, and `tests/sanctuaryScene.test.ts` fails if a fixture
-  stops surviving a rebuild. That test also constructs the scene in plain Node, so
+  sand, the two stacks, the coral, the grass, the shafts, the caustics, the motes and the
+  bubbles are all built once in the constructor, and `tests/sanctuaryScene.test.ts` fails
+  if a fixture stops surviving a rebuild. That test also constructs the scene in plain Node, so
   everything the room owns has to be DOM-free at construction — which is why
   `LightShafts`' canvas-painted beam texture returns null without a `document`, the same
   guard `UnderwaterFog` has.
 - **The sanctuary is dressed from the reef's own generators**, with its own seeds
-  (`SEEDS.sanctuary*`). `CoralField` and `LightShafts` take their sites/placements as an
-  optional second and third constructor argument; the reef's authored ones are the
-  defaults precisely so a second room cannot move them.
+  (`SEEDS.sanctuary*`). `CoralField`, `LightShafts` and `Bubbles` take their
+  sites/placements as an optional second and third constructor argument; the reef's
+  authored ones are the defaults precisely so a second room cannot move them. Its shaft
+  *widths* track the reef's, though its count does not: the beam map, its bell and its
+  opacity are shared, so a room left at the old widths would be lit by the same softness at
+  two thirds the breadth and read as a different ocean. Its two bubble vents are there for
+  depth rather than atmosphere — the residents swim in open water nine metres out with
+  nothing between them and the lens, and a thread rising behind them is the cheapest thing
+  in the project that says how far back "behind" is.
 - **Sanctuary lane gotcha**: residents swim a lemniscate, and a lemniscate's heading stops
   turning at the crossing, so an animal spends most of its loop at one of two headings —
   forty-five degrees either side of its lane's `turn`. Turn a lane far enough that one of

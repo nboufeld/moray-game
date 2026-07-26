@@ -42,6 +42,7 @@ export const SEEDS = {
   coral: 0xc042_11ee,
   fish: 0x0f15_4001,
   motes: 0x3a17_7e5c,
+  bubbles: 0x3a17_7e5d,
   caustics: 0xca05_71c5,
   shafts: 0x5eab_ea11,
   fogDither: 0xd177_be71,
@@ -59,6 +60,7 @@ export const SEEDS = {
   sanctuaryCoral: 0x5a4d_0102,
   sanctuaryGrass: 0x5a4d_0103,
   sanctuaryMotes: 0x5a4d_0104,
+  sanctuaryBubbles: 0x5a4d_0106,
   sanctuaryShafts: 0x5a4d_0105,
   // The soundscape synthesises its noise the same way the reef scatters its
   // rocks: from a fixed stream, so the ambience bed and the reverb tail are

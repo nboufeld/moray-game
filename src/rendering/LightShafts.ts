@@ -168,28 +168,50 @@ export interface ShaftPlacement {
 }
 
 /**
- * Eight beams, placed rather than scattered.
+ * Six beams, placed rather than scattered.
  *
  * Three cross the corridor the diver swims down, so the opening minutes always
  * have light falling somewhere they are looking; the first lands just behind
  * the hero moray's crevice at (0, 1.4, 1.5), which is what puts atmosphere
- * behind the subject in the close-up. The other five sit past fifteen metres at
- * half strength, where their job is to describe how far away the far water is.
+ * behind the subject in the close-up. The other three sit past fifteen metres
+ * at half strength, where their job is to describe how far away the far water
+ * is.
+ *
+ * It was eight until WP-G4, and the three staged beams went up by three fifths
+ * in width in the same pass, so the light in the water is not far off what it
+ * was — there are simply fewer, broader things carrying it. A painted ribbon of
+ * light is a compositional element and a frame can hold two or three of them;
+ * eight narrow ones are weather.
+ *
+ * The distant three took a fifth rather than three fifths, and that asymmetry
+ * was measured. A beam's screen width is its width over its distance, and these
+ * were already authored wide to survive being far away — widened to match the
+ * near ones they stopped being beams at all: the mid-depth traverse came back
+ * with a curtain across 99% of its frame, its tenth percentile lifted eight
+ * parts in 255 and its red mean twenty. That is the veil this list has warned
+ * about since the beam at (11, 15) was moved out, arriving from the other
+ * direction.
+ *
+ * Of the two that went, one was the deep-left flanker's twin — a pair of beams
+ * five metres apart at that distance is one beam with a seam in it once they
+ * are this wide — and the other stood at (11, 15), seven metres off the spawn
+ * point. That one had already been moved out to the flank once, for a reason
+ * widening it only sharpens: a curtain that close does not read as a shaft at
+ * all, it is a veil over the whole frame that lifts the blacks everywhere and
+ * gains no highlight worth having. Do not put a beam near the spawn point.
  */
 const PLACEMENTS: readonly ShaftPlacement[] = [
-  { ground: [0.5, -0.9], width: 4.0, height: 5.6 },
-  { ground: [-4.5, 6.0], width: 5.6, height: 6.4 },
-  { ground: [5.5, 8.5], width: 4.4, height: 5.0 },
-  { ground: [-16.5, 5.0], width: 5.0, height: 6.0, faint: true },
-  { ground: [15.5, -7.0], width: 6.2, height: 6.8, faint: true },
-  { ground: [-8.0, -16.0], width: 5.4, height: 6.2, faint: true },
-  // Kept out on the flank deliberately. Moved in near the spawn point to give
-  // the opening shot a closer highlight, this beam put its curtain a few metres
-  // from the camera, and a full-screen additive layer that close does not read
-  // as a shaft at all — it is a veil over the whole frame that lifts the blacks
-  // everywhere and gains no highlight worth having.
-  { ground: [11.0, 15.0], width: 6.8, height: 7.0, faint: true },
-  { ground: [-13.0, -13.5], width: 5.8, height: 6.4, faint: true },
+  { ground: [0.5, -0.9], width: 6.4, height: 5.6 },
+  { ground: [-4.5, 6.0], width: 9.0, height: 6.4 },
+  // Widened least of the three staged beams, because the mid-depth traverse
+  // camera stands six metres from it: a curtain that close fills sixty degrees
+  // of frame at the full retune, and 99% of that shot's pixels came back
+  // touched by a shaft. Screen width is width over distance, and this is the
+  // one beam a canonical camera walks up to.
+  { ground: [5.5, 8.5], width: 5.6, height: 5.0 },
+  { ground: [-16.5, 5.0], width: 6.0, height: 6.0, faint: true },
+  { ground: [15.5, -7.0], width: 7.4, height: 6.8, faint: true },
+  { ground: [-8.0, -16.0], width: 6.5, height: 6.2, faint: true },
 ];
 
 interface Blade {
@@ -239,7 +261,14 @@ export class LightShafts {
   // A material per quad, never one shared across beams: a single opacity made
   // the entire ocean breathe on one metronome.
   private readonly beams: Beam[] = [];
-  private readonly baseOpacity = 0.26;
+  // Down a third from 0.26 to pay for WP-G4's wider, softer beams: three
+  // fifths more width and a flatter bell is close to twice the light per beam,
+  // and two fewer beams gives back rather less than that. The warm tint costs
+  // more than the arithmetic says, too — this water has very little red in it,
+  // so a warm additive is far more visible than the same luminance of a cool
+  // one, which is the same reading-the-red-channel-first rule the value key
+  // rests on.
+  private readonly baseOpacity = 0.17;
   // Tuned against the closest pool a canonical camera ever stands over, not the
   // average one: at 0.7 the mid-depth traverse shot showed a pure white hole in
   // its foreground — no shape, no falloff, just clip — and the bloom smeared it
@@ -381,7 +410,10 @@ export class LightShafts {
 
     const material = new MeshBasicMaterial({
       map,
-      color: 0xd2eeff,
+      // The same warm white the beam above it is painted in. A cool pool under
+      // a warm ribbon is two light sources, and the sand it lands on says which
+      // one is lying.
+      color: 0xffefd6,
       // Multiplies the map, and carries the rim fade the filtering cannot
       // reach.
       vertexColors: true,
@@ -501,6 +533,18 @@ function poolMap(): DataTexture {
 }
 
 /**
+ * How sharply the beam's brightness falls from its axis to its edges.
+ *
+ * It was 2.2, which puts most of a beam's light in the middle third of its
+ * width and gives it two definite sides — a searchlight, and the harder the
+ * sides the more the beam reads as a solid object hanging in the water. At 1.4
+ * the bell is nearly flat across the core and spends the outer half of the
+ * width feathering, so a beam this wide has no edge to find anywhere. It is the
+ * softness, not the width, that turns a shaft into a ribbon.
+ */
+const BELL_EXPONENT = 1.4;
+
+/**
  * A soft-edged beam: a bell across the width so the sides never show a hard
  * boundary, fading out along its length as the light is absorbed.
  *
@@ -531,12 +575,12 @@ function createShaftTexture(): CanvasTexture | null {
       const fade = Math.pow(depth, 1.7) * head;
       for (let x = 0; x < width; x++) {
         const across = (x / (width - 1)) * 2 - 1;
-        const bell = Math.pow(Math.cos((across * Math.PI) / 2), 2.2);
+        const bell = Math.pow(Math.cos((across * Math.PI) / 2), BELL_EXPONENT);
         const alpha = Math.max(0, bell * fade);
         const index = (y * width + x) * 4;
-        image.data[index] = 214;
-        image.data[index + 1] = 245;
-        image.data[index + 2] = 255;
+        image.data[index] = 255;
+        image.data[index + 1] = 244;
+        image.data[index + 2] = 214;
         image.data[index + 3] = Math.round(alpha * 255);
       }
     }

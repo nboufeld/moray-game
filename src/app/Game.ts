@@ -14,6 +14,7 @@ import { DiveController } from "../player/DiveController";
 import { CameraRig } from "../player/CameraRig";
 import { InputController } from "../player/InputController";
 import { assetsPending } from "../rendering/AssetLibrary";
+import { Bubbles } from "../rendering/Bubbles";
 import { CausticsSystem } from "../rendering/CausticsSystem";
 import { DiscoveryPulse } from "../rendering/DiscoveryPulse";
 import { LightShafts } from "../rendering/LightShafts";
@@ -66,6 +67,7 @@ export class Game {
   private readonly caustics = new CausticsSystem();
   private readonly shafts: LightShafts;
   private readonly particles = new Particles();
+  private readonly bubbles = new Bubbles();
   private readonly fish = new FishSchoolSystem();
 
   private readonly registry = new MorayRegistry();
@@ -122,6 +124,7 @@ export class Game {
     this.shafts.addTo(this.scene);
     this.caustics.addTo(this.scene);
     this.particles.addTo(this.scene);
+    this.bubbles.addTo(this.scene);
     this.fish.addTo(this.scene);
 
     this.scene.add(this.reef.group);
@@ -270,6 +273,9 @@ export class Game {
     // this frame.
     this.shafts.update(delta, this.settings.reducedMotion, this.camera.position);
     this.particles.update(delta, this.settings.reducedMotion);
+    // After the rig as well: every bubble is a quad that has to be turned to
+    // face wherever the lens ended up this frame.
+    this.bubbles.update(delta, this.settings.reducedMotion, this.camera.quaternion);
     // Also after the rig, and for the same reason the shafts are: the shoals
     // bend their course around the diver rather than swimming through them.
     this.fish.update(paused ? 0 : delta, this.settings.reducedMotion, this.camera.position);

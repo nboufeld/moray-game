@@ -15,6 +15,8 @@ export default tseslint.config(
         console: "readonly",
         process: "readonly",
         window: "readonly",
+        document: "readonly",
+        Image: "readonly",
         performance: "readonly",
         requestAnimationFrame: "readonly",
       },

@@ -10,6 +10,7 @@ import {
   Vector3,
 } from "three";
 import { Moray } from "../creatures/morays/Moray";
+import { Bubbles } from "../rendering/Bubbles";
 import { CausticsSystem } from "../rendering/CausticsSystem";
 import { LightShafts, type ShaftPlacement } from "../rendering/LightShafts";
 import { Particles } from "../rendering/Particles";
@@ -138,16 +139,37 @@ const GRASS_CLUMPS: readonly GrassClump[] = [
  * Four beams, all landing behind the swimmers so that the animals cross them.
  * A shaft an eel never passes in front of is scenery; one it does is what puts
  * the animal in the room.
+ *
+ * The widths track the reef's WP-G4 retune — the beam map, its bell and its
+ * opacity are shared, so a room left at the old widths would be lit by the same
+ * softness at two thirds the breadth and read as a different, thinner ocean.
+ * The count does not: four beams over twenty metres of bay is already the two
+ * or three a frame can hold, where the reef's eight were spread over seventy.
  */
 const SHAFTS: readonly ShaftPlacement[] = [
   // Well left of where it wants to look, because a beam leans: with the key
   // this far off vertical each one's curtain hangs several metres toward the
   // light from the sand it lands on, and every beam authored around the middle
   // ended up stacked in the right of the frame.
-  { ground: [-5.5, -4.0], width: 4.2, height: 6.5 },
-  { ground: [3.6, -3.2], width: 3.4, height: 6.0 },
-  { ground: [-7.5, -10.5], width: 5.0, height: 7.0, faint: true },
-  { ground: [7.0, -8.5], width: 4.6, height: 6.8, faint: true },
+  { ground: [-5.5, -4.0], width: 6.7, height: 6.5 },
+  { ground: [3.6, -3.2], width: 5.4, height: 6.0 },
+  { ground: [-7.5, -10.5], width: 8.0, height: 7.0, faint: true },
+  { ground: [7.0, -8.5], width: 7.4, height: 6.8, faint: true },
+];
+
+/**
+ * Two vents, both behind the lanes and out toward the stacks.
+ *
+ * The reef gets its bubbles for atmosphere; the sanctuary gets them for depth.
+ * The animals here swim in open water nine metres out with nothing between them
+ * and the lens, and a thread of bubbles rising behind them is the cheapest
+ * thing in the project that says how far back "behind" is. They stay off the
+ * centre line, where they would climb through the swimmers rather than past
+ * them, and out of the near field the sweep passes through.
+ */
+const BUBBLE_VENTS: readonly (readonly [number, number])[] = [
+  [-4.5, -6.5],
+  [5.0, -7.5],
 ];
 
 /**
@@ -259,6 +281,7 @@ export class SanctuaryScene {
   private readonly caustics = new CausticsSystem(40);
   private readonly shafts = new LightShafts(KEY_POSITION, SEEDS.sanctuaryShafts, SHAFTS);
   private readonly motes = new Particles(120, 14, SEEDS.sanctuaryMotes);
+  private readonly bubbles = new Bubbles(22, BUBBLE_VENTS, SEEDS.sanctuaryBubbles);
   private readonly grass = new SeaGrass(SEEDS.sanctuaryGrass, LENS_CLEARANCE, GRASS_CLUMPS);
   private sweep = 0;
 
@@ -326,6 +349,7 @@ export class SanctuaryScene {
     this.shafts.addTo(this.scene);
     this.caustics.addTo(this.scene);
     this.motes.addTo(this.scene);
+    this.bubbles.addTo(this.scene);
 
     this.placeCamera();
   }
@@ -437,6 +461,9 @@ export class SanctuaryScene {
     // `playerProxy` is this frame's camera position, read above.
     this.shafts.update(dt, reducedMotion, this.playerProxy);
     this.motes.update(dt, reducedMotion);
+    // The sweep turns the camera every frame, and a bubble is a quad that has
+    // to be turned with it.
+    this.bubbles.update(dt, reducedMotion, this.camera.quaternion);
   }
 
   private placeCamera(): void {
