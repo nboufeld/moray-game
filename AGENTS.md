@@ -15,6 +15,11 @@ comfort/accessibility settings panel with Calm Mode, and the Dream Sanctuary aqu
  `MorayBody` (the skinned tube and dorsal fin its joint chain drives) and `MorayOutline`
  (the contour hull, which the animals wear and nothing else does).
 - `src/creatures/fish/` — `FishSchoolSystem` (instanced ambient fish).
+- `src/creatures/life/` — `LifeSystem` (the interface every population comes in through),
+ `LifeRegistry` (what `Game` holds instead of a field per animal) and `LifeScaffold`
+ (a named, seeded, empty group: a module that is not built yet).
+- `src/creatures/fauna/` — `Crabs`, `Starfish`, `Urchins`, `AnemoneGarden` (scaffolds).
+- `src/creatures/visitors/` — `VisitorSchedule`, `Turtle`, `Ray`, `JellyBloom` (scaffolds).
 - `src/discovery/` — `FocusScanner`, `DiscoverySystem`, `HintSystem` (all pure/testable).
 - `src/rendering/` — fog + gradient backdrop, lighting, caustics, light shafts, particles,
  the `ColorGradeShader` used by the post chain (paper grain and watercolour pooling
@@ -74,8 +79,15 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
   `Math.random()` in world generation: an unseeded reef is different on every load, and
   then no two screenshots can be compared and no visual change can be judged.
 - **Visual QA**: `npm run dev`, then `npm run shots -- <change-tag>` writes the canonical
-  shot set to `visual-qa/` (opening hero, mid-depth traverse, close moray, UI overlay,
-  sanctuary portrait). `Game.capture()` stops the live loop, places the diver and advances
+ shot set to `visual-qa/` (opening hero, mid-depth traverse, close moray, UI overlay,
+ sanctuary portrait) plus Round L's four: `F-life-wide` and `H-visitor-arc` are A's and
+ B's viewpoints held for six and nine seconds, because a visitor's pass and a bloom's
+ drift are minute-scale and a two-second settle cannot see them; `G-tidepool-close` is
+ down at 1.3m on the eastern shoulder, pitched at the sand, where the small fauna live
+ and where no canonical shot has ever stood; `S-sanctuary-life` is E's pose later in the
+ sweep. They were added once, in advance, so that the packages filling the reef with life
+ never move the array — a shot set that changes mid-round is one that cannot be compared
+ across it. `Game.capture()` stops the live loop, places the diver and advances
   the world by whole fixed steps, so a shot is reproducible frame for frame. Capture
   before *and* after a change and compare; `scripts/measure-frames.mjs` does the same for
   frame cost. The shot set holds exactly one sanctuary frame and that camera moves, so for
@@ -1002,6 +1014,39 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
   intentionally harder to spot — the zebra/dragon heads are dark against their caves. Use
   the `H` hint ladder (it targets the nearest undiscovered moray). All four are verified
   discoverable; placement/facing live in `SPOT_PLACEMENTS` in `src/world/Reef.ts`.
+- **Everything alive that is not a moray or a shoal comes in through `LifeSystem`**, and
+ `Game` holds one `LifeRegistry` rather than a field per animal. That is the whole point
+ of the interface: a package that adds a population constructs it in the registry's list
+ and touches no other shared file. The context it is handed each frame is deliberately
+ four values — where the diver is, how fast, whether motion is reduced, and simulated
+ time — because anything that needs the camera, the renderer or the save is not a life
+ system. The diver's position is *copied* into the context rather than aliased, and it is
+ the diver's, not the lens's: what startles an animal is a body arriving, and the two
+ part company the moment the rig lags or leads.
+ - **The seeds are all registered before any of the animals exist** (`crabs`, `starfish`,
+ `urchins`, `anemones`, `visitors`, `sandPuffs`, and `audioLife` for the grain in an
+ event's noise). Same reason the sanctuary has its own: these are filled in one at a
+ time, and a shared stream would re-roll every population already placed each time
+ another arrived. The three visitors deliberately share `visitors` — who arrives and how
+ they swim is one decision — and nothing else may share anything.
+ - **A scaffold costs one scene-graph node and nothing else.** `LifeScaffold` is an empty
+ `Group` with a name and a seed, and a subclass that grows real contents should stop
+ extending it and implement the interface itself. `tests/lifeSystems.test.ts` drives
+ every one of them through a minute of frames in plain Node and asserts the group comes
+ back empty and detached after `dispose` — which is the same DOM-free rule the sanctuary
+ is built under, and the only reason any of this can be unit tested at all.
+- **The capture harness's own noise is not uniform across the shot set, and on two of the
+ five it is several parts.** A shot is reproducible frame for frame *given the same
+ starting state*, but `capture()` stops a loop that has already been running on real
+ deltas since the page loaded, so anything mid-cycle when the shutter falls — the
+ school's phase, a bubble's height, the sanctuary's residents — starts from wherever the
+ machine's speed left it. Measured by capturing the unmodified tree twice in one evening:
+ A and D held to a tenth of a part, C moved 3.0 of luma mean and E's p90 moved 7.7, and B
+ swung 2.1 in one direction and 0.6 in the other across two sessions. So a "zero pixel
+ change" claim cannot be made against an archived tag alone. Capture a **same-session
+ control** from the tree without the change and diff against that: W-L1 measured +0.0 on
+ A, C, D and E that way, against the +3.0 and +7.7 the control itself showed versus the
+ archived baseline.
 - **The soundscape is synthesised, like everything else here.** `src/audio/` holds the
   lifecycle (`AudioEngine`), the voices (`synth.ts` — ambience bed, bubble, FM chime,
   sanctuary pad), the timing of the one random layer (`BubbleScheduler`, pure and unit
@@ -1022,6 +1067,28 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
   further and measures each layer — spectral tilt of the bed, the bell's decay ratio, the
   bubble's sweep, the size of the noise loop's seam — the way `measure-frames.mjs`
   measures a frame. Run it before and after a tuning change.
+- **The reef's creatures share one bus and one trim.** `playEvent(name, gain)` on
+ `ReefSoundscape` fires one of six synthesised one-shots — `crab-click`, `fish-flutter`,
+ `turtle-glide`, `jelly-shimmer`, `sand-puff`, `moray-peek` — into an `eventBus` held at
+ `EVENT_LEVEL`, with a smaller reverb send than a bubble gets, because these sounds are
+ close and small and a crab in a cathedral is a crab somewhere else. Nothing here ducks
+ the bed: a reef that stepped back for a tick would be announcing the tick. Three things
+ are worth knowing before retuning any of it:
+ - **Read the probe's peak column with the frequency beside it.** `probe-audio.mjs`
+ renders each voice offline and prints peak, rms, length and where its energy sits.
+ `moray-peek` measures as the largest peak of the six and is the quietest thing there:
+ an eighty hertz tone needs some twenty-five decibels more amplitude than a mid one to
+ be heard at the same level. Comparing peaks across voices at different pitches is the
+ mistake the note in `LIFE_EVENTS` exists to stop.
+ - **A detuned cluster's gain is per voice.** The jelly's three sines beat in and out of
+ phase, so the cluster peaks at nearly three times the constant — it was mixed at 0.012
+ "as the quietest voice" and measured the second loudest, at 2kHz, which is exactly
+ where hearing is sharpest. 0.006 lands it where the comment always claimed it was.
+ - **One noise buffer per context, three seconds long, played from a random offset.**
+ The grainy voices can fire in bursts, so a buffer per tick would put a few thousand
+ PRNG calls on whichever frame a crab moved. It is longer than the longest event plus
+ the largest offset, so nothing reaches the seam and no crossfade is needed — unlike
+ the ambience bed, which runs forever and does need one.
 - **Audio gotchas that were paid for once already**: an exponential ramp cannot reach zero,
   so every envelope ends at `SILENT` rather than at 0. An LFO connected to an `AudioParam`
   *adds* to that param's automation, which is why the sanctuary can ramp the bed's cutoff

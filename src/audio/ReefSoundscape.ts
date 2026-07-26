@@ -10,7 +10,9 @@ import {
   createReverbImpulse,
   playBubble,
   playChime,
+  playLifeEvent,
   type AmbienceBed,
+  type LifeEventName,
   type SanctuaryPad,
 } from "./synth";
 
@@ -25,6 +27,18 @@ const MODE_CROSSFADE = 1.2;
 
 const CHIME_SEND = 0.35;
 const BUBBLE_SEND = 0.12;
+const EVENT_SEND = 0.1;
+
+/**
+ * The one trim on every living sound in the reef.
+ *
+ * The voices are already mixed as garnish, and this is the knob that says how
+ * much garnish — half, so that even a crab clicking directly under the diver
+ * sits below the bubble from their own regulator. It is a bus rather than six
+ * constants because the answer to "the reef is getting chatty" has to be one
+ * number.
+ */
+const EVENT_LEVEL = 0.5;
 
 interface SoundscapeGraph {
   readonly context: AudioContext;
@@ -36,6 +50,8 @@ interface SoundscapeGraph {
   readonly soften: GainNode;
   readonly chimeBus: GainNode;
   readonly bubbleBus: GainNode;
+  /** Everything the reef's creatures do, trimmed by {@link EVENT_LEVEL}. */
+  readonly eventBus: GainNode;
 }
 
 /**
@@ -51,6 +67,7 @@ interface SoundscapeGraph {
 export class ReefSoundscape {
   private readonly bubbles = new BubbleScheduler(new Random(SEEDS.audioBubbles));
   private readonly bubbleRandom = new Random(SEEDS.audioBubbleVoice);
+  private readonly eventRandom = new Random(SEEDS.audioLife);
   private graph: SoundscapeGraph | null = null;
 
   private inSanctuary = false;
@@ -58,6 +75,7 @@ export class ReefSoundscape {
   private reducedMotion = false;
   private chimes = 0;
   private bubbleCount = 0;
+  private eventCount = 0;
 
   constructor(private readonly engine: AudioEngine = new AudioEngine()) {
     this.engine.onStart.push((context, master) => this.build(context, master));
@@ -104,6 +122,32 @@ export class ReefSoundscape {
     // the moment instead of waiting politely for it to finish.
     graph.duck.gain.setTargetAtTime(1, now + DUCK_SECONDS, 0.35);
     this.chimes++;
+  }
+
+  /**
+   * A one-shot from something alive: a crab moving, a visitor passing, silt
+   * settling. `gain` scales the voice's own level, which is how a caller says
+   * "small" or "far off" without knowing what the sound is made of.
+   *
+   * Unlike a discovery this does not duck the bed and does not announce
+   * itself. It is safe before the first gesture, like everything else here,
+   * and safe to call every frame — nothing rate-limits it, because what makes
+   * a noise and how often is the caller's decision, not the mixer's.
+   */
+  playEvent(name: LifeEventName, gain = 1): void {
+    const graph = this.graph;
+    if (!graph) {
+      return;
+    }
+    playLifeEvent(
+      graph.context,
+      graph.eventBus,
+      name,
+      graph.context.currentTime + 0.02,
+      gain,
+      this.eventRandom,
+    );
+    this.eventCount++;
   }
 
   /** Opens the bed up and fades the pad in (or the reverse, on the way out). */
@@ -180,12 +224,26 @@ export class ReefSoundscape {
     return this.bubbleCount;
   }
 
+  get eventsPlayed(): number {
+    return this.eventCount;
+  }
+
   /** The permanent buses, in signal order, for a structural assertion. */
   get graphNodes(): string[] {
     if (!this.graph) {
       return [];
     }
-    return ["bed", "pad", "ambience", "duck", "soften", "chimeBus", "bubbleBus", "master"];
+    return [
+      "bed",
+      "pad",
+      "ambience",
+      "duck",
+      "soften",
+      "chimeBus",
+      "bubbleBus",
+      "eventBus",
+      "master",
+    ];
   }
 
   /**
@@ -235,6 +293,9 @@ export class ReefSoundscape {
     chimeBus.connect(master);
     const bubbleBus = context.createGain();
     bubbleBus.connect(master);
+    const eventBus = context.createGain();
+    eventBus.gain.value = EVENT_LEVEL;
+    eventBus.connect(master);
 
     // A tail on the transients only. The bed is already a diffuse wash and
     // sending it through as well just smears it into mud.
@@ -243,6 +304,9 @@ export class ReefSoundscape {
     reverb.connect(master);
     connectSend(context, chimeBus, reverb, CHIME_SEND);
     connectSend(context, bubbleBus, reverb, BUBBLE_SEND);
+    // A little less tail than a bubble gets: these sounds are close and small,
+    // and a crab in a cathedral is a crab somewhere else.
+    connectSend(context, eventBus, reverb, EVENT_SEND);
 
     this.graph = {
       context,
@@ -253,6 +317,7 @@ export class ReefSoundscape {
       soften,
       chimeBus,
       bubbleBus,
+      eventBus,
     };
 
     // The player may already be in the sanctuary or holding the panel open

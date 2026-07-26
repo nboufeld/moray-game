@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AudioEngine } from "../src/audio/AudioEngine";
 import { ReefSoundscape } from "../src/audio/ReefSoundscape";
+import { LIFE_EVENT_NAMES } from "../src/audio/synth";
 
 /**
  * These run in plain Node, where there is no `window` and no `AudioContext`.
@@ -83,6 +84,22 @@ describe("ReefSoundscape without a window", () => {
 
     expect(soundscape.chimeCount).toBe(0);
     expect(soundscape.bubblesPlayed).toBe(0);
+    soundscape.dispose();
+  });
+
+  it("takes every life event the reef can ask for, before there is a graph", () => {
+    // The creatures are driven from the simulation, which runs long before
+    // anyone touches the page — so an event fired at a soundscape that has no
+    // context yet has to be a no-op rather than a crash, exactly like a bubble.
+    const soundscape = new ReefSoundscape();
+    for (const name of LIFE_EVENT_NAMES) {
+      soundscape.playEvent(name);
+      soundscape.playEvent(name, 0.2);
+      // Silence and nonsense are both a caller's prerogative.
+      soundscape.playEvent(name, 0);
+      soundscape.playEvent(name, Number.NaN);
+    }
+    expect(soundscape.eventsPlayed).toBe(0);
     soundscape.dispose();
   });
 

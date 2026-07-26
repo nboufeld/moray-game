@@ -55,6 +55,34 @@ const SHOTS = [
     seedDiscoveries: true,
     openSanctuary: true,
   },
+  // Round L's four. They are the same world A, B and E already show, held for
+  // longer or looked at from lower down, and they exist so that the packages
+  // that fill the reef with life never have to edit this array again — a shot
+  // set that moves mid-round is a shot set that cannot be compared across it.
+  {
+    // A's viewpoint, settled long enough for anything on a slow cycle to have
+    // done something: a visitor's pass and a bloom's drift are minute-scale.
+    name: "F-life-wide",
+    pose: { position: [0, 2, 22], yaw: 0, pitch: 0, settle: 6 },
+  },
+  {
+    // Down among the rubble at the reef's eastern shoulder, pitched at the
+    // sand: the small fauna live at this height and no canonical shot is here.
+    name: "G-tidepool-close",
+    pose: { position: [7.5, 1.3, 10.5], yaw: 0.5, pitch: -0.25, settle: 3 },
+  },
+  {
+    // B's viewpoint, held nine seconds — the open water a visitor crosses.
+    name: "H-visitor-arc",
+    pose: { position: [10, 3, 12], yaw: 0.72, pitch: -0.1, settle: 9 },
+  },
+  {
+    // E's pose, later in the sweep, for whatever comes to live in the room.
+    name: "S-sanctuary-life",
+    pose: { settle: 8 },
+    seedDiscoveries: true,
+    openSanctuary: true,
+  },
 ];
 
 const SAVE_KEY = "reef-between-seas.save.v1";

@@ -73,4 +73,17 @@ export const SEEDS = {
   audioBubbles: 0x5a4d_0202,
   audioBubbleVoice: 0x5a4d_0203,
   audioReverb: 0x5a4d_0204,
+  /** The grain inside a life event's noise — a crab's tick, a turtle's swell. */
+  audioLife: 0x5a4d_0205,
+  // The life systems. Each population takes its own stream for the same reason
+  // the two rooms do: these are filled in one at a time over several packages,
+  // and a shared stream would re-roll every animal already placed each time
+  // another one is added — which no screenshot comparison could survive.
+  crabs: 0x5a4d_0301,
+  starfish: 0x5a4d_0302,
+  urchins: 0x5a4d_0303,
+  anemones: 0x5a4d_0304,
+  /** Who visits, and when. The three visitors share it; the schedule owns it. */
+  visitors: 0x5a4d_0305,
+  sandPuffs: 0x5a4d_0306,
 } as const;

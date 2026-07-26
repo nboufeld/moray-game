@@ -19,6 +19,7 @@ interface AudioProbe {
   readonly duckGain: number | null;
   readonly chimeCount: number;
   readonly bubblesPlayed: number;
+  readonly eventsPlayed: number;
   readonly graphNodes: string[];
   probeRms(seconds?: number, volume?: number): Promise<number>;
 }
@@ -64,6 +65,7 @@ test("the reef is silent until the player touches it", async ({ page }) => {
     padGain: window.__reefAudio?.padGain ?? -1,
     duck: window.__reefAudio?.duckGain ?? -1,
     bubbles: window.__reefAudio?.bubblesPlayed ?? -1,
+    events: window.__reefAudio?.eventsPlayed ?? -1,
     nodes: window.__reefAudio?.graphNodes ?? [],
   }));
 
@@ -78,6 +80,7 @@ test("the reef is silent until the player touches it", async ({ page }) => {
     "soften",
     "chimeBus",
     "bubbleBus",
+    "eventBus",
     "master",
   ]);
   // The dive's voicing: a dark bed, no pad, nothing ducked, nobody swimming.
@@ -85,6 +88,8 @@ test("the reef is silent until the player touches it", async ({ page }) => {
   expect(after.padGain).toBeLessThan(0.001);
   expect(after.duck).toBeCloseTo(1, 2);
   expect(after.bubbles).toBe(0);
+  // The life events have a bus and a voice each, and nothing asks for one yet.
+  expect(after.events).toBe(0);
 
   expect(errors).toEqual([]);
 });

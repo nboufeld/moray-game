@@ -5,10 +5,19 @@ import {
   type ComfortSettings,
 } from "../accessibility/AccessibilitySettings";
 import { ReefSoundscape } from "../audio/ReefSoundscape";
+import { AnemoneGarden } from "../creatures/fauna/AnemoneGarden";
+import { Crabs } from "../creatures/fauna/Crabs";
+import { Starfish } from "../creatures/fauna/Starfish";
+import { Urchins } from "../creatures/fauna/Urchins";
 import { FishSchoolSystem } from "../creatures/fish/FishSchoolSystem";
+import { LifeRegistry, type LifeContext } from "../creatures/life/LifeSystem";
 import { Moray } from "../creatures/morays/Moray";
 import { MorayRegistry } from "../creatures/morays/MorayRegistry";
 import type { MoraySpeciesConfig } from "../creatures/morays/MoraySpeciesConfig";
+import { JellyBloom } from "../creatures/visitors/JellyBloom";
+import { Ray } from "../creatures/visitors/Ray";
+import { Turtle } from "../creatures/visitors/Turtle";
+import { VisitorSchedule } from "../creatures/visitors/VisitorSchedule";
 import { DiscoverySystem, type DiscoveryTarget } from "../discovery/DiscoverySystem";
 import { DiveController } from "../player/DiveController";
 import { CameraRig } from "../player/CameraRig";
@@ -20,6 +29,7 @@ import { DiscoveryPulse } from "../rendering/DiscoveryPulse";
 import { LightShafts } from "../rendering/LightShafts";
 import { Lighting } from "../rendering/Lighting";
 import { Particles } from "../rendering/Particles";
+import { SandPuffs } from "../rendering/SandPuffs";
 import { UnderwaterFog } from "../rendering/UnderwaterFog";
 import { SanctuaryScene } from "../sanctuary/SanctuaryScene";
 import { SaveSystem } from "../save/SaveSystem";
@@ -69,6 +79,30 @@ export class Game {
   private readonly particles = new Particles();
   private readonly bubbles = new Bubbles();
   private readonly fish = new FishSchoolSystem();
+
+  /**
+   * Everything alive in the reef that is not a moray or a shoal, behind one
+   * handle. A package that adds a population adds it to this list and touches
+   * nothing else in this file — which is the entire reason the list exists
+   * before any of the animals in it do.
+   */
+  private readonly life = new LifeRegistry([
+    new Crabs(),
+    new Starfish(),
+    new Urchins(),
+    new AnemoneGarden(),
+    new VisitorSchedule(),
+    new Turtle(),
+    new Ray(),
+    new JellyBloom(),
+    new SandPuffs(),
+  ]);
+  private readonly lifeContext: LifeContext = {
+    diverPosition: new Vector3(),
+    diverSpeed: 0,
+    reducedMotion: false,
+    time: 0,
+  };
 
   private readonly registry = new MorayRegistry();
   private readonly morays: MorayInstance[] = [];
@@ -126,6 +160,7 @@ export class Game {
     this.particles.addTo(this.scene);
     this.bubbles.addTo(this.scene);
     this.fish.addTo(this.scene);
+    this.life.addTo(this.scene);
 
     this.scene.add(this.reef.group);
     this.collision = new CollisionField(this.reef.colliders, this.reef.bounds);
@@ -279,6 +314,16 @@ export class Game {
     // Also after the rig, and for the same reason the shafts are: the shoals
     // bend their course around the diver rather than swimming through them.
     this.fish.update(paused ? 0 : delta, this.settings.reducedMotion, this.camera.position);
+    // The reef's own inhabitants, from where the diver is rather than where
+    // the lens is: what startles a crab is a body arriving, and the two part
+    // company the moment the camera lags or leads.
+    const step = paused ? 0 : delta;
+    const context = this.lifeContext;
+    context.diverPosition.copy(this.dive.position);
+    context.diverSpeed = this.dive.velocity.length();
+    context.reducedMotion = this.settings.reducedMotion;
+    context.time += step;
+    this.life.update(step, context);
     this.hud.update(delta);
   }
 
@@ -560,6 +605,7 @@ export class Game {
     this.running = false;
     this.holding = false;
     window.removeEventListener("resize", this.handleResize);
+    this.life.dispose();
     this.input.dispose();
     this.soundscape.dispose();
     this.renderer.dispose();

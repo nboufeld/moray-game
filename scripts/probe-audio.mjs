@@ -103,7 +103,42 @@ const report = await page.evaluate(async () => {
   const bubbleHead = window_(bubble, 0, 0.03);
   const bubbleTail = window_(bubble, 0.1, 0.15);
 
+  // --- The life events --------------------------------------------------
+  // Six one-shots that creatures ask for. A screenshot has even less to say
+  // about these than about the bell, and the one thing that matters most is a
+  // number: they are garnish, so every peak here has to sit under the diver's
+  // own bubble before the event bus trims them again.
+  const events = [];
+  for (const name of synth.LIFE_EVENT_NAMES) {
+    const samples = await render(2.8, (context, out) =>
+      synth.playLifeEvent(context, out, name, 0, 1, new Random(SEEDS.audioLife)),
+    );
+    let peak = 0;
+    let last = 0;
+    for (let i = 0; i < samples.length; i++) {
+      const value = Math.abs(samples[i]);
+      if (value > peak) {
+        peak = value;
+      }
+      // Where the voice actually stops, rather than where the render does.
+      if (value > 2e-4) {
+        last = i;
+      }
+    }
+    const voiced = samples.subarray(0, Math.max(1, last));
+    events.push({
+      name,
+      peak,
+      rms: rms(voiced),
+      seconds: last / RATE,
+      spectrum: Object.fromEntries(
+        [80, 250, 700, 2000, 5000].map((frequency) => [frequency, bin(voiced, frequency)]),
+      ),
+    });
+  }
+
   return {
+    events,
     chime: {
       peak,
       strikeRms: rms(strike),
@@ -149,5 +184,14 @@ console.info(
   `  bubble  peak ${f(report.bubble.peak)} | 900/300 at onset ${f(report.bubble.startsHigh, 2)} ` +
     `| 300/900 at tail ${f(report.bubble.endsLow, 2)}`,
 );
+console.info("  life events (raw voice, before the event bus trim)");
+for (const event of report.events) {
+  const loudest = Object.entries(event.spectrum).sort((a, b) => b[1] - a[1])[0];
+  console.info(
+    `    ${event.name.padEnd(14)} peak ${f(event.peak)} | rms ${f(event.rms)} ` +
+      `| ${f(event.seconds, 2)}s | loudest ${loudest[0]}Hz ` +
+      `| x${f(event.peak / report.bubble.peak, 2)} of a bubble`,
+  );
+}
 
 await browser.close();
