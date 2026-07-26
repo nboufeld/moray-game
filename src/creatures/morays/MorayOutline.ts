@@ -40,19 +40,35 @@ import { BackSide, Color, Mesh, MeshBasicMaterial, SkinnedMesh } from "three";
 const HULL_THICKNESS = 0.012;
 
 /**
- * What the line is made of: the species' own body colour, most of the way to a
- * dark blue-violet.
+ * What the line is made of: the species' own body colour, most of the way to
+ * one of two inks — a dark blue-violet, or a warm cream.
  *
- * Not black, for the reason the whole value key exists — the darkest thing in
- * this world is a colour. And not one shared ink either: a line mixed from the
- * animal it belongs to keeps the zebra's line cool and the dragon's warm, which
- * is the difference between a drawing and a decal.
+ * Neither is black or white, for the reason the whole value key exists: the
+ * darkest thing in this world is a colour and so is the lightest. And neither
+ * is used neat, because a line mixed from the animal it belongs to keeps the
+ * zebra's cool and the dragon's warm, which is the difference between a drawing
+ * and a decal.
+ *
+ * There are two of them because a line is a value and no value reads against
+ * itself. One dark ink was fine for a cream snowflake and quietly useless on
+ * the animals that need a contour most: the zebra is a near-black eel in a
+ * violet crevice, and mixing its body 60% toward an ink *lighter than the body*
+ * produced a line four hundredths of a step off it — present in the buffer,
+ * invisible in the frame. Measured across the four species in the value the
+ * palette was picked in, the single dark ink separated the snowflake's line
+ * from its body by 0.43 and the zebra's by 0.045.
+ *
+ * Lining a dark subject light is also simply what the reference does. A cel
+ * character's contour is dark on a pale face and pale on a black one, for
+ * exactly this reason and with no more theory behind it than that.
  */
 const HULL_INK = 0x27354f;
+const HULL_HALO = 0xf2e8d0;
 const HULL_MIX = 0.6;
 
-/** Exposed so a test can check the mix without writing the value down twice. */
+/** Exposed so a test can check the mix without writing the values down twice. */
 export const OUTLINE_INK = HULL_INK;
+export const OUTLINE_HALO = HULL_HALO;
 
 /** What every hull mesh is called, so a probe can take the line out of a frame. */
 export const OUTLINE_NAME = "moray-outline";
@@ -84,17 +100,52 @@ const inflate: MeshBasicMaterial["onBeforeCompile"] = (shader) => {
 };
 
 /**
- * The line's colour, mixed in sRGB.
+ * Perceived value, on numbers that are already in sRGB.
  *
- * The same reasoning as `softenAccent`: these palettes were picked in the space
- * a painter reads, and three's working space is linear, where the same fraction
- * is a far deeper cut. Mixed linearly, the snowflake — a cream animal — comes
- * out with a line two thirds of the way back to its own body value, which is a
- * smudge rather than a contour.
+ * Deliberately not `Color.getLuminance`, which reads the linear working space
+ * and is a different question: this one is asking which of two inks a painter
+ * would say is further from the animal, and a painter is looking at the encoded
+ * value. The two disagree sharply down at the zebra's end of the range, which
+ * is the end where the choice is actually made.
+ */
+function value(srgb: Color): number {
+  return 0.2126 * srgb.r + 0.7152 * srgb.g + 0.0722 * srgb.b;
+}
+
+/**
+ * The line's colour: the body mixed toward whichever ink stands furthest from
+ * it in value, in sRGB.
+ *
+ * Furthest, rather than a threshold on the body's own darkness. A threshold
+ * needs a number picked between two species and re-picked whenever a fifth is
+ * added, and this needs neither — it falls out of the two inks, so a species is
+ * still a data change and a repainted ink moves every animal's line with it.
+ * It also cannot produce the one outcome that would be worse than either ink,
+ * which is a *blend* of them: interpolating the ink by body luminance would
+ * hand a mid-valued animal a mid-valued line, and that is the failure this
+ * exists to fix, arrived at deliberately.
+ *
+ * As it lands: the snowflake keeps the dark line and the other three take the
+ * halo. The ribbon is the one that is not obvious by eye — an electric blue is
+ * read as a bright colour — but it is a mid-dark *value*, and the dark ink
+ * separated it by 0.13 against the halo's 0.30. What it wears is a pale blue,
+ * being 40% of its own body still.
+ *
+ * The mix is in sRGB for the same reason as `softenAccent`: these palettes were
+ * picked in the space a painter reads, and three's working space is linear,
+ * where the same fraction is a far deeper cut. Mixed linearly, the snowflake —
+ * a cream animal — comes out with a line two thirds of the way back to its own
+ * body value, which is a smudge rather than a contour.
  */
 function inkFor(bodyColor: number): Color {
-  const ink = new Color(HULL_INK).convertLinearToSRGB();
-  return new Color(bodyColor).convertLinearToSRGB().lerp(ink, HULL_MIX).convertSRGBToLinear();
+  const body = new Color(bodyColor).convertLinearToSRGB();
+  const dark = new Color(HULL_INK).convertLinearToSRGB();
+  const halo = new Color(HULL_HALO).convertLinearToSRGB();
+
+  const level = value(body);
+  const ink =
+    Math.abs(value(halo) - level) > Math.abs(value(dark) - level) ? halo : dark;
+  return body.lerp(ink, HULL_MIX).convertSRGBToLinear();
 }
 
 export interface MorayOutlineParts {

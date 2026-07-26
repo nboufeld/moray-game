@@ -229,27 +229,12 @@ const measure = await page.evaluate(
       seen.push(visible);
     }
 
-    // The glint read straight off the instance colours rather than hunted for
-    // in pixels: it is a flick lasting under a second on a handful of fish, so
-    // a still frame is very likely to contain none at all and prove nothing.
-    // Sampled across a stretch of simulated time instead, which answers the
-    // question that matters — how often does the school catch the light.
-    const glintSamples = [];
-    for (let s = 0; s < 240; s++) {
-      fish.update(1 / 30, false, game.camera.position);
-      const colors = fish.mesh.instanceColor.array;
-      let lit = 0;
-      let peak = 1;
-      for (let i = 0; i < fish.mesh.count; i++) {
-        const g = colors[i * 3 + 1];
-        if (g > 1.15) {
-          lit++;
-        }
-        peak = Math.max(peak, g);
-      }
-      glintSamples.push({ lit, peak });
-    }
-
+    // There is no glint sampler here any more, and its absence is the report.
+    // It read a per-instance colour that the aimed sun sparkle used to write,
+    // and WP-G2 deleted the sparkle along with the BRDF it needed — so
+    // `instanceColor` has been null ever since and this probe threw on its own
+    // last measurement. Anything that comes back to look for the school
+    // catching the light should look at the ramp, not at instance colours.
     const material = fish.mesh.material;
     return {
       results,
@@ -260,13 +245,7 @@ const measure = await page.evaluate(
         max: Math.max(...seen),
         emptyPercent: (seen.filter((v) => v < 4).length / seen.length) * 100,
       },
-      glint: {
-        seconds: 240 / 30,
-        meanLit: glintSamples.reduce((a, b) => a + b.lit, 0) / glintSamples.length,
-        maxLit: Math.max(...glintSamples.map((s) => s.lit)),
-        peak: Math.max(...glintSamples.map((s) => s.peak)),
-        framesWithNone: glintSamples.filter((s) => s.lit === 0).length,
-      },
+      population: fish.mesh.count,
       distances: {
         min: distances[0],
         p50: distances[Math.floor(distances.length * 0.5)],
@@ -289,7 +268,11 @@ const measure = await page.evaluate(
 );
 
 const m = measure.material;
-console.info(`fish material: color #${m.color} rough ${m.roughness} metal ${m.metalness}`);
+// No roughness and no metalness to print: since WP-G2 every lit surface here is
+// a `MeshToonMaterial` and neither property exists on one.
+console.info(
+  `fish material: color #${m.color} vertexColors ${m.vertexColors} | ${measure.population} instances`,
+);
 console.info(
   `  material.fog=${m.fogEnabled} scene.fog=${m.sceneFog ? `${m.sceneFog.type}@${m.sceneFog.density}` : "none"}`,
 );
@@ -318,13 +301,6 @@ const v = measure.onCamera;
 console.info(
   `  in the traverse frame over ${v.seconds}s: ${v.mean.toFixed(1)} fish on average ` +
     `(${v.min}..${v.max}), fewer than 4 in ${v.emptyPercent.toFixed(0)}% of frames`,
-);
-
-const g = measure.glint;
-console.info(
-  `  glint over ${g.seconds}s: ${g.meanLit.toFixed(1)} of ${170} fish lit on an average frame ` +
-    `(max ${g.maxLit}, none in ${((g.framesWithNone / (g.seconds * 30)) * 100).toFixed(0)}% of frames), ` +
-    `peak gain ${g.peak.toFixed(2)}x`,
 );
 
 for (const r of measure.results) {

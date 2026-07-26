@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { BackSide, Box3, Color, Mesh, MeshBasicMaterial, SkinnedMesh } from "three";
 import { Moray } from "../src/creatures/morays/Moray";
 import {
+  OUTLINE_HALO,
   OUTLINE_INK,
   OUTLINE_NAME,
   OUTLINE_THICKNESS,
@@ -51,22 +52,43 @@ describe("Moray contour", () => {
     }
   });
 
-  it("mixes the line from the species' own colour, dark but never black", () => {
+  it("mixes the line from the species' own colour toward one of the two inks", () => {
     for (const config of MORAY_SPECIES) {
       const [hull] = hullsOf(new Moray(config));
       const line = (hull!.material as MeshBasicMaterial).color;
       const body = new Color(config.bodyColor);
-      const ink = new Color(OUTLINE_INK);
 
-      // A mix of the two and never an overshoot of either, on every channel.
-      for (const channel of ["r", "g", "b"] as const) {
-        expect(line[channel]).toBeGreaterThanOrEqual(Math.min(body[channel], ink[channel]) - 1e-6);
-        expect(line[channel]).toBeLessThanOrEqual(Math.max(body[channel], ink[channel]) + 1e-6);
-      }
-      // Never black, however dark the animal: the zebra's line comes out
-      // *lighter* than its own near-black body, which is the value key doing
-      // its job rather than a bug.
+      // A mix of the body with one ink or the other, and never an overshoot of
+      // either end, on every channel.
+      const mixes = [OUTLINE_INK, OUTLINE_HALO].some((hex) => {
+        const ink = new Color(hex);
+        return (["r", "g", "b"] as const).every(
+          (channel) =>
+            line[channel] >= Math.min(body[channel], ink[channel]) - 1e-6 &&
+            line[channel] <= Math.max(body[channel], ink[channel]) + 1e-6,
+        );
+      });
+      expect(mixes, `${config.id} line is not a mix of its body and either ink`).toBe(true);
+
+      // Never black and never white, however dark or pale the animal: the
+      // darkest thing in this world is a colour and so is the lightest.
       expect(Math.max(line.r, line.g, line.b)).toBeGreaterThan(0.01);
+      expect(Math.min(line.r, line.g, line.b)).toBeLessThan(0.99);
+    }
+  });
+
+  it("gives every species a line that can be seen against its own body", () => {
+    // The reason there are two inks at all. One dark ink separated the
+    // snowflake's line from its body by 0.43 of perceived value and the
+    // zebra's by 0.045 — a contour that exists in the buffer and not in the
+    // frame, on the one animal that is a dark shape in a dark hole.
+    for (const config of MORAY_SPECIES) {
+      const [hull] = hullsOf(new Moray(config));
+      const line = (hull!.material as MeshBasicMaterial).color.clone().convertLinearToSRGB();
+      const body = new Color(config.bodyColor).convertLinearToSRGB();
+      const separation = Math.abs(luminance(line) - luminance(body));
+      expect(separation, `${config.id} line separates by only ${separation.toFixed(3)}`).
+        toBeGreaterThan(0.2);
     }
   });
 

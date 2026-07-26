@@ -76,6 +76,36 @@ const SITES: readonly ClusterSite[] = [
  */
 const PALETTE = [0xc7755a, 0xb06379, 0xcca572, 0x69a99c, 0x8372a9, 0xac755e];
 
+/**
+ * How far each head's colour is scaled from the palette entry it drew.
+ *
+ * The reef's range is wide on purpose — see the note above: a garden all at one
+ * value reads as one moulded object, and the spread is most of what makes forty
+ * heads out of six colours look like a reef.
+ *
+ * A room can ask for a different one, and the sanctuary does. The bottom of the
+ * reef's range is a rust or a clay taken well down, and on a *branching* head
+ * that is a dark colony among lighter ones, which is what a reef looks like. On
+ * a **table** it is a wide flat plate, seen from below and so wearing both the
+ * shade band and `plateGeometry`'s own baked underside — and a dark brown plank
+ * lying a metre off the sand, in a bright pastel room, is not coral. The review
+ * called it a shipwreck hull and that is exactly what it reads as.
+ *
+ * The sanctuary's floor is where that plate becomes a terracotta one. Its
+ * ceiling goes up by the same sort of amount so the room does not simply lose
+ * its range: this garden is 26 heads in the middle distance of one composed
+ * frame, where the reef's is 57 spread over sixty metres.
+ *
+ * It is a scale in the linear working space, like every `multiplyScalar` on a
+ * `Color` — 0.6 of linear light is about 0.79 of the encoded value, which is
+ * why the reef's bottom end is a deep colour rather than a black one.
+ */
+export interface ToneRange {
+  readonly min: number;
+  readonly max: number;
+}
+const REEF_TONE: ToneRange = { min: 0.6, max: 1.15 };
+
 type ShapeKind = "branch" | "boulder" | "polyp" | "tableTop" | "tableStalk";
 
 interface Part {
@@ -91,12 +121,16 @@ export class CoralField {
   readonly contacts: { x: number; z: number; radius: number; strength: number }[] = [];
 
   /**
-   * `sites` defaults to the reef's authored bommies. The sanctuary grows its
-   * own garden from the same generators, and passing its sites in is the whole
-   * of the difference — the reef's composition is the default precisely so that
-   * a second room cannot disturb it.
+   * `sites` and `tone` default to the reef's authored bommies and value range.
+   * The sanctuary grows its own garden from the same generators, and passing
+   * those in is the whole of the difference — the reef's composition is the
+   * default precisely so that a second room cannot disturb it.
    */
-  constructor(seed: number, sites: readonly ClusterSite[] = SITES) {
+  constructor(
+    seed: number,
+    sites: readonly ClusterSite[] = SITES,
+    tone: ToneRange = REEF_TONE,
+  ) {
     const random = new Random(seed);
     /**
      * Tables draw their lean and tilt from their own stream.
@@ -114,9 +148,11 @@ export class CoralField {
         const x = site.x + random.signed(2.8);
         const z = site.z + random.signed(2.8);
 
+        // One draw whatever the range, so a room changing its tone leaves the
+        // whole garden's layout bit-identical.
         const color = new Color(
           PALETTE[Math.floor(random.next() * PALETTE.length)] ?? PALETTE[0]!,
-        ).multiplyScalar(random.range(0.6, 1.15));
+        ).multiplyScalar(random.range(tone.min, tone.max));
         // A minority of heads are bioluminescent. Kept rare on purpose:
         // everything glowing reads as neon, a few glowing reads as magic.
         const glowing = random.next() < 0.28;
@@ -471,6 +507,26 @@ function boulderGeometry(): BufferGeometry {
 const PLATE_RADIUS = 1.1;
 
 /**
+ * How far the plate's underside is baked down.
+ *
+ * Halved from the 0.55 it was authored at, and for the reason that keeps coming
+ * back in this project: under a ramp, a bake like this is *modelling the light
+ * a second time*. The underside faces away from every light in the scene, so
+ * the toon shade band already has it — and 0.55 on top of that took it to about
+ * a fifth of the plate's colour. What a wide flat disc at a fifth of its colour
+ * looks like, seen edge-on from below with a straight lit rim above it, is a
+ * plank. In the sanctuary, where it lies a metre off pale sand in a bright
+ * room, the review read it as the strake of a wrecked hull, and it is the same
+ * shape in the left of shot B.
+ *
+ * Halving keeps the cue — a plate coral's shade is the whole reason the shape
+ * exists, and something has to say the underside is not the top — while letting
+ * the ramp be the thing that darkens it. Exactly the correction `MorayPattern`
+ * took in WP-G6 and the fish's counter-shading has just taken.
+ */
+const PLATE_UNDERSIDE = 0.28;
+
+/**
  * The shared table plate: a lobed, warped, flaring disc rather than a table
  * top.
  *
@@ -500,7 +556,7 @@ function plateGeometry(): BufferGeometry {
     // Daylight arrives from above and the plate is its own ceiling: the
     // underside only ever sees bounce, so bake that in rather than hope the
     // lighting finds it.
-    const shade = 1 - 0.55 * Math.max(0, -normal.getY(i));
+    const shade = 1 - PLATE_UNDERSIDE * Math.max(0, -normal.getY(i));
     colors[i * 3] = shade;
     colors[i * 3 + 1] = shade;
     colors[i * 3 + 2] = shade;

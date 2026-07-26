@@ -1,4 +1,4 @@
-import { BufferAttribute, type BufferGeometry, type MeshToonMaterial } from "three";
+import { BufferAttribute, Color, type BufferGeometry, type MeshToonMaterial } from "three";
 import { requestAlbedo } from "../rendering/AssetLibrary";
 import {
   buildColorTexture,
@@ -46,7 +46,10 @@ const TILE_REPEAT = 2;
  * per rock family, and one of them is doing compositional work: the foreground
  * shoulder that crops shot A is `0x3a474a`, and a shoulder that is not darker
  * than the reef behind it is not a shoulder. Blending the tints toward white
- * would take that from 0.23 to 0.73 and flatten the frame.
+ * would take that from 0.23 to 0.73 and flatten the frame. ({@link TINT_FLOOR}
+ * does lift that shoulder now, but by value alone and by less than half of its
+ * distance below the family — the order of the tints is the thing neither of
+ * these is allowed to touch.)
  *
  * So the tint is *scaled* rather than washed out: a single multiply in linear
  * space, giving back the luminance the map stopped supplying. Every rock keeps
@@ -54,15 +57,21 @@ const TILE_REPEAT = 2;
  * uniform scale cannot change a ratio — which is the whole point, since the
  * ratios are the rock-to-rock variation.
  *
- * The number moved with the file. It was 2.85 for a limestone tile that
- * measured 0.27 in linear luminance against the built texture's 0.80; the
- * gouache wash that replaces it measures 0.386, which asks for 2.07. The
- * families' own colours need no other adjustment — they were already all but
- * neutral (`0x8b9184` is four parts of saturation), which is what lets the
- * wash's grey-lavender-sage through as the stone's actual hue instead of
- * multiplying it into the olive the old tile was.
+ * The number moves with the file, and it is only ever the built texture's
+ * linear luminance over the tile's. It was 2.85 for a limestone tile that
+ * measured 0.27 against the built texture's 0.80, and 2.07 for the first
+ * gouache wash at 0.3855. The repaint measures 0.3723 — a hair darker, because
+ * it spends some of its value on colour — so the same ratio asks for 2.14.
+ *
+ * The families' own colours still need no adjustment, and now they are earning
+ * it. They were always all but neutral (`0x8b9184` is four parts of
+ * saturation), and where the first wash was a grey that leaned lavender in some
+ * patches and sage in others — a swing of about 34 parts in red-minus-blue —
+ * this one carries lavender, sage *and* ochre across a swing of 40, around a
+ * mean that is itself 24 parts warmer. A near-neutral tint is a multiply that
+ * cannot argue with any of it: the patches arrive as the stone's own colour.
  */
-const TINT_LIFT = 2.07;
+const TINT_LIFT = 2.14;
 
 let shared: { map: ReturnType<typeof buildColorTexture>; normal: ReturnType<typeof buildNormalTexture> } | undefined;
 
@@ -101,12 +110,64 @@ function rockHeight(u: number, v: number): number {
  *
  * The procedural map is authored to sit under a tint, and the tints are all but
  * neutral, so before this the fallback rock had no hue but the faint warm one
- * written into the map — which was mixed to look like limestone. The painted
- * wash is a grey-lavender-sage, and a build with no assets should be the same
- * world in flatter paint rather than a different, browner one, so the map
- * carries that hue instead.
+ * written into the map — which was mixed to look like limestone. A build with
+ * no assets should be the same world in flatter paint rather than a different
+ * one, so the map carries the wash's own mean instead.
+ *
+ * It tracks the file. The first wash averaged a grey leaning blue and this is
+ * written as its mean, (0xaa, 0xa3, 0x9a) — a warm grey, because the repaint
+ * moved the whole tile 24 parts warmer in red-minus-blue. The lavender and the
+ * sage are patches *within* that mean and a single hue cannot stand in for
+ * them; what it can do is stop the assetless build reading as a different rock
+ * from the shipping one.
  */
-const WASH_HUE = [0x9a / 0xa8, 0xa4 / 0xa8, 1] as const;
+const WASH_HUE = [1, 0xa3 / 0xaa, 0x9a / 0xaa] as const;
+
+/**
+ * The value the stone family sits at, and how much of a darker tint's distance
+ * below it survives.
+ *
+ * Every rock in the reef and the sanctuary shares one map, so the only thing
+ * that separates a sea stack from a foreground shoulder is the tint it is
+ * given — and two of those tints were written when this world was lit like a
+ * photograph, where a dark mass is how you build depth. Under a painted key it
+ * is how you put a hole in the picture: the sanctuary's near stack rendered at
+ * 114 of luma against water at 189, and the reef's foreground shoulder at 80
+ * against 175. Both read as slabs of a different, heavier world laid over this
+ * one, and neither is far off the "nothing anywhere near black" the value key
+ * turns on.
+ *
+ * A floor rather than a brightening, and a soft one rather than a clamp. The
+ * shoulder is *doing something* — it crops the left of shot A and it is only a
+ * repoussoir while it is darker than the reef behind it — so what this must not
+ * do is flatten the order the tints are in. Taking 55% of the distance below
+ * the floor out keeps every rock in its place and pulls the bottom of the range
+ * up into the family: the shoulder goes from 0.268 of perceived value to 0.407
+ * and the sanctuary's near stack from 0.406 to 0.469, while the two mid-grey
+ * families above the floor are untouched to the bit.
+ *
+ * The lift is a scale in sRGB, so hue and saturation are exactly preserved and
+ * only value moves — which is what "toward the pastel family" has to mean for a
+ * stone whose actual colour is coming from a painted wash.
+ */
+const TINT_FLOOR = 0.52;
+const TINT_FLOOR_KEEP = 0.45;
+
+/** Perceived value on sRGB numerals; see `MorayOutline`'s note on the space. */
+function value(srgb: Color): number {
+  return 0.2126 * srgb.r + 0.7152 * srgb.g + 0.0722 * srgb.b;
+}
+
+/** A rock family's tint, with the bottom of the range lifted into the family. */
+function liftDarkTint(color: number): Color {
+  const tint = new Color(color).convertLinearToSRGB();
+  const level = value(tint);
+  if (level >= TINT_FLOOR || level <= 0) {
+    return tint.convertSRGBToLinear();
+  }
+  const lifted = TINT_FLOOR - (TINT_FLOOR - level) * TINT_FLOOR_KEEP;
+  return tint.multiplyScalar(lifted / level).convertSRGBToLinear();
+}
 
 /**
  * Stone surface, shared by every rock, mound and flank in the reef.
@@ -130,7 +191,7 @@ export function createRockMaterial(color: number): MeshToonMaterial {
   };
 
   const material = createToonMaterial({
-    color,
+    color: liftDarkTint(color),
     map: shared.map,
     normalMap: shared.normal,
     // Algae tinting is baked per-vertex from the surface normal.

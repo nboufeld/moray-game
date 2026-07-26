@@ -17,7 +17,7 @@ import { Particles } from "../rendering/Particles";
 import { UnderwaterFog } from "../rendering/UnderwaterFog";
 import { SEEDS } from "../util/Random";
 import { disposeSubtree } from "../util/disposeSubtree";
-import { CoralField, type ClusterSite } from "../world/CoralField";
+import { CoralField, type ClusterSite, type ToneRange } from "../world/CoralField";
 import { createRockMaterial, weatherRock } from "../world/RockMaterial";
 import { createSandMaterial } from "../world/SandMaterial";
 import {
@@ -120,6 +120,15 @@ const CORAL_SITES: readonly ClusterSite[] = [
   { x: 9.0, z: 0.5, heads: 5 },
   { x: -1.5, z: -14.5, heads: 6 },
 ];
+
+/**
+ * The room's garden keeps the reef's palette and drops the bottom of its value
+ * range; see {@link ToneRange}. The site at (9, 0.5) is the reason — it is the
+ * only bommie the sweep brings close to the lens, and a table plate there,
+ * drawn at the dark end of a rust, was reading as the strake of a wrecked hull
+ * rather than as coral.
+ */
+const CORAL_TONE: ToneRange = { min: 0.88, max: 1.3 };
 
 /**
  * Grass in the middle distance rather than at the lens. A clump close enough to
@@ -410,7 +419,7 @@ export class SanctuaryScene {
   }
 
   private buildCoral(contacts: ContactPatch[]): void {
-    const coral = new CoralField(SEEDS.sanctuaryCoral, CORAL_SITES);
+    const coral = new CoralField(SEEDS.sanctuaryCoral, CORAL_SITES, CORAL_TONE);
     this.scene.add(coral.group);
     contacts.push(...coral.contacts);
   }

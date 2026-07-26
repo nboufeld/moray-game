@@ -22,8 +22,12 @@ import { Random, SEEDS } from "../../util/Random";
  * fish fog closes it — so seven groups scattered over the whole reef put an
  * average of one and a half of them in frame. In practice that meant a shot
  * with three shoals in it and, fifteen seconds later, one with none. Thirteen
- * groups of thirteen still read as schools, and the reef is never empty of
- * them: measured over the traverse camera, never fewer than four fish in shot.
+ * still read as schools, and the reef is never empty of them: measured over the
+ * traverse camera, never fewer than four fish in shot.
+ *
+ * It stays at thirteen while the population comes down, which is the whole
+ * shape of this change: the count was never the problem, the *density* was. See
+ * {@link STATION_SPREAD}.
  */
 const SHOAL_COUNT = 13;
 
@@ -95,6 +99,32 @@ const VIEWER_GAIN = 0.9;
 const VIEWER_MAX_RATE = 0.45;
 
 /**
+ * How far a fish's station sits from the middle of its shoal, in metres:
+ * across, up, and along the line of travel.
+ *
+ * These are what decide whether the reef holds *schools* or a scatter, and they
+ * used to be nearly twice as wide — 2.8 across by 1.1 up by 3.5 along, which a
+ * spread of up to 1.5 stretched into a formation eight metres wide and ten
+ * long. Thirteen fish in ten metres of water is one fish every three quarters
+ * of a metre, and at the distance the fog leaves them visible at, that is not a
+ * shoal. It is confetti — thirteen unrelated dots that happen to be drifting
+ * the same way, which is exactly what the pivot's review called them.
+ *
+ * Grouping is the cheapest legibility there is and it costs nothing at all: the
+ * same instances, the same draw call, the same matrices. Halved, a shoal is
+ * about three metres across and four long, nine animals inside it, and it reads
+ * from anywhere in the reef as one thing with a shape.
+ */
+const STATION_ACROSS = 1.6;
+const STATION_UP = 0.65;
+const STATION_ALONG = 2.0;
+/** Multiplies every station: a tight ball at the low end, a loose drift high. */
+const STATION_SPREAD = { min: 0.6, max: 1.1 } as const;
+
+/** How large a fish inside the near field is allowed to be; see `update`. */
+const NEAR_SCALE_CAP = 0.69;
+
+/**
  * How much of its girth the body has left by the tail.
  *
  * An ellipsoid is symmetric end to end, and a fish is not: the fork has to hang
@@ -114,12 +144,13 @@ const TAIL_TAPER = 0.42;
  * where a round shape has to survive being a dozen pixels across.
  *
  * 6×5 rather than the 8×6 that was drawn up, and the reason is that a school is
- * 170 of these: measured on the software rasteriser at the resolution the
- * adaptive scaler actually settles on, the school costs 3.0ms of an 85ms frame
- * at 48 triangles and 5.5ms at 80, against 2.3ms for the diamond it replaces.
- * The two spheres are indistinguishable at the size this animal is ever drawn —
- * it is held at arm's length by `VIEWER_STANDOFF` and shrunk further by the
- * near-field cap — so the extra 32 triangles buy nothing but the frame.
+ * a hundred and twenty of these: measured at 170 of them, on the software
+ * rasteriser and at the resolution the adaptive scaler actually settles on, the
+ * school cost 3.0ms of an 85ms frame at 48 triangles and 5.5ms at 80, against
+ * 2.3ms for the diamond it replaces. The two spheres are indistinguishable at
+ * the size this animal is ever drawn — it is held at arm's length by
+ * `VIEWER_STANDOFF` and shrunk by the near-field cap — so the extra 32
+ * triangles buy nothing but the frame.
  *
  * Every part of it stays *indexed* for the same reason. A sphere shares each of
  * its vertices between six faces, so keeping the index is the difference
@@ -167,6 +198,9 @@ function createFishGeometry(): BufferGeometry {
   countershade(body, shading);
   countershade(upperBlade, shading);
   countershade(lowerBlade, shading);
+  // After the counter-shading, whose entries it overwrites, and on the body
+  // alone: a tail blade has no cheek to put an eye on.
+  markEyes(body);
 
   // The fallback is kept because a merge can only fail by the attributes not
   // lining up, which is a build-time mistake and not a reason to have no fish.
@@ -226,6 +260,116 @@ function verticalExtent(geometry: BufferGeometry): VerticalExtent {
 }
 
 /**
+ * Where the pale underside ends and the dark back begins, up the body.
+ *
+ * The two ends are unchanged — belly at the full material colour, back at 0.6
+ * of it — and what moved is everything between them. This was a straight ramp,
+ * `1 - 0.4t`, and a straight ramp is one value: at the size this animal is
+ * drawn, six pixels tall on a good day, a gradient from 1.0 to 0.6 averages
+ * into a single mid tone and the fish is a dot. Two plateaus with a short
+ * crossing between them survive that averaging, because whatever the fish
+ * covers, some of its pixels are pale and some are dark.
+ *
+ * The crossing lands where it does because of the geometry it has to live on.
+ * The body is a five-segment sphere, so there are exactly six rings of vertices
+ * up it, at 0, 0.10, 0.35, 0.65, 0.90 and 1.00 of the height — and the only
+ * place a window from 0.42 to 0.72 can put its edge is between the third and
+ * the fourth, which is the flank at the midline. That is where a counter-shaded
+ * fish actually turns over, and any narrower a window would fall between the
+ * same two rings and change nothing.
+ */
+const BELLY_TOP = 0.42;
+const BACK_FROM = 0.72;
+
+/**
+ * How far the back is taken down from the belly's value.
+ *
+ * 0.78, which is a far shallower dip than the 0.6 it was, and the reason is the
+ * one `MorayPattern`'s counter-shading was cut back for in WP-G6: under a ramp,
+ * counter-shading is *modelling the light on a cylinder on top of shading that
+ * already models the light on a cylinder*. Worse than that here, because it
+ * models it upside down. The key is overhead, so the ramp hands the fish's back
+ * the lit band and its underside the shade band — and then the old figure
+ * darkened the lit side by 40% and left the shaded side at full. The two very
+ * nearly cancelled: a fish's back rendered at 0.6 of the key and its belly at
+ * 1.0 of a 0.26 shade band, which is one flat mid-mauve across the whole flank.
+ * One value, which is precisely the "scattered confetti" read, and the vertex
+ * buffer was paying for it.
+ *
+ * Shallower, the light gets to do its own job and the fish has the two values
+ * the review asked for: a pale top and a violet-shaded underside, with the
+ * marking riding on top of that rather than fighting it. Measured through
+ * `probe-fish.mjs`, this is also what brings the school's median back up toward
+ * the water it sits on — a small dark shape on a large saturated field is read
+ * as that field's complement, which is where "pink" comes from and which no hue
+ * on the albedo has ever been able to argue with.
+ */
+const BACK_SHADE = 0.78;
+
+/**
+ * The eye: one vertex per side, taken back up to the belly's value.
+ *
+ * A distant fish needs two values to read as an animal rather than a fleck, and
+ * the split above gives it those along the body. What it does not give is a
+ * *head* — both ends of a lozenge look the same — and the one mark that says
+ * which end is the front, in every picture book ever printed, is an eye.
+ *
+ * It is free. There is no texture, no extra vertex and no second draw: the
+ * colour attribute the counter-shading already writes has one entry overwritten
+ * on each cheek.
+ *
+ * What it actually looks like, at 13× on a thirty-pixel fish, is worth being
+ * straight about: a soft bright patch over the front eighth of the body, not a
+ * dot. The body is six segments around and five up, so one vertex owns an
+ * eighth of the surface and Gouraud interpolation spreads it over all of it.
+ * That is still most of what the mark is for — it breaks the fore-and-aft
+ * symmetry of a lozenge, so the animal has a *front* — and it is worth
+ * measuring rather than arguing about: through `probe-fish.mjs` it takes the
+ * school's ninety-ninth percentile over the water it covers from +6 to +28 in
+ * shot C and from +16 to +33 in shot B. A tighter eye means more segments, and
+ * AGENTS.md has the measurement for what those cost across a school.
+ *
+ * It is not pushed brighter than this for the reason the whole animal is tuned
+ * the way it is: a school that pops out of the water is a worse failure than a
+ * school that is slightly flat, and a glowing snout on a background animal is
+ * the loudest way to get there.
+ *
+ * It is the one thing in this file allowed above 1, and the exception is worth
+ * being precise about, because the ceiling next door is load-bearing. That rule
+ * is about the counter-shading *ramp*: a ramp that peaks above 1 is a global
+ * brightening of the animal hidden in a vertex buffer, where nobody reading the
+ * material would find it, and it makes the material's colour a lie. Two
+ * vertices at the head are not that. They are a highlight, they are visible as
+ * one in the geometry, and the material's colour still describes every other
+ * pixel of the fish.
+ *
+ * The ceiling could not do the job in any case, and the arithmetic says why.
+ * The canonical cameras sit *below* the shoals — they cruise at four to seven
+ * metres and the diver's eye line is around two — so what the frame shows is
+ * mostly underside, and underside is the ramp's shade band with the violet
+ * ambient on it. A mark at 1.0 there is exactly as bright as the belly beside
+ * it. 1.5 is what lifts it clear of its own cheek without reaching the water's
+ * value, which would make the fish look holed rather than eyed.
+ *
+ * The anchor is expressed as fractions of the body's own half-extents so it
+ * survives the sphere being re-segmented or the animal being re-proportioned;
+ * the nearest vertex on each side wins, which is stable because the body is
+ * mirror-symmetric across x. As built it lands a fifth of the way back from the
+ * snout, on the ring of vertices just *below* the midline.
+ *
+ * Below, and that is the same argument as the value. The upper cheek is where
+ * an eye anatomically goes, and it was tried there first: it lands immediately
+ * under the pale dorsal band the ramp lights, so the mark and the band merge
+ * and the fish gains a slightly wider light edge instead of an eye. The cheek
+ * under the midline is the mauve the underside actually shows the camera, and a
+ * pale spot on it separates cleanly. At thirty pixels of fish nobody can see
+ * that the eye is low; everybody can see whether there is one.
+ */
+const EYE_FORWARD = 0.82;
+const EYE_RISE = -0.25;
+const EYE_VALUE = 1.5;
+
+/**
  * Bakes counter-shading — dark back, bright belly — into vertex colours.
  *
  * This is the real cue that makes a fish read as a fish from a distance, and at
@@ -236,7 +380,8 @@ function verticalExtent(geometry: BufferGeometry): VerticalExtent {
  * *brightening* applied on top of the base colour — a gain living in a vertex
  * buffer, where nobody reading the material would find it. The material's
  * colour is the animal's brightest point rather than something four fifths of
- * the way up it, and that is what makes the range below readable.
+ * the way up it, and that is what makes the range below readable. (The eye is
+ * above it and is not an exception to that sentence; see {@link EYE_VALUE}.)
  *
  * The range itself came down when the reef went to a painted key. A back at
  * 0.42 of the belly was authored for a frame whose water sat near a fifth of
@@ -247,6 +392,9 @@ function verticalExtent(geometry: BufferGeometry): VerticalExtent {
  * (measured, the pixels are already blue-grey). The counter-shading is still
  * the cue that says which way up a fish is; it just no longer has to carry the
  * animal down into water that is not there any more.
+ *
+ * The shape between those two ends is {@link BELLY_TOP}'s business now rather
+ * than a straight line's.
  *
  * The gradient is clamped at both ends for the same reason it is capped at 1:
  * the tail fork reaches a little above and below the body it is shaded against,
@@ -262,17 +410,68 @@ function countershade(geometry: BufferGeometry, { min, span }: VerticalExtent): 
   const colors = new Float32Array(position.count * 3);
   for (let i = 0; i < position.count; i++) {
     const t = Math.min(1, Math.max(0, (position.getY(i) - min) / span));
-    const shade = 1 - t * 0.4;
+    const shade = 1 - (1 - BACK_SHADE) * smoothstep(BELLY_TOP, BACK_FROM, t);
     // The hue turns over with the value: a shade of warm cream along the belly
     // and the cool of the water along the back, which is what counter-shading
     // looks like when a painter does it rather than a physicist. It is a tilt
     // of a few percent between channels on an albedo that stays cool overall —
-    // the cream is the direction, not the colour.
+    // the cream is the direction, not the colour. It still reads off `t`
+    // directly, so the hue keeps turning smoothly while the value steps.
     colors[i * 3] = shade * (1.02 - t * 0.07);
     colors[i * 3 + 1] = shade;
     colors[i * 3 + 2] = shade * (0.97 + t * 0.09);
   }
   geometry.setAttribute("color", new BufferAttribute(colors, 3));
+}
+
+function smoothstep(edge0: number, edge1: number, x: number): number {
+  const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+}
+
+/** Writes the eye onto whichever vertex is nearest it; see {@link EYE_FORWARD}. */
+function markEyes(geometry: BufferGeometry): void {
+  const position = geometry.attributes.position;
+  const color = geometry.attributes.color;
+  if (!position || !color) {
+    return;
+  }
+
+  let halfWidth = 0;
+  let halfHeight = 0;
+  let halfLength = 0;
+  for (let i = 0; i < position.count; i++) {
+    halfWidth = Math.max(halfWidth, Math.abs(position.getX(i)));
+    halfHeight = Math.max(halfHeight, position.getY(i));
+    halfLength = Math.max(halfLength, position.getZ(i));
+  }
+
+  for (const side of [-1, 1]) {
+    const ax = side * halfWidth;
+    const ay = halfHeight * EYE_RISE;
+    const az = halfLength * EYE_FORWARD;
+
+    let best = -1;
+    let bestDistance = Infinity;
+    for (let i = 0; i < position.count; i++) {
+      const x = position.getX(i);
+      // Its own side only. This also drops the two poles, whose x is exactly 0
+      // and which would otherwise be eligible for both eyes at once.
+      if (x * side <= 0) {
+        continue;
+      }
+      const distance =
+        (x - ax) ** 2 + (position.getY(i) - ay) ** 2 + (position.getZ(i) - az) ** 2;
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = i;
+      }
+    }
+
+    if (best >= 0) {
+      color.setXYZ(best, EYE_VALUE, EYE_VALUE, EYE_VALUE);
+    }
+  }
 }
 
 /**
@@ -338,7 +537,7 @@ function wrapAngle(radians: number): number {
  * carousels, and a carousel is the one motion nothing alive makes. From a fixed
  * camera the giveaway is that nothing ever arrives or leaves; it just goes
  * round. The cost is unchanged either way: one InstancedMesh, one draw call,
- * the same 170 matrices written per frame.
+ * one matrix per fish written per frame.
  */
 export class FishSchoolSystem {
   readonly mesh: InstancedMesh;
@@ -349,7 +548,19 @@ export class FishSchoolSystem {
   private readonly swim = { value: 0 };
   private time = 0;
 
-  constructor(count = 170, seed: number = SEEDS.fish) {
+  /**
+   * A hundred and twenty, down from a hundred and seventy.
+   *
+   * Measured with `probe-fish.mjs`, the old school put 86 fish inside the
+   * traverse frame on an average second — half the population, all of it in one
+   * shot. That is not a busy reef, it is a wall of dots, and it is the other
+   * half of the confetti read that {@link STATION_ACROSS} covers: too many
+   * animals, too thinly grouped. Cutting the population and tightening the
+   * formation are the same fix approached from two sides, and the cut is the
+   * one that also buys frame time — this is 50 fewer matrices written and 50
+   * fewer bodies rasterised, every frame, for nothing.
+   */
+  constructor(count = 120, seed: number = SEEDS.fish) {
     const random = new Random(seed);
     const geometry = createFishGeometry();
     const material = createToonMaterial({
@@ -370,7 +581,7 @@ export class FishSchoolSystem {
       //
       // The specular went with the BRDF, and both halves of the old argument
       // went with it. There is no lobe left to concentrate into the pinpoints
-      // that made a school of 170 pop out of the water, and there is none left
+      // that made a whole school pop out of the water, and there is none left
       // to model a near fish either — which the ramp does instead, in flat
       // steps, which is what a storybook fish is.
       //
@@ -413,8 +624,8 @@ export class FishSchoolSystem {
         );
     };
     this.mesh = new InstancedMesh(geometry, material, count);
-    // Small, distant and always moving: their shadows are never legible, and
-    // 170 extra casters in the shadow pass are not.
+    // Small, distant and always moving: their shadows are never legible, and a
+    // school's worth of extra casters in the shadow pass are not.
     this.mesh.castShadow = false;
 
     // Shoals set off from scattered stations on scattered bearings. The
@@ -449,7 +660,7 @@ export class FishSchoolSystem {
         // Some shoals ball up and some string out. Without this every group is
         // the same size and density, which is a repeated decal at the scale of
         // the shoal rather than of the fish.
-        spread: random.range(0.65, 1.5),
+        spread: random.range(STATION_SPREAD.min, STATION_SPREAD.max),
       });
     }
 
@@ -458,9 +669,9 @@ export class FishSchoolSystem {
         shoal: i % SHOAL_COUNT,
         // Wider than tall and longer than wide, which is the shape a school
         // travelling in one direction actually holds.
-        right: random.signed(2.8),
-        up: random.signed(1.1),
-        forward: random.signed(3.5),
+        right: random.signed(STATION_ACROSS),
+        up: random.signed(STATION_UP),
+        forward: random.signed(STATION_ALONG),
         weaveRate: random.range(0.5, 1.1),
         weavePhase: random.range(0, Math.PI * 2),
         weaveAmp: random.range(0.25, 0.7),
@@ -540,12 +751,20 @@ export class FishSchoolSystem {
       // inside the bubble when a capture teleports the camera stays there
       // for the settle. So the render itself shrinks close fish toward the
       // small end of the scale range, blended over 6-12m so nothing pumps.
+      //
+      // A quarter less shrinking than it used to do, because the sentence above
+      // is no longer true: it *has* an eye now, and a two-value body to hang it
+      // on. The cap was insurance against a featureless lozenge filling the
+      // lens, and paying for that insurance meant every fish the player could
+      // actually get a look at was also the smallest one on offer — which is
+      // its own kind of illegible. 0.69 is where a near fish is big enough to
+      // see the eye and still small enough to be background.
       const dx = x - viewer.x;
       const dy = y - viewer.y;
       const dz = z - viewer.z;
       const range = Math.sqrt(dx * dx + dy * dy + dz * dz);
       const far = Math.min(1, Math.max(0, (range - 6) / 6));
-      const nearScale = Math.min(fish.scale, 0.55);
+      const nearScale = Math.min(fish.scale, NEAR_SCALE_CAP);
       this.dummy.position.set(x, y, z);
       this.dummy.rotation.set(pitch, yaw, bank, "YXZ");
       this.dummy.scale.setScalar(nearScale + (fish.scale - nearScale) * far);

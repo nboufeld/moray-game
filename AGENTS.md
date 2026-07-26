@@ -108,6 +108,14 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
  claim like "held the frame mean to within one part in 255" gets made at all. Watch its
  tenth percentile — a veil of additive light shows up there first, because it lifts the
  darks and leaves the highlights alone.
+ `node scripts/image-stats.mjs <file> [--rows <top> <count>] [--grid <n>]` is the same
+ idea one step upstream: it measures the *painting* rather than the frame, which is what
+ every integration constant in `UnderwaterFog` and `RockMaterial` is derived against.
+ `--rows` reports a horizontal strip on its own, the way the fog samples its horizon;
+ `--grid` reports block means, which is how a wash's colour patches are told from its
+ noise. When an asset is repainted, measure the old file out of git and the new one the
+ same way — a constant re-derived from a true ratio takes a minute and a constant
+ guessed at costs a package.
 - **Render cost gotchas** (all of these were measured, not guessed): coral is flattened
   into a handful of instanced meshes because ~200 individual draw calls dominated the
   frame; grass and fish deliberately do not cast shadows; the light shafts are
@@ -252,16 +260,28 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
  - **Nothing raycasts a moray**, so the hulls cannot intercept anything: `Game.isObstructed`
  tests `Reef.obstructionMeshes`, which is rock and mound only. That was checked rather
  than assumed, and it is why there is no `raycast = () => {}` here to explain.
- - **The ink is the species' own colour, mixed 60% toward a dark blue-violet, in sRGB.**
- The same reasoning as `softenAccent`: the palette was picked in the space a painter
- reads, and the same fraction in three's linear working space is a far deeper cut —
- mixed linearly the cream snowflake wears a line at four tenths of its own value,
- which is a smudge. One consequence is deliberate and worth knowing before it is
- reported as a bug: the zebra's line comes out *lighter* than its near-black body, and
- a dark species in a dark crevice has a contour you can barely see. A line is a value,
- and no value reads against itself. The thickness is 12mm in the animal's *local*
+ - **The ink is the species' own colour, mixed 60% toward one of two inks, in sRGB.**
+ The mix is in sRGB for the same reason as `softenAccent`: the palette was picked in
+ the space a painter reads, and the same fraction in three's linear working space is a
+ far deeper cut — mixed linearly the cream snowflake wears a line at four tenths of
+ its own value, which is a smudge. The thickness is 12mm in the animal's *local*
  space, so it thickens with the reef's 1.5× morays and thins with the sanctuary's,
  which is what a drawn contour does.
+ - **There are two inks because a line is a value and no value reads against
+ itself.** One dark blue-violet was fine for the cream snowflake and quietly useless
+ on the animals that need a contour most: mixing a near-black zebra 60% toward an ink
+ *lighter than its own body* separated the line from the body by 0.045 of perceived
+ value, against the snowflake's 0.43 — present in the buffer, invisible in the frame.
+ So there is a warm cream (`HULL_HALO`) as well, and each species takes whichever ink
+ stands furthest from it. That is deliberately not a threshold and deliberately not a
+ blend: a threshold needs a number re-picked whenever a fifth species is added, and
+ interpolating the ink by body luminance would hand a mid-valued animal a mid-valued
+ line, which is the failure itself arrived at on purpose. As it lands the snowflake
+ keeps the dark line and the other three take the halo — including the ribbon, which
+ reads as a bright colour and is a mid-dark *value* (0.13 separation dark against 0.30
+ haloed). `tests/morayOutline.test.ts` asserts every species clears 0.2, so a new
+ palette cannot quietly lose a contour. Lining a dark subject light is also just what
+ the reference does.
 - **Authored assets live in `public/assets/`, and there are exactly nine of them.** Four
   animals, three surfaces, one light and one sky (WP-G6 added five and retired the two
   photographic terrain tiles). Every one of them is a colour image and none of them is a
@@ -301,16 +321,34 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
     compositional — the `0x3a474a` foreground shoulder that crops shot A is only a
     shoulder while it is darker than the reef behind it. So rock *scales* its tint
     instead (`TINT_LIFT`), one multiply in linear space that gives back the luminance
-    the map stopped supplying; it went 2.85 → 2.07 when the tile went from a 0.27
-    limestone photograph to a 0.386 gouache wash. Ratios between rocks survive a
-    uniform scale, which is the entire point. Measure both means before changing
-    either file — the canonical shots hold their frame mean to within three parts in
-    255 across the whole package.
+    the map stopped supplying. It is only ever the built texture's linear luminance
+    over the tile's, so it moves with the file and nothing else: 2.85 for a 0.27
+    limestone photograph, 2.07 for the first gouache wash at 0.3855, **2.14** for
+    WP-G8's repaint at 0.3723. Ratios between rocks survive a uniform scale, which is
+    the entire point. Measure both means before changing either file —
+    `node scripts/image-stats.mjs <file>` reports exactly the linear luminance these
+    are derived from, and the canonical shots hold their frame mean to within three
+    parts in 255 across the whole package.
   - **The rock families needed no colour change and that is the point.** They were
     already all but neutral (`0x8b9184` is four parts of saturation), so the wash's
-    grey-lavender-sage arrives as the stone's actual hue instead of being multiplied
-    into the olive the old tile was. If a family is ever given a real colour again it
-    will fight the painting, not tint it.
+    colour arrives as the stone's actual hue instead of being multiplied into the
+    olive the old tile was. If a family is ever given a real colour again it will
+    fight the painting, not tint it. WP-G8's repaint is where that pays: it carries
+    lavender, sage *and* ochre across a 40-part swing in red-minus-blue, around a mean
+    24 parts warmer than the first wash's, and a near-neutral tint cannot argue with
+    any of it. The assetless fallback's `WASH_HUE` tracks the file's mean, so a
+    repaint that changes the stone's hue has to move that too.
+  - **`TINT_FLOOR` lifts the bottom of the tint range into the family, and it is a
+    floor rather than a brightening.** Two tints were written when this world was lit
+    like a photograph, where a dark mass is how depth is built: the sanctuary's near
+    stack rendered at 114 of luma against water at 189 and the reef's foreground
+    shoulder at 80 against 175, and both read as slabs of a heavier world laid over
+    this one. What the correction must not do is reorder the tints — the shoulder is
+    only a repoussoir while it is darker than the reef behind it — so it takes 55% of
+    a tint's distance below the floor out rather than clamping, and it scales in sRGB
+    so hue and saturation are exactly preserved and only value moves. The shoulder
+    goes 0.268 → 0.407 of perceived value, the sanctuary's stack 0.406 → 0.469, and
+    the two families already above the floor are untouched to the bit.
   - **The sand wash is laid at half the procedural rate** (`SAND_WASH_REPEAT` 7
     against `SAND_REPEAT` 14) and its contrast is opened 2.6× around its own mean at
     load, in `openWash`. Both are answers to the same fact: the normal map's ripples
@@ -345,14 +383,37 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
     sand emerges out of the water by warming four parts over six rows, with green and
     blue continuous to within one.
   - **`BACKDROP_EXPOSURE` is the one number allowed between the painting and the
-    world.** The panorama is painted half a stop above this reef's key — its horizon
-    is #68dbd9, very nearly the hue the fog was already tuned to and much brighter —
-    and hung as it comes it lifted the canonical shots twelve parts at the mean and
-    eighteen at the p90, turning luminous turquoise into haze. It is applied to
-    `scene.backgroundIntensity` *and* to the sampled horizon, so the agreement above
-    survives it. At 0.64 the derived fog lands within a part of the `0x53b2bb` it
-    replaces on every channel: the painter and WP-G1 agreed about the colour and
-    differed only about the exposure.
+    world**, and what it means depends on whether the painting is flat. It is applied
+    to `scene.backgroundIntensity` *and* to the sampled horizon, so the agreement
+    above survives it. It was 0.64 for the first panorama, which had almost no
+    vertical range — that image was uniformly half a stop hot and 0.64 was pure
+    brightness. WP-G8's repaint has range (whole-image p10/p50/p90 of 63/159/240, red
+    running 64 at the horizon to 155 thirty degrees up), so the same multiply now
+    decides how much of the range survives, and 0.64 spent it. **0.85** is where the
+    derived fog's green lands exactly on the value the reef has always had, and it is
+    what makes the upper third of shots A and B water with light coming down through
+    it rather than a flat turquoise field.
+  - **`RED_PEDESTAL` exists because three's neutral tone curve is a black-point crush
+    aimed at whichever channel is smallest — which on this frame is always red.** The
+    curve opens by subtracting `x - 6.25x²` where `x` is the minimum channel, and
+    while red is small that is close to total: at 0.02 of linear light it removes
+    seven eighths. The first panorama never got near it (horizon red 103); the repaint
+    carries 71 and lands the water above the skyline *inside* the crush, which
+    rendered as rgb(15, 175, 186) with 2.5% of shot A under 25 parts of red against
+    0.06% before. That is the electric poster-paint cyan the value key warns about,
+    arriving from a direction nobody was watching — not from the file's deep zone,
+    which drops red to 1 and is never drawn (it lies below 34° of depression, where a
+    camera two metres over the sand is looking at sand). The fix is the crush read
+    backwards: an affine lift on the *image*, 0 → 28 and 255 untouched, largest
+    exactly where the subtraction is. It is applied before anything reads the file, so
+    the horizon strip is sampled from the lifted copy and the fog/painting agreement
+    is untouched. 28 is where the band clears the `x < 0.08` knee; going higher stops
+    correcting and starts warming every fogged surface in the reef, which is a
+    decision about the water and belongs in the water's own colour.
+  - **The copy is what gets hung, and the loaded file never reaches the GPU.**
+    `liftRed` memoises one `CanvasTexture` and `textureFromPixels` carries everything
+    across except `mapping` — set that, or three treats the panorama as a flat UV
+    texture and the sky becomes one stretched pixel.
   - **The sanctuary keeps its gradient**, and that is the one place the room does not
     follow the reef. Hanging the painting there was tried and measured across the
     sweep — same 83.3ms, slightly deeper water — but the fog comes off the same file,
@@ -771,10 +832,24 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
   everything the room owns has to be DOM-free at construction — which is why
   `LightShafts`' canvas-painted beam texture returns null without a `document`, the same
   guard `UnderwaterFog` has.
+- **A table coral's plate is the one shape in the garden that can read as wreckage.**
+  It is a wide flat disc, and seen edge-on from below with a lit rim above it and its
+  underside baked down, it is a plank. `plateGeometry` used to bake that underside at
+  0.55 on top of the shade band the ramp already gives it — the same double-modelling
+  the fish and the morays were cured of — which took it to about a fifth of the plate's
+  colour. In the sanctuary, lying a metre off pale sand in a bright room, the review
+  called it the strake of a wrecked hull; it is the same shape in the left of shot B.
+  `PLATE_UNDERSIDE` is halved to 0.28, which keeps the cue and lets the ramp do the
+  darkening. A garden that has gone dark is worth checking here first.
 - **The sanctuary is dressed from the reef's own generators**, with its own seeds
   (`SEEDS.sanctuary*`). `CoralField`, `LightShafts` and `Bubbles` take their
   sites/placements as an optional second and third constructor argument; the reef's
-  authored ones are the defaults precisely so a second room cannot move them. Its shaft
+  authored ones are the defaults precisely so a second room cannot move them.
+  `CoralField` takes a `ToneRange` the same way, and the sanctuary raises its floor
+  (0.6 → 0.88): the bottom of the reef's range is a rust taken well down, which on a
+  *branching* head is one dark colony among lighter ones and on a table is the plank
+  above. The draw is one `random.range` whatever the bounds, so a room changing its
+  tone leaves the whole garden's layout bit-identical. Its shaft
   *widths* track the reef's, though its count does not: the beam map, its bell and its
   opacity are shared, so a room left at the old widths would be lit by the same softness at
   two thirds the breadth and read as a different ocean. Its two bubble vents are there for
@@ -819,6 +894,45 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
  salmon), and the counter-shading's back-to-belly range came down from 0.58 to 0.40,
  because 0.42 of the belly was authored against water that sat near a fifth of white and
  WP-G1's water does not. Measure before believing the frame here.
+- **The fish's counter-shading was modelling the light a second time, upside down.**
+ The range above came down again in WP-G8, to 0.22, and this is the reason rather than
+ the value key. The key is overhead, so the ramp already hands the back the lit band
+ and the underside the shade band — and a *dark back, pale belly* marking then darkens
+ the lit side by 40% and leaves the shaded side at full. The two very nearly cancelled:
+ back at 0.6 of the key against belly at 1.0 of a 0.26 shade band is one flat mid-mauve
+ across the whole flank, which is one value, which is the "scattered confetti" read, and
+ the vertex buffer was paying for it. This is the same correction `MorayPattern` took in
+ WP-G6 and the coral plate's underside took in WP-G8: **under a ramp, counter-shading is
+ a marking, not a second model of the light.** Shallower, the light does its own job and
+ the fish has a pale top and a violet-shaded underside — two values that survive being
+ six pixels tall. The window between them (`BELLY_TOP`/`BACK_FROM`) is placed where it
+ is because the body is a five-segment sphere: six vertex rings, and the only edge worth
+ having falls between the third and fourth, at the flank's midline.
+- **The fish has an eye, and it is the only thing here allowed above the vertex-colour
+ ceiling.** One vertex per cheek at 1.5, written after the counter-shading. The ceiling
+ rule next door is about the *ramp* — a ramp peaking above 1 is a global brightening
+ hidden in a buffer that makes the material colour a lie — and two vertices at the head
+ are a highlight instead. It has to be above 1 because the canonical cameras sit *below*
+ the shoals (they cruise at 4–7m, the diver's eye line is around 2), so the frame is
+ mostly underside, and a mark at 1.0 there is exactly as bright as the belly beside it.
+ It sits just *below* the midline for the same reason: on the upper cheek it merges into
+ the pale dorsal band the ramp lights, and the animal gains a wider light edge instead
+ of an eye. Be honest about what it looks like — at six segments around, one vertex owns
+ an eighth of the surface, so it is a soft bright patch over the front of the body
+ rather than a dot. That still does the job, which is to break the fore-and-aft symmetry
+ of a lozenge: measured, it takes the school's p99 over the water it covers from +6 to
+ +28 in shot C and +16 to +33 in shot B. A tighter eye means more segments, and the
+ triangle-cost measurement for that is two notes down.
+- **Density was the confetti, not the count.** WP-G8 cut the school 170 → 120 and halved
+ the formation (`STATION_ACROSS`/`UP`/`ALONG`, and a `STATION_SPREAD` topping out at 1.1
+ rather than 1.5) while leaving `SHOAL_COUNT` at thirteen. The old stations let a shoal
+ stretch eight metres across and ten long, which at thirteen fish is one animal every
+ three quarters of a metre — thirteen unrelated dots drifting the same way. Halved, a
+ shoal is about three metres by four with nine fish in it and reads as one thing with a
+ shape. Measured through `probe-fish.mjs`, the traverse frame went from 86 fish on an
+ average second to 62, and still never fewer than four. The near-field cap went 0.55 →
+ 0.69 in the same pass, because the sentence it was written against — "a bare round body
+ with no eye" — stopped being true.
 - **A fish's tail fork rides on a merge that can fail silently.**
  `createFishGeometry` merges a body with two cone blades, and `mergeGeometries`
  takes its indexing from the first geometry and then rejects every other one
@@ -838,18 +952,28 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
  top of the tail. Its belly end is tilted a few percent warm and its back end a
  few percent cool, which is where the art plan's cream lives; on the albedo it
  is the cream body WP-G2 measured and threw out.
-- **A school is 170 instances, so its triangle count is a frame cost and not a
+- **A school is 120 instances, so its triangle count is a frame cost and not a
  detail setting.** The body is `SphereGeometry(0.13, 6, 5)` and not the 8×6 it
- was drawn as: measured at the resolution the adaptive scaler settles on, the
- school costs 2.3ms as the old diamond, 3.0ms at 48 triangles and 5.5ms at 80,
- and the two spheres cannot be told apart at any size this animal is drawn.
+ was drawn as: measured at 170 instances, at the resolution the adaptive scaler
+ settles on, the school cost 2.3ms as the old diamond, 3.0ms at 48 triangles and
+ 5.5ms at 80, and the two spheres cannot be told apart at any size this animal
+ is drawn.
  Also worth knowing before measuring anything: `measure-frames.mjs` samples rAF
  deltas, so it can only report **multiples of 16.66ms** — a 3ms regression and a
  16ms one look identical, and a change can appear to cost 16ms purely by
  straddling a tick. To attribute a cost, time `renderFrame()` directly with a
  one-pixel `readPixels` after it as a barrier (`gl.finish` returns as soon as
  the commands are queued), with `pinRenderScale` set so every sample is at one
- resolution.
+ resolution. `measure-frames.mjs` is also very sensitive to what else the machine
+ is doing — the same build measured 183ms, 117ms and 100ms at load averages of 4.2,
+ 3.6 and 2.2. Read `uptime` beside the number or the number means nothing.
+- **A probe can rot, and a rotted probe throws rather than lying.** `probe-fish.mjs`
+ sampled a per-instance "glint" colour that the aimed sun sparkle wrote; WP-G2 deleted
+ the sparkle with the BRDF, so `instanceColor` has been null ever since and the probe
+ died on its own last measurement — which is why nobody had run it. It is gone, along
+ with the roughness and metalness the report printed for a `MeshToonMaterial` that has
+ neither. If a probe reports on something a package removed, delete the measurement
+ rather than leaving it to fail.
 - **A fish close to the lens is the whole ballgame.** Everything above is about values,
  and none of it matters if a shoal drifts through the diver: measured at the mid-depth
  traverse, the nearest six instances sat between 0.8m and 1.8m out and the closest

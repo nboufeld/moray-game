@@ -10,7 +10,7 @@ import {
 } from "three";
 import { Random, SEEDS } from "../util/Random";
 import { requestBackdrop } from "./AssetLibrary";
-import { readImageRows } from "./ImagePixels";
+import { readImage, readImageRows, textureFromPixels } from "./ImagePixels";
 import { SUN_POSITION } from "./Lighting";
 
 export interface UnderwaterFogOptions {
@@ -61,23 +61,89 @@ const PAINTED_SUN_U = 0.287;
 /**
  * What the painting is exposed at, in linear light.
  *
- * The panorama arrives painted brighter than this world is lit: its horizon
- * measures #68dbd9, which is very nearly the hue the fog was already tuned to
- * and a little over half a stop above its value. Dropped in as it comes it
- * lifted the canonical shots by twelve parts in 255 at the mean and eighteen at
- * the ninetieth — the water stopped being luminous turquoise and became haze,
- * and every distant rock lost its form into it.
- *
  * The fix has to be a *single* number applied to both sides, and this is it:
  * three multiplies the background by `backgroundIntensity` in linear light, and
  * the colour sampled off the same painting is multiplied by the same figure
- * before it becomes the fog. The horizon therefore still cannot band — the two
- * quantities are one quantity — while the frame keeps the value key WP-G1 set.
- * At 0.64 the derived fog lands within a part of the `0x53b2bb` it replaces on
- * every channel, which is the measurement that says the painter and the tuning
- * agreed about the *colour* all along and differed only about the exposure.
+ * before it becomes the fog. The horizon therefore cannot band — the two
+ * quantities are one quantity — however the panorama is exposed or repainted.
+ *
+ * It was 0.64, and that figure was doing a job this painting no longer needs
+ * done. The first panorama was flat: its column ran 101 to 141 in red between
+ * the horizon and thirty degrees up, so the whole sky was one bright haze half
+ * a stop above the reef, and 0.64 was the amount of pulling-down that took its
+ * horizon back to the `0x53b2bb` WP-G1 had tuned by hand. Applied to a *flat*
+ * image, an exposure is a brightness control and nothing else.
+ *
+ * The repaint has range — 64 at the horizon to 155 thirty degrees up, against a
+ * whole-image p10/p50/p90 of 63/159/240 — so the same multiply now decides how
+ * much of that range survives, and pulling it down by a third spends the range
+ * before anyone sees it. Measured against the old painting's derived fog, the
+ * new horizon strip asks for 0.858 in green and 0.783 in blue; 0.85 lands the
+ * fog's green *exactly* on the value the reef has always had and its blue seven
+ * parts over. What that buys is above the horizon rather than at it: the upper
+ * third of shots A and B stops being a flat turquoise field and becomes water
+ * with light coming down through it.
+ *
+ * Red is the channel to watch and the one that does not agree — the painter's
+ * horizon is a cooler cyan than the old one, so at 0.85 the fog would carry 66
+ * parts of red where it used to carry 83. That is the direction AGENTS.md's
+ * value key warns about and it did go wrong, though not where it was expected
+ * to; {@link RED_PEDESTAL} is the answer and the whole of it. With that in
+ * place the canonical shots sit within a few parts of the last frame the value
+ * key was signed off on — A +1.5 at the luma mean, B -1.4, C +2.5, with every
+ * channel mean inside four — and what has moved is the ninetieth percentile of
+ * blue, +10, which is the surface glow arriving and nothing else.
+ *
+ * The deep zone of the file drops red to 1 in 255 and it is never drawn: it
+ * lies below 34° of depression, where a camera two metres over the sand is
+ * looking at sand. That was the failure this package went looking for and it
+ * is not the one that was there.
  */
-const BACKDROP_EXPOSURE = 0.64;
+const BACKDROP_EXPOSURE = 0.85;
+
+/**
+ * The pedestal the painting's red channel is lifted onto, in sRGB bytes, before
+ * anything reads it.
+ *
+ * This is the one correction allowed to the panorama's *hue*, and it exists
+ * because of a specific piece of arithmetic downstream rather than because the
+ * painter mixed the wrong colour. Three's neutral tone curve begins by
+ * subtracting `x - 6.25x²` from every channel, where `x` is the *smallest* of
+ * the three. On a turquoise frame the smallest is always red, and the
+ * subtraction is close to total while red is small: at 0.02 of linear light it
+ * removes seven eighths of it. So the tone curve is a black-point crush aimed
+ * squarely at the one channel AGENTS.md's value key says to read first, and the
+ * deeper the cyan the harder it pulls.
+ *
+ * The old panorama never got near it — its horizon carried 103 parts of red.
+ * The repaint's horizon carries 71, which lands the water above the skyline
+ * inside the crush: measured on shot A, that band rendered at rgb(15, 175, 186)
+ * and 2.5% of the frame came out under 25 parts of red against 0.06% before.
+ * That is the electric poster-paint cyan the key describes, and it is visible —
+ * put the same crop from the two runs one above the other and the pigment has
+ * gone out of the water.
+ *
+ * The remap is the crush read backwards: an affine lift that takes 0 to this
+ * and leaves 255 alone, so it is largest exactly where the curve's subtraction
+ * is largest and fades to nothing in the bright water overhead. It preserves
+ * order, so every gradient the painter put in the red channel survives, and it
+ * is applied to the *image* rather than to the fog — which is what keeps the
+ * two one quantity, since the horizon strip is sampled from the lifted copy.
+ *
+ * 28 was reached from both ends. The knee says it: at 20 the same band still
+ * measured 0.070 of linear red going into the curve, inside the `x < 0.08`
+ * window where the subtraction is quadratic rather than the flat 0.04 it
+ * becomes above, and 28 is what clears it. So does the frame — 20 took the
+ * water above the horizon from 67 back to 77 parts of red and 28 takes it to
+ * 82, against 86 in the frame this is being held to, and the share of the shot
+ * under 25 parts of red goes 2.475% → 0.112% → 0.056% against that frame's own
+ * 0.058%. Higher than this is not free, and the reason is the fog rather than
+ * the sky: the horizon strip is sampled off the lifted copy, so every part of
+ * this lift lands on every fogged surface in the reef as well. Past the knee
+ * that is no longer correcting anything — it is warming the distance, which is
+ * a decision about the water and belongs in the water's own colour.
+ */
+const RED_PEDESTAL = 28;
 
 /**
  * Wide enough to resolve a smooth horizontal lobe. It used to be 8 columns,
@@ -129,6 +195,48 @@ function angleBetween(a: number, b: number): number {
 function bytes(color: Color): [number, number, number] {
   const hex = color.getHex(SRGBColorSpace);
   return [(hex >> 16) & 0xff, (hex >> 8) & 0xff, hex & 0xff];
+}
+
+/**
+ * The panorama with its red channel stood on {@link RED_PEDESTAL}.
+ *
+ * Memoised, because this is two megapixels of arithmetic and a second upload:
+ * the copy is what gets hung, so the texture the library loaded is read once
+ * here and never reaches the GPU at all. Nothing disposes either — the source
+ * belongs to the library and is shared by path, and the copy outlives every
+ * scene that could ask for it, exactly as the sand wash's opened tile does.
+ *
+ * Without a DOM there is nothing to remap into and the painting is used as
+ * loaded, which cannot happen in practice — nothing loads at all without a
+ * `window` — but is what keeps this a pure function of its input.
+ */
+let liftedBackdrop: Texture | undefined;
+function liftRed(texture: Texture): Texture {
+  if (liftedBackdrop) {
+    return liftedBackdrop;
+  }
+
+  const pixels = readImage(texture);
+  if (!pixels) {
+    return texture;
+  }
+
+  const data = pixels.data;
+  const gain = (255 - RED_PEDESTAL) / 255;
+  for (let i = 0; i < data.length; i += 4) {
+    data[i] = RED_PEDESTAL + (data[i] ?? 0) * gain;
+  }
+
+  const lifted = textureFromPixels(pixels, texture);
+  if (!lifted) {
+    return texture;
+  }
+  // The one property `textureFromPixels` cannot carry: it copies the sampling a
+  // surface map needs, and this is not a surface. Without it three would treat
+  // the panorama as a flat UV texture and the sky would be one stretched pixel.
+  lifted.mapping = EquirectangularReflectionMapping;
+  liftedBackdrop = lifted;
+  return lifted;
 }
 
 /**
@@ -205,13 +313,17 @@ export class UnderwaterFog {
    * picks the new water up on the next frame with nothing to plumb.
    */
   private adoptBackdrop(scene: Scene, texture: Texture, gradient: CanvasTexture | null): void {
-    const horizon = this.sampleHorizon(texture)?.multiplyScalar(BACKDROP_EXPOSURE);
+    // The lift first, and everything downstream reads the lifted copy — the
+    // background the player sees and the strip the fog is averaged from are the
+    // same pixels, which is the invariant this whole method exists to keep.
+    const painting = liftRed(texture);
+    const horizon = this.sampleHorizon(painting)?.multiplyScalar(BACKDROP_EXPOSURE);
     if (horizon) {
       this.color.copy(horizon);
       scene.fog?.color.copy(horizon);
     }
 
-    scene.background = texture;
+    scene.background = painting;
     scene.backgroundIntensity = BACKDROP_EXPOSURE;
     // The painted sun is turned onto the real one. `equirectUv` measures
     // azimuth as atan2(z, x) and three negates the background rotation before
