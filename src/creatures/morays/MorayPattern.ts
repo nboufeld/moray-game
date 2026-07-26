@@ -2,7 +2,6 @@ import { Color, type DataTexture } from "three";
 import {
   buildColorTexture,
   buildNormalTexture,
-  buildScalarTexture,
   fbm,
   voronoi,
 } from "../../rendering/ProceduralTexture";
@@ -17,11 +16,15 @@ const SIZE = 256;
 export interface MoraySkin {
   readonly map: DataTexture;
   readonly normalMap: DataTexture;
-  readonly roughnessMap: DataTexture;
 }
 
 /**
- * The markings, skin and sheen of one species, painted across the whole body.
+ * The markings and skin of one species, painted across the whole body.
+ *
+ * There used to be a third map here, a broken roughness that stood for a wet
+ * animal's specular. Ramp shading has no specular to break, so it went with the
+ * BRDF: what makes the eel read as an animal now is the counter-shading below
+ * and the folds in the normal map, both of which survive a stepped light.
  *
  * The body's UVs run `u` around the circumference and `v` from head to tail, so
  * this paints in animal space: `u` carries the dorsal-ventral gradient that
@@ -74,12 +77,6 @@ export function createMoraySkin(config: MoraySpeciesConfig): MoraySkin {
       },
       0.035,
     ),
-
-    // A wet animal's most convincing detail is a broken specular, not albedo.
-    roughnessMap: buildScalarTexture(SIZE, (u, v) => {
-      const damp = fbm(u * 2, v * 3, { seed: seed ^ 0xa7, period: 14, octaves: 3 });
-      return 0.26 + damp * 0.34;
-    }),
   };
 
   cache.set(config.id, skin);

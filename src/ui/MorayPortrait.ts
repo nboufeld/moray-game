@@ -106,11 +106,20 @@ export function renderMorayPortrait(
     scene.add(light, light.target);
   };
 
-  const key = new DirectionalLight(0xffe4bd, 2.8);
+  // Roughly half what the rig carried under a physical BRDF, and that is not a
+  // taste change. A ramp does not fall off: every plane inside the key's top
+  // band renders at the light's full intensity rather than at its own cosine,
+  // and the plate is a close-up of a curved animal, which is nearly all of it.
+  // At the old numbers the face clipped white and the codex showed a species
+  // that does not live in the reef. The ratio between key and rim is untouched,
+  // because that is what the composition is.
+  const key = new DirectionalLight(0xffe4bd, 1.5);
   place(key, 0.7, -0.9, 0.75);
-  const rim = new DirectionalLight(0x9adcf2, 2.4);
+  const rim = new DirectionalLight(0x9adcf2, 1.3);
   place(rim, -0.8, 0.85, 0.45);
-  scene.add(new HemisphereLight(0x7fc4dc, 0x0a2b38, 0.55));
+  // The hemisphere comes down too, but by less: it is the only light here the
+  // ramp does not touch, so it is now a larger share of the plate than it was.
+  scene.add(new HemisphereLight(0x7fc4dc, 0x0a2b38, 0.4));
 
   try {
     return renderer.captureToDataUrl(scene, camera, size);

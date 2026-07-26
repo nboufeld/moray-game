@@ -8,7 +8,6 @@ import {
   InstancedMesh,
   Mesh,
   MeshBasicMaterial,
-  MeshStandardMaterial,
   Object3D,
   Vector2,
   Vector3,
@@ -17,6 +16,7 @@ import {
 import { Random, SEEDS } from "../util/Random";
 import type { ReefBounds, SphereCollider } from "./CollisionField";
 import { buildColorTexture, buildScalarTexture, fbm } from "../rendering/ProceduralTexture";
+import { createToonMaterial } from "../rendering/ToonShading";
 import { CoralField } from "./CoralField";
 import { createRockMaterial, weatherRock } from "./RockMaterial";
 import { createSandMaterial } from "./SandMaterial";
@@ -449,12 +449,10 @@ export class Reef {
    */
   private buildRubble(): void {
     const count = 150;
-    const material = new MeshStandardMaterial({
+    const material = createToonMaterial({
       // Close to the sand it lies on. Stones darker than this read as holes
       // punched in the seabed rather than as pebbles resting on it.
       color: 0xc4baa0,
-      roughness: 1,
-      metalness: 0,
       flatShading: true,
     });
     const stones = new InstancedMesh(new DodecahedronGeometry(0.24, 0), material, count);

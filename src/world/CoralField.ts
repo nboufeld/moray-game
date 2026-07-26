@@ -7,7 +7,6 @@ import {
   IcosahedronGeometry,
   InstancedMesh,
   Matrix4,
-  MeshStandardMaterial,
   Object3D,
   SphereGeometry,
   type BufferGeometry,
@@ -15,6 +14,7 @@ import {
   type WebGLProgramParametersWithUniforms,
 } from "three";
 import { buildColorTexture, buildNormalTexture, fbm, voronoi } from "../rendering/ProceduralTexture";
+import { createToonMaterial } from "../rendering/ToonShading";
 import { Random, SEEDS } from "../util/Random";
 import { seabedHeight } from "./Seabed";
 
@@ -166,12 +166,7 @@ function buildInstances(
   kind: ShapeKind,
 ): InstancedMesh {
   const skin = coralSkin(kind);
-  const material = new MeshStandardMaterial({
-    // Coral is a porous limestone skeleton under a skin of polyps. At 0.72 it
-    // held a broad specular sheen across every head at once, which is most of
-    // what read as moulded plastic.
-    roughness: 0.88,
-    metalness: 0,
+  const material = createToonMaterial({
     flatShading: true,
     // The maps stay light and hue-neutral so the per-instance colour below
     // keeps carrying the variation across the garden; what they do carry is

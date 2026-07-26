@@ -283,8 +283,10 @@ export class SanctuaryScene {
     }).applyTo(this.scene);
 
     // Held to the reef's key ratio: enough to say which side the light is on,
-    // not enough to be the exposure. The room's brightness is its water.
-    const key = new DirectionalLight(0xfff0d2, 1.7);
+    // not enough to be the exposure. The room's brightness is its water. It
+    // tracked the reef's key up when the shading became a ramp, and its ambient
+    // down by the same amount, for the reason set out in `Lighting`.
+    const key = new DirectionalLight(0xfff0d2, 1.8);
     key.position.copy(KEY_POSITION);
     // The animals are the subject and they are off the ground, so nothing but a
     // cast shadow attaches them to it — the sand's baked occlusion can only
@@ -310,7 +312,7 @@ export class SanctuaryScene {
     // is warm sand here for the same reason the reef's is. Sky under ambient,
     // for the same reason as the reef: see `Lighting`.
     const hemisphere = new HemisphereLight(0xb2e6de, 0xf7e2b6, 0.44);
-    const ambient = new AmbientLight(0xb391d6, 0.78);
+    const ambient = new AmbientLight(0xb391d6, 0.72);
     this.scene.add(key, key.target, fill, hemisphere, ambient);
 
     const contacts: ContactPatch[] = [];

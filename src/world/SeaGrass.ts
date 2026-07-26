@@ -3,7 +3,6 @@ import {
   Color,
   DoubleSide,
   InstancedMesh,
-  MeshStandardMaterial,
   Object3D,
   PlaneGeometry,
   Vector2,
@@ -11,6 +10,7 @@ import {
   type WebGLProgramParametersWithUniforms,
 } from "three";
 import { buildColorTexture, fbm } from "../rendering/ProceduralTexture";
+import { createToonMaterial } from "../rendering/ToonShading";
 import { Random, SEEDS } from "../util/Random";
 import { seabedHeight } from "./Seabed";
 
@@ -54,9 +54,7 @@ export class SeaGrass {
 
   constructor(seed: number, clearances: readonly Vector2[], clumps: readonly GrassClump[] = []) {
     const random = new Random(seed);
-    const material = new MeshStandardMaterial({
-      roughness: 0.85,
-      metalness: 0,
+    const material = createToonMaterial({
       side: DoubleSide,
       // Dark root climbing to a sun-bleached tip, with lengthwise fibre. A flat
       // green blade reads as a cactus spine; the gradient is what makes it read

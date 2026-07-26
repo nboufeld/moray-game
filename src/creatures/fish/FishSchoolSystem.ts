@@ -1,10 +1,8 @@
 import {
   BufferAttribute,
-  Color,
   ConeGeometry,
   InstancedMesh,
   Matrix4,
-  MeshStandardMaterial,
   Object3D,
   OctahedronGeometry,
   type BufferGeometry,
@@ -13,7 +11,7 @@ import {
   type WebGLProgramParametersWithUniforms,
 } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import { SUN_POSITION } from "../../rendering/Lighting";
+import { createToonMaterial } from "../../rendering/ToonShading";
 import { Random, SEEDS } from "../../util/Random";
 
 /**
@@ -33,8 +31,8 @@ const SHOAL_COUNT = 13;
  * How much further away a fish is, as far as the fog is concerned, than it
  * actually is.
  *
- * The school did already receive the scene's fog — `MeshStandardMaterial`
- * respects it and always has. It simply was not enough, because fog can only
+ * The school did already receive the scene's fog — every lit material three
+ * ships respects it and always has. It simply was not enough, because fog can only
  * interpolate toward the water and a lit fish started an order of magnitude
  * above it: measured off the composited frame, the brightest tenth of the
  * pixels of a shoal thirty metres out still landed near 143 against water at
@@ -46,31 +44,6 @@ const SHOAL_COUNT = 13;
  * It is also free, being one multiply in the vertex shader.
  */
 const FOG_DISTANCE_GAIN = 1.6;
-
-/** Horizontal bearing of the sun, which is the direction a glint answers to. */
-const SUN_FLAT_LENGTH = Math.hypot(SUN_POSITION.x, SUN_POSITION.z);
-const SUN_HEADING_X = SUN_POSITION.x / SUN_FLAT_LENGTH;
-const SUN_HEADING_Z = SUN_POSITION.z / SUN_FLAT_LENGTH;
-
-/**
- * How tightly the glint is tied to swimming at the sun, and how sharply it
- * pulses once it is. Both are exponents on a value already in 0..1, so raising
- * either narrows the window: the aim term admits roughly a sixth of all
- * headings, the flick term roughly an eighth of each cycle, and the product is
- * what keeps a school of 170 down to a handful of fish catching the light at
- * any one moment. That is the difference between a reef and a disco.
- */
-const GLINT_AIM_EXPONENT = 6;
-const GLINT_FLICK_EXPONENT = 5;
-
-/**
- * Peak brightening per channel at the top of a flick, warm-weighted: the sun is
- * warm and the body is cool silver, so the product reads as a white flash off a
- * flank rather than as the fish changing colour.
- */
-const GLINT_GAIN_R = 1.15;
-const GLINT_GAIN_G = 1.02;
-const GLINT_GAIN_B = 0.78;
 
 /**
  * Where a shoal is turned back toward the reef, and how hard.
@@ -200,10 +173,19 @@ function verticalExtent(geometry: BufferGeometry): VerticalExtent {
  *
  * The ceiling is 1. It used to be 1.25, which meant the belly was a 25%
  * *brightening* applied on top of the base colour — a gain living in a vertex
- * buffer, where nobody reading the material would find it. The belly-to-back
- * ratio below is the one it always had, so the cue is unchanged; what moved is
- * that the material's colour is now the animal's brightest point rather than
- * something four fifths of the way up it.
+ * buffer, where nobody reading the material would find it. The material's
+ * colour is the animal's brightest point rather than something four fifths of
+ * the way up it, and that is what makes the range below readable.
+ *
+ * The range itself came down when the reef went to a painted key. A back at
+ * 0.42 of the belly was authored for a frame whose water sat near a fifth of
+ * white; against WP-G1's bright turquoise the same ratio is a *dark* shape on a
+ * light field, and a small dark low-chroma shape on a large saturated one is
+ * read by the eye as that field's complement — which is the "pink against
+ * turquoise" the pivot flagged and which no hue on the albedo can argue with
+ * (measured, the pixels are already blue-grey). The counter-shading is still
+ * the cue that says which way up a fish is; it just no longer has to carry the
+ * animal down into water that is not there any more.
  *
  * The gradient is clamped at both ends for the same reason it is capped at 1:
  * the tail fork reaches a little above and below the body it is shaded against,
@@ -219,7 +201,7 @@ function countershade(geometry: BufferGeometry, { min, span }: VerticalExtent): 
   const colors = new Float32Array(position.count * 3);
   for (let i = 0; i < position.count; i++) {
     const t = Math.min(1, Math.max(0, (position.getY(i) - min) / span));
-    const shade = 1 - t * 0.58;
+    const shade = 1 - t * 0.4;
     colors[i * 3] = shade * 0.95;
     colors[i * 3 + 1] = shade;
     colors[i * 3 + 2] = shade * 1.04;
@@ -272,8 +254,6 @@ interface FishAgent {
   yawAmp: number;
   /** How far it drops the inside shoulder as the weave turns it. */
   bankAmp: number;
-  glintRate: number;
-  glintPhase: number;
   scale: number;
 }
 
@@ -300,36 +280,34 @@ export class FishSchoolSystem {
   private readonly agents: FishAgent[] = [];
   private readonly dummy = new Object3D();
   private readonly matrix = new Matrix4();
-  private readonly tint = new Color();
   private readonly swim = { value: 0 };
   private time = 0;
 
   constructor(count = 170, seed: number = SEEDS.fish) {
     const random = new Random(seed);
     const geometry = createFishGeometry();
-    const material = new MeshStandardMaterial({
+    const material = createToonMaterial({
       // This is the belly colour: the counter-shading below is a 0..1
       // multiplier now, so the brightest part of the animal is exactly this and
       // nothing in the material is secretly brighter than it looks.
       //
-      // Silvered rather than golden, and cooler than the value alone would
-      // suggest. The key light is strong and warm, so a neutral body under it
-      // comes out cream — which against blue water is the tan paper scrap the
-      // school was being mistaken for. Leaning the albedo blue is what lets it
-      // land on white silver once the sun has warmed it.
-      color: new Color(0xc8e2e6),
-      // Barely metal, and rough. The extreme pixels in the shots that started
-      // this were specular rather than diffuse: at metalness 0.15 and roughness
-      // 0.42 a flat-shaded facet catching the sun went to a hard pinpoint,
-      // which a few pixels across does not read as "shiny fish" but as a bright
-      // dot with no shape — 170 of those is the pop. Taking it to zero costs
-      // too much, though: with no specular at all a fish near the lens is matte
-      // cardboard, and the modelling that tells you which way it is facing goes
-      // with it. So the lobe stays and is spread wide instead, which keeps the
-      // form and cannot concentrate into a dot. The highlight that is *meant*
-      // to be sharp is the glint below, and that one is aimed.
-      roughness: 0.58,
-      metalness: 0.09,
+      // Same hue as before and a quarter brighter, which is the fix the
+      // "pink against turquoise" note was actually asking for. The clash is a
+      // *value* failure wearing a hue: a small mid-dark shape on a large field
+      // of bright turquoise reads as that field's complement whatever it is
+      // painted, and at the old value the school came back mauve. A cream body
+      // — tried, measured, reverted — only makes it worse, because the warm key
+      // then lands it on salmon, which is the same clash louder. The direction
+      // that works is the one the old note gives and further along it: lean the
+      // albedo against the warm light so the product is silver, and put it high
+      // enough in value that it sits *near* the water rather than against it.
+      //
+      // The specular went with the BRDF, and both halves of the old argument
+      // went with it. There is no lobe left to concentrate into the pinpoints
+      // that made a school of 170 pop out of the water, and there is none left
+      // to model a near fish either — which the ramp does instead, in flat
+      // steps, which is what a storybook fish is.
+      color: 0xdfeef2,
       flatShading: true,
       vertexColors: true,
     });
@@ -369,9 +347,9 @@ export class FishSchoolSystem {
     this.mesh.castShadow = false;
 
     // Shoals set off from scattered stations on scattered bearings. The
-    // bearings are dealt round the compass rather than drawn freely: the glint
-    // only answers to fish swimming at the sun, so a school that happened to
-    // roll every heading into one quadrant would never catch the light at all.
+    // bearings are dealt round the compass rather than drawn freely, so a
+    // school cannot roll every heading into one quadrant and leave three
+    // quarters of the reef empty of fish.
     for (let s = 0; s < SHOAL_COUNT; s++) {
       this.shoals.push({
         x: random.signed(15),
@@ -420,8 +398,6 @@ export class FishSchoolSystem {
         surgeAmp: random.range(0.3, 0.9),
         yawAmp: random.range(0.12, 0.3),
         bankAmp: random.range(0.22, 0.55),
-        glintRate: random.range(0.7, 1.4),
-        glintPhase: random.range(0, Math.PI * 2),
         // A shoal of identically sized fish reads as a repeated decal.
         //
         // Smaller than they were, and this matters more than it sounds. The
@@ -434,9 +410,6 @@ export class FishSchoolSystem {
         // even when a shoal wanders close.
         scale: random.range(0.45, 0.8),
       });
-      // Allocates `instanceColor` before the first render, which is when three
-      // decides whether the program has the attribute at all.
-      this.mesh.setColorAt(i, this.tint.setRGB(1, 1, 1));
     }
   }
 
@@ -506,13 +479,9 @@ export class FishSchoolSystem {
       this.dummy.updateMatrix();
       this.matrix.copy(this.dummy.matrix);
       this.mesh.setMatrixAt(i, this.matrix);
-      this.setGlint(i, fish, yaw);
     }
 
     this.mesh.instanceMatrix.needsUpdate = true;
-    if (this.mesh.instanceColor) {
-      this.mesh.instanceColor.needsUpdate = true;
-    }
   }
 
   /**
@@ -556,37 +525,5 @@ export class FishSchoolSystem {
       shoal.x += Math.sin(shoal.heading) * shoal.speed * step;
       shoal.z += Math.cos(shoal.heading) * shoal.speed * step;
     }
-  }
-
-  /**
-   * The flick of sun off a flank, as a per-instance colour multiplier.
-   *
-   * Instance colour rather than a shader term because at this size it makes no
-   * visible difference which one it is — a fish is a few pixels, so brightening
-   * the whole body reads exactly as brightening the side that faces the light —
-   * and 170 colours is 2kB of upload against a new varying and a new fragment
-   * branch on every pixel of every fish.
-   */
-  private setGlint(index: number, fish: FishAgent, yaw: number): void {
-    const facing = Math.sin(yaw) * SUN_HEADING_X + Math.cos(yaw) * SUN_HEADING_Z;
-    if (facing <= 0) {
-      this.mesh.setColorAt(index, this.tint.setRGB(1, 1, 1));
-      return;
-    }
-    const flick = Math.sin(this.time * fish.glintRate + fish.glintPhase);
-    if (flick <= 0) {
-      this.mesh.setColorAt(index, this.tint.setRGB(1, 1, 1));
-      return;
-    }
-
-    const glint = facing ** GLINT_AIM_EXPONENT * flick ** GLINT_FLICK_EXPONENT;
-    this.mesh.setColorAt(
-      index,
-      this.tint.setRGB(
-        1 + glint * GLINT_GAIN_R,
-        1 + glint * GLINT_GAIN_G,
-        1 + glint * GLINT_GAIN_B,
-      ),
-    );
   }
 }

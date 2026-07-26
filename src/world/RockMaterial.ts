@@ -1,4 +1,4 @@
-import { BufferAttribute, MeshStandardMaterial, type BufferGeometry } from "three";
+import { BufferAttribute, type BufferGeometry, type MeshToonMaterial } from "three";
 import { requestAlbedo } from "../rendering/AssetLibrary";
 import {
   buildColorTexture,
@@ -7,6 +7,7 @@ import {
   ridged,
   voronoi,
 } from "../rendering/ProceduralTexture";
+import { createToonMaterial } from "../rendering/ToonShading";
 import { Random, SEEDS } from "../util/Random";
 
 const SIZE = 512;
@@ -80,7 +81,7 @@ function rockHeight(u: number, v: number): number {
  * is textured facets, chiselled rather than smoothly rendered, which is the
  * look the rest of the reef is built around.
  */
-export function createRockMaterial(color: number): MeshStandardMaterial {
+export function createRockMaterial(color: number): MeshToonMaterial {
   shared ??= {
     map: buildColorTexture(SIZE, (u, v) => {
       const h = rockHeight(u, v);
@@ -91,12 +92,10 @@ export function createRockMaterial(color: number): MeshStandardMaterial {
     normal: buildNormalTexture(SIZE, rockHeight, 0.07),
   };
 
-  const material = new MeshStandardMaterial({
+  const material = createToonMaterial({
     color,
     map: shared.map,
     normalMap: shared.normal,
-    roughness: 0.95,
-    metalness: 0,
     flatShading: true,
     // Algae tinting is baked per-vertex from the surface normal.
     vertexColors: true,

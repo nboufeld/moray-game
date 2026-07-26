@@ -6,6 +6,7 @@ import {
   Group,
   Mesh,
   MeshStandardMaterial,
+  MeshToonMaterial,
   Object3D,
   Skeleton,
   SkinnedMesh,
@@ -14,6 +15,7 @@ import {
   Vector3,
 } from "three";
 import { requestAlbedo } from "../../rendering/AssetLibrary";
+import { createToonMaterial } from "../../rendering/ToonShading";
 import { buildMorayBody } from "./MorayBody";
 import { projectHeadUvs } from "./MorayHeadUv";
 import { createMoraySkin } from "./MorayPattern";
@@ -74,6 +76,12 @@ function tube(frontRadius: number, backRadius: number, length: number): Cylinder
  * three keys its program cache on `onBeforeCompile.toString()`, so two
  * materials whose injected source differed only in a baked-in constant would
  * silently share one program — and one of them would wear the other's numbers.
+ *
+ * It survived the move to ramp shading untouched. The toon fragment shader
+ * carries the same `normal_fragment_maps` chunk in the same place and reaches
+ * `totalEmissiveRadiance` the same way, and emissive is the one channel a
+ * stepped light leaves alone — which is what this rim needed in the first
+ * place, since a crevice gives it no light to step.
  */
 const RIM_LIGHT_CHUNK = /* glsl */ `
   vec3 rimWorldNormal = inverseTransformDirection( normal, viewMatrix );
@@ -85,7 +93,7 @@ const RIM_LIGHT_CHUNK = /* glsl */ `
 `;
 
 /** Adds {@link RIM_LIGHT_CHUNK}. Inert in Node: nothing compiles without a renderer. */
-function addRimLight(material: MeshStandardMaterial): MeshStandardMaterial {
+function addRimLight(material: MeshToonMaterial): MeshToonMaterial {
   material.onBeforeCompile = (shader) => {
     shader.fragmentShader = shader.fragmentShader.replace(
       "#include <normal_fragment_maps>",
@@ -161,15 +169,12 @@ export class Moray {
 
     const accentColor = new Color(config.accentColor);
 
-    // Markings, counter-shading, skin folds and wet sheen are all painted.
+    // Markings, counter-shading and skin folds are all painted.
     const skin = createMoraySkin(config);
     const bodyMaterial = addRimLight(
-      new MeshStandardMaterial({
+      createToonMaterial({
         map: skin.map,
         normalMap: skin.normalMap,
-        roughnessMap: skin.roughnessMap,
-        roughness: 1,
-        metalness: 0.04,
       }),
     );
     // Upgrade the albedo to the painted one if there is a painted one. Only the
@@ -192,20 +197,14 @@ export class Moray {
     // margin, and at full strength on a bare untextured cone twenty centimetres
     // from the eye it is the brightest, flattest thing on a painted face — a
     // plastic horn stuck to an animal. Held down in saturation and value it
-    // keeps the hue that identifies the species and gives up the glow, and the
-    // roughness follows the fin's reasoning: a small convex shape against a
-    // dark crevice turns a tight specular lobe into a bead of light.
-    const nasalMaterial = addRimLight(
-      new MeshStandardMaterial({ color: softenAccent(accentColor), roughness: 0.78, metalness: 0 }),
-    );
-    // The fin wears the accent colour but not the accent's sheen. It is a broad
-    // thin surface that the camera meets edge-on as often as not, and at the
-    // nasal tubes' roughness a pale one catches a hard highlight all down its
-    // top edge — which over a head in a dark crevice reads as a spike, not a
-    // fin. A fin is skin, and skin at this angle is scatter, not gloss.
-    const finMaterial = addRimLight(
-      new MeshStandardMaterial({ color: accentColor, roughness: 0.9, metalness: 0 }),
-    );
+    // keeps the hue that identifies the species and gives up the glow.
+    const nasalMaterial = addRimLight(createToonMaterial({ color: softenAccent(accentColor) }));
+    // The fin wears the accent colour flat. It used to also wear a roughness of
+    // its own, because it is a broad thin surface the camera meets edge-on as
+    // often as not and a tighter lobe hung a hard highlight all down its top
+    // edge — a spike over a head in a dark crevice. Ramp shading settles that
+    // argument for it: there is no lobe left to spread.
+    const finMaterial = addRimLight(createToonMaterial({ color: accentColor }));
 
     const root = new Group();
     const bodyRoot = new Object3D();
@@ -318,18 +317,25 @@ export class Moray {
     projectHeadUvs(head, [skull, snout, brow, upperJawMesh], rig.neckV, [lowerJawMesh]);
 
     const eyeGeometry = new SphereGeometry(0.06 * headScale, 10, 10);
-    const eyeMaterial = new MeshStandardMaterial({
-      color: 0x14100e,
-      roughness: 0.08,
-      metalness: 0.1,
-      emissive: 0x241a12,
-    });
+    // The bead is ramp-shaded like the rest of the animal. It used to be a
+    // near-mirror — roughness 0.08 — which on a sphere is a pinpoint, and a
+    // pinpoint is precisely what this pivot is removing from the frame. The
+    // wet spark was never that highlight anyway; it is the catchlight below,
+    // which is a modelled object and survives untouched.
+    const eyeMaterial = createToonMaterial({ color: 0x14100e, emissive: 0x241a12 });
     // A wet catchlight is what separates "a creature is looking at you" from
     // "two dark beads"; the bloom pass then gives it a faint wet flare.
     // Sized for the distance the game is actually played at: at the range shot
     // C frames the crevice from, the old bead covered well under a pixel and
     // fell below the bloom threshold, so the one spark in the frame was gone
     // exactly when the player was being asked to look for it.
+    //
+    // This is the one lit-material type the ramp pivot left alone, and the
+    // reason is that it is not a lit surface: it is a bloom source wearing a
+    // sphere, held above 1 by an emissive of 3.2 and taken out of the tone
+    // curve entirely. Ramping it would step a diffuse term that contributes
+    // under a sixth of what it puts on screen, and would risk the one spark the
+    // discovery moment is built around for nothing.
     const catchlightGeometry = new SphereGeometry(0.028 * headScale, 8, 8);
     const catchlightMaterial = new MeshStandardMaterial({
       color: 0xffffff,

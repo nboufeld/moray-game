@@ -117,15 +117,16 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
   painted body
   albedos, loaded by `src/rendering/AssetLibrary.ts` and swapped onto the moray body
   material in `Moray`'s constructor. Everything else on the animal stays generated: the
-  swap replaces `map` only, because the wrinkles and the broken wet sheen live in
-  `MorayPattern`'s normal and roughness maps and the painting has no channel for them.
+  swap replaces `map` only, because the wrinkles live in `MorayPattern`'s normal map and
+  the painting has no channel for them. (There was a roughness map here too, for a wet
+  animal's broken specular; ramp shading has no specular to break, so it is gone.)
   Which file a species wears is `albedoAsset` in `MoraySpeciesConfig`, so adding a
   species is still a data change.
   - **`assets/world/{sand,rock}-albedo.png` are the terrain tiles**, requested with
     `{ tile: true }` — mirrored repeat on both axes, which makes a generated image
-    seamless by construction. Both are painted shadow-free, because the light has to
-    move across the ripples and the strata, and both leave the procedural normal (and
-    the sand's roughness) exactly where they were.
+    seamless by construction.     Both are painted shadow-free, because the light has to
+    move across the ripples and the strata, and both leave the procedural normal exactly
+    where it was.
   - **A tile and a tint cannot both carry the colour.** The procedural maps are
     authored to sit *under* the material colour, so they are near white; a painted
     tile brings its own. Sand answers that by neutralising its tint to white on the
@@ -226,13 +227,14 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
     untouched, which is what keeps `getHeadWorldPosition` — and the focus cone,
     the sightline raycast and `tests/reefSightlines.test.ts` tuned against it —
     exact.
-- **The value key is a painted one, and it is held in four places at once.** The target is
+- **The value key is a painted one, and it is held in five places at once.** The target is
   a picture-book memory of shallow water, not a photograph of it: bright mid-key
   turquoise, shadows that are blue-violet, distance that goes *milky-bright* rather than
   dark, and nothing anywhere near black. It is spread across `UnderwaterFog` (the water's
-  own colour), `Lighting` (the ratio between key and fill), `ColorGradeShader` (the floor
-  and the split) and `RendererAdapter` (the curve), so any one of them changed on its own
-  will fight the other three. Four things about it were paid for by measurement:
+  own colour), `Lighting` (the ratio between key and fill), `ToonShading` (how far apart
+  the bands land and how dark a shadow may be), `ColorGradeShader` (the floor and the
+  split) and `RendererAdapter` (the curve), so any one of them changed on its own
+  will fight the other four. Four things about it were paid for by measurement:
   - **The fog colour sits above the reef's midtone, not below it.** Distance loses
     contrast and local colour — it does not gain darkness. This is the one inversion the
     whole look rests on, and it is why the `UnderwaterFog` defaults are so light.
@@ -264,9 +266,54 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
   (`SandMaterial`, `RockMaterial`, `CoralField.coralSkin`, `SeaGrass.bladeTexture`,
   `MorayPattern`) and are cached per material or per species — they are built at
   construction, which the unit tests hit for every species.
+- **Every lit surface in the project is a `MeshToonMaterial` reading one shared ramp.**
+  `src/rendering/ToonShading.ts` owns the ramp and `createToonMaterial`, and nothing else
+  may build a lit material — sand, rock, coral, grass, rubble, fish, moray skin, fins,
+  nasal tubes and eyes all come out of that one door, in the reef and in the sanctuary
+  alike. There is no roughness and no metalness anywhere any more: the moray's wet-sheen
+  roughness map, the sand's damp variation and the fish's metalness and aimed sun glint
+  were all deleted rather than turned down, because a specular response is the single
+  loudest "photograph" tell in a frame. A painted highlight comes back later as pigment.
+  The two things that are deliberately *not* toon are the eyes' catchlight spheres and
+  every `MeshBasicMaterial` (shafts, caustics, cave-mouth stickers, motes): none of them
+  is a shaded surface, they are emissive marks, and stepping them would only risk the one
+  spark the discovery moment is built around.
+  - **The ramp is authored against the normals this reef actually has.** Its lookup is
+    `dot(n, l) * 0.5 + 0.5`, and with the sun 48° up, every up-facing plane in the scene
+    piles up between 0.80 and 0.88 while everything facing away falls below 0.5, with
+    almost nothing in between. So the two steps sit at 0.5 and **0.82** — the second
+    *inside* that cluster, which is what separates a plane square to the sun from one
+    merely turned toward it. A stop anywhere between 0.6 and 0.78 gives a boulder two
+    values instead of three and it goes flat. Move the sun and this has to move with it.
+  - **A shade band is a floor under the key, and it costs shadow colour.** The bottom
+    band hands a surface facing *away* from the sun a quarter of the key it used to be
+    denied, and that light is warm — so raising it dilutes WP-G1's violet shadows and
+    lifts the frame's tenth percentile with it. 0.35 measured eight parts in 255 of lift
+    across the canonical shots and took the violet out; 0.26 is where the shadow keeps
+    its colour and is still a colour rather than a hole.
+  - **A ramp also hands the whole key to anything in its top band**, rather than that
+    plane's own cosine — the seabed used to take 75% of the sun and now takes all of it.
+    So `Lighting`'s key is a *contrast* control here and a very sensitive brightness one:
+    it went 1.5 → 1.75 → 1.6 during WP-G2, and the ambient came down 0.8 → 0.74 to pay
+    for it, because anything more brightens the largest surface in frame faster than it
+    opens the steps. The sanctuary tracks both.
+  - **16 texels is one too few.** A `RAMP_SOFTNESS` of 0.08 falls inside a single texel
+    gap at that size, so the texture declares a soft edge and `LinearFilter` reconstructs
+    a cel one — measured, a 0.39 jump between neighbours at the terminator. 32 puts two
+    and a half texels in the window. It costs 128 bytes.
+  - **`flatShading` has to be assigned, not passed.** Three neither declares nor
+    initialises it on `MeshToonMaterial`, so the constructor drops it — but the renderer
+    reads it off the material generically and `getProgramCacheKeyBooleans` hashes it, so
+    assignment works and caches correctly. `createToonMaterial` does it, behind a module
+    augmentation of the three types.
+  - **Normal maps run at half strength** (`TOON_NORMAL_SCALE`). Under a BRDF a normal map
+    modulates a gradient; under a ramp it modulates *where the step falls*, and at full
+    strength the band boundary breaks into noise and the form stops reading.
 - **Flat shading is kept on purpose.** Normal maps compose correctly with it, so the reef
   reads as textured facets — chiselled, not smoothly rendered CG. The fix for a surface
-  that looks like a platonic solid is geometry (`weatherRock`), not smooth normals.
+  that looks like a platonic solid is geometry (`weatherRock`), not smooth normals. It
+  matters more under a ramp than it did under a BRDF: a facet is what gives a stepped
+  light an edge to land on.
 - **Rock UVs are box-projected at build time**, not triplanar. Triplanar would cost three
   fetches per map on the largest surfaces; box projection is one, and its seams land on
   facet edges where flat shading has already broken the normal.
@@ -293,13 +340,21 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
  twice and averaged normals give the two copies different values, which draws a bright line down
  the belly; the meshes carry an **explicit `boundingSphere`**, because three bounds a skinned mesh
  from whichever pose the bones happen to be in at the first render and then never again; and the
- fin has its **own material at roughness 0.9**, because at the accent's sheen a pale fin caught
- edge-on renders as a bright spike over the head — the comb of plates it replaced, wearing a
- different shape. Geometry is authored in *joint units* (`g`), so a fractional position along the
+ fin has its **own material**, which used to be about roughness — at the accent's sheen a pale
+ fin caught edge-on rendered as a bright spike over the head — and since WP-G2 is only about
+ carrying the accent colour, because there is no sheen left to hold down. Geometry is authored
+ in *joint units* (`g`), so a fractional position along the
  body is also literally its skin weight. The head is not part of any of this: it hangs off
  `bodyRoot`, so `getHeadWorldPosition` is the root's own world position and no body change can
  move it.
-- **The moray's rim light must stay directional.** `RIM_LIGHT_CHUNK` in `Moray.ts` is
+- **The moray's rim light must stay directional**, and it survived the move to toon
+  untouched — the toon fragment shader carries `normal_fragment_maps` in the same place
+  and reaches `totalEmissiveRadiance` the same way, and emissive is the one channel a
+  stepped light leaves alone. The same is true of the other three injections: the grass
+  sway and the fish tail sway patch `begin_vertex`/`common`, the fish fog gain patches
+  `fog_vertex`, and the coral's per-instance emissive tint patches `emissivemap_fragment`.
+  All five chunks are shared between the standard and toon shaders. `RIM_LIGHT_CHUNK` in
+  `Moray.ts` is
   injected by `onBeforeCompile` and weights its fresnel by a fixed world direction. Drop
   that weighting for a plain facing term and the animal turns into a cool glowing blob:
   it is built from cylinders running away from the camera, and every side normal of a
@@ -390,9 +445,19 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
  pixel in the shots. The lever that fixes distance is `FOG_DISTANCE_GAIN`: one multiply
  on `vFogDepth` in the vertex shader. Because the fog is exponential in the *square* of
  depth, lengthening it is almost free near the lens and brutal far from it, which is
- exactly the ask. Do not take metalness to zero to chase the pinpoints — with no
- specular at all a fish near the lens is matte cardboard and loses the modelling that
- says which way it faces. Spread the lobe instead.
+ exactly the ask, and it is still the lever. The rest of that paragraph is history now:
+ WP-G2 took the specular away entirely along with the BRDF, and the warning about matte
+ cardboard did not come true because the ramp models a near fish in flat steps instead,
+ which is what a storybook fish is.
+- **The fish's "pink against turquoise" is a value failure, not a hue one.** Sampled off
+ the composited frame the school measures blue above green above red — it is cool, it has
+ always been cool, and no albedo tweak will make it look cooler. What the eye is doing is
+ reading a small low-chroma *dark* shape on a large saturated cyan field as that field's
+ complement. Two things move it and both are value: the body colour went up a quarter
+ (and a cream one, tried and reverted, makes it far worse — the warm key lands it on
+ salmon), and the counter-shading's back-to-belly range came down from 0.58 to 0.40,
+ because 0.42 of the belly was authored against water that sat near a fifth of white and
+ WP-G1's water does not. Measure before believing the frame here.
 - **A fish's tail fork rides on a merge that can fail silently.**
  `createFishGeometry` merges an octahedron body with two cone blades, and
  `mergeGeometries` takes its indexing from the first geometry and then rejects

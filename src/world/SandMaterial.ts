@@ -1,11 +1,7 @@
-import { MeshStandardMaterial } from "three";
+import { type MeshToonMaterial } from "three";
 import { requestAlbedo } from "../rendering/AssetLibrary";
-import {
-  buildColorTexture,
-  buildNormalTexture,
-  buildScalarTexture,
-  fbm,
-} from "../rendering/ProceduralTexture";
+import { buildColorTexture, buildNormalTexture, fbm } from "../rendering/ProceduralTexture";
+import { createToonMaterial } from "../rendering/ToonShading";
 import { SEEDS } from "../util/Random";
 
 const SIZE = 512;
@@ -20,25 +16,28 @@ export const SAND_REPEAT = 14;
  * where texture buys the most. The ripples are the important part — a single
  * flat value reads as paper, and the directional bands immediately tell the eye
  * there is a current here and that the ground has a scale.
+ *
+ * There is no damp variation any more. It was a roughness map, and a roughness
+ * map is a statement about a specular lobe that no longer exists: the seabed is
+ * ramp-shaded now, so a wetter patch had nothing left to be wetter *with*. The
+ * ripples it used to follow are still in the normal map, which is where the
+ * light actually reads them.
  */
-export function createSandMaterial(): MeshStandardMaterial {
+export function createSandMaterial(): MeshToonMaterial {
   const height = sandHeight;
 
-  const material = new MeshStandardMaterial({
+  const material = createToonMaterial({
     // Desaturated toward grey-gold. Coral sand is far less yellow than it
     // looks, and a saturated base under warm light tips the whole frame ochre.
     color: 0xa2957c,
     map: buildSandAlbedo(),
     normalMap: buildNormalTexture(SIZE, height, 0.028),
-    roughnessMap: buildSandRoughness(),
-    roughness: 1,
-    metalness: 0,
     // Vertex colours carry the baked occlusion: dune troughs and contact
     // shadows under everything resting on the sand.
     vertexColors: true,
   });
 
-  for (const map of [material.map, material.normalMap, material.roughnessMap]) {
+  for (const map of [material.map, material.normalMap]) {
     map?.repeat.set(SAND_REPEAT, SAND_REPEAT);
   }
 
@@ -96,13 +95,5 @@ function buildSandAlbedo() {
     // Near-neutral on purpose. The material's base colour carries the hue, and
     // tinting here as well stacked warm on warm and turned the seabed mustard.
     return [tone, tone * 0.985, tone * 0.955];
-  });
-}
-
-function buildSandRoughness() {
-  return buildScalarTexture(SIZE, (u, v) => {
-    const damp = fbm(u, v, { seed: SEEDS.sand ^ 0xc3, period: 5, octaves: 3 });
-    // Damp patches are smoother and catch a sheen; dry sand is fully matte.
-    return 0.72 + damp * 0.28;
   });
 }

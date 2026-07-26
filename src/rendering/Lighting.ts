@@ -46,7 +46,16 @@ export class Lighting {
     // reaches an up-facing surface, so it is what keeps the sand a cream and
     // not an olive. Both halves of that are why it landed here and not lower:
     // at 1.15 the shadow read was right and the floor had gone green.
-    this.sun = new DirectionalLight(0xfff0c6, 1.5);
+    //
+    // It went up a little when the reef became ramp-shaded, and the ambient
+    // came down to pay for it. A ramp is a *ratio* between bands, so the key is
+    // the only thing that decides how far apart the steps land: the fill lands
+    // on every band equally and can only close them up. It is a small move on
+    // purpose, because a ramp also *hands the whole key* to any plane in its top
+    // band rather than that plane's own cosine — the seabed used to take 75% of
+    // this light and now takes all of it, so anything more here brightens the
+    // largest surface in the frame far faster than it opens the steps.
+    this.sun = new DirectionalLight(0xfff0c6, 1.6);
     this.sun.position.copy(SUN_POSITION);
     this.sun.castShadow = true;
     // 1024 over a frustum this tight resolves contact shadows well; 2048 cost
@@ -79,7 +88,10 @@ export class Lighting {
     // falls into on its own. It reaches the faces the hemisphere's two poles
     // miss, it is the only light inside a shadow that the sky does not also
     // supply, and it is the floor under every value in the frame.
-    const ambient = new AmbientLight(0xb083dd, 0.8);
+    // Down from 0.8 with the key's rise, which keeps the frame mean near where
+    // it was: a ramp's shade band is a floor under the key, so the fill no
+    // longer has to hold the shadows up on its own.
+    const ambient = new AmbientLight(0xb083dd, 0.74);
 
     this.group.add(this.sun, this.sun.target, hemisphere, ambient);
   }
