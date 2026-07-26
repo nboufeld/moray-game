@@ -52,6 +52,8 @@ export const SEEDS = {
   grassBlade: 0x5a4d_0004,
   pinnacle: 0x5a4d_0005,
   cave: 0x5a4d_0006,
+  /** The paper the finished frame is printed on; see `ColorGradeShader`. */
+  paperGrain: 0x5a4d_0007,
   // The sanctuary dresses its own set from the same generators as the reef, so
   // it takes its own streams: sharing the reef's would put the reef's meadow
   // and its bommies in the aquarium, and re-tuning one room would re-roll the

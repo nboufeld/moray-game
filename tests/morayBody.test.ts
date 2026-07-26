@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { SkinnedMesh, Vector3 } from "three";
 import { Moray } from "../src/creatures/morays/Moray";
+import { OUTLINE_NAME } from "../src/creatures/morays/MorayOutline";
 import { MORAY_SPECIES } from "../src/creatures/morays/MoraySpeciesConfig";
 
 function skinnedMeshes(moray: Moray): SkinnedMesh[] {
@@ -18,8 +19,9 @@ describe("Moray body rig", () => {
     for (const config of MORAY_SPECIES) {
       const meshes = skinnedMeshes(new Moray(config));
       // The whole point of the rig: two surfaces, not a stack of them.
-      expect(meshes).toHaveLength(2);
-      // Both ride the same chain, so a joint cannot move one without the other.
+      expect(meshes.filter((mesh) => mesh.name !== OUTLINE_NAME)).toHaveLength(2);
+      // Every one of them rides the same chain — the contour hulls included,
+      // which is the only reason the drawn line follows the animation.
       expect(new Set(meshes.map((mesh) => mesh.skeleton)).size).toBe(1);
     }
   });

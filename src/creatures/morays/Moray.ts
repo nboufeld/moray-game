@@ -18,6 +18,7 @@ import { requestAlbedo } from "../../rendering/AssetLibrary";
 import { createToonMaterial } from "../../rendering/ToonShading";
 import { buildMorayBody } from "./MorayBody";
 import { projectHeadUvs } from "./MorayHeadUv";
+import { addMorayOutline } from "./MorayOutline";
 import { createMoraySkin } from "./MorayPattern";
 import type { BodyArchetype, MoraySpeciesConfig } from "./MoraySpeciesConfig";
 
@@ -362,6 +363,18 @@ export class Moray {
       if (object instanceof Mesh) {
         object.castShadow = true;
       }
+    });
+
+    // Last, and after the traverse above rather than before it: the contour is
+    // a drawn line and must not cast a shadow. The parts it is given are the
+    // ones that carry the silhouette — the tube, the fin and the five head
+    // primitives. The eyes, their catchlights and the nasal tubes are left
+    // out: the first two for the reason `MorayOutlineParts` gives, and the
+    // tubes because a twelve-millimetre shell on a five-centimetre cone is not
+    // a line around an appendage, it is a fatter appendage.
+    addMorayOutline(config.bodyColor, {
+      skinned: [body, fin],
+      rigid: [skull, snout, brow, upperJawMesh, lowerJawMesh],
     });
 
     this.asset = {

@@ -12,13 +12,15 @@ comfort/accessibility settings panel with Calm Mode, and the Dream Sanctuary aqu
 - `src/player/` — `DiveController` (pure physics), `CameraRig` (comfort options), `InputController`.
 - `src/world/` — `Reef`, `Seabed` (shared dune height), `CoralField`, `SeaGrass`, `CollisionField`.
 - `src/creatures/morays/` — data-driven `MoraySpeciesConfig`, `MorayRegistry`, procedural `Moray`,
- and `MorayBody` (the skinned tube and dorsal fin its joint chain drives).
+ `MorayBody` (the skinned tube and dorsal fin its joint chain drives) and `MorayOutline`
+ (the contour hull, which the animals wear and nothing else does).
 - `src/creatures/fish/` — `FishSchoolSystem` (instanced ambient fish).
 - `src/discovery/` — `FocusScanner`, `DiscoverySystem`, `HintSystem` (all pure/testable).
 - `src/rendering/` — fog + gradient backdrop, lighting, caustics, light shafts, particles,
-  the `ColorGradeShader` used by the post chain, the `DiscoveryPulse` that drives its
-  swell, `ProceduralTexture` (the noise and map-building toolkit every surface is
-  textured with) and `AssetLibrary` (the one door authored art comes in through).
+ the `ColorGradeShader` used by the post chain (paper grain and watercolour pooling
+ included), the `DiscoveryPulse` that drives its
+ swell, `ProceduralTexture` (the noise and map-building toolkit every surface is
+ textured with) and `AssetLibrary` (the one door authored art comes in through).
 - `public/assets/` — the only authored art in the project: four painted moray albedos.
 - `src/audio/` — `AudioEngine` (context + master, armed by the first gesture), `synth.ts`
   (every voice, all synthesised), `BubbleScheduler` (pure), `ReefSoundscape` (the layers).
@@ -90,7 +92,11 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
  renders each pose twice, once with the layer hidden, and reports what the difference
  actually is in parts of 255, plus how warm it is and how much of the frame it touches. It
  also walks the opening shot through simulated time, because two of those layers only exist
- in motion. `node scripts/frame-stats.mjs <before.png> <after.png>` does the other half:
+ in motion. The painted finish — grain, pooling, contour — has
+ `node scripts/probe-paint.mjs <tag>`, which does the same trick and also *times* each
+ layer directly rather than through rAF deltas; it is the only harness here fine enough
+ to attribute a few milliseconds to one pass.
+ `node scripts/frame-stats.mjs <before.png> <after.png>` does the other half:
  value statistics for two archived shots and the difference between them, which is how a
  claim like "held the frame mean to within one part in 255" gets made at all. Watch its
  tenth percentile — a veil of additive light shows up there first, because it lifts the
@@ -177,6 +183,78 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
     *better*, because violet is the complement of the dragon's orange, and the discovery
     spec is green. If a future skin does vanish into it, that is the skin's problem and not
     the detection code's.
+- **The frame is finished like a painting, and only the characters carry a line**
+ (WP-G5). Three marks, and the split between them is the rule: a Ghibli background has
+ no outline anywhere — rock, sand, coral and water are painted shapes meeting each other
+ — and the characters drawn over it do. So the reef gets paper and pooled pigment, the
+ morays get a contour, and the fish get neither (at their size a hull is sub-pixel).
+ `node scripts/probe-paint.mjs <tag>` measures all three the way `probe-light.mjs`
+ measures the additive layers, and it exists because none of them can be judged from a
+ screenshot: two of them move the frame by one to three parts in 255.
+ - **The paper is a sheet the picture is printed on, so it lives in screen space.** A
+ 256px seeded fbm `DataTexture` (`SEEDS.paperGrain`), sampled once at the very end of
+ the grade as `0.97 + grain * 0.06`. Its repeat is set from the *composer's buffer*
+ size in `RendererAdapter.applySize`, not from the canvas: the grade runs on the
+ internal targets and the adaptive scaler moves them, so anything measured in canvas
+ pixels swims when the scaler steps. The sheet is owned by the adapter rather than
+ hung on `ColorGradeShader.uniforms`, because `ShaderPass` clones the uniforms it is
+ handed and `cloneUniforms` clones textures with them — a map parked there is uploaded
+ twice and the original orphaned.
+ - **A swing of a percent and a half is not visible, and that is arithmetic rather than
+ taste.** The grade multiplies *linear* light and the sRGB transfer flattens a
+ proportional change by about half on the way out, so 1.5% lands as one part in 255 —
+ under the frame's own dither, and the probe reports it as a range of -2..2 with a
+ median of nothing. Three percent lands at two to three parts, which is a tooth you can
+ find in the flat water of shot A and cannot find in the sand. Six is mottling.
+ - **The pooling is a multiply by the water, which is what stops it reaching black.**
+ Where a luma difference crosses `EDGE_LOW..EDGE_HIGH` the pixel is taken 6% down and
+ a fifth of the way toward `uPoolTint` — the scene's own fog colour, scaled so its
+ largest channel is 1 and read off `scene.fog` every frame in `render()`, so the reef
+ and the sanctuary pool in their own water without `Game` plumbing a colour it already
+ told the scene. A *mix* toward the fog colour would have lightened every dark pixel
+ in the frame, because this fog sits above the reef's midtone; a multiply by a tint
+ whose peak is 1 can only ever darken, and what it takes out is red. It runs before
+ the rest of the grade, on the picture, so the shadow floor still catches it.
+ - **Two taps, not four, and the thresholds are two thirds rather than half.** A
+ full-frame texture fetch costs four to five milliseconds on the software rasteriser
+ the capture harness runs on, so a symmetric cross was eighteen — more than everything
+ else in this package together. Forward-differencing from the pixel already in hand
+ halves the bill and moves the mark half a pixel, which on a soft darkening cannot be
+ seen. Halving the thresholds to match over-fired, though: the steps in this frame are
+ two or three pixels wide after the bloom, so a one-texel difference is more than half
+ a two-texel one.
+ - **The contour is an inverted hull, and it is the cheapest way to line a *skinned*
+ character.** `MorayOutline.ts` builds it and `Moray` is the only caller. The skinned
+ hulls share the surface's geometry, skeleton *and* bind matrix — they are not a copy
+ of the pose, they are the pose, which is why the line follows the wave down the body
+ for nothing. The head hulls cannot share: a head is built from squashed primitives
+ (the brow is nearly twice as wide as it is deep) and a constant push along an
+ object-space normal under a non-uniform scale is a line of two different widths, so
+ those clone the geometry with the node's scale baked in and sit at unit scale. The
+ push is a `begin_vertex` injection on a `MeshBasicMaterial`, in object space
+ deliberately: `begin_vertex` runs before `skinning_vertex`, so the bones carry the
+ offset with the vertex.
+ - **Three things the hull must not do**, all of them one line each and all of them
+ easy to lose: it must not cast a shadow (`Moray` switches shadows on for every mesh
+ under its root, so the hulls are added *after* that traverse and set false), it must
+ carry the surface's own `boundingSphere` (three bounds a skinned mesh from the first
+ pose it draws and never again — a body in frame with its line culled is a body that
+ lost its outline), and it must not go on the eyes. The catchlight is a bloom source
+ wearing a sphere, and the one spark the discovery moment is built around is not
+ something to draw a dark ring around.
+ - **Nothing raycasts a moray**, so the hulls cannot intercept anything: `Game.isObstructed`
+ tests `Reef.obstructionMeshes`, which is rock and mound only. That was checked rather
+ than assumed, and it is why there is no `raycast = () => {}` here to explain.
+ - **The ink is the species' own colour, mixed 60% toward a dark blue-violet, in sRGB.**
+ The same reasoning as `softenAccent`: the palette was picked in the space a painter
+ reads, and the same fraction in three's linear working space is a far deeper cut —
+ mixed linearly the cream snowflake wears a line at four tenths of its own value,
+ which is a smudge. One consequence is deliberate and worth knowing before it is
+ reported as a bug: the zebra's line comes out *lighter* than its near-black body, and
+ a dark species in a dark crevice has a contour you can barely see. A line is a value,
+ and no value reads against itself. The thickness is 12mm in the animal's *local*
+ space, so it thickens with the reef's 1.5× morays and thins with the sanctuary's,
+ which is what a drawn contour does.
 - **Authored assets live in `public/assets/`, and there are exactly six of them.** Four
   animals and two surfaces, and every one of them is an albedo — that is the whole
   contract. `assets/creatures/moray-{snowflake,ribbon,zebra,dragon}-albedo.png` are

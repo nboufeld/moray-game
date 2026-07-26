@@ -3,9 +3,11 @@ import {
   PCFSoftShadowMap,
   SRGBColorSpace,
   Vector2,
+  Vector3,
   WebGLRenderer,
   WebGLRenderTarget,
   type Camera,
+  type DataTexture,
   type Scene,
 } from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
@@ -13,7 +15,7 @@ import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
-import { ColorGradeShader } from "../rendering/ColorGradeShader";
+import { ColorGradeShader, createPaperGrain, grainRepeatFor } from "../rendering/ColorGradeShader";
 
 /** How far below display resolution the bloom mips are rendered. */
 const BLOOM_DIVISOR = 4;
@@ -49,6 +51,7 @@ export class RendererAdapter {
   private readonly renderPass: RenderPass;
   private readonly bloomPass: UnrealBloomPass;
   private readonly gradePass: ShaderPass;
+  private readonly grain: DataTexture;
   private pixelRatioCap = 1.5;
   private width = 1;
   private height = 1;
@@ -108,6 +111,11 @@ export class RendererAdapter {
     // `ShaderPass` clones the shader's uniforms, so the live grade is driven
     // through this pass rather than through `ColorGradeShader.uniforms`.
     this.gradePass = new ShaderPass(ColorGradeShader);
+    // The paper is owned here rather than by the shader definition, because
+    // `ShaderPass` clones every uniform it is handed and clones textures with
+    // them. One sheet, uploaded once, released in `dispose`.
+    this.grain = createPaperGrain();
+    this.gradePass.uniforms.tGrain!.value = this.grain;
     this.composer.addPass(this.gradePass);
 
     // Last: applies the renderer's tone mapping and output colour space.
@@ -157,13 +165,44 @@ export class RendererAdapter {
       Math.max(1, Math.round((this.width * this.renderScale) / BLOOM_DIVISOR)),
       Math.max(1, Math.round((this.height * this.renderScale) / BLOOM_DIVISOR)),
     );
+
+    // Both of the grade's screen-space effects are measured in *buffer* pixels
+    // rather than canvas ones, because that is the raster they actually run on:
+    // the composer's targets are what the pass reads and writes, and the
+    // adaptive scaler moves them out from under it.
+    const bufferWidth = Math.max(1, this.width * ratio * this.renderScale);
+    const bufferHeight = Math.max(1, this.height * ratio * this.renderScale);
+    const texel = this.gradePass.uniforms.uTexel?.value as Vector2 | undefined;
+    texel?.set(1 / bufferWidth, 1 / bufferHeight);
+    const repeat = this.gradePass.uniforms.uGrainRepeat?.value as Vector2 | undefined;
+    repeat?.copy(grainRepeatFor(bufferWidth, bufferHeight));
   }
 
   render(scene: Scene, camera: Camera): void {
     this.renderPass.scene = scene;
     this.renderPass.camera = camera;
+    this.readPoolTint(scene);
     this.composer.render();
     this.adaptResolution();
+  }
+
+  /**
+   * Takes the pooling colour from whichever scene is about to be drawn.
+   *
+   * The reef and the sanctuary share this one chain but not one ocean, and a
+   * wash boundary pools the pigment of the water it is in. Reading it off the
+   * fog each frame is what keeps the two rooms honest without `Game` having to
+   * hand the grade a colour it already told the scene about. Normalised to a
+   * peak of 1 so the shader's multiply can only ever darken.
+   */
+  private readPoolTint(scene: Scene): void {
+    const fog = scene.fog;
+    const tint = this.gradePass.uniforms.uPoolTint?.value as Vector3 | undefined;
+    if (!fog || !tint) {
+      return;
+    }
+    const peak = Math.max(fog.color.r, fog.color.g, fog.color.b, 1e-4);
+    tint.set(fog.color.r / peak, fog.color.g / peak, fog.color.b / peak);
   }
 
   /**
@@ -246,6 +285,7 @@ export class RendererAdapter {
   }
 
   dispose(): void {
+    this.grain.dispose();
     this.composer.dispose();
     this.renderer.dispose();
   }
