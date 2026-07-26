@@ -33,37 +33,28 @@ const SAND_WASH_REPEAT = 7;
 /**
  * What the painted wash is scaled by, and how far its marks are opened up.
  *
- * The wash is painted as a pale saturated yellow — #f8e39d, 0.77 in linear
- * luminance, where the tile it replaces averaged 0.39 — so laid down as it
- * comes it doubles the value of the largest surface in the frame. The level is
- * the scale that takes it back.
+ * The current wash is the second painting of this tile. The first swung only
+ * 4% peak to trough — two parts in 255 on a surface sitting near 200, under
+ * the frame's own dither — and needed a 2.6× runtime opening to carry the
+ * floor at all, plus a strong blue lift against its saturated yellow mix. It
+ * was repainted to what those corrections said it should have been: measured
+ * means (218, 201, 158), a p10–p90 ripple swing of ~10%, blue at 73% of red.
  *
- * It is very nearly neutral, and the exception is deliberate. Red and green are
- * held together, so the painting keeps its own hue and stays a warmer, more
- * golden sand than the tile's grey-gold. Blue is let up by a tenth, because at
- * a flat level the seabed measured sixteen parts short of the tile's blue and
- * carried the whole frame with it — the canonical shots came back a dozen parts
- * warm at the mean, and the near sand in shot C was mustard rather than sand.
- * This is the old warning about a saturated base under a warm key arriving from
- * the asset's side: the painting is more saturated than this water can carry.
- *
- * {@link WASH_CONTRAST} is the other half, and it is what the seabed actually
- * needed. The wash's ripples swing about 4% of value peak to trough where the
- * tile they replace swung 24%, and 4% of a surface sitting near 200 in the
- * frame is two parts in 255 — under the frame's own dither, by the same
- * arithmetic WP-G5's paper grain was sized with. Since WP-G2 there is nothing
- * else left to draw the floor: a ramp gives a flat plane one band from here to
- * the fog line, so the marks in this image are the only marks the seabed has.
- * Opening them up around the image's own mean scales the marks and leaves the
- * exposure where the level put it.
+ * The level lands the tile on the same after-level means the shipped seabed
+ * was judged at — about #bab08a, i.e. (186, 176, 138) — so the frame's
+ * exposure does not move with the repaint. The contrast stays a hair above 1
+ * only to keep the mip chain from softening the marks in the middle distance;
+ * the paint itself now carries them. Since WP-G2 there is nothing else left to
+ * draw the floor: a ramp gives a flat plane one band from here to the fog
+ * line, so the marks in this image are the only marks the seabed has.
  *
  * Both are applied to the painted bytes rather than to linear light, which is
- * the space the image was painted in and the space the swing was read in. The
- * distinction is worth less than a part in 255 here: the whole file lies
- * between 217 and 235, where the sRGB curve is a straight line.
+ * the space the image was painted in and the space the swing was read in; the
+ * file sits in the upper range of the curve where that distinction is under a
+ * part in 255.
  */
-const WASH_LEVEL = [0.75, 0.75, 0.84] as const;
-const WASH_CONTRAST = 2.6;
+const WASH_LEVEL = [0.86, 0.88, 0.88] as const;
+const WASH_CONTRAST = 1.1;
 
 /**
  * The seabed material: ripples, grain and damp patches.
