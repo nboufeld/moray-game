@@ -99,6 +99,10 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
  `node scripts/probe-paint.mjs <tag>`, which does the same trick and also *times* each
  layer directly rather than through rAF deltas; it is the only harness here fine enough
  to attribute a few milliseconds to one pass.
+ The DOM has `node scripts/probe-ui.mjs <tag>`: the shot set opens the comfort panel in
+ D and the sanctuary in E and never opens the codex, raises the discovery plate, fills
+ the focus ring or shows the keyboard ring at all, so four of the six surfaces a UI
+ change touches are in no canonical shot.
  `node scripts/frame-stats.mjs <before.png> <after.png>` does the other half:
  value statistics for two archived shots and the difference between them, which is how a
  claim like "held the frame mean to within one part in 255" gets made at all. Watch its
@@ -487,6 +491,52 @@ All standard commands live in `package.json` scripts: `dev`, `build`, `preview`,
     untouched, which is what keeps `getHeadWorldPosition` — and the focus cone,
     the sightline raycast and `tests/reefSightlines.test.ts` tuned against it —
     exact.
+- **The UI is a page from the same book, and it is all in `src/style.css`** (WP-G7).
+  The panels were navy glass, which is the right answer over a photograph and the
+  wrong one over gouache: a dark card is the only surface in frame the paint never
+  reaches. They are cream paper now (#f7ecd7 at 92%, 14px corners, an ink-blue
+  #2b3a55 body, a warm ink shadow instead of a black one), and the markup did not
+  move — no class, no role, no string and no focus order changed, so the e2e specs
+  that drive the comfort panel by keyboard and read the name plate never saw it.
+  `node scripts/probe-ui.mjs <tag>` walks all six surfaces, because the canonical
+  shot set holds only two UI frames and four of the things a restyle can break are
+  in neither.
+  - **The accent has to exist at two values, and that is arithmetic.** `--amber`
+    (#ffca7a) measures 1.28:1 on cream — it was legible only because it used to sit
+    on navy. So the bright amber stays for marks that go over the *water* (the
+    reticle, the plate's rules, a filled key) and `--amber-ink` (#8c5210, 5.39:1)
+    carries every warm *word*. Same hue, different value; the same split
+    `softenAccent` makes on a moray's nostrils. `--sea-ink` (#0f5e5c, 6.18:1)
+    replaces the turquoise on the same grounds. Measured against the paper:
+    ink 9.75:1, `--ink-soft` 5.83:1, and 4.79:1 for the worst case in the file
+    (amber ink on the shaded foot of the codex gradient). All of it clears AA, and
+    the amber is never body text.
+  - **The modal dim is teal, and the old one was quietly a navy.** Measured on the
+    same patch of open water in shot D's pose, 72% of near-black left the reef 40 of
+    its 100 parts of chroma *and put blue above green* where this water has green
+    above blue. Deep teal at 46% leaves 75 and keeps the order. Nothing in this
+    world reaches black, so nothing laid over it may either.
+  - **The keyboard ring has to be authored.** Chrome's default focus ring is a dark
+    blue halo tuned for a white page, and on cream it is the last thing in the UI
+    still wearing the old palette. It is amber ink at 3px with a 2px offset, on
+    `:focus-visible` only — what takes focus, and in what order, is untouched.
+  - **The native controls are dressed, not replaced.** `color-scheme: light` and one
+    `accent-color` put the comfort panel's checkboxes and sliders on paper in the
+    amber family. Nothing there is a custom control: `appearance: none` on a range
+    means owning a thumb, and that panel is the one part of this game an e2e spec
+    drives entirely from the keyboard.
+  - **The codex plate stays dark water on purpose.** It is an illustration mounted on
+    the page rather than another panel, and its fill matches `MorayPortrait`'s own
+    `BACKDROP` so the empty frame is the same colour as the picture that lands in it.
+    The mat around it is paper.
+  - **The reticle's radius is shared with the scanner.** `Hud.setFocus` computes the
+    dash offset from r = 20, so the ring's weight and colour are free to move and its
+    geometry is not.
+  - **A stopped render loop stalls CSS animation time.** `capture()` holds a frame,
+    and with no rAF running the document timeline advances at a fraction of wall
+    clock — the discovery plate's rise took 1.2s of real time to reach 400ms of its
+    own. Any harness that screenshots an animated overlay has to wait on the computed
+    style rather than on a clock, which is what `probe-ui.mjs` does.
 - **The value key is a painted one, and it is held in five places at once.** The target is
   a picture-book memory of shallow water, not a photograph of it: bright mid-key
   turquoise, shadows that are blue-violet, distance that goes *milky-bright* rather than

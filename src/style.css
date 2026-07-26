@@ -1,27 +1,58 @@
+/* WP-G7: the UI is a page from the same book as the world.
+   The panels used to be navy glass, which was the right answer for a
+   photographic reef and is the wrong one for a gouache painting: a dark card
+   over a bright picture is the only surface in frame the paint never reaches.
+   So the panels are paper, the type is ink, and the amber that used to be the
+   one warm thing on a cold card now has to exist at two values — the bright
+   mark that goes over the water (reticle, plate rule, a pressed key) and the
+   deep one that reads as text on paper. They are the same hue; only the value
+   differs, which is the same trick `softenAccent` plays on the morays. */
 :root {
+  /* The sheet is #f7ecd7, and it is never used opaque: the panels lay it at
+     92% and the discovery band at 90%, which is opaque enough to carry ink
+     wherever it lands — a panel sits over bright coral as readily as over open
+     water — and still lets the reef breathe through the paper. The two solid
+     tones are the lit and shaded parts of the same sheet. */
+  --panel: rgb(247 236 215 / 0.92);
+  --paper-lit: #fdf6e8;
+  --paper-deep: #eddfc2;
+
+  --ink: #2b3a55;
+  --ink-soft: #4d5b76;
+  --sea-ink: #0f5e5c;
   --amber: #ffca7a;
-  --turquoise: #9fe7e0;
-  --deep: #0a2a3a;
-  --ink: #06202b;
-  --panel: rgba(8, 34, 46, 0.82);
-  --panel-edge: rgba(159, 231, 224, 0.35);
+  --amber-lit: #ffe9bd;
+  --amber-ink: #8c5210;
 
-  /* Overlay chrome. The old panels were 82% opaque, which read as cardboard
-     pasted over the reef; glass lets the water carry through them. */
-  /* Opaque enough to guarantee text contrast wherever it lands: a panel can
-     sit over bright coral as easily as over open water. */
-  --glass: rgb(8 32 44 / 0.55);
-  --glass-edge: color-mix(in oklab, var(--turquoise) 32%, transparent);
-  --glass-blur: blur(16px) saturate(135%);
-  --panel-radius: 16px;
-  /* Layered rather than one blanket shadow: a bright inset lip for the glass
-     edge, a tight contact shadow, and a wide soft one for depth. */
-  --glass-shadow:
-    0 1px 0 0 rgb(226 250 255 / 0.14) inset,
-    0 2px 6px -2px rgb(0 0 0 / 0.4),
-    0 18px 36px -16px rgb(0 0 0 / 0.55);
+  /* Deep water, for the two surfaces that are not paper: the page behind the
+     canvas and the dim behind a modal. Nothing in this grammar reaches black,
+     and a scrim is the easiest place to forget that. */
+  --deep-water: #0d3a44;
+  /* The modal dim. It has to push the reef back far enough that a cream panel
+     is the brightest thing in frame, and the old 72% of near-black did that by
+     switching the picture off. Measured on the same patch of open water in
+     shot D's pose, that dim left the reef 40 of its 100 parts of chroma and
+     turned it faintly blue — the near-black was a navy, so it put blue above
+     green where the water has green above blue. Deep teal at 46% leaves 75 and
+     keeps the order, which is the same rule the world's own darkest values
+     follow: nothing here reaches black, so nothing over it may either. */
+  --scrim: rgb(15 66 74 / 0.46);
 
-  color-scheme: dark;
+  --panel-edge: rgb(43 58 85 / 0.18);
+  --panel-radius: 14px;
+  /* Ink at low alpha rather than black: a paper panel casts a warm shadow on a
+     turquoise world, and a neutral dark one reads as a drop shadow in a UI kit.
+     The inset lip is the lit top edge of a sheet, not a glass highlight. */
+  --panel-shadow:
+    0 1px 0 0 rgb(255 253 246 / 0.75) inset,
+    0 2px 5px -2px rgb(43 58 85 / 0.18),
+    0 16px 30px -18px rgb(43 58 85 / 0.32);
+
+  /* Light, so the native checkbox and range controls in the comfort panel are
+     drawn on paper rather than on a dark form. The accent puts them in the
+     amber family without any of them needing a custom control. */
+  color-scheme: light;
+  accent-color: var(--amber-ink);
 
   /* Empty by default so the gradients below stay valid on pre-2024 browsers,
      where an unsupported interpolation keyword is a syntax error that would
@@ -36,15 +67,27 @@
 }
 
 /* One surface treatment, shared. `:where()` keeps specificity at zero so each
-   panel below can still override any part of it without fighting the cascade. */
+   panel below can still override any part of it without fighting the cascade.
+   There is no backdrop filter any more: paper is not glass, and at 92% there is
+   nothing left behind it to blur. */
 :where(.hud, .controls-help, .sanctuary-overlay__header, .sanctuary-card) {
-  background: var(--glass);
-  border: 1px solid var(--glass-edge);
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
   border-radius: var(--panel-radius);
-  box-shadow: var(--glass-shadow);
-  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--panel-shadow);
+  color: var(--ink);
   /* Progressive enhancement: softer, more optical corners where supported. */
   corner-shape: squircle;
+}
+
+/* The keyboard ring has to be authored here. Chrome's default is a dark blue
+   halo tuned for a white page; on cream it is the one thing in the UI still
+   wearing the old palette. Amber at three pixels clears 3:1 against the paper
+   it sits on (5.39:1 measured), and offsetting it keeps a focused checkbox
+   legible instead of ringed. Nothing about *what* takes focus changes. */
+:where(button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--amber-ink);
+  outline-offset: 2px;
 }
 
 * {
@@ -56,9 +99,11 @@ body {
   margin: 0;
   height: 100%;
   overflow: hidden;
-  background: var(--ink);
-  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-  color: #eaf7f5;
+  background: var(--deep-water);
+  /* A round humanist face, and system fallbacks only — a webfont would be a
+     network fetch on a game that ships nine images and no other requests. */
+  font-family: "Nunito", "Avenir Next", "Avenir", "Trebuchet MS", system-ui, sans-serif;
+  color: var(--ink);
 }
 
 #app {
@@ -89,19 +134,19 @@ body {
 }
 
 .hud__objective span {
-  color: var(--amber);
-  font-weight: 600;
+  color: var(--amber-ink);
+  font-weight: 700;
 }
 
 .hud__progress span {
-  color: var(--turquoise);
-  font-weight: 600;
+  color: var(--sea-ink);
+  font-weight: 700;
 }
 
 .hud__hint {
   margin-top: 6px;
   min-height: 1.2em;
-  color: #ffe6b8;
+  color: var(--amber-ink);
   font-style: italic;
   font-size: 14px;
 }
@@ -116,11 +161,15 @@ body {
   pointer-events: none;
 }
 
+/* Warm and a half-pixel heavier than it was, with an ink halo underneath it:
+   the reticle is the one mark in the UI that never has paper behind it, and
+   sunlit sand is nearly as bright as the ring itself. */
 .reticle__ring {
   position: absolute;
   inset: 18px;
-  border: 2px solid rgba(234, 247, 245, 0.55);
+  border: 3px solid rgb(255 246 227 / 0.85);
   border-radius: 50%;
+  box-shadow: 0 0 7px rgb(43 58 85 / 0.4);
   transition: inset 160ms ease, border-color 160ms ease;
 }
 
@@ -131,25 +180,28 @@ body {
 
 .reticle.is-found .reticle__ring {
   inset: 8px;
-  border-color: var(--turquoise);
+  border-color: var(--amber-lit);
 }
 
 .reticle__progress {
   position: absolute;
   inset: 0;
   transform: rotate(-90deg);
+  filter: drop-shadow(0 1px 2px rgb(43 58 85 / 0.4));
 }
 
+/* The radius stays 20: `Hud` computes the dash offset from it, so the arc's
+   geometry is shared with the focus scanner's progress. Only the weight moves. */
 .reticle__track {
   fill: none;
-  stroke: rgba(234, 247, 245, 0.16);
-  stroke-width: 3;
+  stroke: rgb(43 58 85 / 0.26);
+  stroke-width: 3.5;
 }
 
 .reticle__fill {
   fill: none;
   stroke: var(--amber);
-  stroke-width: 3;
+  stroke-width: 3.5;
   stroke-linecap: round;
   stroke-dasharray: 125.6;
   stroke-dashoffset: 125.6;
@@ -166,7 +218,7 @@ body {
   max-width: 260px;
   /* Reference material, not the subject: it sits back until the diver needs it
      and fades further once they start swimming. */
-  opacity: 0.8;
+  opacity: 0.86;
   transition: opacity 400ms ease;
 }
 
@@ -175,17 +227,22 @@ body {
   padding-left: 16px;
 }
 
+/* Little paper tiles with an ink border and a thicker bottom edge — a key cap
+   drawn rather than rendered. */
 kbd {
   display: inline-block;
   min-width: 18px;
   padding: 1px 5px;
   margin: 0 1px;
   text-align: center;
-  background: rgba(159, 231, 224, 0.14);
-  border: 1px solid var(--panel-edge);
+  color: var(--ink);
+  background: var(--paper-lit);
+  border: 1px solid rgb(43 58 85 / 0.34);
+  border-bottom-width: 2px;
   border-radius: 5px;
   font-size: 12px;
   font-family: inherit;
+  font-weight: 600;
 }
 
 .codex {
@@ -193,7 +250,7 @@ kbd {
   inset: 0;
   display: grid;
   place-items: center;
-  background: rgba(3, 16, 22, 0.72);
+  background: var(--scrim);
   backdrop-filter: blur(4px);
   z-index: 10;
 }
@@ -207,21 +264,22 @@ kbd {
   max-height: 80vh;
   overflow-y: auto;
   padding: 24px 28px;
-  background: linear-gradient(160deg var(--in-oklab), #12455c, #071f2a);
-  border: 1px solid var(--glass-edge);
-  border-radius: 20px;
-  box-shadow: var(--glass-shadow);
+  background: linear-gradient(160deg var(--in-oklab), var(--paper-lit), var(--paper-deep));
+  border: 1px solid var(--panel-edge);
+  border-radius: 18px;
+  box-shadow: var(--panel-shadow);
+  color: var(--ink);
   corner-shape: squircle;
 }
 
 .codex__panel h2 {
   margin-top: 0;
-  color: var(--amber);
-  font-weight: 600;
+  color: var(--amber-ink);
+  font-weight: 700;
 }
 
 .codex__empty {
-  color: #9fb8c0;
+  color: var(--ink-soft);
   font-style: italic;
 }
 
@@ -230,32 +288,36 @@ kbd {
   align-items: flex-start;
   gap: 16px;
   padding: 16px 0;
-  border-top: 1px solid rgba(159, 231, 224, 0.18);
+  border-top: 1px solid rgb(43 58 85 / 0.14);
 }
 
 /* The plate the codex has always promised. Rendered once, at discovery, from
-   the same species configuration the animal in the reef was built from. */
+   the same species configuration the animal in the reef was built from.
+   Its fill stays the deep water `MorayPortrait` renders behind the animal — the
+   plate is an illustration mounted on the page, not another panel — so the
+   frame is a paper mat around it and the placeholder matches the picture that
+   replaces it. */
 .codex__portrait {
   flex: 0 0 auto;
   width: 132px;
   height: 132px;
   background: #0c3243;
   border-radius: 12px;
-  border: 1px solid var(--glass-edge);
+  border: 3px solid var(--paper-lit);
   box-shadow:
-    0 1px 0 0 rgb(226 250 255 / 0.12) inset,
-    0 10px 24px -14px rgb(0 0 0 / 0.7);
+    0 0 0 1px var(--panel-edge),
+    0 8px 18px -12px rgb(43 58 85 / 0.55);
   corner-shape: squircle;
 }
 
 .codex__entry h3 {
   margin: 0;
-  color: var(--turquoise);
+  color: var(--sea-ink);
 }
 
 .codex__entry .sci {
   font-style: italic;
-  color: #bfe9e3;
+  color: var(--ink-soft);
   font-size: 14px;
 }
 
@@ -263,7 +325,7 @@ kbd {
   margin: 6px 0 0;
   font-size: 14px;
   line-height: 1.6;
-  color: #dff2ef;
+  color: var(--ink);
 }
 
 .codex__close {
@@ -271,9 +333,11 @@ kbd {
   padding: 8px 18px;
   background: var(--amber);
   color: var(--ink);
-  border: none;
+  border: 1px solid rgb(43 58 85 / 0.22);
   border-radius: 10px;
-  font-weight: 600;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
 }
 
@@ -282,7 +346,8 @@ kbd {
 /* A band across the foot of the frame rather than a box in the corner. This is
    the payoff of the whole loop, so it is titled like one: the reef reads
    straight through the ends of the band, and the plate is gone again in two
-   and a half seconds without ever having taken the screen. */
+   and a half seconds without ever having taken the screen. Since WP-G7 the
+   band is torn paper — the caption under a picture-book illustration. */
 .discovery-plate {
   position: absolute;
   left: 0;
@@ -296,12 +361,13 @@ kbd {
   padding: 20px 24px;
   pointer-events: none;
   text-align: center;
+  color: var(--ink);
   background: linear-gradient(
     to right var(--in-oklab),
     transparent,
-    rgb(5 26 36 / 0.7) 24%,
-    rgb(5 26 36 / 0.72) 50%,
-    rgb(5 26 36 / 0.7) 76%,
+    rgb(247 236 215 / 0.9) 24%,
+    rgb(247 236 215 / 0.93) 50%,
+    rgb(247 236 215 / 0.9) 76%,
     transparent
   );
 }
@@ -322,7 +388,7 @@ kbd {
   background: linear-gradient(
     to right,
     transparent,
-    color-mix(in oklab, var(--amber) 72%, transparent),
+    color-mix(in oklab, var(--amber-ink) 55%, transparent),
     transparent
   );
 }
@@ -340,21 +406,22 @@ kbd {
   font-size: 11px;
   letter-spacing: 2.4px;
   text-transform: uppercase;
-  color: color-mix(in oklab, var(--turquoise) 78%, transparent);
+  color: var(--sea-ink);
 }
 
+/* No glow: a halo is how a bright word held itself off a dark card, and on
+   paper it is a smudge. The value does the work instead. */
 .discovery-plate__name {
   font-size: 32px;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.15;
-  color: var(--amber);
-  text-shadow: 0 0 26px color-mix(in oklab, var(--amber) 40%, transparent);
+  color: var(--amber-ink);
 }
 
 .discovery-plate__sci {
   font-style: italic;
   font-size: 15px;
-  color: #d7efec;
+  color: var(--ink-soft);
 }
 
 /* One animation covers rise, hold and exit, so the plate needs no state beyond
@@ -422,28 +489,28 @@ kbd {
   0% {
     transform: scale(1);
     opacity: 1;
-    border-color: var(--turquoise);
+    border-color: var(--amber);
   }
   55% {
     transform: scale(1.38);
     opacity: 0.75;
-    border-color: var(--turquoise);
+    border-color: var(--amber);
   }
   100% {
     transform: scale(1.6);
     opacity: 0;
-    border-color: var(--turquoise);
+    border-color: var(--amber);
   }
 }
 
 @keyframes reticle-glow {
   from {
     opacity: 1;
-    border-color: var(--turquoise);
+    border-color: var(--amber);
   }
   to {
     opacity: 0.25;
-    border-color: var(--turquoise);
+    border-color: var(--amber);
   }
 }
 
@@ -455,7 +522,7 @@ kbd {
   justify-content: flex-end;
   padding: 24px;
   pointer-events: none;
-  background: linear-gradient(to top, rgba(4, 18, 26, 0.55), transparent 40%);
+  background: linear-gradient(to top, rgb(17 60 68 / 0.42), transparent 40%);
 }
 
 .sanctuary-overlay[hidden] {
@@ -472,14 +539,14 @@ kbd {
 
 .sanctuary-overlay__header h2 {
   margin: 0 0 4px;
-  color: var(--amber);
-  font-weight: 600;
+  color: var(--amber-ink);
+  font-weight: 700;
 }
 
 .sanctuary-overlay__header p {
   margin: 0;
   font-size: 13px;
-  color: #dff2ef;
+  color: var(--ink);
 }
 
 .sanctuary-overlay__cards {
@@ -497,13 +564,13 @@ kbd {
 
 .sanctuary-card h3 {
   margin: 0;
-  color: var(--turquoise);
+  color: var(--sea-ink);
   font-size: 15px;
 }
 
 .sanctuary-card .sci {
   font-style: italic;
-  color: #bfe9e3;
+  color: var(--ink-soft);
   font-size: 12px;
 }
 
@@ -511,7 +578,7 @@ kbd {
   margin: 6px 0 0;
   font-size: 12px;
   line-height: 1.5;
-  color: #dff2ef;
+  color: var(--ink);
 }
 
 .settings {
@@ -519,7 +586,7 @@ kbd {
   inset: 0;
   display: grid;
   place-items: center;
-  background: rgba(3, 16, 22, 0.72);
+  background: var(--scrim);
   backdrop-filter: blur(4px);
   z-index: 11;
 }
@@ -531,10 +598,11 @@ kbd {
 .settings__panel {
   width: min(420px, 90vw);
   padding: 24px 28px;
-  background: linear-gradient(160deg var(--in-oklab), #12455c, #071f2a);
-  border: 1px solid var(--glass-edge);
-  border-radius: 20px;
-  box-shadow: var(--glass-shadow);
+  background: linear-gradient(160deg var(--in-oklab), var(--paper-lit), var(--paper-deep));
+  border: 1px solid var(--panel-edge);
+  border-radius: 18px;
+  box-shadow: var(--panel-shadow);
+  color: var(--ink);
   corner-shape: squircle;
   display: flex;
   flex-direction: column;
@@ -543,8 +611,8 @@ kbd {
 
 .settings__panel h2 {
   margin: 0 0 4px;
-  color: var(--amber);
-  font-weight: 600;
+  color: var(--amber-ink);
+  font-weight: 700;
 }
 
 .settings__panel label {
@@ -564,26 +632,33 @@ kbd {
   width: 100%;
 }
 
+/* Off is a paper tile, on is the amber filled in — the same two states a
+   pressed key has, so the preset reads without a second colour family. */
 .settings__calm {
   padding: 10px 16px;
-  background: var(--turquoise);
+  background: var(--paper-lit);
   color: var(--ink);
-  border: none;
+  border: 2px solid rgb(43 58 85 / 0.3);
   border-radius: 10px;
-  font-weight: 600;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
 }
 
 .settings__calm.is-active {
   background: var(--amber);
+  border-color: var(--amber-ink);
 }
 
 .settings__close {
   margin-top: 6px;
   padding: 8px 18px;
-  background: rgba(159, 231, 224, 0.18);
-  color: #eaf7f5;
-  border: 1px solid var(--panel-edge);
+  background: var(--paper-lit);
+  color: var(--ink);
+  border: 1px solid rgb(43 58 85 / 0.3);
   border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
   cursor: pointer;
 }
