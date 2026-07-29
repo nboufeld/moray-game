@@ -1,4 +1,5 @@
 import { Game } from "./app/Game";
+import { REGIONS } from "./world/regions/RegionRegistry";
 import "./style.css";
 
 const canvas = document.getElementById("reef-canvas");
@@ -15,3 +16,8 @@ game.start();
 // reads the graph's shape and levels back off it instead.
 (window as unknown as { __reef?: Game }).__reef = game;
 (window as unknown as { __reefAudio?: Game["audio"] }).__reefAudio = game.audio;
+// R0: the region capture harness reads pose tables straight out of the
+// running module graph, so the script and the game cannot disagree.
+(window as unknown as { __reefRegions?: { defs: typeof REGIONS } }).__reefRegions = {
+  defs: REGIONS,
+};

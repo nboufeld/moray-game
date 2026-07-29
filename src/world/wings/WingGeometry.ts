@@ -105,7 +105,14 @@ export function wingMood(def: WingDef, x: number, y: number, z: number): number 
   const descent = smoothstep01((def.moodSurface - y) / def.moodDescent);
   const through = smoothstep01((r - 30) / 5);
   const across = 1 - smoothstep01((away - def.wedge.floorHalf) / (half - def.wedge.floorHalf));
-  return descent * through * across;
+  // R0: the mood ends where the wing does. Without this, a wing's cone of
+  // water would tint its whole province spoke out to the horizon — the
+  // early swim caps at r 51 so nothing shipped ever noticed. Exactly 1
+  // below r = 48 (the arithmetic below it is untouched to the bit), gone
+  // by r = 60 where a gateway's approach vale takes over with its region's
+  // own water.
+  const outward = 1 - smoothstep01((r - 48) / 12);
+  return descent * through * across * outward;
 }
 
 /** Where the annexed airspace begins and ends, shared by all wings. */

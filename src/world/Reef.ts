@@ -40,6 +40,8 @@ import { WINGS, wingById } from "./wings/WingRegistry";
 import { WING_FLORA_BUILDERS } from "./wings/WingFloraRegistry";
 import { WING_DENS, type WingDenSpec } from "./wings/WingDens";
 import type { WingFlora } from "./wings/WingTypes";
+import { REGION_SLOTS } from "./regions/RegionSlots";
+import { regionBySlot } from "./regions/RegionRegistry";
 import { CoralField } from "./CoralField";
 import { CorridorDressing } from "./CorridorDressing";
 import { DistantReef } from "./DistantReef";
@@ -1368,9 +1370,19 @@ export class Reef {
    * Wave 8: the walls that keep a diver inside a wing's wedge — the canyon's
    * own collider pattern, derived per wing from its frozen envelope. One
    * shared builder in `WingField`, so a wing owner never edits this file.
+   *
+   * R0: a gateway wing whose depth-1 region has actually landed keeps no
+   * end wall — the province opens through it. Gateways without a region
+   * yet stay walled, so an unfinished province is a place the diver has
+   * simply not been shown, not a hole.
    */
   private buildWingColliders(): void {
-    this.colliders.push(...wingWallColliders());
+    const open = new Set(
+      REGION_SLOTS.filter((slot) => slot.depth === 1 && regionBySlot(slot.id) !== undefined).map(
+        (slot) => slot.gatewayWingId,
+      ),
+    );
+    this.colliders.push(...wingWallColliders(open));
   }
 
   /**

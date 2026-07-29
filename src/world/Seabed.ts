@@ -3,6 +3,7 @@ import { fbm } from "../rendering/ProceduralTexture";
 import { Random, SEEDS } from "../util/Random";
 import { canyonBlend, canyonTarget } from "./Abyss";
 import { applyWingCarves } from "./wings/WingField";
+import { applyRegionTerrain } from "./regions/RegionField";
 
 /**
  * Gentle dunes, as layered sines rather than noise so the shape is exactly
@@ -242,7 +243,15 @@ export function seabedHeight(x: number, z: number): number {
   // untouched height inside every wing's `carveFrom` and outside every
   // wedge, so the bowl and the canyon keep their bits by the same argument
   // as above. `tests/wings.test.ts` holds it.
-  return applyWingCarves(x, z, carved);
+  const winged = applyWingCarves(x, z, carved);
+
+  // R0: the regions past the wings — kilometres of streamed world, whose
+  // terrain is nonetheless one pure function registered here so tests,
+  // bakes and placements sample one truth whether or not a region is
+  // built. Exactly identity wherever every region's weight is zero, which
+  // is everywhere inside r = 46 and outside every domain.
+  // `tests/regions.test.ts` holds it.
+  return applyRegionTerrain(x, z, winged);
 }
 
 function reliefFalloff(distance: number): number {
@@ -310,14 +319,33 @@ export function bakeSeabedOcclusion(
 }
 
 export function createSeabedGeometry(size: number, segments: number, lift = 0): PlaneGeometry {
+  return createSeabedGeometryAt(0, 0, size, segments, lift);
+}
+
+/**
+ * R0: a ground sheet centred anywhere — the regions' floors are the same
+ * one-function terrain as the bowl's, sampled where the region actually
+ * is. The vertices keep world-space x/z (the sheet is translated at bake,
+ * not at render), so region builders can treat every coordinate in their
+ * geometry as world truth.
+ */
+export function createSeabedGeometryAt(
+  centerX: number,
+  centerZ: number,
+  size: number,
+  segments: number,
+  lift = 0,
+): PlaneGeometry {
   const geometry = new PlaneGeometry(size, size, segments, segments);
   geometry.rotateX(-Math.PI / 2);
 
   const position = geometry.attributes.position;
   if (position) {
     for (let i = 0; i < position.count; i++) {
-      const x = position.getX(i);
-      const z = position.getZ(i);
+      const x = position.getX(i) + centerX;
+      const z = position.getZ(i) + centerZ;
+      position.setX(i, x);
+      position.setZ(i, z);
       position.setY(i, seabedHeight(x, z) + lift);
     }
     position.needsUpdate = true;

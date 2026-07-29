@@ -201,4 +201,26 @@ export const SEEDS = {
   /** Starfish and urchin polish. */
   starfishGrand: 0x5a4d_0b0a,
   urchinsGrand: 0x5a4d_0b0b,
+  // R0: the streamed provinces — one stream per region slot, pre-registered
+  // before any region worker launches, in slot order (five spokes × three
+  // depths). A region's whole interior draws from its one stream and its
+  // `^` substreams; nothing about build timing can touch draw order because
+  // no two regions share a stream.
+  regionVerdant1: 0x5a4d_0c01,
+  regionVerdant2: 0x5a4d_0c02,
+  regionVerdant3: 0x5a4d_0c03,
+  regionSmoking1: 0x5a4d_0c04,
+  regionSmoking2: 0x5a4d_0c05,
+  regionSmoking3: 0x5a4d_0c06,
+  regionPale1: 0x5a4d_0c07,
+  regionPale2: 0x5a4d_0c08,
+  regionPale3: 0x5a4d_0c09,
+  regionBlue1: 0x5a4d_0c0a,
+  regionBlue2: 0x5a4d_0c0b,
+  regionBlue3: 0x5a4d_0c0c,
+  regionGolden1: 0x5a4d_0c0d,
+  regionGolden2: 0x5a4d_0c0e,
+  regionGolden3: 0x5a4d_0c0f,
+  /** The texture atelier's repaint passes (R2+ quality uplift). */
+  atelier: 0x5a4d_0c10,
 } as const;

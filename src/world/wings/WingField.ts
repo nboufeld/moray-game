@@ -104,7 +104,9 @@ export function wingAnnexes(floorAt: (x: number, z: number) => number): readonly
  * floor to just over the ceiling so the crack between two wings cannot be
  * flown over inside the swim volume, plus an end pair where the carve fades.
  */
-export function wingWallColliders(): readonly SphereCollider[] {
+export function wingWallColliders(
+  openEnded: ReadonlySet<string> = new Set(),
+): readonly SphereCollider[] {
   const colliders: SphereCollider[] = [];
   for (const wing of WINGS) {
     const perpX = -Math.sin(wing.azimuth);
@@ -130,6 +132,11 @@ export function wingWallColliders(): readonly SphereCollider[] {
 
     // The end wall, where the carve eases back up under the wing's own
     // curtains/backdrop dressing. The annex's radial cap stands behind it.
+    // R0: a gateway wing keeps no end wall — its far end opens into a
+    // province's approach vale, and the region's own bounds take over.
+    if (openEnded.has(wing.id)) {
+      continue;
+    }
     const endR = wing.carve.carveEnd - 2;
     for (const side of [-1, 1]) {
       const x = axisX * endR + perpX * side * 2.2;

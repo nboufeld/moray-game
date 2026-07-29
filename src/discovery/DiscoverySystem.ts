@@ -32,13 +32,31 @@ export class DiscoverySystem {
   private readonly scanners = new Map<string, FocusScanner>();
   private readonly discovered = new Set<string>();
   private readonly toTarget = new Vector3();
+  private readonly targets: DiscoveryTarget[];
 
   constructor(
-    private readonly targets: readonly DiscoveryTarget[],
+    targets: readonly DiscoveryTarget[],
     private readonly params: FocusParams = DEFAULT_FOCUS_PARAMS,
   ) {
+    this.targets = [...targets];
     for (const target of targets) {
       this.scanners.set(target.speciesId, new FocusScanner(params));
+    }
+  }
+
+  /**
+   * R0: streamed regions bring their findable residents with them the
+   * first time they build, so the roster grows as provinces land. A
+   * species already in the roster (or already discovered from a save) is
+   * not doubled; the caller refreshes any total-count UI after this.
+   */
+  addTargets(targets: readonly DiscoveryTarget[]): void {
+    for (const target of targets) {
+      if (this.scanners.has(target.speciesId)) {
+        continue;
+      }
+      this.targets.push(target);
+      this.scanners.set(target.speciesId, new FocusScanner(this.params));
     }
   }
 

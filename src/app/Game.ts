@@ -16,6 +16,9 @@ import { Moray } from "../creatures/morays/Moray";
 import { MorayRegistry } from "../creatures/morays/MorayRegistry";
 import type { MoraySpeciesConfig } from "../creatures/morays/MoraySpeciesConfig";
 import { MYTHICS, mythicById } from "../creatures/mythics/MythicRegistry";
+import { REGIONS } from "../world/regions/RegionRegistry";
+import { RegionStreamer } from "../world/regions/RegionStreamer";
+import type { CodexEntry } from "../ui/Codex";
 import { JellyBloom } from "../creatures/visitors/JellyBloom";
 import { Ray } from "../creatures/visitors/Ray";
 import { Turtle } from "../creatures/visitors/Turtle";
@@ -123,6 +126,9 @@ export class Game {
 
   private readonly registry = new MorayRegistry();
   private readonly morays: MorayInstance[] = [];
+  /** R0: the streamed provinces, and their residents' codex cards. */
+  private readonly streamer: RegionStreamer;
+  private readonly regionCodex = new Map<string, CodexEntry>();
 
   private readonly dive: DiveController;
   private readonly rig: CameraRig;
@@ -198,6 +204,23 @@ export class Game {
     this.scene.add(this.reef.group);
     this.collision = new CollisionField(this.reef.colliders, this.reef.bounds);
 
+    // R0: the streamed world past the wings. Nothing builds at boot — the
+    // nearest province's build margin begins at the gateway wings — and a
+    // region's findable residents join the discovery roster the first time
+    // their region builds.
+    this.streamer = new RegionStreamer(this.scene, this.collision);
+    for (const region of REGIONS) {
+      for (const entry of region.codexEntries ?? []) {
+        this.regionCodex.set(entry.id, entry);
+      }
+    }
+    this.streamer.onTargets = (targets) => {
+      this.discovery.addTargets(targets);
+      this.hud.setTotal(this.discovery.totalCount);
+      this.hud.setProgress(this.discovery.discoveredCount, this.discovery.totalCount);
+      this.refreshObjective();
+    };
+
     // Populate every hiding spot with its species.
     const targets: DiscoveryTarget[] = [];
     for (const spot of this.reef.hidingSpots) {
@@ -243,6 +266,14 @@ export class Game {
       } else if (mythicById(id)) {
         this.discovery.markDiscovered(id);
         this.recordMythicInCodex(id);
+      } else {
+        // R0: a region resident, whose card lives in its region's pure
+        // half — restorable without the region being built.
+        const entry = this.regionCodex.get(id);
+        if (entry) {
+          this.discovery.markDiscovered(id);
+          this.codex.recordEntry(entry);
+        }
       }
     }
     this.hud.setProgress(this.discovery.discoveredCount, this.discovery.totalCount);
@@ -380,6 +411,9 @@ export class Game {
     context.reducedMotion = this.settings.reducedMotion;
     context.time += step;
     this.life.update(step, context);
+    // R0: the streamed provinces — build/attach/detach by distance, and
+    // advance whatever is alive in the attached ones.
+    this.streamer.update(this.dive.position, step, context);
     this.hud.update(delta);
   }
 
@@ -481,6 +515,16 @@ export class Game {
     return this.weather.state;
   }
 
+  /** R0 QA door: builds and attaches a region now (region capture harness). */
+  forceRegion(slotId: string): void {
+    this.streamer.force(slotId);
+  }
+
+  /** R0: which regions are attached, for probes and captures. */
+  get activeRegions(): readonly string[] {
+    return this.streamer.active;
+  }
+
   /** Whether the player is holding any of the swim keys. */
   private isSwimming(): boolean {
     const input = this.input.diveInput;
@@ -515,6 +559,7 @@ export class Game {
   private onMythicDiscovered(speciesId: string): void {
     const myth = mythicById(speciesId);
     if (!myth) {
+      this.onRegionResidentDiscovered(speciesId);
       return;
     }
     this.recordMythicInCodex(speciesId);
@@ -543,6 +588,23 @@ export class Game {
       id: config.id,
       render: () => renderMorayPortrait(this.renderer, config),
     });
+  }
+
+  /** R0: a region resident's discovery — same ceremony, card from the def. */
+  private onRegionResidentDiscovered(speciesId: string): void {
+    const entry = this.regionCodex.get(speciesId);
+    if (!entry) {
+      return;
+    }
+    this.codex.recordEntry(entry);
+    this.hud.showDiscovery(entry.commonName, entry.scientificName, this.settings.reducedMotion);
+    this.pulse.trigger();
+    this.soundscape.playDiscovery();
+    this.hud.setProgress(this.discovery.discoveredCount, this.discovery.totalCount);
+    this.hud.setHint("Added to the Codex.");
+    this.hintLevel = -1;
+    this.refreshObjective();
+    this.save.recordDiscovery(speciesId, this.settings);
   }
 
   /** Files a mythic's card and queues its plate, if its definition has one. */

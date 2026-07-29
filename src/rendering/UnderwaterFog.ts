@@ -12,6 +12,7 @@ import {
 import { Random, SEEDS } from "../util/Random";
 import { ABYSS_FOG, abyssMood, onSceneRender } from "../world/Abyss";
 import { wingMoodAt } from "../world/wings/WingField";
+import { regionMoodAt } from "../world/regions/RegionField";
 import type { WingMoodTables } from "../world/wings/WingTypes";
 import { requestBackdrop } from "./AssetLibrary";
 import { readImage, readImageRows, textureFromPixels } from "./ImagePixels";
@@ -462,6 +463,14 @@ export class UnderwaterFog {
         if (wing !== null) {
           placeMood = wing.mood;
           tables = wing.tables.fog;
+        } else {
+          // R0: the regions past the wings — the third place channel over
+          // the same quantity, still one writer.
+          const region = regionMoodAt(position.x, position.y, position.z);
+          if (region !== null) {
+            placeMood = region.mood;
+            tables = region.tables.fog;
+          }
         }
       }
 

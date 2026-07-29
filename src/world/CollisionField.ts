@@ -48,14 +48,40 @@ export interface ReefBounds {
  * along the surface normal. Pure math for unit testing.
  */
 export class CollisionField {
+  /** R0: the streamer's live volumes and colliders; empty when no region is near. */
+  private dynamicVolumes: readonly BoundsAnnex[] = [];
+  private dynamicColliders: readonly SphereCollider[] = [];
+
   constructor(
     private readonly colliders: readonly SphereCollider[],
     private readonly bounds: ReefBounds,
   ) {}
 
+  /**
+   * R0: swaps in the streamed regions' bounds volumes and colliders. The
+   * region volumes are checked *before* the canyon's and the wings' —
+   * a depth-1 approach vale overlaps its gateway wing's last metres on
+   * purpose, and the handover must go outward.
+   */
+  setDynamic(volumes: readonly BoundsAnnex[], colliders: readonly SphereCollider[]): void {
+    this.dynamicVolumes = volumes;
+    this.dynamicColliders = colliders;
+  }
+
   /** Resolves the position in place and returns it for convenience. */
   resolve(position: Vector3, radius: number): Vector3 {
     const push = new Vector3();
+    for (const collider of this.dynamicColliders) {
+      push.subVectors(position, collider.center);
+      const minDistance = collider.radius + radius;
+      const distance = push.length();
+      if (distance < minDistance && distance > 1e-5) {
+        push.multiplyScalar((minDistance - distance) / distance);
+        position.add(push);
+      } else if (distance <= 1e-5) {
+        position.y += minDistance;
+      }
+    }
     for (const collider of this.colliders) {
       push.subVectors(position, collider.center);
       const minDistance = collider.radius + radius;
@@ -68,6 +94,11 @@ export class CollisionField {
       }
     }
 
+    for (const volume of this.dynamicVolumes) {
+      if (volume.contains(position.x, position.z)) {
+        return this.resolveInAnnex(position, radius, volume);
+      }
+    }
     const annex = this.bounds.annex;
     if (annex?.contains(position.x, position.z)) {
       return this.resolveInAnnex(position, radius, annex);

@@ -9,6 +9,7 @@ import {
 } from "three";
 import { ABYSS_LIGHT, abyssMood, onSceneRender } from "../world/Abyss";
 import { wingMoodAt } from "../world/wings/WingField";
+import { regionMoodAt } from "../world/regions/RegionField";
 import type { WingMoodTables } from "../world/wings/WingTypes";
 import type { WeatherMoods } from "./WeatherMoods";
 
@@ -153,6 +154,13 @@ export class Lighting {
         if (wing !== null) {
           mood = wing.mood;
           shares = wing.tables.light;
+        } else {
+          // R0: the regions — the third place channel, one writer still.
+          const region = regionMoodAt(position.x, position.y, position.z);
+          if (region !== null) {
+            mood = region.mood;
+            shares = region.tables.light;
+          }
         }
       }
       const weather =
