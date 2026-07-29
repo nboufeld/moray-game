@@ -146,9 +146,9 @@ export function buildVerdantDistance(): { meshes: (Mesh | InstancedMesh)[] } {
       dummy.position.set(CENTER_X + Math.cos(theta) * r, FOOT + 2, CENTER_Z + Math.sin(theta) * r);
       dummy.rotation.set(0, random.range(0, Math.PI), random.signed(0.06));
       dummy.scale.set(
-        random.range(1.2, 2.1),
+        random.range(1.0, 1.5),
         random.range(spec.hMin, spec.hMax) / TRUNK_CARD_HEIGHT,
-        random.range(1.2, 2.1),
+        random.range(1.0, 1.5),
       );
       dummy.updateMatrix();
       mesh.setMatrixAt(placed, dummy.matrix);
@@ -178,16 +178,25 @@ function trunkCardGeometry(): BufferGeometry {
   }
   const blade = (spin: number): BufferGeometry => {
     const h = TRUNK_CARD_HEIGHT;
+    // Proportions read off the real young kelp that ghosted so well at
+    // sixty metres in round 1: a thin drifting stem for four fifths of the
+    // height, then a small *lumpy* head — two offset diamonds and two
+    // drooping straps. The first cut's single wide diamond scaled up into
+    // a pyramid and the horizon read as mountains again.
     const positions = new Float32Array([
-      // The stem: a tapered strip with a drift to one side.
-      -1.1, 0, 0, 1.1, 0, 0, -0.5, h * 0.72, 0,
-      1.1, 0, 0, 0.9, h * 0.72, 0, -0.5, h * 0.72, 0,
-      // The crown: a wide diamond at the head.
-      -3.4, h * 0.78, 0, 3.6, h * 0.8, 0, 0.2, h * 1.0, 0,
-      -3.4, h * 0.78, 0, 0.2, h * 0.62, 0, 3.6, h * 0.8, 0,
+      // The stem, in two leaning segments.
+      -0.9, 0, 0, 0.9, 0, 0, 1.4, h * 0.45, 0,
+      -0.9, 0, 0, 1.4, h * 0.45, 0, -0.2, h * 0.47, 0,
+      -0.2, h * 0.47, 0, 1.4, h * 0.45, 0, 0.9, h * 0.84, 0,
+      -0.2, h * 0.47, 0, 0.9, h * 0.84, 0, -0.1, h * 0.85, 0,
+      // The head: two small diamonds, offset so the crown lumps.
+      -1.8, h * 0.84, 0, 2.6, h * 0.86, 0, 0.5, h * 0.95, 0,
+      -1.8, h * 0.84, 0, 0.6, h * 0.78, 0, 2.6, h * 0.86, 0,
+      -1.4, h * 0.92, 0, 2.0, h * 0.94, 0, 0.2, h * 1.02, 0,
+      -1.4, h * 0.92, 0, 0.3, h * 0.87, 0, 2.0, h * 0.94, 0,
       // Two drooping crown straps.
-      -3.2, h * 0.82, 0, -1.4, h * 0.8, 0, -4.6, h * 0.6, 0,
-      3.4, h * 0.84, 0, 1.6, h * 0.82, 0, 4.8, h * 0.64, 0,
+      -1.6, h * 0.88, 0, -0.6, h * 0.86, 0, -3.2, h * 0.7, 0,
+      1.9, h * 0.9, 0, 0.8, h * 0.88, 0, 3.4, h * 0.72, 0,
     ]);
     const geometry = new BufferGeometry();
     geometry.setAttribute("position", new BufferAttribute(positions, 3));

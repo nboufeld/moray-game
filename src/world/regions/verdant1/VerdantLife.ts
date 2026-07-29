@@ -79,7 +79,7 @@ export function buildVerdantLife(giants: readonly KelpFoot[]): VerdantLifeBuild 
     count: 60,
     color: new Color(0xaed2cd),
     profile: { width: 0.9, height: 0.9, length: 1.05, tailTaper: 0.5, dorsal: 0.5, pectoral: 0.9, tail: { reach: 1.5, lobe: 0.62, notch: 1.05 } },
-    scale: 0.85,
+    scale: 1.05,
     behaviour: {
       kind: "travel",
       centerU: 330,
@@ -103,7 +103,7 @@ export function buildVerdantLife(giants: readonly KelpFoot[]): VerdantLifeBuild 
     // the colour, not adjacent to it.
     color: new Color(0x8fb85c),
     profile: { width: 1.0, height: 1.35, length: 0.8, tailTaper: 0.5, dorsal: 0.9, pectoral: 1.1, tail: { reach: 1.35, lobe: 0.7, notch: 1.0 } },
-    scale: 0.6,
+    scale: 0.8,
     behaviour: {
       kind: "hover",
       centerU: 433,
@@ -296,7 +296,15 @@ function buildShoal(options: ShoalOptions): {
 } {
   const random = new Random(options.seed);
   const geometry = createFishGeometry(options.profile);
-  const material = createToonMaterial({ vertexColors: true });
+  // The whisper of emissive keeps a shaded fish its own colour: the baked
+  // eye highlight (1.5× in the vertex colours) otherwise overexposes into
+  // an orange dot under the warm key, and at shoal distance the dot *is*
+  // the fish.
+  const material = createToonMaterial({
+    vertexColors: true,
+    emissive: 0x24443c,
+    emissiveIntensity: 0.5,
+  });
   const mesh = new InstancedMesh(geometry, material, options.count);
   mesh.name = `verdant-shoal-${options.behaviour.kind}`;
   mesh.castShadow = false;
@@ -434,7 +442,12 @@ function buildSerpent(giants: readonly KelpFoot[]): {
     pectoral: 0.8,
     tail: { reach: 1.5, lobe: 0.6, notch: 1.05 },
   });
-  const material = createToonMaterial({ vertexColors: true });
+  // Same emissive whisper as the shoals — see `buildShoal`.
+  const material = createToonMaterial({
+    vertexColors: true,
+    emissive: 0x24443c,
+    emissiveIntensity: 0.5,
+  });
   const mesh = new InstancedMesh(geometry, material, count);
   mesh.name = "verdant-current-serpent";
   mesh.castShadow = false;
@@ -452,7 +465,7 @@ function buildSerpent(giants: readonly KelpFoot[]): {
     offsets.push({
       lateral: random.signed(0.32),
       phase: random.range(0, Math.PI * 2),
-      scale: random.range(0.9, 1.25),
+      scale: random.range(1.15, 1.5),
     });
     tint.copy(silver).multiplyScalar(random.range(0.85, 1.05));
     mesh.setColorAt(i, tint);

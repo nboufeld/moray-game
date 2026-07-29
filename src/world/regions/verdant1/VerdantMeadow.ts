@@ -97,7 +97,7 @@ export function buildVerdantMeadow(): VerdantMeadowBuild {
   };
   material.customProgramCacheKey = () => "verdant-meadow";
 
-  const capacity = PATCHES * BLADES_PER_PATCH + 700;
+  const capacity = PATCHES * BLADES_PER_PATCH + 820;
   const mesh = new InstancedMesh(bladeGeometry(), material, capacity);
   mesh.name = "verdant-meadow";
   mesh.castShadow = false;
@@ -144,11 +144,17 @@ export function buildVerdantMeadow(): VerdantMeadowBuild {
   }
 
   // The Falling Edge's thin turf: the forest fades, the grass keeps going
-  // a little further — eight sparse patches so the shelf is a place and
-  // not a parking lot.
-  for (let patch = 0; patch < 8; patch++) {
-    const patchU = random.range(552, 612);
-    const patchV = random.signed(60);
+  // a little further — sparse patches so the shelf is a place and not a
+  // parking lot. The first three are authored into the falling-edge
+  // pose's own foreground; the rest scatter.
+  for (let patch = 0; patch < 11; patch++) {
+    const authored: readonly [number, number][] = [
+      [584, 8],
+      [591, 22],
+      [597, -5],
+    ];
+    const patchU = patch < 3 ? authored[patch]![0] : random.range(552, 612);
+    const patchV = patch < 3 ? authored[patch]![1] : random.signed(60);
     const family = FAMILIES[Math.floor(paletteRandom.next() * FAMILIES.length)] ?? FAMILIES[0]!;
     for (let blade = 0; blade < 22; blade++) {
       const spread = 4.4 * Math.sqrt(random.next());
