@@ -1,5 +1,6 @@
 import type { RegionDef } from "./RegionTypes";
 import { VERDANT_1 } from "./verdant1/Verdant1";
+import { SMOKING_1 } from "./smoking1/Smoking1";
 
 /**
  * The registered regions. Pre-wired empty by R0. A region worker adds
@@ -8,7 +9,7 @@ import { VERDANT_1 } from "./verdant1/Verdant1";
  * merging this file across branches — one line per branch, trivially
  * resolvable. Append-only, never reordered.
  */
-export const REGIONS: readonly RegionDef[] = [VERDANT_1];
+export const REGIONS: readonly RegionDef[] = [VERDANT_1, SMOKING_1];
 
 const BY_SLOT = new Map(REGIONS.map((region) => [region.slotId, region]));
 
