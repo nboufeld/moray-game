@@ -201,16 +201,16 @@ export function buildPaleBloom(archCrown: { x: number; y: number; z: number }): 
   // dense beds stand exactly where it looks, and one at the Gardener's
   // Round (the crab plants where it walks).
   for (const [su, sv, pieces] of [
-    [520, -50, 9],
-    [534, -63, 8],
-    [547, -46, 8],
-    [509, -30, 6],
+    [518, -48, 12],
+    [532, -62, 10],
+    [545, -45, 10],
+    [509, -30, 7],
     [494, 30, 5],
   ] as const) {
     for (let p = 0; p < pieces; p++) {
       plant(
-        su + gardenRandom.signed(4.5),
-        sv + gardenRandom.signed(4.5),
+        su + gardenRandom.signed(6),
+        sv + gardenRandom.signed(6),
         drawKind(gardenRandom),
         gardenRandom,
         0.15,
@@ -225,11 +225,13 @@ export function buildPaleBloom(archCrown: { x: number; y: number; z: number }): 
   // region is a tended garden.
   for (let row = 0; row < 6; row++) {
     const heading = (row / 6) * Math.PI * 2 + 0.35;
-    for (let seat = 0; seat < 6; seat++) {
-      const d = 14 + seat * 3.4;
-      const u = SEED_GROVE.u + Math.cos(heading) * d + nurseryRandom.signed(0.5);
-      const v = SEED_GROVE.v + Math.sin(heading) * d + nurseryRandom.signed(0.5);
-      const kind: CoralKind = seat % 2 === 0 ? "branch" : "tube";
+    for (let seat = 0; seat < 8; seat++) {
+      const d = 13 + seat * 2.6;
+      const u = SEED_GROVE.u + Math.cos(heading) * d + nurseryRandom.signed(0.4);
+      const v = SEED_GROVE.v + Math.sin(heading) * d + nurseryRandom.signed(0.4);
+      // Branch and fan alternating — the bright silhouettes; round 2's
+      // tube juveniles read as dark specks on the bowl.
+      const kind: CoralKind = seat % 2 === 0 ? "branch" : "fan";
       const [scaleMin] = KIND_SCALE[kind];
       // Juveniles: a third of a grown colony, but planted in rows dense
       // enough that the rows themselves read from the grove's rim.
@@ -238,7 +240,7 @@ export function buildPaleBloom(archCrown: { x: number; y: number; z: number }): 
         u,
         v,
         tint: recoveryTint(nurseryRandom, 1, 0.8),
-        scale: scaleMin * nurseryRandom.range(0.34, 0.5),
+        scale: scaleMin * nurseryRandom.range(0.38, 0.52),
         yaw: nurseryRandom.range(0, Math.PI * 2),
       });
     }
@@ -597,7 +599,13 @@ function buildMother(random: Random): {
     );
   }
 
-  const mesh = mergedMesh(parts, createToonMaterial({ vertexColors: true }), "pale-mother-coral");
+  // The emissive whisper holds the rose against thirty metres of milk —
+  // the mother is the one thing in the region allowed to glow a little.
+  const mesh = mergedMesh(
+    parts,
+    createToonMaterial({ vertexColors: true, emissive: 0x3a1c22, emissiveIntensity: 0.6 }),
+    "pale-mother-coral",
+  );
   mesh.geometry.translate(at.x, foot, at.z);
   mesh.geometry.computeBoundingSphere();
 

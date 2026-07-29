@@ -183,10 +183,18 @@ export const PALE_1: RegionDef = {
   mood: {
     // The milk, region-sized: paler and denser than open water but a
     // step clearer than the Ghost Reef's room, so the vistas breathe to
-    // ~65 m. Round 1 measured the first table as electric poster-cyan —
-    // the value key's "read the red channel first" failure — so the red
-    // now leads the lift: the water warms toward paper as it pales.
-    fog: { colorScale: [1.18, 1.12, 1.08], densityGain: 0.011, backdropFade: 0.45 },
+    // ~65 m. Rounds 1–2 both failed the value key's first read: the
+    // scale multiplies the base fog (linear ≈ 0.09, 0.45, 0.50 — red
+    // near nothing), so a polite red lift of 1.18 was arithmetic dust
+    // and the milk rendered electric poster-cyan. Milk needs red raised
+    // *fourfold* against that base before the ratio reads as paper.
+    // The backdrop fade came down too: 0.45 dimmed the whole sky into a
+    // dark teal slab pressing on every frame — the white world wants
+    // its light kept on.
+    // Density eased a step from round 2 so the shelf's authored beds
+    // layer inside the fog instead of drowning at forty metres — the
+    // reveal rhythm wants ~55 m of legible water.
+    fog: { colorScale: [4.4, 1.3, 1.12], densityGain: 0.009, backdropFade: 0.22 },
     light: { sun: 0.1, hemisphere: -0.1, ambient: -0.03 },
   },
   moodSurface: 16,
