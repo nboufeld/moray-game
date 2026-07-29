@@ -438,11 +438,13 @@ export function buildSmokingChimneys(): SmokingChimneysBuild {
   const poseSmoke = (time: number): void => {
     for (const [i, puff] of puffHomes.entries()) {
       const cycle = (time * 0.045 + puff.phase) % 1;
-      const swell = 1.6 + cycle * 4.6;
+      // Round 3: rounds 1–2 read the puffs as fairy lights — small and
+      // bright is a spark, big and dim is smoke.
+      const swell = 2.6 + cycle * 6;
       dummy.position.set(
-        puff.x + Math.sin(time * 0.14 + puff.drift + cycle * 3) * (0.4 + cycle * 1.6),
+        puff.x + Math.sin(time * 0.14 + puff.drift + cycle * 3) * (0.5 + cycle * 2.4),
         puff.y + cycle * puff.rise,
-        puff.z + Math.cos(time * 0.11 + puff.drift + cycle * 2.4) * (0.4 + cycle * 1.6),
+        puff.z + Math.cos(time * 0.11 + puff.drift + cycle * 2.4) * (0.5 + cycle * 2.4),
       );
       dummy.rotation.set(0, puff.drift + cycle * 1.8, 0);
       dummy.scale.setScalar(swell);
@@ -450,7 +452,7 @@ export function buildSmokingChimneys(): SmokingChimneysBuild {
       smoke.setMatrixAt(i, dummy.matrix);
       // Born dim, brightest a third up, gone at the top.
       const life = smoothstep01(cycle / 0.18) * (1 - smoothstep01((cycle - 0.55) / 0.45));
-      smokeTint.setRGB(1, 0.86, 0.74).multiplyScalar(life);
+      smokeTint.setRGB(1, 0.86, 0.74).multiplyScalar(life * 0.55);
       smoke.setColorAt(i, smokeTint);
     }
     smoke.instanceMatrix.needsUpdate = true;

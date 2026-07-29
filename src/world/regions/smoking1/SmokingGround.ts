@@ -187,14 +187,18 @@ function bakeSmoulderPaint(geometry: PlaneGeometry, contacts: readonly ContactPa
     // where the mineral water spills.
     const springs = springsWeight(u, v);
     if (springs > 0) {
+      // Round 3: the terraces need CONTRAST to read as terraces — milky
+      // pool hearts, amber-dark spill risers, and rims that are the
+      // brightest painted value in the region.
       const { raw } = springsStair(u, v);
       const frac = raw / 1.1 - Math.floor(raw / 1.1);
-      const rim = smoothstep01((frac - 0.72) / 0.16);
-      const spill = smoothstep01((frac - 0.55) / 0.16) * (1 - rim);
-      r += (0.94 + rim * 0.24 + spill * 0.1 - r) * springs;
-      g += (0.9 + rim * 0.22 - spill * 0.02 - g) * springs;
-      b += (0.78 + rim * 0.18 - spill * 0.16 - b) * springs;
-      value += springs * (0.08 + rim * 0.18);
+      const rim = smoothstep01((frac - 0.66) / 0.14);
+      const spill = smoothstep01((frac - 0.42) / 0.18) * (1 - rim);
+      const heart = 1 - smoothstep01((frac - 0.4) / 0.2);
+      r += (0.8 + heart * 0.16 + rim * 0.4 + spill * 0.28 - r) * springs;
+      g += (0.76 + heart * 0.16 + rim * 0.38 + spill * 0.08 - g) * springs;
+      b += (0.68 + heart * 0.14 + rim * 0.3 - spill * 0.2 - b) * springs;
+      value += springs * (0.04 + rim * 0.24 - spill * 0.08);
     }
 
     // The Chimney Forest: the darkest resting ground, warm-charcoal with

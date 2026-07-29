@@ -191,12 +191,12 @@ export const SMOKING_1: RegionDef = {
   floorClearance: 0.7,
 
   mood: {
-    // Warm charcoal-amber water: red held highest, blue taken hardest —
-    // the Vent Springs' rule carried out into open country. Round 1
-    // measured the polite version as bowl-cyan: at densityGain 0.005 the
-    // base water simply outvoted the scale, so the density carries the
-    // warmth to the eye and the cuts are real cuts.
-    fog: { colorScale: [0.95, 0.62, 0.46], densityGain: 0.011, backdropFade: 0.5 },
+    // Warm charcoal-amber water: red held highest, blue taken hardest.
+    // Rounds 1–2 measured the polite versions as bowl-cyan and then
+    // olive: the base water's green (0.70) outvotes its red (0.33) at
+    // any red scale below one, so the scale *raises* red — the product
+    // (0.42, 0.35, 0.29) is the warm grey the whole palette keys to.
+    fog: { colorScale: [1.3, 0.5, 0.4], densityGain: 0.011, backdropFade: 0.5 },
     light: { sun: 0.22, hemisphere: 0.3, ambient: 0.16 },
   },
   moodSurface: 20,

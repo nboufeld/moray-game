@@ -84,7 +84,7 @@ export function buildSmokingSprings(): SmokingSpringsBuild {
     const glisten =
       0.75 + fbm(x * 0.11, z * 0.11, { seed: SEED ^ 0x91f7, period: 8, octaves: 2 }) * 0.5;
     const own = smoothstep01((w - 0.3) / 0.4);
-    shade.copy(WATER_TINT).multiplyScalar(0.15 * heart * glisten * own * own);
+    shade.copy(WATER_TINT).multiplyScalar(0.12 * heart * glisten * own * own);
     colors[i * 3] = shade.r;
     colors[i * 3 + 1] = shade.g;
     colors[i * 3 + 2] = shade.b;
@@ -95,6 +95,9 @@ export function buildSmokingSprings(): SmokingSpringsBuild {
   sheet.computeVertexNormals();
   sheet.computeBoundingSphere();
 
+  // `fog: false` is load-bearing (the canyon light-column rule): fog on
+  // an additive mark brightens distance instead of closing it — rounds
+  // 1–2 read this sheet as a glowing glacier from the gorge lip.
   const waterMaterial = new MeshBasicMaterial({
     vertexColors: true,
     transparent: true,
@@ -102,6 +105,7 @@ export function buildSmokingSprings(): SmokingSpringsBuild {
     blending: AdditiveBlending,
     depthWrite: false,
     side: DoubleSide,
+    fog: false,
   });
   const water = new Mesh(sheet, waterMaterial);
   water.name = "smoulder-spring-water";
@@ -135,13 +139,13 @@ export function buildSmokingSprings(): SmokingSpringsBuild {
     }
     const { raw } = springsStair(u, v);
     const frac = raw / SPRING_STEP - Math.floor(raw / SPRING_STEP);
-    if (frac < 0.7 || frac > 0.92) {
+    if (frac < 0.66 || frac > 0.95) {
       continue;
     }
     const { x, z } = worldOf(u, v);
     dummy.position.set(x, seabedHeight(x, z) + 0.08, z);
     dummy.rotation.set(random.signed(0.2), random.range(0, Math.PI * 2), random.signed(0.2));
-    dummy.scale.setScalar(random.range(0.6, 1.7));
+    dummy.scale.setScalar(random.range(1.0, 2.3));
     dummy.updateMatrix();
     beads.setMatrixAt(placed, dummy.matrix);
     tint.copy(SINTER_PALE).multiplyScalar(random.range(0.88, 1.08));

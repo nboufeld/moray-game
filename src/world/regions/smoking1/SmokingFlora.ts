@@ -44,12 +44,13 @@ const SEED = SEEDS.regionSmoking1;
 
 const BLADE_HEIGHT = 1.25;
 
-// Darkened in round 2: bone-pale blades vanished against pale dunes —
-// the grass needs to sit a value step BELOW its ground to be seen.
+// Round 2 darkened the bone-pale blades that had vanished against the
+// dunes; round 3 lifts them a small step back — a value below the ground
+// but not a silhouette cut-out.
 const ASH_FAMILIES: readonly (readonly number[])[] = [
-  [0x8d8098, 0xa396a4, 0x776b84],
-  [0x998a7c, 0xab9c88, 0x82746a],
-  [0x84789e, 0x998ea8, 0x6f647e],
+  [0x9c90a6, 0xb0a4b0, 0x877b92],
+  [0xa89a8a, 0xbaab96, 0x918378],
+  [0x9488aa, 0xa79cb4, 0x7e738c],
 ] as const;
 
 const FROND_ROOT = new Color(0x6b3a40);

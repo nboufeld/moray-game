@@ -298,13 +298,15 @@ function jellyGeometry(): BufferGeometry {
   const bell = new LatheGeometry(profile, 14);
   smoothNormals(bell);
 
-  // Four trailing skirt straps.
+  // Six short skirt straps, splayed outward — round 2's four parallel
+  // straps merged into one thick stalk and the jelly read as a mushroom.
   const parts: BufferGeometry[] = [bell.toNonIndexed()];
-  for (let i = 0; i < 4; i++) {
-    const strap = new PlaneGeometry(0.16, 1.1, 1, 4).toNonIndexed();
-    strap.translate(0, -0.62, 0);
-    const theta = (i / 4) * Math.PI * 2 + 0.4;
-    strap.applyMatrix4(new Matrix4().makeTranslation(0.3, 0, 0).premultiply(new Matrix4().makeRotationY(theta)));
+  for (let i = 0; i < 6; i++) {
+    const strap = new PlaneGeometry(0.11, 0.85, 1, 4).toNonIndexed();
+    strap.translate(0, -0.5, 0);
+    strap.applyMatrix4(new Matrix4().makeRotationZ(0.35));
+    const theta = (i / 6) * Math.PI * 2 + 0.4;
+    strap.applyMatrix4(new Matrix4().makeTranslation(0.42, -0.05, 0).premultiply(new Matrix4().makeRotationY(theta)));
     parts.push(strap);
   }
   const merged = mergeGeometries(parts, false);

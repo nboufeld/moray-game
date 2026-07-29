@@ -216,7 +216,9 @@ function ridgeRing(layer: RidgeLayer, noiseSeed: number): BufferGeometry {
       column = 0;
       continue;
     }
-    const end = smoothstep01((off - GAP_HALF) / 0.14);
+    // A long taper: round 2's short ramp stood at the gap's edge as a
+    // flat-topped block that read as a building.
+    const end = smoothstep01((off - GAP_HALF) / 0.34);
     const x = CENTER_X + Math.cos(theta) * layer.radius;
     const z = CENTER_Z + Math.sin(theta) * layer.radius;
 
