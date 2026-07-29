@@ -90,7 +90,14 @@ export function buildCurator(): CuratorBuild {
   // tipped toward the grove she keeps.
   const head = new Vector3(x, groundY + 0.62, z);
   const body = buildBody();
-  const material = createToonMaterial({ vertexColors: true });
+  // The lantern floor: the pilot's rule for a findable resident — the
+  // brightest thing in its quarter. Round 1's unlit lilac read as one
+  // more grey stone on a grey stone.
+  const material = createToonMaterial({
+    vertexColors: true,
+    emissive: 0x2b2530,
+    emissiveIntensity: 0.55,
+  });
   const mesh = new Mesh(body.geometry, material);
   mesh.name = "calamity-curator";
   mesh.castShadow = false;
@@ -286,7 +293,13 @@ function buildGleams(random: Random, x: number, y: number, z: number): Mesh {
     part.setAttribute("color", new BufferAttribute(colors, 3));
     parts.push(part);
   }
-  return mergedMesh(parts, createToonMaterial({ vertexColors: true }), "calamity-shrine-gleams");
+  // The pile must *shine* — a memorial catches the light, and round 1's
+  // unlit gleams lay on the stone like more stone.
+  return mergedMesh(
+    parts,
+    createToonMaterial({ vertexColors: true, emissive: 0x33291c, emissiveIntensity: 0.6 }),
+    "calamity-shrine-gleams",
+  );
 }
 
 // ─── The body ────────────────────────────────────────────────────────────────

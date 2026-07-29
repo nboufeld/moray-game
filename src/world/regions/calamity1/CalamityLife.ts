@@ -320,8 +320,8 @@ function buildGyre(plume: { x: number; z: number; base: number; top: number }): 
   // and reads at fifty metres down the crater's open column.
   const material = createToonMaterial({
     vertexColors: true,
-    emissive: 0x3a4a50,
-    emissiveIntensity: 0.75,
+    emissive: 0x46565c,
+    emissiveIntensity: 0.85,
   });
   const mesh = new InstancedMesh(geometry, material, count);
   mesh.name = "calamity-crater-gyre";
@@ -338,7 +338,7 @@ function buildGyre(plume: { x: number; z: number; base: number; top: number }): 
       phase: random.next(),
       radius: random.range(0.8, 1.3),
       speed: random.range(0.85, 1.15),
-      scale: random.range(1.0, 1.35),
+      scale: random.range(1.25, 1.65),
       wobble: random.range(0, Math.PI * 2),
     });
     tint.copy(silver).multiplyScalar(random.range(0.85, 1.06));
@@ -362,7 +362,7 @@ function buildGyre(plume: { x: number; z: number; base: number; top: number }): 
         // The up-leg: a tight bright helix around the plume.
         const k = s / 0.5;
         const angle = o.wobble + k * Math.PI * 5;
-        const radius = 2.6 * o.radius * (1 + k * 0.4);
+        const radius = 3.2 * o.radius * (1 + k * 0.4);
         x = plume.x + Math.cos(angle) * radius;
         z = plume.z + Math.sin(angle) * radius;
         y = plume.base + k * rise;
@@ -550,7 +550,11 @@ function crabGeometry(): BufferGeometry {
 function buildCrabs(): InstancedMesh {
   const random = new Random(SEED ^ 0xc4a5);
   const geometry = crabGeometry();
-  const material = createToonMaterial({ color: 0xd4cec0 });
+  const material = createToonMaterial({
+    color: 0xe2dccd,
+    emissive: 0x221f19,
+    emissiveIntensity: 0.5,
+  });
   const count = 18;
   const mesh = new InstancedMesh(geometry, material, count);
   mesh.name = "calamity-crabs";

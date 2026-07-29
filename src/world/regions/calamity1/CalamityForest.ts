@@ -66,8 +66,8 @@ import { GHOST_FOREST, LAST_GROVE, WOUND, worldOf } from "./CalamityTerrain";
 
 const SEED = SEEDS.regionCalamity;
 
-const GIANT_MIN = 11;
-const GIANT_MAX = 19;
+const GIANT_MIN = 13;
+const GIANT_MAX = 21;
 const STALK_SIDES = 6;
 const GIANT_RINGS = 12;
 
@@ -128,7 +128,7 @@ export function buildCalamityForest(): CalamityForestBuild {
   const placed: { u: number; v: number }[] = [];
   const aisleAt = (u: number): number => -10 * smoothstep01((u - 520) / 150) + 7 * Math.sin(u * 0.045);
   let attempts = 0;
-  while (placed.length < 58 && attempts < 600) {
+  while (placed.length < 70 && attempts < 800) {
     attempts++;
     const angle = random.range(0, Math.PI * 2);
     const spread = Math.sqrt(random.next()) * 1;
@@ -203,16 +203,18 @@ export function buildCalamityForest(): CalamityForestBuild {
     const { x, z } = worldOf(u, v);
     const foot = seabedHeight(x, z);
     const phase = random.range(0, Math.PI * 2);
-    // The blast's rake: standing but laid over, harder nearer the Wound.
+    // The blast's rake: the clock-hand read is the region's signature, so
+    // it is *committed* — every giant visibly laid over, hardest nearest
+    // the Wound. Round 1's polite lean read as ordinary straight trunks.
     const craterD = Math.hypot(u - WOUND.u, v - WOUND.v);
     const rake =
       kind === "snapped"
-        ? random.range(0.04, 0.14)
-        : random.range(0.16, 0.34) * (1 + Math.max(0, 120 - craterD) / 260);
+        ? random.range(0.06, 0.2)
+        : random.range(0.34, 0.58) * (1 + Math.max(0, 120 - craterD) / 300);
     const wander = random.signed(0.05);
     const curve = (t: number): number => (rake * t * t + wander * Math.sin(t * Math.PI * 1.4)) * height;
 
-    const radius = random.range(0.85, 1.15) * (kind === "snapped" ? 0.3 : 0.22);
+    const radius = random.range(0.85, 1.15) * (kind === "snapped" ? 0.32 : 0.3);
     const stalk = deadStalk(height, curve, radius, kind);
     stalk.applyMatrix4(new Matrix4().makeRotationY(rakeYaw + random.signed(0.3)));
     stalk.translate(x, foot, z);
@@ -653,7 +655,16 @@ function arcAlong(v: number, droop: number, rise = 0): { along: number; drop: nu
 // ─── The materials ───────────────────────────────────────────────────────────
 
 function deadStalkMaterial(): MeshToonMaterial {
-  return createToonMaterial({ map: deadStalkTexture(), vertexColors: true });
+  // The ghost glow: a faint emissive floor, the canyon ghost-kelp's
+  // documented cure — round 1's unlit toon read the pale palette as
+  // near-black poles against the ash-milk water. The dead must *shine*,
+  // faintly, or they are not ghosts at all.
+  return createToonMaterial({
+    map: deadStalkTexture(),
+    vertexColors: true,
+    emissive: 0x383730,
+    emissiveIntensity: 0.55,
+  });
 }
 
 function deadLeafMaterial(): MeshToonMaterial {
@@ -661,6 +672,8 @@ function deadLeafMaterial(): MeshToonMaterial {
     side: DoubleSide,
     map: deadStrapTexture(),
     vertexColors: true,
+    emissive: 0x32312b,
+    emissiveIntensity: 0.55,
   });
 }
 
@@ -681,6 +694,11 @@ function groveLeafMaterial(
     side: DoubleSide,
     map: groveStrapTexture(),
     vertexColors: true,
+    // A whisper of emissive so the grove's green survives its own
+    // backlight — the Last Grove is the region's promise, it may not
+    // read as black scrub against the ash.
+    emissive: 0x1d2a1a,
+    emissiveIntensity: 0.5,
   });
   material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
     injectCalamitySway(shader, sway);

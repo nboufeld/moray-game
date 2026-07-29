@@ -231,7 +231,7 @@ export function gardensWeight(u: number, v: number): number {
 /** How much of the Last Grove's hollow owns a spoke point, in [0, 1]. */
 export function groveWeight(u: number, v: number): number {
   const d = Math.hypot(u - LAST_GROVE.u, v - LAST_GROVE.v);
-  return 1 - smoothstep01((d - 14) / 28);
+  return 1 - smoothstep01((d - 14) / 34);
 }
 
 /** How much of the sheltering ridge owns a spoke point, in [0, 1]. */

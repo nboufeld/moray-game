@@ -55,7 +55,7 @@ const SHAFTS: readonly Shaft[] = [
   // The Cold Candle's wide cold column: the crater's heart glows.
   { u: WOUND.u, v: WOUND.v, top: 18, width: 8, opacity: 0.13 },
   // The Last Grove's green-gold fall: the region's one warm mark.
-  { u: LAST_GROVE.u - 2, v: LAST_GROVE.v + 2, top: 14, width: 5, opacity: 0.16, warm: true },
+  { u: LAST_GROVE.u - 2, v: LAST_GROVE.v + 2, top: 14, width: 5.5, opacity: 0.2, warm: true },
 ];
 
 export function buildCalamityLight(): { meshes: Mesh[] } {

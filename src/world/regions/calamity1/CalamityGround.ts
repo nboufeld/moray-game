@@ -139,16 +139,19 @@ function bakeCalamityPaint(geometry: PlaneGeometry, contacts: readonly ContactPa
     // is a smooth beige dune with the hue swapped).
     const silt =
       fbm(x * 0.045, z * 0.045, { seed: SEED ^ 0x5117, period: 11, octaves: 3 }) - 0.5;
-    let r = 0.74 + silt * 0.1;
-    let g = 0.79 + silt * 0.12;
-    let b = 0.85 + silt * 0.08;
+    // Round 2 cut the red a second time: the sand wash under these
+    // multipliers is strongly warm, and at 0.74 the "dead" sand still
+    // read as beach. Grey means red is *cut*, not blue raised.
+    let r = 0.62 + silt * 0.1;
+    let g = 0.75 + silt * 0.12;
+    let b = 0.84 + silt * 0.08;
 
     // The march: grey deepening down the blast road, the shock rings
     // standing in value bands, and a violet pool in the Suffocated Mile's
     // channel — the water went bad here and the ground remembers.
     if (u < MARCH_TO) {
       const ring = shockRing(x, z);
-      value += ring * 0.09;
+      value += ring * 0.14;
       const deep = smoothstep01((-marchFloor(u) - 6.4) / 2.2);
       const inChannel = 1 - smoothstep01((Math.abs(v - marchChannelCenter(u)) - marchChannelHalf(u)) / 8);
       const pool = deep * inChannel * smoothstep01((u - 280) / 60) * (1 - smoothstep01((u - 420) / 60));

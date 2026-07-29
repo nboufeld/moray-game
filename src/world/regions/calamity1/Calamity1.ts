@@ -14,7 +14,6 @@ import {
   CENTER_X,
   CENTER_Z,
   LAST_GROVE,
-  SEEP_GARDENS,
   WOUND,
   calamityCeiling,
   calamityTerrainTarget,
@@ -155,24 +154,27 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "suffocated-mile", u: 366, v: 0, lift: 2.4, atU: 408, atV: -4, pitch: -0.04 },
   // The Wound Gate: the thrown ridge pinching the light.
   { name: "wound-gate", u: 438, v: 0, lift: 2.6, atU: 470, atV: 0, pitch: 0.02 },
-  // The reveal: over the crest — Shatterfield, first ghosts, the far glow.
-  { name: "the-reveal", u: 486, v: 0, lift: 2.8, atU: 560, atV: 8, pitch: -0.08 },
+  // The reveal: standing on the crest itself, the crater country opening
+  // below — Shatterfield, the Great Slab, the first ghost ranks.
+  { name: "the-reveal", u: 477, v: 0, lift: 4.2, atU: 585, atV: 6, pitch: -0.16 },
   // The Shatterfield causeway: swimming the fallen pavement.
   { name: "shatterfield", u: 528, v: -6, lift: 2.6, atU: 574, atV: 14, pitch: -0.03, settle: 4 },
   // The Ghost Forest: among the clock-hand dead.
   { name: "ghost-forest", u: 596, v: 8, lift: 2.8, atU: 650, atV: -12, pitch: 0.05, settle: 5 },
-  // The Wound's rim: the terraced bowls falling away to the Cold Candle.
-  { name: "the-wound", u: 652, v: -14, lift: 3, atU: 700, atV: 0, pitch: -0.14, settle: 4 },
-  // The Cold Candle: the plume, the gyre, the cold fire.
-  { name: "cold-candle", u: 676, v: 10, lift: 4, atU: WOUND.u, atV: WOUND.v, pitch: 0.12, settle: 6 },
-  // The Seep Gardens: life that came back wrong.
-  { name: "seep-gardens", u: 726, v: 34, lift: 2.6, atU: SEEP_GARDENS.u, atV: SEEP_GARDENS.v, pitch: -0.04, settle: 4 },
+  // The Wound's rim: the terraced bowls falling away to the Cold Candle,
+  // with the leaning watchers holding the frame's edge.
+  { name: "the-wound", u: 650, v: -20, lift: 3, atU: 698, atV: 2, pitch: -0.13, settle: 4 },
+  // The Cold Candle: the plume, the gyre, the cold fire — close enough
+  // for the chimney to fill the eye.
+  { name: "cold-candle", u: 686, v: 6, lift: 5, atU: WOUND.u, atV: WOUND.v, pitch: 0.08, settle: 6 },
+  // The Seep Gardens: life that came back wrong, close on the first mound.
+  { name: "seep-gardens", u: 736, v: 42, lift: 2.2, atU: 750, atV: 56, pitch: -0.06, settle: 4 },
   // The Last Grove: green in the grey, behind the ridge.
   { name: "last-grove", u: 748, v: -60, lift: 2.8, atU: LAST_GROVE.u, atV: LAST_GROVE.v, pitch: 0.03, settle: 5 },
-  // The shrine: the Curator at the memorial. The aim rides a step off the
-  // anchor so the settle does not complete a discovery and drop the
-  // ceremony plate over the frame being judged.
-  { name: "the-shrine", u: 764, v: -78, lift: 2.4, atU: 770, atV: -84, pitch: -0.06, settle: 6 },
+  // The shrine: the Curator at the memorial, close enough to watch her
+  // work. The aim rides a step off the anchor so the settle does not
+  // complete a discovery and drop the ceremony plate over the frame.
+  { name: "the-shrine", u: 767, v: -79, lift: 1.8, atU: 772, atV: -83, pitch: -0.1, settle: 6 },
   // The Quiet Rim: the far shelf, the leaning stacks, the painted distance.
   { name: "quiet-rim", u: 846, v: 10, lift: 3, atU: 905, atV: 0, pitch: 0.02 },
 ];
@@ -205,11 +207,13 @@ export const CALAMITY_1: RegionDef = {
   floorClearance: 0.7,
 
   mood: {
-    // Ash-milk water: the gold drained out. Red cut a step harder than
-    // green so the haze goes grey-cool rather than electric, density up so
-    // the vistas close to ~60 m — devastation is *weather* here — but the
-    // fog still sits above the midtone: distance goes milky, never dark.
-    fog: { colorScale: [0.72, 0.79, 0.84], densityGain: 0.006, backdropFade: 0.35 },
+    // Ash water: the gold drained out, and the milk came down a step in
+    // round 2 — grey-teal that stays *under* the region's pale subjects
+    // so bone, sinter and shell can ghost against it (the first draft's
+    // near-white milk washed every subject into a dark cut-out). Red cut
+    // hardest so the haze goes grey-cool, never electric; density keeps
+    // the devastation's weather but lets the vistas breathe to ~65 m.
+    fog: { colorScale: [0.66, 0.75, 0.82], densityGain: 0.0035, backdropFade: 0.35 },
     light: { sun: 0.16, hemisphere: 0.22, ambient: 0.08 },
   },
   // The mood fades out above 14 m: climbing the crater's open column back

@@ -101,8 +101,11 @@ export function buildCalamityRubble(): CalamityRubbleBuild {
   const colliders: SphereCollider[] = [];
   const contacts: ContactPatch[] = [];
 
-  const paleStone = createRockMaterial(0x8d8a7c);
-  const woundStone = createRockMaterial(0x67626e);
+  // Round 2 lifted both tints a step: against the ash-milk the first
+  // draft's stones read near-black, and the darkest thing in the region
+  // is a colour, not a cut-out.
+  const paleStone = createRockMaterial(0x9a958a);
+  const woundStone = createRockMaterial(0x76717e);
 
   /** Direction from a spoke point back toward the Wound, in world XZ. */
   const woundDir = (u: number, v: number): { x: number; z: number } => {
@@ -119,7 +122,7 @@ export function buildCalamityRubble(): CalamityRubbleBuild {
     radius: number,
     height: number,
     material = woundStone,
-    scorch = 0.22,
+    scorch = 0.12,
   ): { x: number; z: number; y: number } => {
     const { x, z } = worldOf(u, v);
     const y = seabedHeight(x, z);
@@ -208,17 +211,17 @@ export function buildCalamityRubble(): CalamityRubbleBuild {
   // Five pavement slabs fallen against each other over u 315–345: the
   // pavement's biggest jumble on the road, with real swim-under shadows.
   const cardSpecs: { u: number; v: number; yaw: number; tilt: number; radius: number }[] = [
-    { u: 318, v: -6.5, yaw: 0.5, tilt: 0.62, radius: 3.4 },
-    { u: 322, v: -1.5, yaw: 2.2, tilt: -0.55, radius: 3.8 },
-    { u: 327, v: 4.5, yaw: 1.2, tilt: 0.7, radius: 3.2 },
-    { u: 333, v: -4, yaw: 2.9, tilt: -0.66, radius: 3.6 },
-    { u: 340, v: 2, yaw: 0.2, tilt: 0.5, radius: 2.9 },
+    { u: 318, v: -6.5, yaw: 0.5, tilt: 0.42, radius: 3.4 },
+    { u: 322, v: -1.5, yaw: 2.2, tilt: -0.38, radius: 3.8 },
+    { u: 327, v: 4.5, yaw: 1.2, tilt: 0.46, radius: 3.2 },
+    { u: 333, v: -4, yaw: 2.9, tilt: -0.44, radius: 3.6 },
+    { u: 340, v: 2, yaw: 0.2, tilt: 0.36, radius: 2.9 },
   ];
   for (const [i, spec] of cardSpecs.entries()) {
     const geometry = slabGeometry({ seed: SEED ^ (0x0b00 + i), radius: spec.radius, height: spec.radius * 0.42 });
     // Heaved up on edge: the pavement slab's flat face turned toward the sky.
     geometry.applyMatrix4(new Matrix4().makeRotationX(spec.tilt));
-    const at = stand(geometry, spec.u, spec.v, spec.yaw, spec.radius, spec.radius * 1.9, paleStone, 0.28);
+    const at = stand(geometry, spec.u, spec.v, spec.yaw, spec.radius, spec.radius * 1.9, paleStone, 0.16);
     colliders.push({ center: new Vector3(at.x, at.y + spec.radius * 1.2, at.z), radius: spec.radius * 0.7 });
   }
 
@@ -315,7 +318,7 @@ export function buildCalamityRubble(): CalamityRubbleBuild {
     gateArch.translate(x, y, z);
     gateArch.computeBoundingBox();
     const dir = woundDir(GATE_U - 4, 0);
-    scorchToward(gateArch, dir.x, dir.z, 0.3);
+    scorchToward(gateArch, dir.x, dir.z, 0.18);
     gateArch.computeBoundingSphere();
     const mesh = new Mesh(gateArch, woundStone);
     mesh.name = "calamity-wound-gate";
@@ -356,7 +359,7 @@ export function buildCalamityRubble(): CalamityRubbleBuild {
       radius,
       radius * 1.4,
       i % 4 === 0 ? paleStone : woundStone,
-      0.3,
+      0.18,
     );
     if (i % 2 === 0) {
       colliders.push({ center: new Vector3(at.x, at.y + radius * 0.9, at.z), radius: radius * 0.6 });
@@ -378,7 +381,7 @@ export function buildCalamityRubble(): CalamityRubbleBuild {
     4.6,
     13.5,
     paleStone,
-    0.34,
+    0.2,
   );
 
   // ─── The crater lip's leaning watchers ───────────────────────────────────
@@ -400,7 +403,7 @@ export function buildCalamityRubble(): CalamityRubbleBuild {
       1.5,
       5.4,
       woundStone,
-      0.3,
+      0.18,
     );
   }
 

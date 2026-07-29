@@ -82,7 +82,13 @@ export function buildCalamitySeeps(): CalamitySeepsBuild {
   const craterFloor = seabedHeight(crater.x, crater.z);
   const chimney = chimneyGeometry(8.4, 1.7, SEED ^ 0xca01);
   chimney.translate(crater.x, craterFloor, crater.z);
-  const mineral = createToonMaterial({ vertexColors: true });
+  // The mineral crust catches what light the crater holds — a faint
+  // emissive floor, so the Candle reads from the rim sixty metres out.
+  const mineral = createToonMaterial({
+    vertexColors: true,
+    emissive: 0x211f1a,
+    emissiveIntensity: 0.5,
+  });
   const chimneyParts: BufferGeometry[] = [chimney];
   // Three lesser throats leaning against the main stack.
   for (const [i, spot] of [
@@ -217,7 +223,7 @@ function buildBubbles(
 ): { points: Points; update: (time: number, calm: number) => void } {
   const random = new Random(SEED ^ 0xb0b1);
   const vents = [
-    { x: plume.x, z: plume.z, base: plume.base, top: plume.top, count: 130, spread: 0.8 },
+    { x: plume.x, z: plume.z, base: plume.base, top: plume.top, count: 210, spread: 0.9 },
     ...seeps.map((spot) => {
       const { x, z } = worldOf(spot.u, spot.v);
       return {
@@ -263,10 +269,10 @@ function buildBubbles(
   geometry.boundingSphere!.radius = 40;
 
   const material = new PointsMaterial({
-    size: 0.14,
+    size: 0.22,
     map: bubbleTexture(),
     transparent: true,
-    opacity: 0.75,
+    opacity: 0.85,
     blending: AdditiveBlending,
     depthWrite: false,
     sizeAttenuation: true,
@@ -343,7 +349,14 @@ function buildWorms(
   seeps: readonly { u: number; v: number; scale: number }[],
 ): { mesh: InstancedMesh; contacts: ContactPatch[] } {
   const geometry = wormGeometry();
-  const material = createToonMaterial({ vertexColors: true });
+  // The same ghost-glow floor as the dead forest: round 1's worms read
+  // as dark specks, when the gardens' whole argument is pale bone and
+  // arterial red shining out of the ash.
+  const material = createToonMaterial({
+    vertexColors: true,
+    emissive: 0x2c2824,
+    emissiveIntensity: 0.6,
+  });
   const capacity = 150;
   const mesh = new InstancedMesh(geometry, material, capacity);
   mesh.name = "calamity-tube-worms";
