@@ -269,8 +269,8 @@ export function buildVerdantKelp(): VerdantKelpBuild {
   // Nine clusters on alternating wall feet down the vale — the something
   // that breaches the fog every thirty metres of a two-hundred-metre
   // approach, and the green the walls' moss paint is reaching toward.
-  for (let i = 0; i < 9; i++) {
-    const u = 78 + i * 23 + random.signed(5);
+  for (let i = 0; i < 11; i++) {
+    const u = 72 + i * 20 + random.signed(5);
     const side = i % 2 === 0 ? 1 : -1;
     const vc = valeChannelCenter(u);
     const lateral = vc + side * random.range(5.5, 8.5);

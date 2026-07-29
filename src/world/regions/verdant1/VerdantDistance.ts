@@ -4,10 +4,14 @@ import {
   Color,
   DoubleSide,
   FogExp2,
+  InstancedMesh,
+  Matrix4,
   Mesh,
   MeshBasicMaterial,
+  Object3D,
   type Scene,
 } from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { fbm } from "../../../rendering/ProceduralTexture";
 import { Random, SEEDS } from "../../../util/Random";
 import { smoothstep01 } from "./VerdantShared";
@@ -62,10 +66,11 @@ const INK = new Color(0.62, 0.72, 0.58);
 /** Half-angle of the gap the rings leave over the vale's approach. */
 const GAP_HALF = 0.42;
 
-export function buildVerdantDistance(): { meshes: Mesh[] } {
+export function buildVerdantDistance(): { meshes: (Mesh | InstancedMesh)[] } {
   const random = new Random(SEEDS.regionVerdant1 ^ 0xd157);
-  const meshes: Mesh[] = [];
+  const meshes: (Mesh | InstancedMesh)[] = [];
   const materials: MeshBasicMaterial[] = [];
+  const trunkMaterials: { material: MeshBasicMaterial; fade: number }[] = [];
   let lastFog = -1;
 
   const followFog = (scene: Scene): void => {
@@ -81,6 +86,9 @@ export function buildVerdantDistance(): { meshes: Mesh[] } {
     const ink = fog.color.clone().multiply(INK);
     for (const [index, layer] of LAYERS.entries()) {
       materials[index]?.color.copy(ink).lerp(fog.color, layer.fade);
+    }
+    for (const { material, fade } of trunkMaterials) {
+      material.color.copy(ink).lerp(fog.color, fade);
     }
   };
 
@@ -102,7 +110,95 @@ export function buildVerdantDistance(): { meshes: Mesh[] } {
     meshes.push(mesh);
     materials.push(material);
   }
+
+  // The standing trunks. A 3–5 m kelp trunk at 250 m is narrower than a
+  // ring segment and simply vanishes between vertices (measured twice), so
+  // the distant giants are their own instanced silhouettes: crossed
+  // tapered cards with crown blobs, standing on the rings' own radii in
+  // two distance bands that share the rings' ink.
+  for (const [band, spec] of [
+    { rFrom: 242, rTo: 256, count: 26, fade: 0.44, hMin: 16, hMax: 24 },
+    { rFrom: 262, rTo: 282, count: 18, fade: 0.66, hMin: 20, hMax: 30 },
+  ].entries()) {
+    const material = new MeshBasicMaterial({
+      color: new Color(0x3f8f7a),
+      fog: false,
+      side: DoubleSide,
+      toneMapped: true,
+    });
+    trunkMaterials.push({ material, fade: spec.fade });
+    const mesh = new InstancedMesh(trunkCardGeometry(), material, spec.count);
+    mesh.name = `verdant-distance-trunks-${band}`;
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    const dummy = new Object3D();
+    const gapAt = VERDANT_SLOT.azimuth + Math.PI;
+    let placed = 0;
+    let guard = 0;
+    while (placed < spec.count && guard++ < 400) {
+      const theta = random.range(0, Math.PI * 2);
+      if (angleBetween(theta, gapAt) < GAP_HALF + 0.1) {
+        continue;
+      }
+      const r = random.range(spec.rFrom, spec.rTo);
+      dummy.position.set(CENTER_X + Math.cos(theta) * r, FOOT + 2, CENTER_Z + Math.sin(theta) * r);
+      dummy.rotation.set(0, random.range(0, Math.PI), random.signed(0.06));
+      dummy.scale.set(
+        random.range(0.8, 1.4),
+        random.range(spec.hMin, spec.hMax) / TRUNK_CARD_HEIGHT,
+        random.range(0.8, 1.4),
+      );
+      dummy.updateMatrix();
+      mesh.setMatrixAt(placed, dummy.matrix);
+      placed++;
+    }
+    mesh.count = placed;
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+    meshes.push(mesh);
+  }
+
   return { meshes };
+}
+
+/** The card's authored height; instances scale it to their drawn height. */
+const TRUNK_CARD_HEIGHT = 20;
+
+/**
+ * One distant giant: two crossed silhouette blades — a tapering stem with
+ * a small lean, a crown blob and two drooping crown straps. Never lit,
+ * never fogged; the ink is the whole drawing.
+ */
+let trunkCard: BufferGeometry | undefined;
+function trunkCardGeometry(): BufferGeometry {
+  if (trunkCard) {
+    return trunkCard;
+  }
+  const blade = (spin: number): BufferGeometry => {
+    const h = TRUNK_CARD_HEIGHT;
+    const positions = new Float32Array([
+      // The stem: a tapered strip with a drift to one side.
+      -1.1, 0, 0, 1.1, 0, 0, -0.5, h * 0.72, 0,
+      1.1, 0, 0, 0.9, h * 0.72, 0, -0.5, h * 0.72, 0,
+      // The crown: a wide diamond at the head.
+      -3.4, h * 0.78, 0, 3.6, h * 0.8, 0, 0.2, h * 1.0, 0,
+      -3.4, h * 0.78, 0, 0.2, h * 0.62, 0, 3.6, h * 0.8, 0,
+      // Two drooping crown straps.
+      -3.2, h * 0.82, 0, -1.4, h * 0.8, 0, -4.6, h * 0.6, 0,
+      3.4, h * 0.84, 0, 1.6, h * 0.82, 0, 4.8, h * 0.64, 0,
+    ]);
+    const geometry = new BufferGeometry();
+    geometry.setAttribute("position", new BufferAttribute(positions, 3));
+    geometry.applyMatrix4(new Matrix4().makeRotationY(spin));
+    return geometry;
+  };
+  const merged = mergeGeometries([blade(0), blade(Math.PI / 2)], false);
+  if (!merged) {
+    throw new Error("verdant distance trunk blades could not be merged");
+  }
+  merged.computeBoundingSphere();
+  trunkCard = merged;
+  return trunkCard;
 }
 
 /**

@@ -181,10 +181,15 @@ function bakeVerdantPaint(geometry: PlaneGeometry, contacts: readonly ContactPat
     const maze = mazeWeight(u, v);
     if (maze > 0) {
       const gully = smoothstep01((-y - 18.6) / 2.8);
-      r += (0.46 - gully * 0.08 - r) * maze;
-      g += (0.4 - gully * 0.08 - g) * maze;
-      b += (0.66 + gully * 0.02 - b) * maze;
-      value -= maze * (0.16 + gully * 0.14);
+      // Its own mottle at its own scale: silt drifts and algal shadow
+      // patches, because a smooth mauve dune is a smooth beige dune with
+      // the hue swapped (round 4's read).
+      const silt =
+        fbm(x * 0.05, z * 0.05, { seed: SEED ^ 0x517a, period: 12, octaves: 3 }) - 0.5;
+      r += (0.46 - gully * 0.08 + silt * 0.14 - r) * maze;
+      g += (0.4 - gully * 0.08 + silt * 0.18 - g) * maze;
+      b += (0.66 + gully * 0.02 + silt * 0.1 - b) * maze;
+      value -= maze * (0.16 + gully * 0.14 - silt * 0.12);
     }
 
     // The Falling Edge: milky-bright, the distance rule written into the ground.

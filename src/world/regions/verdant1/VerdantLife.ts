@@ -101,7 +101,7 @@ export function buildVerdantLife(giants: readonly KelpFoot[]): VerdantLifeBuild 
     // Green-gold outright: even olive-cream measured salmon against the
     // cyan in round 3 — a small body under the warm key needs green *in*
     // the colour, not adjacent to it.
-    color: new Color(0xb9d774),
+    color: new Color(0xa5cf68),
     profile: { width: 1.0, height: 1.35, length: 0.8, tailTaper: 0.5, dorsal: 0.9, pectoral: 1.1, tail: { reach: 1.35, lobe: 0.7, notch: 1.0 } },
     scale: 0.6,
     behaviour: {
@@ -443,10 +443,10 @@ function buildSerpent(giants: readonly KelpFoot[]): {
   mesh.instanceMatrix.setUsage(DynamicDrawUsage);
 
   const tint = new Color();
-  // Brighter and bluer than round 1's silver: the school is the region's
-  // one cool accent, and the extra value is what keeps a fish six pixels
-  // long from reading as its background's pink complement.
-  const silver = new Color(0xeef6f8);
+  // Green-leaned silver. Plain silver measured salmon from below in two
+  // rounds running — under a warm key against green water, a small body
+  // must carry green in its own colour or the eye supplies the complement.
+  const silver = new Color(0xd8eee0);
   const offsets: { lateral: number; phase: number; scale: number }[] = [];
   for (let i = 0; i < count; i++) {
     offsets.push({
