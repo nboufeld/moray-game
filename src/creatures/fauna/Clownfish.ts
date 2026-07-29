@@ -215,10 +215,13 @@ function shortestTurn(from: number, to: number): number {
 }
 
 // Bright for this water on purpose: the trio is the one saturated accent the
-// garden owns, and a duller orange sank into the rose coral behind it.
+// garden owns, and a duller orange sank into the rose coral behind it. The
+// back-to-belly pair counter-shades the body the way the sculpted GLB does,
+// and the "black" is a warm plum — the darkest thing is a colour.
 const ORANGE = new Color(0xff8438);
+const ORANGE_BELLY = new Color(0xffb066);
 const WHITE = new Color(0xf6f0e2);
-const BLACK = new Color(0x141118);
+const BLACK = new Color(0x2a191e);
 
 /**
  * The stand-in clownfish, authored at the GLB's own true 0.105–0.11 m so the
@@ -264,6 +267,8 @@ function createClownfishGeometry(): BufferGeometry {
 const HALF_LENGTH = 0.03 * 1.75;
 /** Body half-width after the scale above; the eye dots live at its edge. */
 const HALF_WIDTH = 0.03 * 0.55;
+/** Body half-height; the counter-shade gradient is read across it. */
+const HALF_HEIGHT = 0.03;
 
 /**
  * The three bands, (centre, white half-width, black rim width) in |z| units.
@@ -285,12 +290,13 @@ function paintBands(body: SphereGeometry): void {
     return;
   }
   const colors = new Float32Array(position.count * 3);
+  const shaded = new Color();
   for (let i = 0; i < position.count; i++) {
     const zn = position.getZ(i) / HALF_LENGTH;
     // The eye sits inside the head band, at the body's widest — a dark dot
     // per cheek, and it must stay dark.
     const isEye = zn > 0.52 && zn < 0.7 && Math.abs(position.getX(i)) > HALF_WIDTH * 0.7;
-    let paint = ORANGE;
+    let paint: Color = ORANGE;
     if (isEye) {
       paint = BLACK;
     } else {
@@ -305,6 +311,12 @@ function paintBands(body: SphereGeometry): void {
           break;
         }
       }
+    }
+    if (paint === ORANGE) {
+      // Counter-shade the orange: deep along the back, warm and pale under
+      // the belly — a flat orange body read as a bead, not a fish.
+      const belly = Math.min(1, Math.max(0, 0.5 - position.getY(i) / (HALF_HEIGHT * 2)));
+      paint = shaded.copy(ORANGE).lerp(ORANGE_BELLY, belly);
     }
     colors[i * 3] = paint.r;
     colors[i * 3 + 1] = paint.g;
