@@ -36,6 +36,19 @@ interface Entry {
   readonly buildMargin: number;
   build: RegionBuild | null;
   attached: boolean;
+  /**
+   * QA door only: a forced region holds its attach until the diver has
+   * actually arrived inside its build margin once, then streams normally.
+   * Without it the door's own contract ("a capture never depends on swim
+   * distance") silently fails for the far-side slots: the capture harness
+   * forces a region while the diver still stands at the bowl spawn, and
+   * three of the five depth-1 slots are ~10 m outside the detach radius
+   * from there — the region unloads between `force()` and the capture's
+   * teleport, and the collision handover throws the diver back into the
+   * bowl box. Gameplay never sets this flag. (pale-passage-1 worker; the
+   * pilot's slot happened to sit inside the radius and never saw it.)
+   */
+  pinned: boolean;
 }
 
 export class RegionStreamer {
@@ -66,6 +79,7 @@ export class RegionStreamer {
         buildMargin,
         build: null,
         attached: false,
+        pinned: false,
       };
     });
   }
@@ -79,9 +93,13 @@ export class RegionStreamer {
     for (const entry of this.entries) {
       const edge =
         Math.hypot(diverPosition.x - entry.centerX, diverPosition.z - entry.centerZ) - entry.radius;
+      if (entry.pinned && edge <= entry.buildMargin) {
+        // The diver truly arrived; the QA pin hands back to normal streaming.
+        entry.pinned = false;
+      }
       if (!entry.attached && edge <= entry.buildMargin) {
         this.attach(entry);
-      } else if (entry.attached && edge > entry.buildMargin + HYSTERESIS) {
+      } else if (entry.attached && !entry.pinned && edge > entry.buildMargin + HYSTERESIS) {
         this.detach(entry);
       }
       if (entry.attached && entry.build) {
@@ -93,8 +111,11 @@ export class RegionStreamer {
   /** QA door: builds and attaches a region immediately (capture harness). */
   force(slotId: string): void {
     const entry = this.entries.find((candidate) => candidate.def.slotId === slotId);
-    if (entry && !entry.attached) {
-      this.attach(entry);
+    if (entry) {
+      entry.pinned = true;
+      if (!entry.attached) {
+        this.attach(entry);
+      }
     }
   }
 
