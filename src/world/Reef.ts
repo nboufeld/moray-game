@@ -30,6 +30,16 @@ import {
   insideCanyonAirspace,
 } from "./Abyss";
 import { AbyssFlora } from "./AbyssFlora";
+import {
+  bakeWingPaint,
+  wingAnnexes,
+  wingGateAzimuths,
+  wingWallColliders,
+} from "./wings/WingField";
+import { WINGS, wingById } from "./wings/WingRegistry";
+import { WING_FLORA_BUILDERS } from "./wings/WingFloraRegistry";
+import { WING_DENS, type WingDenSpec } from "./wings/WingDens";
+import type { WingFlora } from "./wings/WingTypes";
 import { CoralField } from "./CoralField";
 import { CorridorDressing } from "./CorridorDressing";
 import { DistantReef } from "./DistantReef";
@@ -447,6 +457,8 @@ export class Reef {
       ceiling: canyonCeiling,
       maxRadius: AIRSPACE_MAX_RADIUS,
     },
+    // Wave 8: the wings' annexes, one per wedge, by the same contract.
+    annexes: wingAnnexes(seabedHeight),
   };
 
   // Lifted well off the old near-black: against bright sand and blue water the
@@ -464,6 +476,8 @@ export class Reef {
   private kelp?: Kelp;
   private seaweed?: Seaweed;
   private corridorDressing?: CorridorDressing;
+  /** Wave 8: each wing's flora, in registry order; `update` fans out to them. */
+  private readonly wingFlora: WingFlora[] = [];
 
   constructor(seed: number = SEEDS.reef) {
     this.random = new Random(seed);
@@ -477,6 +491,11 @@ export class Reef {
     // the same machinery. Its ground is the canyon floor, so the head height
     // rides `seabedHeight` the way every other placement in the world does.
     this.addHidingSpot(abyssDenPlacement());
+    // Wave 8: the wing dens, appended after the fifth in `WING_DENS` order —
+    // same machinery, ground riding each wing's carved floor.
+    for (const spec of WING_DENS) {
+      this.addHidingSpot(wingDenPlacement(spec));
+    }
     this.dressDens();
     this.buildRubble();
     this.buildSeaGrass();
@@ -488,6 +507,8 @@ export class Reef {
     this.buildAbyssGate();
     this.buildCanyonColliders();
     this.buildAbyssFlora();
+    this.buildWingColliders();
+    this.buildWingFlora();
     // Last: the sand bakes a contact shadow under everything standing on it,
     // so it has to know where everything ended up. Nothing above consumes the
     // seabed mesh, and none of them share a random stream, so the reordering
@@ -496,11 +517,17 @@ export class Reef {
   }
 
   private buildSeabed(): void {
-    const geometry = createSeabedGeometry(90, 96);
+    // Wave 8: the sheet grew from 90 m to 112 m so every wing's carve
+    // (r ≤ 50) fits at every azimuth, not only on the diagonals the canyon
+    // was seeded into. Segments grew with it, so the grid keeps the same
+    // ~0.94 m per vertex the sediment-line pitch was measured against.
+    const geometry = createSeabedGeometry(112, 120);
     bakeSeabedOcclusion(geometry, this.contacts);
     // W-N1: the canyon walls' strata bands, multiplied into the bake. A no-op
     // to the byte everywhere `canyonBlend` is zero — see `bakeCanyonStrata`.
     bakeCanyonStrata(geometry);
+    // Wave 8: each wing's own wall paint, by the same identity contract.
+    bakeWingPaint(geometry);
     const seabed = new Mesh(geometry, createSandMaterial());
     seabed.receiveShadow = true;
     this.group.add(seabed);
@@ -852,6 +879,23 @@ export class Reef {
       sink: DEN.sink + abyssRandom.range(0, 0.08),
     });
 
+    // Wave 8: the wing dens' poses, off their own pre-registered stream and
+    // drawn in `WING_DENS` order — so the five dens above are dressed
+    // identically to the bit, and a wing den can be retuned without moving
+    // any other.
+    const wingRandom = new Random(SEEDS.wingDens);
+    for (const spec of WING_DENS) {
+      const placement = wingDenPlacement(spec);
+      poses.push({
+        placement,
+        tiltX: wingRandom.signed(0.04),
+        yaw: placement.facing + wingRandom.signed(0.1),
+        tiltZ: wingRandom.signed(0.04),
+        scale: DEN.scale * (1 + wingRandom.signed(0.06)),
+        sink: DEN.sink + wingRandom.range(0, 0.08),
+      });
+    }
+
     requestModel("models/creature-den-mouth.glb", (source) => {
       // One clone shared by all four mouths, because the cached geometry is
       // the library's and these UVs are ours to change: the file lays one UV
@@ -1004,21 +1048,29 @@ export class Reef {
    * metres clear of these — so `reachable()` evaluates exactly what it did.
    */
   private buildRimColliders(): void {
-    const count = 24;
-    for (let i = 0; i < count; i++) {
-      const theta = (i / count) * Math.PI * 2;
-      // W-M3: the one sphere that would stand in the gate is left out. Its
-      // neighbours at ±15° stay, and their surfaces are what narrows the
-      // notch to a swimmable channel a little over four metres wide — the
-      // rest of the ring is exactly the ring W-L9 built.
-      const away = Math.abs(theta - GATE_AZIMUTH);
-      if (Math.min(away, Math.PI * 2 - away) < 0.13) {
-        continue;
+    // Wave 8: the rim is mostly doorways now — the canyon's gate plus the
+    // fifteen wings' — so the W-L9 ring of 24 spheres became a fence of
+    // *gap fins*: one stack of spheres at the midpoint of every stretch of
+    // standing rock between two adjacent gates. Placed at r = 31.5 with
+    // radius 4.5 so their inner surfaces stand near r = 27, which is where
+    // the old ring turned the diver away — the ridge is still ankle height
+    // there and nothing can clip into the crest. Each doorway keeps a free
+    // channel between its two flanking fins; inside a wedge the wing's own
+    // wall colliders and annex take over.
+    const gates = [GATE_AZIMUTH, ...wingGateAzimuths()]
+      .map((azimuth) => ((azimuth % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2))
+      .sort((a, b) => a - b);
+    for (let i = 0; i < gates.length; i++) {
+      const current = gates[i]!;
+      const next = gates[(i + 1) % gates.length]!;
+      const span = i + 1 < gates.length ? next - current : next + Math.PI * 2 - current;
+      const theta = current + span / 2;
+      for (const y of [1.6, 5]) {
+        this.colliders.push({
+          center: new Vector3(Math.cos(theta) * 31.5, y, Math.sin(theta) * 31.5),
+          radius: 4.5,
+        });
       }
-      this.colliders.push({
-        center: new Vector3(Math.cos(theta) * 33.5, 1.6, Math.sin(theta) * 33.5),
-        radius: 6.5,
-      });
     }
 
     // The two shelves take sunken spheres whose crowns sit just over their
@@ -1312,11 +1364,66 @@ export class Reef {
     this.group.add(new AbyssFlora(SEEDS.abyssFlora).group);
   }
 
+  /**
+   * Wave 8: the walls that keep a diver inside a wing's wedge — the canyon's
+   * own collider pattern, derived per wing from its frozen envelope. One
+   * shared builder in `WingField`, so a wing owner never edits this file.
+   */
+  private buildWingColliders(): void {
+    this.colliders.push(...wingWallColliders());
+  }
+
+  /**
+   * Wave 8: each wing's flora, from its owner's builder in
+   * `WingFloraRegistry`. Contacts join the seabed bake like everything else
+   * standing on the sand; `update` fans the frame out to any wing that
+   * moves. Scenery by construction unless a wing's ledger note says
+   * otherwise.
+   */
+  private buildWingFlora(): void {
+    for (const wing of WINGS) {
+      const builder = WING_FLORA_BUILDERS[wing.id];
+      if (!builder) {
+        continue;
+      }
+      const flora = builder(wing);
+      this.group.add(flora.group);
+      if (flora.contacts) {
+        this.contacts.push(...flora.contacts);
+      }
+      this.wingFlora.push(flora);
+    }
+  }
+
   /** Advances the ambient life in the reef: the meadow's sway, the kelp's and the seaweed's. */
   update(dt: number, reducedMotion: boolean): void {
     this.grass?.update(dt, reducedMotion);
     this.kelp?.update(dt, reducedMotion);
     this.seaweed?.update(dt, reducedMotion);
     this.corridorDressing?.update(dt, reducedMotion);
+    for (const flora of this.wingFlora) {
+      flora.update?.(dt, reducedMotion);
+    }
   }
+}
+
+/**
+ * Wave 8: resolves a wing den's wing-relative spec into a world placement,
+ * the way `abyssDenPlacement` resolves the fifth den — the head rides the
+ * carved ground, and the default facing looks back up the wing toward its
+ * gate so the approach corridor the sightline machinery guards is the wing
+ * itself.
+ */
+function wingDenPlacement(spec: WingDenSpec): SpotPlacement {
+  const wing = wingById(spec.wingId);
+  const azimuth = wing.azimuth + spec.across;
+  const x = Math.cos(azimuth) * spec.r;
+  const z = Math.sin(azimuth) * spec.r;
+  const axisX = Math.cos(wing.azimuth);
+  const axisZ = Math.sin(wing.azimuth);
+  return {
+    speciesId: spec.speciesId,
+    position: new Vector3(x, seabedHeight(x, z) + spec.headAbove, z),
+    facing: Math.atan2(-axisX, -axisZ) + spec.facingOffset,
+  };
 }

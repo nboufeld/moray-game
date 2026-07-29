@@ -34,6 +34,12 @@ export interface ReefBounds {
   readonly maxZ: number;
   /** Optional volume beyond the box; absent, behaviour is exactly the box. */
   readonly annex?: BoundsAnnex;
+  /**
+   * Wave 8: the wings' annexes, one per wedge. Checked after `annex` — the
+   * canyon's and the wings' predicates are azimuthally disjoint by
+   * construction, so at most one volume ever owns a point.
+   */
+  readonly annexes?: readonly BoundsAnnex[];
 }
 
 /**
@@ -64,24 +70,35 @@ export class CollisionField {
 
     const annex = this.bounds.annex;
     if (annex?.contains(position.x, position.z)) {
-      const r = Math.hypot(position.x, position.z);
-      const maxR = annex.maxRadius - radius;
-      if (r > maxR && r > 1e-6) {
-        const scale = maxR / r;
-        position.x *= scale;
-        position.z *= scale;
+      return this.resolveInAnnex(position, radius, annex);
+    }
+    if (this.bounds.annexes) {
+      for (const wing of this.bounds.annexes) {
+        if (wing.contains(position.x, position.z)) {
+          return this.resolveInAnnex(position, radius, wing);
+        }
       }
-      position.y = clamp(
-        position.y,
-        annex.floor(position.x, position.z) + radius,
-        annex.ceiling(position.x, position.z) - radius,
-      );
-      return position;
     }
 
     position.x = clamp(position.x, this.bounds.minX + radius, this.bounds.maxX - radius);
     position.y = clamp(position.y, this.bounds.minY + radius, this.bounds.maxY - radius);
     position.z = clamp(position.z, this.bounds.minZ + radius, this.bounds.maxZ - radius);
+    return position;
+  }
+
+  private resolveInAnnex(position: Vector3, radius: number, annex: BoundsAnnex): Vector3 {
+    const r = Math.hypot(position.x, position.z);
+    const maxR = annex.maxRadius - radius;
+    if (r > maxR && r > 1e-6) {
+      const scale = maxR / r;
+      position.x *= scale;
+      position.z *= scale;
+    }
+    position.y = clamp(
+      position.y,
+      annex.floor(position.x, position.z) + radius,
+      annex.ceiling(position.x, position.z) - radius,
+    );
     return position;
   }
 }

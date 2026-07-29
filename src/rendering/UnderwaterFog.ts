@@ -11,6 +11,8 @@ import {
 } from "three";
 import { Random, SEEDS } from "../util/Random";
 import { ABYSS_FOG, abyssMood, onSceneRender } from "../world/Abyss";
+import { wingMoodAt } from "../world/wings/WingField";
+import type { WingMoodTables } from "../world/wings/WingTypes";
 import { requestBackdrop } from "./AssetLibrary";
 import { readImage, readImageRows, textureFromPixels } from "./ImagePixels";
 import { SUN_POSITION } from "./Lighting";
@@ -447,17 +449,34 @@ export class UnderwaterFog {
         level = this.backgroundLevel * weather.backdrop;
       }
 
+      // Wave 8: the wings are the same channel as the twilight — a place
+      // mood over the weather-scaled base, one writer, one arithmetic. The
+      // canyon and the wings are azimuthally disjoint by construction, so at
+      // most one of them is nonzero and the canyon's own numbers pass
+      // through this branch untouched. At zero everywhere — the whole bowl —
+      // the base is written back verbatim, exactly as W-M3 shipped it.
+      let placeMood = mood;
+      let tables: WingMoodTables["fog"] = ABYSS_FOG;
+      if (placeMood === 0) {
+        const wing = wingMoodAt(position.x, position.y, position.z);
+        if (wing !== null) {
+          placeMood = wing.mood;
+          tables = wing.tables.fog;
+        }
+      }
+
       fog.color.copy(base);
-      if (mood === 0) {
+      if (placeMood === 0) {
         fog.density = density;
         scene.backgroundIntensity = level;
         return;
       }
-      const [r, g, b] = ABYSS_FOG.colorScale;
+      const [r, g, b] = tables.colorScale;
       this.twilight.setRGB(r, g, b).multiply(base);
-      fog.color.lerp(this.twilight, mood);
-      fog.density = density + ABYSS_FOG.densityGain * mood;
-      scene.backgroundIntensity = level * (1 - ABYSS_FOG.backdropFade * mood);
+      fog.color.lerp(this.twilight, placeMood);
+      // Wings may *clear* the water (negative gain); the floor keeps a fog.
+      fog.density = Math.max(0.004, density + tables.densityGain * placeMood);
+      scene.backgroundIntensity = level * (1 - tables.backdropFade * placeMood);
     });
   }
 

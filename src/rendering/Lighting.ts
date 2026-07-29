@@ -8,6 +8,8 @@ import {
   type Scene,
 } from "three";
 import { ABYSS_LIGHT, abyssMood, onSceneRender } from "../world/Abyss";
+import { wingMoodAt } from "../world/wings/WingField";
+import type { WingMoodTables } from "../world/wings/WingTypes";
 import type { WeatherMoods } from "./WeatherMoods";
 
 /**
@@ -140,25 +142,37 @@ export class Lighting {
     // identity rather than rewritten every frame.
     onSceneRender(scene, (camera) => {
       const position = camera.position;
-      const mood = abyssMood(position.x, position.y, position.z);
+      // Wave 8: a wing's mood is the same channel as the twilight's — the
+      // canyon and the wings are azimuthally disjoint, so at most one is
+      // nonzero, the canyon's arithmetic passes through unchanged, and at
+      // zero everywhere the shipped rig is written back to the bit.
+      let mood = abyssMood(position.x, position.y, position.z);
+      let shares: WingMoodTables["light"] = ABYSS_LIGHT;
+      if (mood === 0) {
+        const wing = wingMoodAt(position.x, position.y, position.z);
+        if (wing !== null) {
+          mood = wing.mood;
+          shares = wing.tables.light;
+        }
+      }
       const weather =
         this.weather !== null && !this.weather.isIdentity ? this.weather.channels : null;
       if (weather === null) {
-        this.sun.intensity = this.baseLevels.sun * (1 - ABYSS_LIGHT.sun * mood);
+        this.sun.intensity = this.baseLevels.sun * (1 - shares.sun * mood);
         this.hemisphere.intensity =
-          this.baseLevels.hemisphere * (1 - ABYSS_LIGHT.hemisphere * mood);
-        this.ambient.intensity = this.baseLevels.ambient * (1 - ABYSS_LIGHT.ambient * mood);
+          this.baseLevels.hemisphere * (1 - shares.hemisphere * mood);
+        this.ambient.intensity = this.baseLevels.ambient * (1 - shares.ambient * mood);
         if (this.tinted) {
           this.sun.color.copy(this.baseSunColor);
           this.tinted = false;
         }
         return;
       }
-      this.sun.intensity = this.baseLevels.sun * weather.sun * (1 - ABYSS_LIGHT.sun * mood);
+      this.sun.intensity = this.baseLevels.sun * weather.sun * (1 - shares.sun * mood);
       this.hemisphere.intensity =
-        this.baseLevels.hemisphere * weather.hemisphere * (1 - ABYSS_LIGHT.hemisphere * mood);
+        this.baseLevels.hemisphere * weather.hemisphere * (1 - shares.hemisphere * mood);
       this.ambient.intensity =
-        this.baseLevels.ambient * weather.ambient * (1 - ABYSS_LIGHT.ambient * mood);
+        this.baseLevels.ambient * weather.ambient * (1 - shares.ambient * mood);
       this.sun.color.setRGB(
         this.baseSunColor.r * weather.sunRed,
         this.baseSunColor.g * weather.sunGreen,

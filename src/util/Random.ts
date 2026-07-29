@@ -148,4 +148,57 @@ export const SEEDS = {
   kelpCanopy: 0x5a4d_0802,
   /** Low colour framing the spawn corridor's first metres. */
   corridorDressing: 0x5a4d_0803,
+  // Wave 8: the great expansion. Every stream below is pre-registered by the
+  // orchestrator before the worker wave launches — the standing convention
+  // for parallel work, so no two packages ever contend for this file. One
+  // stream per wing's flora, one per mythic creature, one per upgraded
+  // population. Substreams via `SEEDS.foo ^ constant` as always.
+  /** The sixteen wings' flora, one stream each, in registry order. */
+  wingKelpCathedral: 0x5a4d_0901,
+  wingNurseryShallows: 0x5a4d_0902,
+  wingLumenGarden: 0x5a4d_0903,
+  wingWreckMeadow: 0x5a4d_0904,
+  wingVentSprings: 0x5a4d_0905,
+  wingMoonlitLagoon: 0x5a4d_0906,
+  wingGlassCove: 0x5a4d_0907,
+  wingGhostReef: 0x5a4d_0908,
+  wingCurrentRun: 0x5a4d_0909,
+  wingRuinsTerrace: 0x5a4d_090a,
+  wingMangroveRoots: 0x5a4d_090b,
+  wingOpenBlue: 0x5a4d_090c,
+  wingIceGrotto: 0x5a4d_090d,
+  wingSargassumSky: 0x5a4d_090e,
+  wingSandfallDunes: 0x5a4d_090f,
+  /** The wing dens' dressing and pose, one stream in `WING_DENS` order. */
+  wingDens: 0x5a4d_0910,
+  /** Wing gate dressing shared machinery (jamb stones, thresholds). */
+  wingGates: 0x5a4d_0911,
+  /** The mythic creatures, one stream each. */
+  mythSerpent: 0x5a4d_0a01,
+  mythSovereign: 0x5a4d_0a02,
+  mythKirin: 0x5a4d_0a03,
+  mythUmibozu: 0x5a4d_0a04,
+  mythKraken: 0x5a4d_0a05,
+  mythMoonKoi: 0x5a4d_0a06,
+  mythLeviathan: 0x5a4d_0a07,
+  mythElder: 0x5a4d_0a08,
+  /** Wave 8's four new moray species: patterns, presence phase, dressing. */
+  morayWave8: 0x5a4d_0b01,
+  /** The seagrass upgrade: taller meadows and standing bushes. */
+  bushes: 0x5a4d_0b02,
+  tallGrass: 0x5a4d_0b03,
+  /** The anemone garden regrown grand, and its clownfish grown legible. */
+  anemonesGrand: 0x5a4d_0b04,
+  clownfishGrand: 0x5a4d_0b05,
+  /** The fish community's re-sculpted bodies. */
+  fishBodies: 0x5a4d_0b06,
+  /** The crabs' sculpted upgrade. */
+  crabsGrand: 0x5a4d_0b07,
+  /** The sanctuary's widened lane fan. */
+  sanctuaryLanes: 0x5a4d_0b08,
+  /** The coral kinds that graduate from procedural to sculpted GLBs. */
+  coralGrand: 0x5a4d_0b09,
+  /** Starfish and urchin polish. */
+  starfishGrand: 0x5a4d_0b0a,
+  urchinsGrand: 0x5a4d_0b0b,
 } as const;

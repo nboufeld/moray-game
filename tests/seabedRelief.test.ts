@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { canyonBlend } from "../src/world/Abyss";
 import { seabedHeight } from "../src/world/Seabed";
+import { angleBetween } from "../src/world/wings/WingGeometry";
+import { WINGS } from "../src/world/wings/WingRegistry";
 
 /**
  * The ground under the game is frozen; the ground between is not.
@@ -167,22 +169,38 @@ describe("the seabed's protected neighbourhoods", () => {
   it("raises a rim beyond the playable bowl, and nothing before it", () => {
     // Sampled on rings, clear of the authored features and the protected
     // notch the spawn corridor's mask cuts through the northern rim.
+    //
+    // Wave 8 restated the crest half of this contract: the rim is mostly
+    // doorways now — the canyon's gate plus fifteen wings' — so "there is a
+    // ridge out there" is asserted where the ridge still stands, at the
+    // midpoint of every stretch of rock between two adjacent gates. The
+    // inner ring at r = 24 is untouched wave over wave: inside the bowl the
+    // ground is micro relief only, to the same bound as ever.
     let inner = 0;
-    let crest = 0;
-    let count = 0;
     for (let i = 0; i < 64; i++) {
       const theta = (i / 64) * Math.PI * 2;
-      const at = (r: number): readonly [number, number] => [
-        r * Math.cos(theta),
-        r * Math.sin(theta),
-      ];
-
-      const [ix, iz] = at(24);
+      const ix = 24 * Math.cos(theta);
+      const iz = 24 * Math.sin(theta);
       if (FEATURES.every((f) => Math.hypot(ix - f.x, iz - f.z) > f.radius)) {
         inner = Math.max(inner, Math.abs(seabedHeight(ix, iz) - legacySeabedHeight(ix, iz)));
       }
+    }
+    expect(inner).toBeLessThanOrEqual(0.1 + 1e-9);
 
-      const [cx, cz] = at(35);
+    // The standing rock between doorways: at every inter-gate midpoint the
+    // crest ring still carries a real ridge, metres rather than hands.
+    const gates = [CANYON.azimuth, ...WINGS.map((wing) => wing.azimuth % (Math.PI * 2))].sort(
+      (a, b) => a - b,
+    );
+    let crest = 0;
+    let count = 0;
+    for (let i = 0; i < gates.length; i++) {
+      const current = gates[i]!;
+      const next = gates[(i + 1) % gates.length]!;
+      const span = i + 1 < gates.length ? next - current : next + Math.PI * 2 - current;
+      const theta = current + span / 2;
+      const cx = 35 * Math.cos(theta);
+      const cz = 35 * Math.sin(theta);
       // The corridor's protection notches the rim around x = 0 on the north
       // side; measure the skyline where the mask has let go.
       if (Math.hypot(cx - 0, cz - Math.min(24, Math.max(1.5, cz))) > 10) {
@@ -190,10 +208,7 @@ describe("the seabed's protected neighbourhoods", () => {
         count++;
       }
     }
-    // Inside the bowl the ground is micro relief only.
-    expect(inner).toBeLessThanOrEqual(0.1 + 1e-9);
-    // Out at the crest ring there is a real ridge, metres rather than hands.
-    expect(count).toBeGreaterThan(32);
+    expect(count).toBeGreaterThan(12);
     expect(crest / count).toBeGreaterThan(1.8);
   });
 
@@ -327,6 +342,17 @@ function macroEnvelope(x: number, z: number): number {
     const away = Math.abs(Math.atan2(z, x) - CANYON.azimuth);
     if (Math.min(away, Math.PI * 2 - away) < CANYON.wedgeHalf) {
       bound += CANYON.maxDrop;
+    }
+  }
+  // Wave 8: each wing's wedge may carve to its own floor (or lift to it —
+  // the shallows rise), plus its authored detail, inside its envelope.
+  for (const wing of WINGS) {
+    if (r > wing.carve.carveFrom && r < wing.carve.carveEnd) {
+      if (angleBetween(Math.atan2(z, x), wing.azimuth) < wing.wedge.endHalf) {
+        bound +=
+          Math.max(Math.abs(wing.carve.floorDepth), Math.abs(wing.carve.sillDepth)) +
+          wing.carve.detailAmplitude;
+      }
     }
   }
   return bound;

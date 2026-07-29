@@ -15,6 +15,7 @@ import { LifeRegistry, type LifeContext } from "../creatures/life/LifeSystem";
 import { Moray } from "../creatures/morays/Moray";
 import { MorayRegistry } from "../creatures/morays/MorayRegistry";
 import type { MoraySpeciesConfig } from "../creatures/morays/MoraySpeciesConfig";
+import { MYTHICS, mythicById } from "../creatures/mythics/MythicRegistry";
 import { JellyBloom } from "../creatures/visitors/JellyBloom";
 import { Ray } from "../creatures/visitors/Ray";
 import { Turtle } from "../creatures/visitors/Turtle";
@@ -130,7 +131,8 @@ export class Game {
 
   private readonly discovery: DiscoverySystem;
   private readonly pulse = new DiscoveryPulse();
-  private readonly portraitQueue: MoraySpeciesConfig[] = [];
+  /** Deferred codex plates: each entry renders one card's portrait. */
+  private readonly portraitQueue: { id: string; render: () => string | null }[] = [];
   private readonly hud = new Hud();
   private readonly codex = new Codex();
   private readonly settingsPanel: SettingsPanel;
@@ -209,6 +211,15 @@ export class Game {
       targets.push(target);
       this.morays.push({ config, moray, target, curiosity: new MorayCuriosity() });
     }
+    // Wave 8: the mythics. Each is a self-contained life system with its own
+    // discovery targets; the registry is the one door, so a creature package
+    // adds a being and touches nothing in this file.
+    for (const myth of MYTHICS) {
+      const build = myth.build();
+      this.life.add(build.system);
+      build.system.addTo(this.scene);
+      targets.push(...build.targets);
+    }
     this.discovery = new DiscoverySystem(targets);
 
     this.dive = new DiveController({ startPosition: new Vector3(0, 2, 22) });
@@ -221,13 +232,17 @@ export class Game {
     });
 
     this.hud.setTotal(this.discovery.totalCount);
-    this.hud.setObjective(`Find the morays (0 / ${this.discovery.totalCount})`);
+    this.hud.setObjective(`Find the morays & the myths (0 / ${this.discovery.totalCount})`);
 
-    // Restore previously discovered morays.
+    // Restore previously discovered morays — and mythics (Wave 8), whose
+    // cards come back through the same one-path-for-both contract.
     for (const id of saved.discovered) {
       if (this.registry.has(id)) {
         this.discovery.markDiscovered(id);
         this.recordInCodex(this.registry.require(id));
+      } else if (mythicById(id)) {
+        this.discovery.markDiscovered(id);
+        this.recordMythicInCodex(id);
       }
     }
     this.hud.setProgress(this.discovery.discoveredCount, this.discovery.totalCount);
@@ -384,7 +399,10 @@ export class Game {
       this.hud.fadeControlsHelp();
     }
 
-    this.dive.update(step, input, this.rig.yaw);
+    // Wave 8: swim where you look — the rig's true forward, pitch included,
+    // so the vertical is a property of the gaze and Space/Shift are options
+    // rather than requirements.
+    this.dive.update(step, input, this.rig.yaw, this.rig.getForward());
     this.collision.resolve(this.dive.position, PLAYER_RADIUS);
 
     for (const instance of this.morays) {
@@ -472,6 +490,10 @@ export class Game {
   }
 
   private onDiscovered(speciesId: string): void {
+    if (!this.registry.has(speciesId)) {
+      this.onMythicDiscovered(speciesId);
+      return;
+    }
     const config = this.registry.require(speciesId);
     this.recordInCodex(config);
     this.hud.showDiscovery(config.commonName, config.scientificName, this.settings.reducedMotion);
@@ -486,13 +508,54 @@ export class Game {
   }
 
   /**
+   * Wave 8: a mythic's discovery is the same ceremony without the sanctuary
+   * — a being that size is visited, not kept. The card, the plate, the
+   * chime, the swell and the save all run the standing paths.
+   */
+  private onMythicDiscovered(speciesId: string): void {
+    const myth = mythicById(speciesId);
+    if (!myth) {
+      return;
+    }
+    this.recordMythicInCodex(speciesId);
+    this.hud.showDiscovery(
+      myth.entry.commonName,
+      myth.entry.scientificName,
+      this.settings.reducedMotion,
+    );
+    this.pulse.trigger();
+    this.soundscape.playDiscovery();
+    this.hud.setProgress(this.discovery.discoveredCount, this.discovery.totalCount);
+    this.hud.setHint("Added to the Codex.");
+    this.hintLevel = -1;
+    this.refreshObjective();
+    this.save.recordDiscovery(speciesId, this.settings);
+  }
+
+  /**
    * Files a species in the codex and queues its portrait. One path for both a
    * discovery made this dive and one restored from a save, so the codex cannot
    * end up half illustrated.
    */
   private recordInCodex(config: MoraySpeciesConfig): void {
     this.codex.record(config);
-    this.portraitQueue.push(config);
+    this.portraitQueue.push({
+      id: config.id,
+      render: () => renderMorayPortrait(this.renderer, config),
+    });
+  }
+
+  /** Files a mythic's card and queues its plate, if its definition has one. */
+  private recordMythicInCodex(speciesId: string): void {
+    const myth = mythicById(speciesId);
+    if (!myth) {
+      return;
+    }
+    this.codex.recordEntry(myth.entry);
+    const portrait = myth.portrait;
+    if (portrait) {
+      this.portraitQueue.push({ id: myth.entry.id, render: portrait });
+    }
   }
 
   /**
@@ -512,9 +575,9 @@ export class Game {
     if (assetsPending()) {
       return;
     }
-    const config = this.portraitQueue.shift();
-    if (config) {
-      this.codex.setPortrait(config.id, renderMorayPortrait(this.renderer, config));
+    const job = this.portraitQueue.shift();
+    if (job) {
+      this.codex.setPortrait(job.id, job.render());
     }
   }
 
@@ -522,9 +585,9 @@ export class Game {
     const found = this.discovery.discoveredCount;
     const total = this.discovery.totalCount;
     if (found >= total) {
-      this.hud.setObjective("Every moray found — linger, or visit the sanctuary (V)");
+      this.hud.setObjective("Every being found — linger, or visit the sanctuary (V)");
     } else {
-      this.hud.setObjective(`Find the morays (${found} / ${total})`);
+      this.hud.setObjective(`Find the morays & the myths (${found} / ${total})`);
     }
   }
 
@@ -534,14 +597,12 @@ export class Game {
       return;
     }
     const nearest = this.nearestUndiscovered();
-    const countWords = ["No", "One", "Two", "Three", "Four", "Five", "Six", "Seven"];
-    const countWord = countWords[this.discovery.totalCount] ?? String(this.discovery.totalCount);
     const rungs = [
-      `${countWord} morays hide across the reef. Drift slowly and watch for small movements.`,
-      nearest ? `Nearest clue: ${nearest.habitatHint}` : "Explore the far edges of the reef.",
+      "Morays hide across the reef, and stranger beings keep its wings. Drift slowly and watch for small movements.",
+      nearest ? `Nearest clue: ${nearest.habitatHint}` : "Explore the wings beyond the rim's doorways.",
       nearest
         ? `Seek the ${nearest.commonName.toLowerCase()} — centre the reticle on its eye and hold steady.`
-        : "Centre the reticle on a moray's eye and hold steady.",
+        : "Centre the reticle on a being's eye and hold steady.",
     ];
     this.hintLevel = Math.min(this.hintLevel + 1, rungs.length - 1);
     this.hud.setHint(rungs[this.hintLevel] ?? rungs[0] ?? "");

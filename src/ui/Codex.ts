@@ -3,6 +3,19 @@ import type { MoraySpeciesConfig } from "../creatures/morays/MoraySpeciesConfig"
 import { requireElement } from "./dom";
 
 /**
+ * One codex card's worth of species, whoever it belongs to (Wave 8): the
+ * morays' configs adapt onto this, and the mythics carry their own.
+ */
+export interface CodexEntry {
+  readonly id: string;
+  readonly commonName: string;
+  readonly scientificName: string;
+  readonly fact: string;
+  /** The storybook line under the fact. */
+  readonly codexLine: string;
+}
+
+/**
  * A transparent pixel. The card's frame stands empty for the frame or two
  * before its plate is rendered, rather than showing a broken image.
  */
@@ -53,30 +66,41 @@ export class Codex {
    * never costs the player the entry.
    */
   record(config: MoraySpeciesConfig): void {
-    if (this.recorded.has(config.id)) {
-      return;
-    }
-    this.recorded.add(config.id);
-    this.emptyState?.remove();
-
     // The personality line (W-M2): one storybook sentence of who this animal
     // is, under the field-guide fact. A species without a profile wears the
-    // default's gentle line, so a new species is never a broken card. It is
-    // a second `<p>` on purpose — `.codex__entry p` already styles it, and
+    // default's gentle line, so a new species is never a broken card.
+    this.recordEntry({
+      id: config.id,
+      commonName: config.commonName,
+      scientificName: config.scientificName,
+      fact: config.fact,
+      codexLine: personalityFor(config.id).codexLine,
+    });
+  }
+
+  /** Wave 8: one card path for every kind of being — morays and mythics. */
+  recordEntry(entry: CodexEntry): void {
+    if (this.recorded.has(entry.id)) {
+      return;
+    }
+    this.recorded.add(entry.id);
+    this.emptyState?.remove();
+
+    // A second `<p>` on purpose — `.codex__entry p` already styles it, and
     // the card's markup contract (classes, roles, order) is untouched.
-    const entry = document.createElement("div");
-    entry.className = "codex__entry";
-    entry.dataset.speciesId = config.id;
-    entry.innerHTML = `
-      <img class="codex__portrait" src="${EMPTY_PLATE}" alt="Portrait of the ${config.commonName.toLowerCase()}" />
+    const card = document.createElement("div");
+    card.className = "codex__entry";
+    card.dataset.speciesId = entry.id;
+    card.innerHTML = `
+      <img class="codex__portrait" src="${EMPTY_PLATE}" alt="Portrait of the ${entry.commonName.toLowerCase()}" />
       <div class="codex__text">
-        <h3>${config.commonName}</h3>
-        <div class="sci">${config.scientificName}</div>
-        <p>${config.fact}</p>
-        <p class="codex__personality"><em>${personalityFor(config.id).codexLine}</em></p>
+        <h3>${entry.commonName}</h3>
+        <div class="sci">${entry.scientificName}</div>
+        <p>${entry.fact}</p>
+        <p class="codex__personality"><em>${entry.codexLine}</em></p>
       </div>
     `;
-    this.entries.appendChild(entry);
+    this.entries.appendChild(card);
   }
 
   /** Hangs a rendered plate (a data URL) in an already recorded card's frame. */

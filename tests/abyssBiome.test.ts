@@ -25,6 +25,8 @@ import { AbyssFlora } from "../src/world/AbyssFlora";
 import { CollisionField } from "../src/world/CollisionField";
 import { Reef } from "../src/world/Reef";
 import { seabedHeight } from "../src/world/Seabed";
+import { insideWingAirspace } from "../src/world/wings/WingGeometry";
+import { WINGS } from "../src/world/wings/WingRegistry";
 
 /**
  * The second biome's contracts (W-M3), and above all the one the whole
@@ -170,9 +172,12 @@ describe("the diver is bounded", () => {
             Math.abs(z) <= 30 - PLAYER_RADIUS &&
             y >= 0.6 + PLAYER_RADIUS &&
             y <= 12 - PLAYER_RADIUS;
+          // Wave 8: the wings are legitimate free water past the rim now,
+          // exactly as the canyon is — same annex machinery, same contract.
+          const inWing = WINGS.some((wing) => insideWingAirspace(wing, x, z));
           expect(
-            inBox || insideCanyonAirspace(x, z),
-            `free outside both bounds at (${x.toFixed(1)}, ${y}, ${z.toFixed(1)})`,
+            inBox || insideCanyonAirspace(x, z) || inWing,
+            `free outside all bounds at (${x.toFixed(1)}, ${y}, ${z.toFixed(1)})`,
           ).toBe(true);
         }
       }

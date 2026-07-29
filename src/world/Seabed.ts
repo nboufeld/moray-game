@@ -2,6 +2,7 @@ import { BufferAttribute, PlaneGeometry } from "three";
 import { fbm } from "../rendering/ProceduralTexture";
 import { Random, SEEDS } from "../util/Random";
 import { canyonBlend, canyonTarget } from "./Abyss";
+import { applyWingCarves } from "./wings/WingField";
 
 /**
  * Gentle dunes, as layered sines rather than noise so the shape is exactly
@@ -234,7 +235,14 @@ export function seabedHeight(x: number, z: number): number {
   // exactly zero returns the bowl's own answer untouched, which is the whole
   // of the bit-identity argument for every height inside the bowl.
   const carve = canyonBlend(x, z);
-  return carve === 0 ? bowl : bowl + carve * (canyonTarget(x, z) - bowl);
+  const carved = carve === 0 ? bowl : bowl + carve * (canyonTarget(x, z) - bowl);
+
+  // Wave 8: the fifteen wings past the rim, each the canyon's own carve
+  // pattern under its own azimuth slot. `applyWingCarves` early-returns the
+  // untouched height inside every wing's `carveFrom` and outside every
+  // wedge, so the bowl and the canyon keep their bits by the same argument
+  // as above. `tests/wings.test.ts` holds it.
+  return applyWingCarves(x, z, carved);
 }
 
 function reliefFalloff(distance: number): number {

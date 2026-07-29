@@ -61,12 +61,26 @@ export class DiveController {
     return out.set(Math.cos(yaw), 0, -Math.sin(yaw));
   }
 
-  update(dt: number, input: DiveInput, yaw: number): void {
+  /**
+   * Wave 8: swim where you look. When `lookForward` is given (the camera
+   * rig's true forward, pitch included), the forward/back axis follows it —
+   * look up and swim forward to rise, look down to descend — so the whole
+   * ocean is reachable without ever touching Space or Shift. Strafing stays
+   * on the horizontal, which is what keeps a lateral dodge from also being
+   * a dive; and the vertical keys still add their axis for anyone who wants
+   * them. Omitted (older tests, probes), the behaviour is exactly the
+   * shipped yaw-planar swim.
+   */
+  update(dt: number, input: DiveInput, yaw: number, lookForward?: Vector3): void {
     if (dt <= 0) {
       return;
     }
 
-    DiveController.forwardFromYaw(yaw, this.forwardDir);
+    if (lookForward) {
+      this.forwardDir.copy(lookForward).normalize();
+    } else {
+      DiveController.forwardFromYaw(yaw, this.forwardDir);
+    }
     DiveController.rightFromYaw(yaw, this.rightDir);
 
     const forwardAxis = (input.forward ? 1 : 0) - (input.back ? 1 : 0);
