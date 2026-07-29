@@ -29,11 +29,22 @@ export const OPEN_BLUE: WingDef = {
   },
   wedge: { floorHalf: 0.075, gateHalf: 0.115, endHalf: 0.165 },
   mood: {
-    fog: { colorScale: [0.55, 0.68, 0.9], densityGain: -0.004, backdropFade: 0.55 },
-    light: { sun: 0.35, hemisphere: 0.2, ambient: 0.05 },
+    // Vast, clear, bright blue: the water *clears* at full mood (negative
+    // gain), the backdrop dissolves almost entirely, and the light stays —
+    // vertigo is read in a bright frame, not a dark one.
+    fog: { colorScale: [0.6, 0.72, 0.95], densityGain: -0.006, backdropFade: 0.6 },
+    light: { sun: 0.2, hemisphere: 0.15, ambient: 0.05 },
   },
   moodSurface: 12,
-  moodDescent: 9,
+  moodDescent: 8,
+  // The floor tells the drop: pale warm sand at the lip, falling to a deep
+  // blue-green as the ground lets go — the vertigo is painted on the sand.
+  paint: (_x, _z, y, blend) => {
+    const k = blend * blend * (3 - 2 * blend);
+    const t = Math.min(1, Math.max(0, (-y - 3) / 9));
+    const d = t * t * (3 - 2 * t);
+    return [1 + (0.04 - 0.3 * d) * k, 1 + (0.01 - 0.07 * d) * k, 1 + (-0.02 + 0.08 * d) * k];
+  },
   ceilingAtGate: 12,
   ceilingInside: 11,
   floorClearance: 0.7,

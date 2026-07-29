@@ -27,8 +27,12 @@ export const GLASS_COVE: WingDef = {
   },
   wedge: { floorHalf: 0.075, gateHalf: 0.115, endHalf: 0.165 },
   mood: {
-    fog: { colorScale: [1.06, 1.04, 1.08], densityGain: -0.006, backdropFade: 0.05 },
-    light: { sun: -0.06, hemisphere: -0.08, ambient: 0 },
+    // The cove's water is the cove's toybox lid: the clearest of any wing's
+    // (density gain negative and the largest of the three), sun and fill
+    // both lifted so the pastel glass reads at ten metres. Red stays near
+    // the base per the value key — bright nostalgia, not electric cyan.
+    fog: { colorScale: [1.07, 1.05, 1.09], densityGain: -0.009, backdropFade: 0.04 },
+    light: { sun: -0.1, hemisphere: -0.08, ambient: -0.03 },
   },
   moodSurface: 12,
   moodDescent: 4,

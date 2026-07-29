@@ -55,7 +55,9 @@ export class Urchins extends FaunaSystem {
     const material = this.own(createToonMaterial({ vertexColors: true }));
     const total = ANCHORS.reduce((sum, anchor) => sum + anchor.count, 0);
     const mesh = this.ownInstanced(
-      new InstancedMesh(this.own(createUrchinGeometry(this.seed)), material, total),
+      // The geometry's shag draws from the registered polish stream, not the
+      // placement stream: re-shagging the spines must never move an urchin.
+      new InstancedMesh(this.own(createUrchinGeometry(SEEDS.urchinsGrand)), material, total),
     );
     mesh.castShadow = false;
     mesh.receiveShadow = false;
@@ -104,21 +106,29 @@ export class Urchins extends FaunaSystem {
   }
 }
 
-const SPINES = 20;
+const SPINES = 40;
+
+/** The spine gradient: roots sink into the shell's darkness, and the tips
+ * carry the warm-violet glint the reef's shadow tint sets up — the animal's
+ * own two values, so the pincushion reads as depth rather than sticks. */
+const ROOT_SHADE: readonly [number, number, number] = [0.5, 0.46, 0.58];
+const TIP_SHADE: readonly [number, number, number] = [1.08, 0.92, 1.16];
 
 /**
- * A pincushion: a squashed body sphere with twenty tapering spines fanned on a
+ * A pincushion: a squashed body sphere with forty tapering spines fanned on a
  * golden spiral over the upper three quarters — the underside points at sand
  * nothing ever sees. Spine lengths vary from a seeded stream so the silhouette
- * is shaggy rather than machined; all parts are indexed grids, so the merge
- * holds. Vertex colour deepens the spine roots into the shell, which is what
- * makes the cushion read as depth instead of a hedgehog of sticks.
+ * is shaggy rather than machined (twenty spines read as a hedgehog's
+ * haircut; forty is the animal); all parts are indexed grids, so the merge
+ * holds. The wave-8 pass doubles the spine field and warms the tips — against
+ * the plum instance tints the pale violet points are what separate an urchin
+ * from a dark pom-pom at two metres.
  */
 function createUrchinGeometry(seed: number): BufferGeometry {
   const rng = new Random((seed ^ 0x5f0a_11e5) >>> 0);
   const parts: BufferGeometry[] = [];
 
-  const body = new SphereGeometry(0.06, 7, 5);
+  const body = new SphereGeometry(0.06, 8, 6);
   body.scale(1, 0.82, 1);
   body.translate(0, 0.05, 0);
   parts.push(paintVertices(body, 1, 1, 1));
@@ -135,11 +145,11 @@ function createUrchinGeometry(seed: number): BufferGeometry {
     const angle = i * golden;
     direction.set(Math.cos(angle) * ring, y, Math.sin(angle) * ring).normalize();
 
-    const length = rng.range(0.05, 0.095);
+    const length = rng.range(0.045, 0.105);
     // Three-sided: a spike a few millimetres wide has no silhouette to lose.
     const spine = new CylinderGeometry(0.0012, 0.0055, length, 3, 1, true);
     paintVertices(spine, 1, 1, 1);
-    deepenRoot(spine, length);
+    shadeSpine(spine, length);
     swing.setFromUnitVectors(up, direction);
     spine.applyQuaternion(swing);
     // Rooted just inside the shell so no seam shows at the base.
@@ -156,23 +166,28 @@ function createUrchinGeometry(seed: number): BufferGeometry {
     part.dispose();
   }
   if (!merged) {
-    return paintVertices(new SphereGeometry(0.06, 7, 5), 1, 1, 1);
+    return paintVertices(new SphereGeometry(0.06, 8, 6), 1, 1, 1);
   }
   merged.computeBoundingSphere();
   return merged;
 }
 
-/** Darkens a spine's root end (the wide, low end of the cylinder). */
-function deepenRoot(spine: BufferGeometry, length: number): void {
+/** Paints a spine root-to-tip: dark at the shell, warm-violet at the point. */
+function shadeSpine(spine: BufferGeometry, length: number): void {
   const position = spine.attributes.position;
   const color = spine.attributes.color;
   if (!position || !color) {
     return;
   }
   for (let i = 0; i < position.count; i++) {
-    // Cylinder is centred on its axis: -length/2 is the wide root.
-    const t = (position.getY(i) + length / 2) / length;
-    const shade = 0.62 + 0.38 * t;
-    color.setXYZ(i, shade, shade, shade * 1.05);
+    // Cylinder is centred on its axis: -length/2 is the wide root. Clamped:
+    // a float hair below zero is NaN the moment it meets the exponent.
+    const t = Math.pow(Math.min(1, Math.max(0, (position.getY(i) + length / 2) / length)), 1.3);
+    color.setXYZ(
+      i,
+      ROOT_SHADE[0] + (TIP_SHADE[0] - ROOT_SHADE[0]) * t,
+      ROOT_SHADE[1] + (TIP_SHADE[1] - ROOT_SHADE[1]) * t,
+      ROOT_SHADE[2] + (TIP_SHADE[2] - ROOT_SHADE[2]) * t,
+    );
   }
 }

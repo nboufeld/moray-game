@@ -3651,3 +3651,52 @@ After W-O1 (canyon look-back), W-O2 (frame-edge staging) and W-O3
   same-direction-adjacency method above (sim the whole visit window, never
   a single instant) — the W-N3 stagger rules alone are provably not
   sufficient to prevent a chimera.
+
+## Wave 8 — the Great Expansion (W8-0 scaffold + twelve parallel workers)
+
+The owner's brief, verbatim in spirit: the world was far too small, too many
+assets were lazy polyhedra, and the cast was too thin. Wave 8 shipped in one
+twelve-worker parallel push over the W8-0 scaffold; this section is the
+orchestrator's merge summary, and **each worker's full ledger lives in
+`docs/wave8-ledger/*.md`** — read those before touching anything a worker
+built. The design reference (frozen wing geometry, cast, invariants) is
+`docs/WAVE8.md`.
+
+- **The wings**: fifteen new environments radiating through the rim, the
+  canyon's carve/mood/annex pattern generalised as data
+  (`src/world/wings/`). Azimuth slots 1.35 + i×0.36 rad, carve 29.5→50,
+  airspace to 51; geometry FROZEN, moods owner-tunable. Bowl and canyon
+  bit-identity held by `tests/wings.test.ts` + the restated
+  `seabedRelief`/`abyssBiome` contracts (the rim is mostly doorways now, so
+  the crest assertion samples inter-gate midpoints). Seabed sheet 90→112 m.
+- **The cast**: four wing morays (`golden-dwarf`, `frost`, `ember`,
+  `pearl`) with dens at r=41 in their wings and sightline contracts in
+  `tests/wingDens.test.ts`; sanctuary widened to nine probe-verified lanes
+  (`scripts/probe-sanctuary-lanes.mjs` — the W-O2 sim re-created; the old
+  script is lost, calibration is relative and documented in the header).
+  Eight mythics (`src/creatures/mythics/`) — LifeSystems with discovery
+  targets and codex cards, not sanctuary residents. Discovery total is 17.
+- **The uplift**: crabs/fish/starfish/urchins re-sculpted (crab GLB 736
+  tris; fish 104-tri loft), meadow raised to chest height with a tall
+  variant, real bushes, tube/fan/branch corals graduated to GLBs, the
+  anemone garden regrown grand at (9.0, 10.2) r2.4, clownfish at 3.0× as a
+  banded GLB trio.
+- **Movement**: swim-where-you-look (pitch-based forward in
+  `DiveController`; Space/Shift still work, no longer required).
+- **Gates at merge**: typecheck + eslint clean repo-wide, unit **484/484**,
+  e2e **20/20** quiet (the reload spec now carries the volume-slider's
+  120 s allowance — two boots of a tripled world outrun 60 s under
+  SwiftShader). Canonical archive `visual-qa/*wave8-merged*`; the wings'
+  own showcase set `visual-qa/*WING-*_wave8*` via
+  `scripts/wave8-wing-shots.mjs` (16 poses + nine-resident sanctuary).
+- **Known flags for the next wave** (owners' details in their ledgers):
+  W1's god-shaft quads show hard edges from some cathedral angles; W3's
+  ghost-reef near-gate stands carry returning-colour green earlier than the
+  bone→colour story says (visible in the first showcase take); the
+  sargassum horizon shows a flat green band from the look-up pose; taller
+  meadow now crowds canonical cameras A/G's foregrounds; W11's branch GLB
+  is capsule-framed (deviation documented) and the instanced garden gained
+  ≈300k tris in the assets build — a perf pass should re-measure headed;
+  the kraken showed its fallback in the first cove capture — GLB adoption
+  worth a headed spot-check; `CoralField.CLEARANCES` still reserves the
+  vacated anemone disc.

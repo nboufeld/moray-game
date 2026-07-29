@@ -27,5 +27,16 @@ export interface WingDenSpec {
 }
 
 export const WING_DENS: readonly WingDenSpec[] = [
-  // W6 fills this in. Empty at scaffold time: zero dens, zero draws.
+  // W6's four, in `MORAY_SPECIES` append order (the dressing stream draws in
+  // this order). All at r = 41: inside the r ≤ 44 end-wall margin, on the
+  // flat floor band the environment workers keep clear (|across| ≤ 0.025 of
+  // the corridor's ±0.06), head heights against the bowl's ~1.3 / the
+  // abyss's 1.5 — a low peek for the tiny one, a full arch for the robust.
+  // Facing defaults to back up the wing toward the gate; the small offsets
+  // only turn the head a few degrees off the corridor axis so the four dens
+  // are not the same pose four times.
+  { speciesId: "golden-dwarf-moray", wingId: "nursery-shallows", r: 41, across: -0.02, headAbove: 1.3, facingOffset: 0.06 },
+  { speciesId: "frost-moray", wingId: "ice-grotto", r: 41, across: 0.025, headAbove: 1.5, facingOffset: -0.05 },
+  { speciesId: "ember-moray", wingId: "vent-springs", r: 41, across: -0.025, headAbove: 1.4, facingOffset: 0.05 },
+  { speciesId: "pearl-moray", wingId: "ghost-reef", r: 41, across: 0.02, headAbove: 1.35, facingOffset: -0.07 },
 ];

@@ -63,6 +63,10 @@ test("browser and OS shortcuts are not hijacked by the dive keys", async ({ page
 });
 
 test("look sensitivity is adjustable and survives a reload", async ({ page }) => {
+  // Two full page boots in one test, and Wave 8 tripled the world the boot
+  // builds — under SwiftShader that outruns the default 60 s the same way
+  // the volume-slider spec always has. Same remedy, same reasoning.
+  test.setTimeout(120_000);
   await page.goto("/?reset=1");
   await page.keyboard.press("KeyO");
 

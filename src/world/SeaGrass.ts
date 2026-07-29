@@ -19,7 +19,18 @@ import { createToonMaterial } from "../rendering/ToonShading";
 import { Random, SEEDS } from "../util/Random";
 import { seabedHeight } from "./Seabed";
 
-const BLADE_HEIGHT = 1.25;
+/**
+ * Raised in Wave 8 (W11, from 1.25): the owner's ask was herbs that stand
+ * higher. The meadow's envelope below is re-centred rather than simply
+ * stretched — knee-high to chest-high, with the canopy carried by the tall
+ * variant (`TALL_HEIGHT`) mixed through the same patches. The foreground
+ * clumps' `heightScale` in `Reef` multiplies this number, so the envelope was
+ * widened with one eye on their worst case: their top end lands a little
+ * under the 3.6 m they could already reach, and the contract — grass tall
+ * enough to crop the frame's edge — is kept at the meadow's new scale rather
+ * than at twice it.
+ */
+const BLADE_HEIGHT = 1.8;
 /**
  * Widened again (W-N2, from 0.182): the round critic read the close meadow as
  * "flat plastic straps", and half of that is width — a strap is a wire that
@@ -68,6 +79,34 @@ const BROAD_PATCH_ODDS = 0.34;
 const BROAD_WIDTH = 1.25;
 const BROAD_HEIGHT = 0.74;
 const BROAD_PALETTE = [0x5cb87f, 0x86cf8b, 0x4fa473];
+
+/**
+ * The per-instance height envelope (W11): knee-high to chest-high.
+ *
+ * Was `range(0.6, 1.45)` against the old 1.25 m blade — 0.75–1.81 m with
+ * most of the mass near the top. Re-centred for the taller blade rather than
+ * stretched: the spread is wider in absolute metres (1.22 against 1.06) so
+ * neighbouring stands read as different ages of growth instead of one lawn,
+ * the mean holds within a centimetre of the old meadow's, and the raise the
+ * owner asked for is carried by the top of the envelope and the tall variant
+ * below rather than by every blade at once, which would have read as a wall.
+ */
+const HEIGHT_LO = 0.34;
+const HEIGHT_HI = 1.02;
+
+/**
+ * The tall variant (W11): a slimmer, longer blade bowed in a gentle S, mixed
+ * through the meadow's own patches at this share of blades. It is a second
+ * geometry and a second instanced mesh — the grass's one allowed extra draw
+ * — planted from its own stream (`SEEDS.tallGrass` xor the room's seed, the
+ * palette stream's own trick) so not one number in the meadow's stream moves.
+ * Siblings are taken at the meadow's drawn blade positions, which is what
+ * "mixed into the patches" costs nothing extra to say: a tall blade stands
+ * where a meadow blade already proved it may.
+ */
+const TALL_ODDS = 0.15;
+const TALL_HEIGHT = 2.3;
+const TALL_WIDTH = 0.17;
 
 /** Squared distance a blade must keep from a crevice mouth. */
 const CLEARANCE_SQ = 16;
@@ -194,6 +233,12 @@ export interface GrassClump {
  */
 export class SeaGrass {
   readonly mesh: InstancedMesh;
+  /**
+   * The tall variant's mesh, hung on {@link mesh} as a child: both callers
+   * (`Reef`, the sanctuary) add only `mesh`, and a child rides along with it
+   * for the one extra draw the grass budget allows.
+   */
+  readonly tallMesh: InstancedMesh;
 
   private readonly sway = { value: 0 };
   private readonly windStrength = { value: 1 };
@@ -203,6 +248,9 @@ export class SeaGrass {
     // The palette drift's own stream; see PALETTE_FAMILIES for why it is not
     // the placement stream.
     const paletteRandom = new Random(seed ^ 0x9e37_79b9);
+    // The tall variant's own stream (W11), off `SEEDS.tallGrass` by the same
+    // side-stream trick as the palette: nothing the meadow already drew moves.
+    const tallRandom = new Random(seed ^ SEEDS.tallGrass);
     const sunView = createSunViewUniform();
     const material = createToonMaterial({
       side: DoubleSide,
@@ -264,6 +312,63 @@ export class SeaGrass {
     this.mesh.castShadow = false;
     trackSunView(this.mesh, sunView);
 
+    // The tall variant's material is the meadow's with one number changed:
+    // the sway's tip weight divides by the tall blade's own height, or its
+    // top third would bend like a root.
+    const tallSunView = createSunViewUniform();
+    const tallMaterial = createToonMaterial({
+      side: DoubleSide,
+      map: bladeTexture(),
+    });
+    requestAlbedo("world/grass-blade.png", (texture) => {
+      const painted = unpackBlade(texture);
+      if (painted) {
+        tallMaterial.map = painted;
+        tallMaterial.needsUpdate = true;
+      }
+    });
+    tallMaterial.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
+      shader.uniforms.uSway = this.sway;
+      shader.uniforms.uWind = this.windStrength;
+      shader.vertexShader = shader.vertexShader
+        .replace(
+          "#include <common>",
+          `#include <common>
+           uniform float uSway;
+           uniform float uWind;`,
+        )
+        .replace(
+          "#include <begin_vertex>",
+          `#include <begin_vertex>
+           float phase = instanceMatrix[3][0] * 0.6 + instanceMatrix[3][2] * 0.43;
+           float tip = clamp(transformed.y / ${TALL_HEIGHT.toFixed(2)}, 0.0, 1.0);
+           float bend = sin(uSway * 1.1 + phase) * 0.5 + sin(uSway * 0.43 + phase * 1.7) * 0.5;
+           transformed.x += bend * 0.22 * uWind * tip * tip;
+           transformed.z += bend * 0.12 * uWind * tip * tip;`,
+        );
+      injectLeafGlow(
+        shader,
+        tallSunView,
+        "vec3(0.14, 0.26, 0.20)",
+        "vec3(0.34, 0.28, 0.10)",
+        "clamp(vMapUv.y, 0.0, 1.0)",
+      );
+    };
+
+    // Capacity is the patch-blade count — every blade could draw a sibling —
+    // but `count` below is set to what was actually planted, so the undrawn
+    // tail of the buffer is never submitted.
+    this.tallMesh = new InstancedMesh(
+      createTallBladeGeometry(),
+      tallMaterial,
+      PATCH_COUNT * BLADES_PER_PATCH,
+    );
+    this.tallMesh.name = "sea-grass-tall";
+    this.tallMesh.receiveShadow = true;
+    this.tallMesh.castShadow = false;
+    trackSunView(this.tallMesh, tallSunView);
+    this.mesh.add(this.tallMesh);
+
     const dummy = new Object3D();
     const color = new Color();
     let placed = 0;
@@ -283,7 +388,7 @@ export class SeaGrass {
       dummy.rotation.set(random.signed(0.12), random.range(0, Math.PI * 2), random.signed(0.12));
       dummy.scale.set(
         random.range(0.75, 1.25) * (broad ? BROAD_WIDTH : 1),
-        random.range(0.6, 1.45) * heightScale * (broad ? BROAD_HEIGHT : 1),
+        random.range(HEIGHT_LO, HEIGHT_HI) * heightScale * (broad ? BROAD_HEIGHT : 1),
         1,
       );
       dummy.updateMatrix();
@@ -294,6 +399,37 @@ export class SeaGrass {
       color.multiplyScalar(random.range(0.75, 1.15));
       this.mesh.setColorAt(placed, color);
       placed++;
+    };
+
+    /**
+     * The tall sibling. Its draws come only from `tallRandom`: one decision
+     * per patch blade whether or not a sibling is taken, then the planting
+     * draws only where one stands — the same rule {@link plant} keeps, so the
+     * stream is fixed given the seed and the clearances. The palette is the
+     * patch's own family, so the canopy reads as the same stand of grass
+     * grown long rather than a second species sown over it.
+     */
+    let tallPlaced = 0;
+    const plantTall = (x: number, z: number, palette: readonly number[]): void => {
+      if (clearances.some((spot) => spot.distanceToSquared(new Vector2(x, z)) < CLEARANCE_SQ)) {
+        return;
+      }
+
+      dummy.position.set(x, seabedHeight(x, z) - 0.05, z);
+      dummy.rotation.set(tallRandom.signed(0.1), tallRandom.range(0, Math.PI * 2), tallRandom.signed(0.1));
+      dummy.scale.set(
+        tallRandom.range(0.85, 1.15),
+        tallRandom.range(0.82, 1.12),
+        1,
+      );
+      dummy.updateMatrix();
+      this.tallMesh.setMatrixAt(tallPlaced, dummy.matrix);
+
+      color.setHex(palette[Math.floor(tallRandom.next() * palette.length)] ?? palette[0]!);
+      // The canopy is the lit layer: its floor sits a step above the meadow's.
+      color.multiplyScalar(tallRandom.range(0.8, 1.15));
+      this.tallMesh.setColorAt(tallPlaced, color);
+      tallPlaced++;
     };
 
     for (let patch = 0; patch < PATCH_COUNT; patch++) {
@@ -311,13 +447,14 @@ export class SeaGrass {
         // Bias toward the middle so patches have a dense heart and soft edges.
         const spread = PATCH_RADIUS * Math.sqrt(random.next());
         const angle = random.range(0, Math.PI * 2);
-        plant(
-          patchX + Math.cos(angle) * spread,
-          patchZ + Math.sin(angle) * spread,
-          1,
-          broad,
-          family,
-        );
+        const x = patchX + Math.cos(angle) * spread;
+        const z = patchZ + Math.sin(angle) * spread;
+        plant(x, z, 1, broad, family);
+        // Tall siblings mix through the patches only — the authored clumps
+        // are compositions, and their heights are already deliberate.
+        if (tallRandom.next() < TALL_ODDS) {
+          plantTall(x, z, family);
+        }
       }
     }
 
@@ -352,6 +489,14 @@ export class SeaGrass {
     this.mesh.instanceMatrix.needsUpdate = true;
     if (this.mesh.instanceColor) {
       this.mesh.instanceColor.needsUpdate = true;
+    }
+
+    // Only the planted siblings are submitted; the rest of the buffer never
+    // had a matrix written and is culled by the count.
+    this.tallMesh.count = tallPlaced;
+    this.tallMesh.instanceMatrix.needsUpdate = true;
+    if (this.tallMesh.instanceColor) {
+      this.tallMesh.instanceColor.needsUpdate = true;
     }
   }
 
@@ -640,6 +785,74 @@ function createBladeGeometry(): PlaneGeometry {
     const normalZ = Math.cos(theta);
     const across = column * half * lanceolate(t);
     const cup = (1 - Math.abs(column)) * half * lanceolate(t) * BLADE_CUP;
+    const offNormal = across * Math.sin(twist) + cup;
+    position.setXYZ(
+      i,
+      across * Math.cos(twist),
+      (arcY[row] ?? 0) + offNormal * normalY,
+      (arcZ[row] ?? 0) + offNormal * normalZ,
+    );
+  }
+  position.needsUpdate = true;
+  geometry.computeVertexNormals();
+
+  return geometry;
+}
+
+/**
+ * The tall variant's S-curve (W11), in radians at the blade's mid-bow.
+ *
+ * The meadow blade bows one way and stays bowed; a long eelgrass blade bows
+ * out and then returns, the tip ending a third of a radian past vertical on
+ * the way back. That return is what separates "grass that grew long" from
+ * "grass that fell over" — the silhouette keeps a lifted, living tip instead
+ * of a wilting one.
+ */
+const TALL_BOW = 0.7;
+/** Spread over one extra length segment: the return of the S needs the row. */
+const TALL_TWIST = 0.75;
+const TALL_CUP = 0.5;
+
+/**
+ * The tall blade: the same lanceolate leaf, slimmer and nearly twice as long,
+ * bowed in a gentle S and twisted a touch further so its length never reads
+ * as a ribbon seen edge-on.
+ */
+function createTallBladeGeometry(): PlaneGeometry {
+  const segments = 5;
+  const geometry = new PlaneGeometry(TALL_WIDTH, TALL_HEIGHT, 2, segments);
+  const position = geometry.attributes.position as BufferAttribute;
+
+  const rows = segments + 1;
+  const arcY = new Float32Array(rows);
+  const arcZ = new Float32Array(rows);
+  const bendAt = new Float32Array(rows);
+  const step = TALL_HEIGHT / segments;
+  let y = 0;
+  let z = 0;
+  for (let row = 0; row < rows; row++) {
+    arcY[row] = y;
+    arcZ[row] = z;
+    // The S: the bend angle peaks a little over a third of the way up and
+    // comes back through vertical by the last quarter, so the tip hooks back
+    // over the stand behind it instead of falling forward.
+    bendAt[row] = TALL_BOW * Math.sin((row / segments) * Math.PI * 1.35);
+    const angle = TALL_BOW * Math.sin(((row + 0.5) / segments) * Math.PI * 1.35);
+    y += Math.cos(angle) * step;
+    z += Math.sin(angle) * step;
+  }
+
+  const half = TALL_WIDTH / 2;
+  for (let i = 0; i < position.count; i++) {
+    const t = (position.getY(i) + TALL_HEIGHT / 2) / TALL_HEIGHT;
+    const row = Math.round(t * segments);
+    const column = position.getX(i) / half;
+    const theta = bendAt[row] ?? 0;
+    const twist = TALL_TWIST * t;
+    const normalY = -Math.sin(theta);
+    const normalZ = Math.cos(theta);
+    const across = column * half * lanceolate(t);
+    const cup = (1 - Math.abs(column)) * half * lanceolate(t) * TALL_CUP;
     const offNormal = across * Math.sin(twist) + cup;
     position.setXYZ(
       i,

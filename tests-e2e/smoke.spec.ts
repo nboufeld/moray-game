@@ -18,9 +18,9 @@ test("the reef boots and renders a canvas", async ({ page }) => {
 
   await expect(page.getByTestId("objective")).toContainText("Find the morays");
   await expect(page.locator("#found-count")).toHaveText("0");
-  // Five since W-M3: the objective derives from the placements table, and the
-  // abyssal moray's canyon den is the fifth entry.
-  await expect(page.locator("#total-count")).toHaveText("5");
+  // Seventeen since Wave 8: nine morays (the frozen four, the abyssal fifth,
+  // and the four wing dens) plus the eight mythics' discovery targets.
+  await expect(page.locator("#total-count")).toHaveText("17");
 
   // The game instance is exposed for lightweight assertions.
   const hasGame = await page.evaluate(() => "__reef" in window);

@@ -1,3 +1,5 @@
+import { fbm } from "../../../rendering/ProceduralTexture";
+import { SEEDS } from "../../../util/Random";
 import type { WingDef } from "../WingTypes";
 
 /**
@@ -8,6 +10,14 @@ import type { WingDef } from "../WingTypes";
  *
  * GEOMETRY FROZEN (azimuth, carve, wedge) — see docs/WAVE8.md. Mood tables
  * and palette belong to this wing's owner.
+ *
+ * The mood is the night arriving honestly: it is on at swim height (the
+ * surface is the bowl's own ceiling of light), the sun gives up most of
+ * itself to become moonlight, and the ambient rises a little against it —
+ * violet shade is the place's floor, never black. The floor's paint is the
+ * basin's silver: a cool lift on the flat ground, mottled like moonlight
+ * through still water, easing off up the walls so the bowl's sand keeps
+ * its own colour at the doorway.
  */
 export const MOONLIT_LAGOON: WingDef = {
   id: "moonlit-lagoon",
@@ -36,4 +46,29 @@ export const MOONLIT_LAGOON: WingDef = {
   ceilingInside: 9,
   floorClearance: 0.7,
   seedKey: "wingMoonlitLagoon",
+  paint: (x, z, y, blend) => {
+    if (blend <= 0) {
+      return null;
+    }
+    const s = smooth01(blend / 0.35);
+    // Silver underfoot: a cool lift strongest on the basin floor
+    // (y ≈ −3.2), mottled like light through still water, fading up the
+    // walls. Blue lifts hardest and red stays close behind — moonlit pale,
+    // never electric.
+    const up = smooth01((y + 4) / 3.5);
+    const mottle =
+      (fbm(x * 0.09, z * 0.09, { seed: SEEDS.wingMoonlitLagoon ^ 0x77c1, period: 6, octaves: 2 }) -
+        0.5) *
+      2;
+    const lift = (1 - up * 0.7) * (0.9 + 0.2 * mottle);
+    const r = 1 + 0.05 * lift;
+    const g = 1 + 0.07 * lift;
+    const b = 1 + 0.11 * lift;
+    return [1 + (r - 1) * s, 1 + (g - 1) * s, 1 + (b - 1) * s];
+  },
 };
+
+function smooth01(t: number): number {
+  const k = Math.min(1, Math.max(0, t));
+  return k * k * (3 - 2 * k);
+}

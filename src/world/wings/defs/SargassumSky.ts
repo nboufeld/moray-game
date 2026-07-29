@@ -28,7 +28,10 @@ export const SARGASSUM_SKY: WingDef = {
   },
   wedge: { floorHalf: 0.075, gateHalf: 0.115, endHalf: 0.165 },
   mood: {
-    fog: { colorScale: [1.04, 0.92, 0.58], densityGain: 0.012, backdropFade: 0.4 },
+    // Golden gloom: the weed roof takes a third of the sun and a fifth of
+    // the sky, the water itself goes amber (red lifted, blue cut hardest),
+    // and the ambient rises a touch so the shade under the canopy glows.
+    fog: { colorScale: [1.05, 0.93, 0.55], densityGain: 0.012, backdropFade: 0.45 },
     light: { sun: 0.35, hemisphere: 0.2, ambient: -0.05 },
   },
   moodSurface: 12,
@@ -37,4 +40,16 @@ export const SARGASSUM_SKY: WingDef = {
   ceilingInside: 10,
   floorClearance: 0.7,
   seedKey: "wingSargassumSky",
+  /**
+   * Amber wash: the canopy's gold bounces off everything beneath it — red
+   * up a little, green a little, blue cut — fading to identity at the
+   * wedge's edges as every paint must.
+   */
+  paint: (_x, _z, _y, blend) => {
+    if (blend < 0.02) {
+      return null;
+    }
+    const w = blend;
+    return [1 + 0.055 * w, 1 + 0.022 * w, 1 - 0.045 * w];
+  },
 };

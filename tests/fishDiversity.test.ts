@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Scene, Vector3, type BufferGeometry, type Material, type Mesh } from "three";
+import { createFishGeometry } from "../src/creatures/fish/FishGeometry";
 import { FishSchoolSystem } from "../src/creatures/fish/FishSchoolSystem";
 import { FISH_SPECIES } from "../src/creatures/fish/FishSpecies";
 import { coralFeedingSites } from "../src/world/CoralField";
@@ -135,15 +136,99 @@ describe("the meshes", () => {
     expect(new Set(keys).size).toBe(system.meshes.length);
   });
 
-  it("merges a tail fork onto every body, and keeps the geometry indexed", () => {
+  it("sculpts every species as one indexed loft inside the 110-triangle budget", () => {
     const system = makeSystem();
     for (const mesh of system.meshes) {
       const geometry = mesh.geometry as BufferGeometry;
-      // `mergeGeometries` fails by returning null and the builder falls back
-      // to a bare body — a 6×5 sphere is 42 vertices, so anything at or below
-      // that is a fish that silently lost its tail.
+      // One welded loft — there is no merge to fail, so "every fish lost its
+      // tail" is a shape assertion now rather than a null check. 58 vertices
+      // is the full sculpt (tube, sail, crescent, pectorals); anything at or
+      // below the old sphere's 42 is a body that shed a part.
       expect(geometry.getIndex()).not.toBeNull();
       expect(geometry.attributes.position!.count).toBeGreaterThan(42);
+      const triangles = geometry.getIndex()!.count / 3;
+      // The wave-8 budget: sculpted, but lean enough to instance 152 of.
+      expect(triangles).toBeGreaterThan(90);
+      expect(triangles).toBeLessThanOrEqual(110);
+    }
+  });
+
+  it("points the nose forward and forks the tail past it, on every species", () => {
+    const system = makeSystem();
+    for (const mesh of system.meshes) {
+      const geometry = mesh.geometry as BufferGeometry;
+      geometry.computeBoundingBox();
+      const box = geometry.boundingBox!;
+      // The swim shader reads `-transformed.z` as tailward: the nose must be
+      // the +z end, and the tail's lobes must reach measurably past it.
+      expect(box.max.z).toBeGreaterThan(0.1);
+      expect(box.min.z).toBeLessThan(-1.2 * box.max.z);
+    }
+  });
+
+  it("winds every triangle outward — a positive signed volume, so the toon ramp lights the outside", () => {
+    for (const species of FISH_SPECIES) {
+      const geometry = createFishGeometry(species.body);
+      const position = geometry.attributes.position!;
+      const index = geometry.getIndex()!;
+      let volume = 0;
+      for (let t = 0; t < index.count; t += 3) {
+        const a = index.getX(t);
+        const b = index.getX(t + 1);
+        const c = index.getX(t + 2);
+        const ax = position.getX(a);
+        const ay = position.getY(a);
+        const az = position.getZ(a);
+        const bx = position.getX(b);
+        const by = position.getY(b);
+        const bz = position.getZ(b);
+        const cx = position.getX(c);
+        const cy = position.getY(c);
+        const cz = position.getZ(c);
+        volume += (ax * (by * cz - bz * cy) - ay * (bx * cz - bz * cx) + az * (bx * cy - by * cx)) / 6;
+      }
+      expect(volume, species.name).toBeGreaterThan(0);
+    }
+  });
+
+  it("raises a dorsal sail above the body tube, and varies the silhouette per species", () => {
+    const system = makeSystem();
+    const spans = new Map<string, { x: number; y: number; z: number; maxX: number; maxY: number }>();
+    for (let i = 0; i < FISH_SPECIES.length; i++) {
+      const species = FISH_SPECIES[i]!;
+      const geometry = system.meshes[i]!.geometry as BufferGeometry;
+      geometry.computeBoundingBox();
+      const box = geometry.boundingBox!;
+      // The sail rises past the body tube (0.74 in the tube's own units);
+      // without it the fish is the old lozenge with a tail.
+      expect(geometry.boundingBox!.max.y, species.name).toBeGreaterThan(0.13 * species.body.height * 0.76);
+      spans.set(species.name, {
+        x: box.max.x - box.min.x,
+        y: box.max.y - box.min.y,
+        z: box.max.z - box.min.z,
+        maxX: box.max.x,
+        maxY: box.max.y,
+      });
+    }
+    const needle = spans.get("needlefish")!;
+    const tang = spans.get("tang")!;
+    const wrasse = spans.get("wrasse")!;
+    // The lance, the disc and the fuller wanderer, as proportions.
+    expect(needle.z / needle.x).toBeGreaterThan(8);
+    expect(tang.y / tang.x).toBeGreaterThan(6);
+    expect(wrasse.maxX).toBeGreaterThan(tang.maxX * 3);
+  });
+
+  it("rebuilds every species' body bit for bit from the same profile", () => {
+    for (const species of FISH_SPECIES) {
+      const a = createFishGeometry(species.body);
+      const b = createFishGeometry(species.body);
+      expect([...(b.attributes.position!.array as Float32Array)]).toEqual([
+        ...(a.attributes.position!.array as Float32Array),
+      ]);
+      expect([...(b.attributes.color!.array as Float32Array)]).toEqual([
+        ...(a.attributes.color!.array as Float32Array),
+      ]);
     }
   });
 

@@ -194,3 +194,31 @@ Each script exports its GLB and writes preview renders to
 `visual-qa/atelier/`. Blender must run outside any sandbox (it dies in
 Metal backend detection otherwise). Verify any change with the inspector
 before trusting it; every claim in this file is reproducible from it.
+
+---
+
+## Wave 8 additions
+
+Ten new assets landed with the wave-8 expansion, all built by the same
+headless pipeline and held to the same contracts above (glTF Y-up, face +Z,
++X the animal's left, linear COLOR_0, no materials, real joints where
+stated). Budgets are measured, not aspirational. **Full per-asset contracts
+live in the builders' ledgers under `docs/wave8-ledger/`** (w7, w8, w9, w10,
+w12 for creatures; w11 for the corals, which follow `coral_common`'s
+FLOAT_COLOR/`perceived()` convention instead).
+
+| asset | tris (budget) | joints | ledger |
+|---|---|---|---|
+| creature-serpent.glb | 2942→2782 (6000) | neck, spine1–5, tail | w7 |
+| creature-crown-jelly.glb | 2400 (3000) | none | w7 |
+| creature-kirin.glb | 2600 (4500) | neck, head, tail | w7 |
+| creature-gentle-dark.glb | 1144 (2000) | none | w8 |
+| creature-kraken-hatchling.glb | 2000 (4000) | root + arm0–7 | w8 |
+| creature-moon-koi.glb | 1348 (3500) | root + spine0–4 + ribbon0–1 | w8 |
+| creature-lantern-leviathan.glb | 3393 (6000) | fluke, pectL, pectR | w9 |
+| creature-island-turtle.glb | 3172 (6000) | head + 4 flippers | w9 |
+| creature-crab.glb | 736 (800) | none (baked pose) | w10 |
+| creature-clownfish.glb | 684 (900) | none | w12 |
+| coral-tube.glb | 1520 (2500) | — (unit footprint) | w11 |
+| coral-fan.glb | 1200 (2200) | — (unit footprint) | w11 |
+| coral-branch.glb | 625 (2600) | — (capsule frame, documented deviation) | w11 |

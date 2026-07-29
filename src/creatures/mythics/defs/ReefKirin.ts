@@ -1,12 +1,13 @@
-import type { Scene } from "three";
 import type { MythicDefinition } from "../MythicTypes";
+import { ReefKirin } from "../kirin/ReefKirin";
+import { paintReefKirinPortrait } from "../kirin/portrait";
 
 /**
- * STUB — owned by wave-8 worker W7. The Reef Kirin: a seahorse-deer spirit
- * with antlers of living coral, grazing between the Ruins Terrace's fallen
- * columns — unhurried, upright, occasionally lifting its head to look at
- * the diver the way deer do. Blender GLB `creature-kirin.glb` (budget 4500
- * tris, joints for head/tail). Draw only from `SEEDS.mythKirin`.
+ * The Reef Kirin: a seahorse-deer spirit with antlers of living coral,
+ * grazing between the Ruins Terrace's fallen columns — unhurried, upright,
+ * lifting its head to look at a slow diver the way deer do. Blender GLB
+ * `creature-kirin.glb` (budget 4500 tris; neck/head/tail joints). Draws
+ * only from `SEEDS.mythKirin`. Built by wave-8 worker W7.
  */
 export const REEF_KIRIN: MythicDefinition = {
   entry: {
@@ -17,12 +18,9 @@ export const REEF_KIRIN: MythicDefinition = {
     codexLine: "The ruins keep their oldest tenant, and it keeps their garden.",
   },
   habitatHint: "Between the fallen columns of the Ruins Terrace, something grazes.",
-  build: () => ({
-    system: {
-      addTo(_scene: Scene): void {},
-      update(): void {},
-      dispose(): void {},
-    },
-    targets: [],
-  }),
+  portrait: paintReefKirinPortrait,
+  build: () => {
+    const system = new ReefKirin();
+    return { system, targets: [system.target] };
+  },
 };

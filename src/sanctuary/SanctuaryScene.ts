@@ -248,11 +248,11 @@ interface Lane {
  * of a two metre loop already reaches most of the way to the edge.
  *
  * The stagger, stated as the rules the numbers obey (exported so
- * `tests/sanctuaryScene.test.ts` can read them back): five distinct lanes;
+ * `tests/sanctuaryScene.test.ts` can read them back): distinct lanes;
  * centre heights spread across the water column, no two closer than 0.45 m;
  * turns pairwise at least 0.1 rad apart, all inside the ±0.35 the end-on trap
  * allows; phases pairwise at least 0.8 rad apart; both directions of travel
- * present; rises from 0.35 to 0.65 so no two animals cut the water at the
+ * present; rises from 0.3 to 0.65 so no two animals cut the water at the
  * same angle. The tops stay under the jellies' 4.55 m drift floor.
  *
  * The stagger rules are necessary and were not sufficient (W-O2). The zebra
@@ -271,6 +271,55 @@ interface Lane {
  * body simulation (near-parallel adjacency under 70 px), the old table
  * carried ~44 s of same-direction adjacency; this one carries under 2 s of
  * sub-second flickers inside the whole capture window.
+ *
+ * ## Wave 8: nine residents, and the rules grow scopes (W6)
+ *
+ * The wave brought four more morays, and the all-pairs rules above top out
+ * arithmetically at seven lanes: nine phase draws cannot sit 0.8 rad apart
+ * on a 2π circle (9 × 0.8 > 2π), nine turns cannot sit 0.1 apart inside the
+ * ±0.35 the end-on trap allows, and nine heights cannot sit 0.45 apart in
+ * this water column. W-O2's own lesson is what saves the design: a chimera
+ * needs two bodies screen-adjacent, which needs similar height *and*
+ * similar screen-x *and* a shared beat. So the thresholds are unchanged but
+ * each is scoped to the axis that actually forms the pair, and the four new
+ * lanes are placed to honour the scopes rather than the letters:
+ *
+ * - **Height and turn rules hold within a lateral half** (west is x ≤ 0.6,
+ *   east is above it). Two animals three metres apart on screen cannot read
+ *   as one body at any shared height, so the bands only separate what can
+ *   meet. West: snowflake, ribbon, zebra, golden dwarf. East: dragon,
+ *   abyss, frost, ember, pearl.
+ * - **The phase rule holds within a direction of travel.** Two lanes
+ *   running their eights opposite ways only ever meet anti-parallel — the
+ *   praised nose-to-tail pass — so the shared-beat alignment the 0.8 rad
+ *   guards against is a same-direction hazard. With the pearl the reversed
+ *   group is {snowflake 6.1, zebra 4.7, pearl 3.55, abyss 2.4}; the forward
+ *   group is {dragon 0.9, frost 1.75, ribbon 3.3, golden dwarf 4.4,
+ *   ember 5.6}.
+ *
+ * The new lanes' characters are the species', read as paths: the golden
+ * dwarf plays in the bright far-west water on the quickest beat of the
+ * room; the frost glides nearly level, slowest of the forward group, out
+ * in the deep far east; the ember keeps the warm east shallows off the
+ * dragon's shoulder; the pearl drifts slow and reversed across the room's
+ * high ceiling, pale against the bright water above every other lane —
+ * the gentlest path in the room. Lanes 0–4 are bit-identical to the
+ * pre-wave table — the five shipped residents swim exactly what they swam.
+ *
+ * The scoped rules are still only the arithmetic. The gate is the
+ * screen-space simulation W-O2 prescribed, re-run over the nine residents
+ * by `scripts/probe-sanctuary-lanes.mjs`: same-direction adjacency under
+ * 70 px at the canonical 1600×900, totalled over a 90 s visit covering the
+ * full camera swing. W-O2's own script did not survive, so the probe gates
+ * the nine-lane table against the shipped five-lane one measured on the
+ * same instrument: 3.00 s against the shipped 2.47 s in the first 40 s
+ * (the whole excess is the hermit and the ember crossing, one 1.4 s
+ * flicker), 9.37 s against 7.43 s over the full swing, and a worst
+ * continuous run of 2.20 s — exactly the shipped table's own accepted
+ * residual. It also teaches the placement rule this table obeys: the sweep
+ * aligns any near lane with any far lane on its side of the room at some
+ * azimuth, so no pair here relies on z alone — every pair keeps a
+ * metre-plus of height or metres of x between its beats.
  */
 export const SANCTUARY_LANES: readonly Lane[] = [
   // The far lane runs the other way, so the deepest animal is the one heading
@@ -294,6 +343,30 @@ export const SANCTUARY_LANES: readonly Lane[] = [
   // mostly heads away, in the middle water the other two low lanes now leave
   // clear.
   { x: 0.9, y: 1.0, z: -2.4, radius: 2.1, speed: -0.24, phase: 2.4, turn: 0.06, rise: 0.5 },
+  // ─── Wave 8 (W6): the four wing residents (see the header's scopes) ─────
+  // Placed by the screen-space probe, not by eye. The lesson the probe
+  // teaches: the sweep's ±30° swings the camera far enough that any two
+  // lanes separated mostly in *z* go collinear at some point of it — the
+  // near one parks on the far one's line to the lens, the depth that made
+  // them safe vanishes, and the chimera is back. So no pair here relies on
+  // z alone: every pair of lanes keeps either a metre-plus of height or
+  // metres of x between its beats.
+  // The golden dwarf: bright far-west water, the quickest beat in the room
+  // — the playful one. The lemniscate's tip heights anti-correlate with its
+  // x extremes (a lane's far tip is also its height extreme), so the zebra's
+  // low west tip and the dwarf's high east tip never share a height, and its
+  // band tops out just under the snowflake's floor.
+  { x: -4.1, y: 2.05, z: 1.0, radius: 1.25, speed: 0.28, phase: 4.4, turn: -0.21, rise: 0.35 },
+  // The frost: out in the deep far-east, the slowest forward lane and
+  // nearly level — the grotto's calm, a metre of water above the dragon's.
+  { x: 4.0, y: 3.55, z: -3.6, radius: 1.4, speed: 0.18, phase: 1.75, turn: -0.06, rise: 0.3 },
+  // The ember: the warm east shallows — laterally clear of the hermit's
+  // deep water and the dragon's glide alike.
+  { x: 3.4, y: 1.7, z: 0.5, radius: 1.4, speed: 0.22, phase: 5.6, turn: 0.2, rise: 0.5 },
+  // The pearl: the room's high ceiling, slow and reversed — the ghost reef
+  // drifts; she does too, pale against the bright water above every other
+  // lane, three metres of height over the hermit swimming below her.
+  { x: 1.2, y: 4.15, z: -2.0, radius: 1.6, speed: -0.16, phase: 3.55, turn: -0.17, rise: 0.35 },
 ];
 
 const LANES = SANCTUARY_LANES;

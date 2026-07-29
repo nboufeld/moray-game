@@ -28,8 +28,12 @@ export const CURRENT_RUN: WingDef = {
   },
   wedge: { floorHalf: 0.075, gateHalf: 0.115, endHalf: 0.165 },
   mood: {
-    fog: { colorScale: [0.92, 1.04, 1.04], densityGain: -0.008, backdropFade: 0.12 },
-    light: { sun: 0, hemisphere: -0.05, ambient: 0 },
+    // Rushing turquoise, and the longest sightline of the three: the water
+    // clears (negative density gain), barely any backdrop is given up —
+    // speed needs somewhere to go, and somewhere to go needs a far end you
+    // can see. Green-blue lifted, red held a step under per the value key.
+    fog: { colorScale: [0.94, 1.06, 1.07], densityGain: -0.012, backdropFade: 0.08 },
+    light: { sun: -0.05, hemisphere: -0.07, ambient: 0 },
   },
   moodSurface: 12,
   moodDescent: 6,

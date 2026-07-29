@@ -1,13 +1,15 @@
-import type { Scene } from "three";
-import type { MythicDefinition } from "../MythicTypes";
+import type { MythicDefinition, MythicBuild } from "../MythicTypes";
+import { KrakenHatchlingSystem } from "../kraken/KrakenHatchlingSystem";
+import { paintKrakenPortrait } from "../kraken/portrait";
 
 /**
- * STUB — owned by wave-8 worker W8. The Kraken Hatchling: a shy octopus
- * child denned in the Sea-Glass Cove's pebble drifts, arms curling and
- * uncurling, chromatophore patterns rippling when calm and blanching when
- * startled (the moray presence-cycle idiom: peek, extend, startle, tuck).
- * Blender GLB `creature-kraken-hatchling.glb` (budget 4000 tris, jointed
- * arms). Draw only from `SEEDS.mythKraken`.
+ * The Kraken Hatchling: a shy octopus child denned in the Sea-Glass Cove's
+ * pebble drifts, arms curling and uncurling, chromatophore patterns rippling
+ * when calm and blanching when startled — the moray presence-cycle idiom
+ * (peek, extend, startle, tuck) re-expressed at half a metre. The GLB
+ * `creature-kraken-hatchling.glb` (budget 4000 tris, eight arm joints) is
+ * authored in the pale tint set; until it lands a cone-and-bulb stand-in
+ * holds the same pivots. Draw only from `SEEDS.mythKraken`.
  */
 export const KRAKEN_HATCHLING: MythicDefinition = {
   entry: {
@@ -18,12 +20,9 @@ export const KRAKEN_HATCHLING: MythicDefinition = {
     codexLine: "Legends begin small, and this one is still collecting pretty pebbles.",
   },
   habitatHint: "The glass drifts of the cove rearrange themselves around a den.",
-  build: () => ({
-    system: {
-      addTo(_scene: Scene): void {},
-      update(): void {},
-      dispose(): void {},
-    },
-    targets: [],
-  }),
+  portrait: paintKrakenPortrait,
+  build: (): MythicBuild => {
+    const system = new KrakenHatchlingSystem();
+    return { system, targets: system.targets };
+  },
 };

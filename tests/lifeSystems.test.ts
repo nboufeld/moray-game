@@ -37,7 +37,7 @@ const SCAFFOLDS = [
   { name: "Crabs", make: () => new Crabs(), seed: SEEDS.crabs },
   { name: "Starfish", make: () => new Starfish(), seed: SEEDS.starfish },
   { name: "Urchins", make: () => new Urchins(), seed: SEEDS.urchins },
-  { name: "AnemoneGarden", make: () => new AnemoneGarden(), seed: SEEDS.anemones },
+  { name: "AnemoneGarden", make: () => new AnemoneGarden(), seed: SEEDS.anemonesGrand },
   { name: "VisitorSchedule", make: () => new VisitorSchedule(), seed: SEEDS.visitors },
   { name: "Turtle", make: () => new Turtle(), seed: SEEDS.visitors },
   { name: "Ray", make: () => new Ray(), seed: SEEDS.visitors },
@@ -114,7 +114,7 @@ describe("life system scaffolds", () => {
     // Pre-registered here so that the packages filling these in never have to
     // edit `Random.ts` — and so that two of them cannot silently pick the same
     // stream and scatter one population on top of another.
-    const world = [SEEDS.crabs, SEEDS.starfish, SEEDS.urchins, SEEDS.anemones, SEEDS.sandPuffs];
+    const world = [SEEDS.crabs, SEEDS.starfish, SEEDS.urchins, SEEDS.anemonesGrand, SEEDS.sandPuffs];
     for (const seed of [...world, SEEDS.visitors]) {
       expect(Number.isInteger(seed)).toBe(true);
       expect(seed).toBeGreaterThan(0);

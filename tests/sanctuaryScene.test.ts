@@ -92,27 +92,43 @@ describe("SanctuaryScene", () => {
     }
   });
 
-  it("authors five properly staggered lanes — height, phase, heading and pitch", () => {
+  it("authors nine properly staggered lanes — height, phase, heading and pitch", () => {
     // W-N3: E and S read as "five nearly parallel horizontal sticks" while
     // the lanes shared their pitch and clustered their turns. These are the
     // stagger rules the table's comment states, read back so a retune cannot
     // quietly fold two residents onto the same line again.
+    //
+    // Wave 8 (W6) grew the room to nine residents, and the all-pairs rules
+    // top out arithmetically at seven (nine phases cannot sit 0.8 rad apart
+    // on a 2π circle). Since a chimera needs similar height *and* screen-x
+    // *and* a shared beat at once (W-O2), the thresholds are unchanged but
+    // scoped: height and turn hold within a lateral half, phase within a
+    // direction of travel. `scripts/probe-sanctuary-lanes.mjs` is the
+    // screen-space gate above these rules.
     expect(SANCTUARY_LANES).toHaveLength(MORAY_SPECIES.length);
+
+    /** The half a lane swims: west of the room's middle seam, or east. */
+    const half = (lane: (typeof SANCTUARY_LANES)[number]): "west" | "east" =>
+      lane.x <= 0.6 ? "west" : "east";
 
     for (let a = 0; a < SANCTUARY_LANES.length; a++) {
       for (let b = a + 1; b < SANCTUARY_LANES.length; b++) {
         const laneA = SANCTUARY_LANES[a]!;
         const laneB = SANCTUARY_LANES[b]!;
-        // No two lanes share a band of water...
-        expect(Math.abs(laneA.y - laneB.y), `lanes ${a}/${b} height`).toBeGreaterThanOrEqual(0.45);
-        // ...or a heading cluster...
-        expect(Math.abs(laneA.turn - laneB.turn), `lanes ${a}/${b} turn`).toBeGreaterThanOrEqual(
-          0.1,
-        );
-        // ...or a lobe of the shared beat.
-        const phaseGap = Math.abs(laneA.phase - laneB.phase) % (Math.PI * 2);
-        const circular = Math.min(phaseGap, Math.PI * 2 - phaseGap);
-        expect(circular, `lanes ${a}/${b} phase`).toBeGreaterThanOrEqual(0.8);
+        if (half(laneA) === half(laneB)) {
+          // No two lanes in the same half share a band of water...
+          expect(Math.abs(laneA.y - laneB.y), `lanes ${a}/${b} height`).toBeGreaterThanOrEqual(0.45);
+          // ...or a heading cluster.
+          expect(Math.abs(laneA.turn - laneB.turn), `lanes ${a}/${b} turn`).toBeGreaterThanOrEqual(
+            0.1,
+          );
+        }
+        if (Math.sign(laneA.speed) === Math.sign(laneB.speed)) {
+          // ...or, running the same way round, a lobe of the shared beat.
+          const phaseGap = Math.abs(laneA.phase - laneB.phase) % (Math.PI * 2);
+          const circular = Math.min(phaseGap, Math.PI * 2 - phaseGap);
+          expect(circular, `lanes ${a}/${b} phase`).toBeGreaterThanOrEqual(0.8);
+        }
       }
     }
 

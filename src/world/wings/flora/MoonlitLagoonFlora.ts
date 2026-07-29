@@ -1,11 +1,376 @@
-import { Group } from "three";
+import {
+  AdditiveBlending,
+  BufferAttribute,
+  BufferGeometry,
+  Color,
+  Group,
+  IcosahedronGeometry,
+  InstancedMesh,
+  Mesh,
+  MeshBasicMaterial,
+  Object3D,
+  Points,
+  PointsMaterial,
+  RingGeometry,
+} from "three";
+import { buildColorTexture, fbm } from "../../../rendering/ProceduralTexture";
+import { smoothNormals } from "../../../rendering/SmoothNormals";
+import { createToonMaterial } from "../../../rendering/ToonShading";
+import { Random, SEEDS } from "../../../util/Random";
+import { seabedHeight, type ContactPatch } from "../../Seabed";
+import { wedgeHalfAt } from "../WingGeometry";
 import type { WingDef, WingFlora } from "../WingTypes";
+import { buildBladeMeadow } from "./WreckMeadowBlades";
 
 /**
- * STUB — owned by the Moonlit Lagoon's wave-8 worker. Build the night:
- * sparse pale flora, slow sparkle motes, a still basin dressed for silver
- * light. Draw only from `SEEDS.wingMoonlitLagoon` (and `^` substreams).
+ * Wing 5 — the Moonlit Lagoon. Serenity: a still, silver basin.
+ *
+ * The quietest place in the game, and deliberately the emptiest of the
+ * three: a few smooth pale stones, sparse silver-green tufts, a slow dust
+ * of sparkle motes, and one soft pool of light on the sand where the Moon
+ * Koi turns its circle. The koi owns the middle of the wing — a ~4 m
+ * circle around r 40 at mid-height — so the lagoon's one hard rule is
+ * that nothing tall enters that volume: tufts inside it are capped short
+ * rather than refused, stones stay low, and the motes hug the floor, so
+ * the meadow reads continuous and the circle stays open water.
+ *
+ * Four draw calls: one instanced tuft meadow (the Wreck Meadow's blade
+ * module, paled and spared down), one instanced stone field, one points
+ * cloud, one additive ground ring. Under reduced motion the motes barely
+ * drift; the stillness is the point either way.
  */
-export function buildMoonlitLagoonFlora(_def: WingDef): WingFlora {
-  return { group: new Group() };
+
+/**
+ * The Moon Koi's circle, as a radial band and a ceiling over the floor.
+ * Exported so the tests check the kept-clear volume against the same
+ * numbers the flora was placed with.
+ */
+export const MOONLIT_KOI_CIRCLE = { from: 36, to: 44, maxTop: 1.25 } as const;
+const KOI_BAND = MOONLIT_KOI_CIRCLE;
+
+/** Where the pool of moonlight lies: under the koi's circle, on the axis. */
+const MOON_POOL = { r: 40, radius: 2.3, opacity: 0.2 } as const;
+
+/** Silver-green tufts, two drifts — pale, never white. */
+const TUFT_PALETTE = {
+  families: [
+    [0xa4c2ae, 0xbfd6c2, 0x8aa894],
+    [0x9cbaa4, 0xb2ccb6, 0x86a290],
+  ],
+} as const;
+
+const MOTE_COUNT = 150;
+const STONE_COUNT = 10;
+
+/** How far a mote dims and brightens over its cycle, and how slow that is. */
+const TWINKLE_FLOOR = 0.4;
+const TWINKLE_RATE_MIN = 0.3;
+const TWINKLE_RATE_MAX = 0.9;
+
+export function buildMoonlitLagoonFlora(def: WingDef): WingFlora {
+  const group = new Group();
+  group.name = "moonlit-lagoon-flora";
+  const random = new Random(SEEDS.wingMoonlitLagoon);
+  const contacts: ContactPatch[] = [];
+
+  const axisX = Math.cos(def.azimuth);
+  const axisZ = Math.sin(def.azimuth);
+  const perpX = -axisZ;
+  const perpZ = axisX;
+
+  // ── The tufts. ──
+  const tufts = buildBladeMeadow({
+    def,
+    seed: SEEDS.wingMoonlitLagoon ^ 0x6d44,
+    patches: 7,
+    bladesPerPatch: 18,
+    patchRadius: 2.2,
+    radiusFrom: 33.5,
+    radiusTo: 47,
+    palette: TUFT_PALETTE,
+    bladeHeight: 1.05,
+    bladeWidth: 0.2,
+    heightRange: [0.45, 0.9],
+    emissive: 0x93a8d0,
+    emissiveIntensity: 0.12,
+    gateMargin: 1.7,
+    shortBand: KOI_BAND,
+  });
+  group.add(tufts.mesh);
+
+  // ── The stones. ──
+  // Smooth pale water-worn lumps, silvered by the bake: a cool base, a
+  // moonlit crown. Two stand at the gate's flanks so the doorway promises
+  // the stillness inside.
+  const stoneGeometry = new IcosahedronGeometry(1, 2);
+  softenStone(stoneGeometry, SEEDS.wingMoonlitLagoon ^ 0x1f66);
+  smoothNormals(stoneGeometry);
+  silverStone(stoneGeometry);
+  const stones = new InstancedMesh(
+    stoneGeometry,
+    createToonMaterial({ vertexColors: true }),
+    STONE_COUNT,
+  );
+  stones.name = "moonlit-stones";
+  stones.castShadow = false;
+  stones.receiveShadow = true;
+
+  const dummy = new Object3D();
+  const color = new Color();
+  let stoneIndex = 0;
+  const layStone = (r: number, lateral: number, scale: number): void => {
+    const x = axisX * r + perpX * lateral;
+    const z = axisZ * r + perpZ * lateral;
+    dummy.position.set(x, seabedHeight(x, z) - scale * 0.3, z);
+    dummy.rotation.set(random.signed(0.3), random.range(0, Math.PI * 2), random.signed(0.3));
+    dummy.scale.set(scale, scale * random.range(0.7, 0.95), scale * random.range(0.85, 1.1));
+    dummy.updateMatrix();
+    stones.setMatrixAt(stoneIndex, dummy.matrix);
+    color.setRGB(random.range(0.92, 1.02), random.range(0.92, 1.02), random.range(0.95, 1.08));
+    color.multiplyScalar(random.range(0.85, 1.08));
+    stones.setColorAt(stoneIndex, color);
+    contacts.push({ x, z, radius: scale * 1.7, strength: 0.4 });
+    stoneIndex++;
+  };
+
+  for (let i = 0; i < 8; i++) {
+    const r = random.range(34, 46.5);
+    const side = random.next() < 0.5 ? -1 : 1;
+    // Inside the koi's circle the stones stay low enough to swim over.
+    const cap = r >= KOI_BAND.from && r <= KOI_BAND.to ? 0.55 : 0.85;
+    const scale = random.range(0.3, cap);
+    // Floor pieces: the flat basin band, not the wall slopes.
+    const lateral = side * random.range(1.4, Math.max(1.6, r * def.wedge.floorHalf * 0.85));
+    layStone(r, lateral, scale);
+  }
+  for (const side of [-1, 1]) {
+    layStone(random.range(32.4, 33.4), side * random.range(2.1, 2.5), random.range(0.35, 0.5));
+  }
+  stones.instanceMatrix.needsUpdate = true;
+  if (stones.instanceColor) {
+    stones.instanceColor.needsUpdate = true;
+  }
+  stones.computeBoundingSphere();
+  group.add(stones);
+
+  // ── The sparkle motes. ──
+  const motes = buildMotes(def);
+  group.add(motes.points);
+
+  // ── The pool of moonlight. ──
+  // One soft additive ring on the sand beneath the koi's circle: the light
+  // that the night water is holding visibly reaches the ground — a glow
+  // that brightens nothing it points at is a decal.
+  group.add(buildMoonPool(def));
+
+  return {
+    group,
+    contacts,
+    update(dt: number, reducedMotion: boolean): void {
+      tufts.update(dt, reducedMotion);
+      motes.update(dt, reducedMotion);
+    },
+  };
+}
+
+/** Water-worn: low gentle noise, because the lagoon is where nothing is rough. */
+function softenStone(geometry: IcosahedronGeometry, seed: number): void {
+  const position = geometry.attributes.position;
+  if (!position) {
+    return;
+  }
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i);
+    const y = position.getY(i);
+    const z = position.getZ(i);
+    const lump = fbm(x * 0.4 + 0.5, z * 0.4 + y * 0.25, { seed, period: 3, octaves: 2 }) - 0.5;
+    const scale = 1 + lump * 0.22;
+    position.setXYZ(i, x * scale, y * (1 + lump * 0.14), z * scale);
+  }
+  position.needsUpdate = true;
+}
+
+/** Moonlit silver: a cool pale base climbing to an almost-white crown. */
+function silverStone(geometry: IcosahedronGeometry): void {
+  const position = geometry.attributes.position;
+  if (!position) {
+    return;
+  }
+  const colors = new Float32Array(position.count * 3);
+  const base = new Color(0x8d99a8);
+  const crown = new Color(0xdfe8ee);
+  const tint = new Color();
+  for (let i = 0; i < position.count; i++) {
+    const t = Math.min(1, Math.max(0, position.getY(i) * 0.5 + 0.5));
+    tint.copy(base).lerp(crown, t * t);
+    colors[i * 3] = tint.r;
+    colors[i * 3 + 1] = tint.g;
+    colors[i * 3 + 2] = tint.b;
+  }
+  geometry.setAttribute("color", new BufferAttribute(colors, 3));
+}
+
+interface Motes {
+  readonly points: Points;
+  update(dt: number, reducedMotion: boolean): void;
+}
+
+/**
+ * Dust in moonlight: tiny bright motes drifting almost imperceptibly, each
+ * riding its own slow twinkle so the field never beats on one metronome.
+ * The reef's `Particles` idiom — additive points, the twinkle carried in a
+ * per-point colour attribute — scattered through the wing's water column,
+ * hugging the floor inside the koi's circle.
+ */
+function buildMotes(def: WingDef): Motes {
+  const random = new Random(SEEDS.wingMoonlitLagoon ^ 0x7e55);
+  const basePositions = new Float32Array(MOTE_COUNT * 3);
+
+  for (let i = 0; i < MOTE_COUNT; i++) {
+    const r = random.range(33, 47.5);
+    const away = random.signed(wedgeHalfAt(def, r) - 0.02);
+    const x = Math.cos(def.azimuth + away) * r;
+    const z = Math.sin(def.azimuth + away) * r;
+    const floor = seabedHeight(x, z);
+    const inCircle = r >= KOI_BAND.from && r <= KOI_BAND.to;
+    basePositions[i * 3] = x;
+    basePositions[i * 3 + 1] = floor + (inCircle ? random.range(0.25, 1.1) : random.range(0.4, 3.4));
+    basePositions[i * 3 + 2] = z;
+  }
+
+  // Drawn after every position rather than interleaved with them, so the
+  // twinkle never re-rolls the drift field it rides on.
+  const phases = new Float32Array(MOTE_COUNT);
+  const rates = new Float32Array(MOTE_COUNT);
+  for (let i = 0; i < MOTE_COUNT; i++) {
+    phases[i] = random.range(0, Math.PI * 2);
+    rates[i] = random.range(TWINKLE_RATE_MIN, TWINKLE_RATE_MAX);
+  }
+
+  const geometry = new BufferGeometry();
+  geometry.setAttribute("position", new BufferAttribute(basePositions.slice(), 3));
+  geometry.setAttribute(
+    "color",
+    new BufferAttribute(new Float32Array(MOTE_COUNT * 3).fill(1), 3),
+  );
+  geometry.computeBoundingSphere();
+
+  const material = new PointsMaterial({
+    color: 0xdce8f8,
+    size: 0.075,
+    map: moteSprite(),
+    transparent: true,
+    opacity: 0.5,
+    blending: AdditiveBlending,
+    depthWrite: false,
+    sizeAttenuation: true,
+    vertexColors: true,
+    fog: false,
+  });
+  const points = new Points(geometry, material);
+  points.name = "moonlit-motes";
+
+  let time = 0;
+  return {
+    points,
+    update(dt: number, reducedMotion: boolean): void {
+      time += dt * (reducedMotion ? 0.2 : 1);
+      const attribute = geometry.getAttribute("position") as BufferAttribute;
+      const shade = geometry.getAttribute("color") as BufferAttribute;
+      const array = attribute.array as Float32Array;
+      const levels = shade.array as Float32Array;
+      for (let i = 0; i < MOTE_COUNT; i++) {
+        const bx = basePositions[i * 3] ?? 0;
+        const by = basePositions[i * 3 + 1] ?? 0;
+        const bz = basePositions[i * 3 + 2] ?? 0;
+        array[i * 3] = bx + Math.sin(time * 0.14 + i) * 0.22;
+        array[i * 3 + 1] = by + Math.sin(time * 0.11 + i * 0.5) * 0.16;
+        array[i * 3 + 2] = bz + Math.cos(time * 0.12 + i) * 0.22;
+
+        const level =
+          TWINKLE_FLOOR +
+          (1 - TWINKLE_FLOOR) * (0.5 + 0.5 * Math.sin(time * (rates[i] ?? 1) + (phases[i] ?? 0)));
+        levels[i * 3] = level;
+        levels[i * 3 + 1] = level;
+        levels[i * 3 + 2] = level;
+      }
+      attribute.needsUpdate = true;
+      shade.needsUpdate = true;
+    },
+  };
+}
+
+/**
+ * The pool of moonlight under the koi's circle: a soft radial glow hugging
+ * the carved floor, its edge dissolved into the sand by the vertex bake.
+ */
+function buildMoonPool(def: WingDef): Mesh {
+  const x = Math.cos(def.azimuth) * MOON_POOL.r;
+  const z = Math.sin(def.azimuth) * MOON_POOL.r;
+  const geometry = new RingGeometry(0, MOON_POOL.radius, 40, 5);
+  geometry.rotateX(-Math.PI / 2);
+  const position = geometry.attributes.position;
+  if (position) {
+    const fade = new Float32Array(position.count * 3);
+    for (let i = 0; i < position.count; i++) {
+      const localX = position.getX(i);
+      const localZ = position.getZ(i);
+      position.setY(i, seabedHeight(x + localX, z + localZ) + 0.06);
+      const edge = 1 - smooth01((Math.hypot(localX, localZ) / MOON_POOL.radius - 0.35) / 0.65);
+      fade[i * 3] = edge;
+      fade[i * 3 + 1] = edge;
+      fade[i * 3 + 2] = edge;
+    }
+    position.needsUpdate = true;
+    geometry.setAttribute("color", new BufferAttribute(fade, 3));
+  }
+  geometry.translate(x, 0, z);
+  geometry.computeBoundingSphere();
+
+  const mesh = new Mesh(
+    geometry,
+    new MeshBasicMaterial({
+      map: poolSprite(),
+      color: 0xaebfe8,
+      vertexColors: true,
+      transparent: true,
+      opacity: MOON_POOL.opacity,
+      blending: AdditiveBlending,
+      depthWrite: false,
+      fog: false,
+    }),
+  );
+  mesh.name = "moonlit-pool";
+  mesh.renderOrder = 1;
+  return mesh;
+}
+
+/** A soft round mote: opaque core fading to nothing at the rim. */
+let moteSpriteTexture: ReturnType<typeof buildColorTexture> | undefined;
+function moteSprite(): ReturnType<typeof buildColorTexture> {
+  moteSpriteTexture ??= buildColorTexture(32, (u, v) => {
+    const distance = Math.hypot(u - 0.5, v - 0.5) * 2;
+    const glow = Math.max(0, 1 - distance);
+    const soft = glow * glow;
+    return [soft, soft, soft];
+  });
+  return moteSpriteTexture;
+}
+
+/** The pool's soft radial glow, wobbled so its rim is not a circle. */
+let poolSpriteTexture: ReturnType<typeof buildColorTexture> | undefined;
+function poolSprite(): ReturnType<typeof buildColorTexture> {
+  poolSpriteTexture ??= buildColorTexture(64, (u, v) => {
+    const wobble = fbm(u, v, { seed: SEEDS.wingMoonlitLagoon ^ 0x9001, period: 3, octaves: 2 });
+    const rim = Math.hypot(u - 0.5, v - 0.5) * 2;
+    const distance = Math.min(1, rim * (0.86 + 0.3 * wobble));
+    const halo = Math.pow(Math.max(0, 1 - distance * distance), 2.4);
+    return [halo, halo, halo];
+  });
+  return poolSpriteTexture;
+}
+
+function smooth01(t: number): number {
+  const k = Math.min(1, Math.max(0, t));
+  return k * k * (3 - 2 * k);
 }

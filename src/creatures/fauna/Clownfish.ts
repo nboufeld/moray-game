@@ -1,4 +1,5 @@
 import {
+  BoxGeometry,
   BufferAttribute,
   Color,
   CylinderGeometry,
@@ -11,25 +12,30 @@ import {
   type Material,
 } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { requestModel } from "../../rendering/AssetLibrary";
 import { createToonMaterial } from "../../rendering/ToonShading";
 import type { Random } from "../../util/Random";
 import type { LifeContext } from "../life/LifeSystem";
 import { paintVertices } from "./FaunaSystem";
 
-/** Diver distance to the garden that sends the pair into the tentacles. */
+/** Diver distance to the garden that sends the trio into the tentacles. */
 const HIDE_RANGE = 3.2;
 /** And the (larger) distance at which they trust the water again. */
 const EMERGE_RANGE = 4.6;
 
 /**
- * Half again over life size, for the same reason the shrimp are 2.75× theirs:
- * the moment is watched from three to five metres (any closer and the pair
- * hides), and at true size the fish were ten pixels lost in the grass — 1.25
- * was tried first and still vanished into the garden's own colour. 1.5× puts
- * a fish at ~16 cm, proportionate to crowns that grew to storybook size
- * themselves, and the white bands survive the distance.
+ * Twice life size, for the same reason the shrimp are 2.75× theirs: the
+ * moment is watched from three to five metres (any closer and the trio
+ * hides), and at true size the fish were ten pixels lost in the crowns —
+ * which is exactly the owner's complaint this wave answers. The GLB is
+ * authored at the animal's true 0.11 m, so 3.0 puts a fish at ~33 cm: a real
+ * presence against crowns that now span a metre and more, proportionate to
+ * the anemones the way a nine-centimetre ocellaris is proportionate to a
+ * forty-centimetre bubble-tip. The juvenile is smaller — clownfish live as a
+ * breeding pair with a smaller attendant, and the size difference is what
+ * reads as a family at eight metres.
  */
-const FISH_SCALE = 1.5;
+const FISH_SCALES = [3.0, 3.0, 2.2] as const;
 
 /** How hard each state pulls the fish toward its target, per second. */
 const DART_RATE = 5;
@@ -38,6 +44,7 @@ const EMERGE_RATE = 1.3;
 
 interface FishState {
   readonly refuge: Vector3;
+  readonly scale: number;
   readonly position: Vector3;
   readonly phases: readonly [number, number, number];
   readonly freqs: readonly [number, number, number];
@@ -46,14 +53,17 @@ interface FishState {
 }
 
 /**
- * The pair of clownfish living in the anemone garden — the delight the user
- * asked for by name, so its behaviour is the point: they hover and weave among
- * the tentacle crowns, and when the diver closes inside a few metres they dart
- * *into* the tentacles and sit tight, re-emerging (more warily than they hid)
- * once the diver stands off again. The two ranges are a hysteresis pair so the
- * pair cannot flicker at the boundary.
+ * The clownfish trio living in the anemone city — the delight the user asked
+ * for by name, so its behaviour is the point: they hover and weave among the
+ * crowns, and when the diver closes inside a few metres they dart *into* the
+ * tentacles and sit tight, re-emerging (more warily than they hid) once the
+ * diver stands off again. The two ranges are a hysteresis pair so the trio
+ * cannot flicker at the boundary.
  *
- * Not a `LifeSystem` itself: the garden owns it, drives it, and registers its
+ * One instanced mesh wearing the sculpted GLB when it lands and a banded
+ * procedural stand-in until then (and forever, in the no-assets build) — the
+ * repo's one-door asset contract, exactly as the shrimp keep it. Not a
+ * `LifeSystem` itself: the garden owns it, drives it, and registers its
  * resources — a clownfish without an anemone is not a thing this reef has.
  */
 export class Clownfish {
@@ -71,27 +81,36 @@ export class Clownfish {
 
   /**
    * `refuges` are tentacle-crown points (one per fish, the garden picks them);
-   * `center` is where the weaving orbits, a little over the crowns.
+   * `center` is where the weaving orbits, a little over the crowns. Three
+   * refuges, three fish: two adults and a juvenile.
    */
-  constructor(rng: Random, center: Vector3, refuges: readonly [Vector3, Vector3]) {
+  constructor(rng: Random, center: Vector3, refuges: readonly Vector3[]) {
     this.center = center.clone();
     this.geometry = createClownfishGeometry();
     this.material = createToonMaterial({ vertexColors: true });
-    this.mesh = new InstancedMesh(this.geometry, this.material, 2);
+    this.mesh = new InstancedMesh(this.geometry, this.material, refuges.length);
     this.mesh.name = "clownfish";
     this.mesh.castShadow = false;
     this.mesh.receiveShadow = false;
-    // Two swimming instances: bounds computed from the first pose go stale,
-    // so the pair opts out of culling the way the bubbles do.
+    // Swimming instances: bounds computed from the first pose go stale, so
+    // the trio opts out of culling the way the bubbles do.
     this.mesh.frustumCulled = false;
     this.mesh.instanceMatrix.setUsage(DynamicDrawUsage);
 
-    for (let i = 0; i < 2; i++) {
+    // The sculpted animal, when it arrives. The stand-in geometry stays owned
+    // by the garden and is disposed on teardown; the GLB is the library's,
+    // shared with any future caller, and must never be disposed here.
+    requestModel("models/creature-clownfish.glb", (geometry) => {
+      this.mesh.geometry = geometry;
+    });
+
+    for (let i = 0; i < refuges.length; i++) {
       const state: FishState = {
         refuge: refuges[i]!.clone(),
+        scale: FISH_SCALES[i] ?? FISH_SCALES[2],
         position: new Vector3(),
         phases: [rng.range(0, Math.PI * 2), rng.range(0, Math.PI * 2), rng.range(0, Math.PI * 2)],
-        // The two fish must not swim in lockstep; each takes its own tempo.
+        // The fish must not swim in lockstep; each takes its own tempo.
         freqs: [rng.range(0.3, 0.42), rng.range(0.22, 0.34), rng.range(0.5, 0.7)],
         yaw: rng.range(0, Math.PI * 2),
         pitch: 0,
@@ -168,16 +187,16 @@ export class Clownfish {
     const [p1, p2, p3] = state.phases;
     const [f1, f2, f3] = state.freqs;
     out.set(
-      this.center.x + Math.sin(time * f1 * tempo * Math.PI * 2 + p1) * 0.6 * amp,
-      this.center.y + Math.sin(time * f3 * tempo * Math.PI * 2 + p3) * 0.16 * amp,
-      this.center.z + Math.sin(time * f2 * tempo * Math.PI * 2 + p2) * 0.5 * amp,
+      this.center.x + Math.sin(time * f1 * tempo * Math.PI * 2 + p1) * 1.5 * amp,
+      this.center.y + Math.sin(time * f3 * tempo * Math.PI * 2 + p3) * 0.3 * amp,
+      this.center.z + Math.sin(time * f2 * tempo * Math.PI * 2 + p2) * 1.2 * amp,
     );
   }
 
   private pose(index: number, state: FishState): void {
     this.dummy.position.copy(state.position);
     this.dummy.rotation.set(state.pitch, state.yaw, 0, "YXZ");
-    this.dummy.scale.setScalar(FISH_SCALE);
+    this.dummy.scale.setScalar(state.scale);
     this.dummy.updateMatrix();
     this.mesh.setMatrixAt(index, this.dummy.matrix);
   }
@@ -195,29 +214,45 @@ function shortestTurn(from: number, to: number): number {
   return turn;
 }
 
+// Bright for this water on purpose: the trio is the one saturated accent the
+// garden owns, and a duller orange sank into the rose coral behind it.
+const ORANGE = new Color(0xff8438);
+const WHITE = new Color(0xf6f0e2);
+const BLACK = new Color(0x141118);
+
 /**
- * An eleven-centimetre clownfish facing +Z: a chunky ellipsoid body with a
- * small tail fan, orange with two white bands painted in vertex colour by
- * position along the body. No eye at this size — the bands are the field mark,
- * exactly the trade the shrimp GLB's transverse bands make.
+ * The stand-in clownfish, authored at the GLB's own true 0.105–0.11 m so the
+ * instance matrices mean the same thing whichever geometry is wearing them: a
+ * plump ellipsoid body, a thin tail fan and a dorsal blade, with the THREE
+ * white bands and their black edgings painted in vertex colour by position
+ * along the body — the same field marks CREATURES.md gives the sculpted
+ * animal, so the no-assets build stays legible. The sphere's rows decide
+ * where paint can land, and the band table below is tuned so a full row
+ * carries each white plateau and a row carries each black rim; a band whose
+ * edge falls between rows is a pink smudge, and the bands are the point.
  */
 function createClownfishGeometry(): BufferGeometry {
-  const body = new SphereGeometry(0.034, 8, 6);
-  body.scale(0.78, 0.88, 1.6);
+  const body = new SphereGeometry(0.03, 14, 20);
+  body.scale(0.55, 1.0, 1.75);
   paintBands(body);
 
-  const deepOrange = new Color(0xc4581c);
-  const tail = new CylinderGeometry(0.002, 0.017, 0.026, 6, 1);
+  const tail = new CylinderGeometry(0.0012, 0.019, 0.022, 6, 1);
   tail.rotateX(Math.PI / 2);
-  tail.translate(0, 0, -0.062);
-  paintVertices(tail, deepOrange.r, deepOrange.g, deepOrange.b);
+  tail.scale(0.3, 1.15, 1);
+  tail.translate(0, 0.001, -0.06);
+  paintVertices(tail, ORANGE.r, ORANGE.g, ORANGE.b);
 
-  const merged = mergeGeometries([body, tail], false);
+  const dorsal = new BoxGeometry(0.0016, 0.016, 0.038);
+  dorsal.translate(0, 0.033, 0.001);
+  paintVertices(dorsal, ORANGE.r, ORANGE.g, ORANGE.b);
+
+  const merged = mergeGeometries([body, tail, dorsal], false);
   body.dispose();
   tail.dispose();
+  dorsal.dispose();
   if (!merged) {
-    const fallback = new SphereGeometry(0.034, 8, 6);
-    fallback.scale(0.78, 0.88, 1.6);
+    const fallback = new SphereGeometry(0.03, 14, 20);
+    fallback.scale(0.55, 1.0, 1.75);
     paintBands(fallback);
     return fallback;
   }
@@ -225,12 +260,25 @@ function createClownfishGeometry(): BufferGeometry {
   return merged;
 }
 
-// Bright for this water on purpose: the pair is the one saturated accent the
-// garden owns, and a duller orange sank into the rose coral behind it.
-const ORANGE = new Color(0xff8438);
-const WHITE = new Color(0xf6f0e2);
+/** Body half-length after the scale above. */
+const HALF_LENGTH = 0.03 * 1.75;
+/** Body half-width after the scale above; the eye dots live at its edge. */
+const HALF_WIDTH = 0.03 * 0.55;
 
-/** Orange with a head band and a mid band, by normalised body position. */
+/**
+ * The three bands, (centre, white half-width, black rim width) in |z| units.
+ * The stand-in's sphere has twenty rows, and this table is tuned so a full
+ * row carries each white plateau (two or three rows, equator-heavy) and one
+ * row carries each black rim — a rim that catches two rows reads as a black
+ * stripe, and the fish is orange with white bands, not banded black.
+ */
+const FALLBACK_BANDS: readonly (readonly [number, number, number])[] = [
+  [0.62, 0.08, 0.06],
+  [0.0, 0.13, 0.065],
+  [-0.62, 0.08, 0.06],
+];
+
+/** Orange with three black-edged white bands, and the eye's dark dot. */
 function paintBands(body: SphereGeometry): void {
   const position = body.attributes.position;
   if (!position) {
@@ -238,10 +286,26 @@ function paintBands(body: SphereGeometry): void {
   }
   const colors = new Float32Array(position.count * 3);
   for (let i = 0; i < position.count; i++) {
-    // Body half-length after the scale above is 0.0544.
-    const zn = position.getZ(i) / 0.0544;
-    const banded = (zn > 0.38 && zn < 0.72) || (zn > -0.14 && zn < 0.14);
-    const paint = banded ? WHITE : ORANGE;
+    const zn = position.getZ(i) / HALF_LENGTH;
+    // The eye sits inside the head band, at the body's widest — a dark dot
+    // per cheek, and it must stay dark.
+    const isEye = zn > 0.52 && zn < 0.7 && Math.abs(position.getX(i)) > HALF_WIDTH * 0.7;
+    let paint = ORANGE;
+    if (isEye) {
+      paint = BLACK;
+    } else {
+      for (const [centre, half, rim] of FALLBACK_BANDS) {
+        const edge = Math.abs(zn - centre) - half;
+        if (edge < 0) {
+          paint = WHITE;
+          break;
+        }
+        if (edge < rim) {
+          paint = BLACK;
+          break;
+        }
+      }
+    }
     colors[i * 3] = paint.r;
     colors[i * 3 + 1] = paint.g;
     colors[i * 3 + 2] = paint.b;

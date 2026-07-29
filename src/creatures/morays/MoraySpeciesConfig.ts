@@ -134,4 +134,83 @@ export const MORAY_SPECIES: readonly MoraySpeciesConfig[] = [
     fact: "A hermit of the twilight canyon, charcoal-violet and dusted with pale speckles like a night of faint stars.",
     habitatHint: "Past the rim itself — over your right shoulder from where you began, a gate of stone opens into darker water.",
   },
+  // ─── Wave 8 (W6): the four wing residents ────────────────────────────────
+  // All four wear the procedural skin only — no `albedoAsset`, like the
+  // abyss — because each of them is described the way `MorayPattern` already
+  // paints: a sheen, a banding, a dusting of embers, a pearl lustre. Dens
+  // live in `WingDens.ts`; personalities in `MorayPersonality.ts`.
+  {
+    id: "golden-dwarf-moray",
+    commonName: "Golden dwarf moray",
+    scientificName: "Gymnothorax melatremus",
+    archetype: "compact",
+    // Luminous gold, not white-hot: the value is high but the hue is pure
+    // sun, and the plain pattern's faint cream mottle stands in for the pale
+    // belly of a real dwarf moray — the counter-shading lifts it further.
+    bodyColor: 0xe9b83c,
+    patternColor: 0xf6e8c8,
+    // A deeper honey on the fin margin, so the fin reads against the body.
+    accentColor: 0xd89a2b,
+    pattern: "plain",
+    nasalAppendages: false,
+    lengthScale: 0.75,
+    girthScale: 0.7,
+    fact: "A dwarf among morays, gold through and through with a cream belly — brave in short, bright bursts.",
+    habitatHint: "Past the rim behind you, a shade right of straight back, where the water climbs warm and bright into the nursery shallows.",
+  },
+  {
+    id: "frost-moray",
+    commonName: "Frost moray",
+    scientificName: "Gymnothorax pruinosus",
+    archetype: "robust",
+    // Ice-blue with glacial white bands. The white is a blue that stopped
+    // just short of paper — the abyss's pale speckle established that a
+    // near-white marking here is still a colour, never a hole in the paint.
+    bodyColor: 0x9ec7e8,
+    patternColor: 0xf0f6fa,
+    accentColor: 0x6fa8d8,
+    pattern: "bands",
+    nasalAppendages: false,
+    lengthScale: 1.1,
+    girthScale: 1.3,
+    fact: "Broad and unhurried, banded like pack ice. In the cold still water it simply out-waits everything.",
+    habitatHint: "Ahead and to your right, far past the rim, where the water goes cold and quiet — the ice grotto.",
+  },
+  {
+    id: "ember-moray",
+    commonName: "Ember moray",
+    scientificName: "Gymnothorax favillus",
+    archetype: "standard",
+    // Warm charcoal, red held above green: the darkest animal in the vents
+    // is still a colour. The embers are bright painted value on the body —
+    // a glow an illustrator would glaze on, never a light the shader emits.
+    bodyColor: 0x3e3230,
+    patternColor: 0xffa83c,
+    accentColor: 0xe2702e,
+    pattern: "speckle",
+    nasalAppendages: false,
+    lengthScale: 1.0,
+    girthScale: 0.95,
+    fact: "Charcoal-dark and dusted with embers, like a banked fire. It keeps the warm springs and its own counsel.",
+    habitatHint: "Behind you and well to the left, where warm springs breathe up through the dark floor of the vents.",
+  },
+  {
+    id: "pearl-moray",
+    commonName: "Pearl moray",
+    scientificName: "Gymnothorax margaritifer",
+    archetype: "standard",
+    // Pearl-white, and the value key holds even here: red sits above green
+    // so the palest animal in the game still leans warm, never paper. The
+    // plain pattern's faint mottle is the rose-gold sheen — a lustre, not
+    // a marking, which is exactly what a low-contrast mottle paints.
+    bodyColor: 0xf0e9e4,
+    patternColor: 0xe4bca6,
+    accentColor: 0xd9a58f,
+    pattern: "plain",
+    nasalAppendages: true,
+    lengthScale: 1.0,
+    girthScale: 0.75,
+    fact: "Near-translucent white with a rose-gold sheen — the ghost reef's gentle haunting.",
+    habitatHint: "Ahead and to your left, out past the rim, where the old reef stands pale in the water — the ghost reef.",
+  },
 ];

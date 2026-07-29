@@ -5,12 +5,23 @@ import { MorayRegistry } from "../src/creatures/morays/MorayRegistry";
 import { MORAY_SPECIES } from "../src/creatures/morays/MoraySpeciesConfig";
 
 describe("Moray asset contract", () => {
-  // Five since W-M3: the vertical slice's four plus the abyssal moray that
-  // lives past the rim in the twilight canyon.
-  it("ships the four reef species and the canyon's fifth", () => {
+  // Nine since wave 8 (W6): the vertical slice's four, the abyssal moray
+  // that lives past the rim in the twilight canyon, and the four wing
+  // residents whose dens are `WING_DENS`.
+  it("ships the reef's five species and the wings' four", () => {
     const registry = new MorayRegistry();
-    expect(registry.size).toBe(5);
-    for (const id of ["snowflake-moray", "ribbon-moray", "zebra-moray", "dragon-moray", "abyss"]) {
+    expect(registry.size).toBe(9);
+    for (const id of [
+      "snowflake-moray",
+      "ribbon-moray",
+      "zebra-moray",
+      "dragon-moray",
+      "abyss",
+      "golden-dwarf-moray",
+      "frost-moray",
+      "ember-moray",
+      "pearl-moray",
+    ]) {
       expect(registry.has(id)).toBe(true);
     }
   });

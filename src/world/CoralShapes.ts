@@ -48,25 +48,35 @@ import { Random, SEEDS } from "../util/Random";
  *   modelled rather than assembled from primitives: a staghorn's silhouette is
  *   a branching one and a brain coral's is a furrowed dome, and neither
  *   survives being approximated by a capsule at that distance.
- * - **Mid** — `plateStack`, `tube` and `fan`, 0.5–1.4 m. Built here, from
- *   lathes, merged discs and one painted quad.
- * - **Fill** — `branch`, `boulder` and `polyp`, the old garden's shapes, kept
- *   at the small end where they do what they always did.
+ * - **Mid** — `plateStack`, `tube` and `fan`, 0.5–1.4 m. The plate is built
+ *   here from lathes and merged discs; the tube and the fan graduated to
+ *   Blender in Wave 8 (W11) — an organ-pipe cluster and a layered lace fan —
+ *   and their procedural versions below remain as the fallbacks, held to the
+ *   same size and silhouette.
+ * - **Fill** — `branch`, `boulder` and `polyp`, the old garden's shapes. The
+ *   branch is the one fill piece that also graduated (W11): an antler frond
+ *   in place of the bare capsule, in Blender and here alike.
  *
  * ## The unit footprint
  *
- * Everything except the three fill shapes is authored **one metre tall, foot on
- * y = 0, centred on the y axis**, and its real size is the instance matrix's.
+ * Everything except `boulder` and `polyp` is authored to a contract frame and
+ * its real size is the instance matrix's. For all but one that frame is **one
+ * metre tall, foot on y = 0, centred on the y axis**; the branch is the
+ * exception, and the reason is the swap, one paragraph down.
  *
  * That is a contract rather than a convention, and the reason is the swap: a
  * Blender piece arrives after the field is already standing, and `CoralField`
  * hangs it on an `InstancedMesh` whose matrices were written against the
  * procedural stand-in. If the two disagree about what one unit means, the whole
  * garden jumps when the model lands — on a fast connection, between two frames
- * nobody is looking at; on a slow one, in the middle of a capture. The fill
- * shapes are exempt because their `add*` builders in `CoralField` compose local
- * transforms around the frames those primitives are born in, and nothing about
- * them ever comes off disk.
+ * nobody is looking at; on a slow one, in the middle of a capture. The two
+ * crusted shapes are exempt because they never come off disk. The branch comes
+ * off disk and is *still* exempt from the unit footprint: `CoralField.addBranching`
+ * composes each finger around the centred frame the bare capsule was born in
+ * (1.42 tall, y ∈ [−0.71, 0.71]), and that builder is not this package's to
+ * move — so both the GLB and the stand-in below are authored in the capsule's
+ * frame, and the swap stays invisible on the one kind where "one unit" never
+ * meant one metre.
  */
 
 export type CoralKind =
@@ -91,6 +101,12 @@ export type CoralKind =
 export const CORAL_MODELS: Partial<Record<CoralKind, string>> = {
   staghorn: "models/coral-staghorn.glb",
   brain: "models/coral-brain.glb",
+  // Wave 8 (W11): the lazy three graduate to sculpted GLBs. The tube and the
+  // fan share this file's unit footprint and swap invisibly; the branch is
+  // the one kind whose frame is not the unit one — see `branchGeometry`.
+  tube: "models/coral-tube.glb",
+  fan: "models/coral-fan.glb",
+  branch: "models/coral-branch.glb",
 };
 
 /** The painted sea fan, the first authored image in the garden. */
@@ -157,16 +173,8 @@ function buildGeometry(kind: CoralKind): BufferGeometry {
       return tubeGeometry();
     case "fan":
       return fanGeometry();
-    /**
-     * A finger, not a spike. The cone this replaced came to a point, and a
-     * spray of points is a sea urchin or a set of traffic cones depending on
-     * how it is coloured — either way it is the one silhouette in the garden
-     * that reads as a hazard rather than as a plant. A capsule is the same
-     * staghorn gesture with the ends rounded off, which is what the living
-     * tissue on a branch tip actually looks like.
-     */
     case "branch":
-      return new CapsuleGeometry(0.16, 1.1, 2, 6);
+      return branchGeometry();
     case "boulder":
       return boulderGeometry();
     // Five by three, not six by five. A polyp is eleven centimetres across and
@@ -276,6 +284,100 @@ function staghornGeometry(): BufferGeometry {
   });
   merged.computeVertexNormals();
   return merged;
+}
+
+/**
+ * The branch kind's frame, in metres: the centred capsule `addBranching` was
+ * written against — see the module header.
+ */
+const BRANCH_HALF = 0.71;
+
+/**
+ * The antler frond, as a stand-in for `coral-branch.glb` (W11).
+ *
+ * One instance of this kind is one *finger* in a spray — `CoralField.addBranching`
+ * leans four to eight of them out of a holdfast — so the piece is a single
+ * elegant antler rather than a thicket: one stem forking into long tines,
+ * distinct from the staghorn's fat, dense recursion. It replaces a bare
+ * capsule, and it keeps the capsule's frame to the millimetre (centred, 1.42
+ * tall) because the builder that places it was tuned against that capsule and
+ * is not this file's to edit: matched to `tools/blender/build_branch.py`,
+ * which exports in the same frame for the same reason.
+ *
+ * It carries a vertex colour where the capsule carried none, and that is a
+ * deliberate part of the swap: the GLB's `COLOR_0` only reaches the shader if
+ * the material was built with `vertexColors`, which is decided from *this*
+ * geometry at construction. The paint is the staghorn's rule — pale new tips
+ * over a shaded crotch, a multiplier that only ever darkens.
+ */
+function branchGeometry(): BufferGeometry {
+  const random = new Random(SHAPE_SEED ^ 0x0006);
+  const parts: BufferGeometry[] = [];
+
+  const prong = (base: readonly [number, number, number], tip: readonly [number, number, number], radius: number): void => {
+    const from = new Vector3(...base);
+    const to = new Vector3(
+      tip[0] + random.signed(0.03),
+      tip[1] + random.signed(0.04),
+      tip[2] + random.signed(0.03),
+    );
+    const direction = to.clone().sub(from);
+    const length = direction.length();
+    const segment = new CapsuleGeometry(radius, length, 1, 5);
+    segment.applyMatrix4(
+      new Matrix4().compose(
+        from.clone().add(to).multiplyScalar(0.5),
+        new Quaternion().setFromUnitVectors(UP, direction.normalize()),
+        new Vector3(1, 1, 1),
+      ),
+    );
+    parts.push(segment);
+  };
+
+  // One stem rising into three long tines, with a fourth fork low on the
+  // leeward side — open and upward where the staghorn is dense and wide.
+  prong([0, 0, 0], [0.03, 0.98, 0.02], 0.075);
+  prong([0.02, 0.52, 0.01], [0.17, 1.14, 0.07], 0.052);
+  prong([0.01, 0.6, 0], [-0.15, 1.24, -0.05], 0.048);
+  prong([0.02, 0.3, 0.01], [0.13, 0.82, -0.12], 0.042);
+  prong([-0.08, 0.95, -0.03], [-0.04, 1.3, 0.13], 0.034);
+
+  const merged = mergeGeometries(parts, false);
+  for (const part of parts) {
+    part.dispose();
+  }
+  if (!merged) {
+    throw new Error("branch: prong merge failed");
+  }
+
+  capsuleFrame(merged);
+  paintByHeight(merged, (height) => {
+    const value = Math.pow(0.74 + height * height * 0.26, 2.2);
+    return [value, value * 0.97, value * 0.9];
+  });
+  merged.computeVertexNormals();
+  return merged;
+}
+
+/**
+ * Scales and centres a piece into the branch kind's capsule frame: 1.42 tall,
+ * y ∈ [−0.71, 0.71], centred on the y axis. The sibling of {@link unitFootprint}
+ * for the one kind that was never born in it.
+ */
+function capsuleFrame(geometry: BufferGeometry): void {
+  geometry.computeBoundingBox();
+  const box = geometry.boundingBox;
+  if (!box) {
+    return;
+  }
+  const scale = (BRANCH_HALF * 2) / Math.max(1e-6, box.max.y - box.min.y);
+  geometry.translate(
+    -(box.min.x + box.max.x) / 2,
+    -(box.min.y + box.max.y) / 2,
+    -(box.min.z + box.max.z) / 2,
+  );
+  geometry.scale(scale, scale, scale);
+  geometry.computeBoundingSphere();
 }
 
 /**

@@ -27,11 +27,18 @@ export const MANGROVE_ROOTS: WingDef = {
   },
   wedge: { floorHalf: 0.075, gateHalf: 0.115, endHalf: 0.165 },
   mood: {
-    fog: { colorScale: [1.02, 0.88, 0.62], densityGain: 0.014, backdropFade: 0.45 },
-    light: { sun: 0.25, hemisphere: 0.35, ambient: 0.05 },
+    // Close warm water, amber through a low roof: the backdrop dissolves
+    // early (shelter has no horizon) and the sun dapples rather than blazes.
+    fog: { colorScale: [1.05, 0.88, 0.58], densityGain: 0.016, backdropFade: 0.5 },
+    light: { sun: 0.3, hemisphere: 0.32, ambient: 0.08 },
   },
   moodSurface: 12,
   moodDescent: 3,
+  // Warm sand under the roots — the amber of the water written on the floor.
+  paint: (_x, _z, _y, blend) => {
+    const k = blend * blend * (3 - 2 * blend);
+    return [1 + 0.07 * k, 1 + 0.02 * k, 1 - 0.08 * k];
+  },
   ceilingAtGate: 12,
   ceilingInside: 6,
   floorClearance: 0.7,

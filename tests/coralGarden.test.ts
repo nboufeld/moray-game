@@ -65,9 +65,12 @@ describe("coral shapes", () => {
    * The contract the model swap rests on. A Blender piece lands on an
    * `InstancedMesh` whose matrices were written for the stand-in, so if the two
    * disagree about what one unit is, the garden jumps when the file arrives.
+   *
+   * W11 adds the fan and keeps the branch apart: four of the five modelled
+   * kinds share the unit footprint, and the fifth never did.
    */
   it("authors the modelled and mid pieces in the unit footprint", () => {
-    for (const kind of ["staghorn", "brain", "plateStack", "tube"] as CoralKind[]) {
+    for (const kind of ["staghorn", "brain", "plateStack", "tube", "fan"] as CoralKind[]) {
       const geometry = coralGeometry(kind);
       geometry.computeBoundingBox();
       const box = geometry.boundingBox!;
@@ -77,8 +80,28 @@ describe("coral shapes", () => {
     }
   });
 
+  it("authors the branch in the capsule frame its builder was written against", () => {
+    // `CoralField.addBranching` composes each finger around a centred capsule
+    // 1.42 tall, and that builder is frozen — so the sculpted antler, GLB and
+    // stand-in alike, lives in the capsule's frame rather than the unit one,
+    // and this is the honest statement of what "footprint" means there.
+    const geometry = coralGeometry("branch");
+    geometry.computeBoundingBox();
+    const box = geometry.boundingBox!;
+    expect(box.min.y).toBeCloseTo(-0.71, 3);
+    expect(box.max.y).toBeCloseTo(0.71, 3);
+    expect((box.min.x + box.max.x) / 2).toBeCloseTo(0, 3);
+    expect((box.min.z + box.max.z) / 2).toBeCloseTo(0, 3);
+  });
+
   it("gives the modelled pieces a vertex-colour multiplier that only darkens", () => {
-    for (const kind of ["staghorn", "brain"] as CoralKind[]) {
+    // The branch joins the landmarks since W11: its antler stand-in now
+    // carries paint, because the GLB's COLOR_0 only reaches the shader when
+    // the stand-in asked for `vertexColors` at construction. The tube's
+    // stand-in keeps its calmer ceiling (its exterior tops out under 0.8 by
+    // design, the no-cream-rim rule), and the fan's sheet carries no paint —
+    // its silhouette lives in alpha — so neither is in this list.
+    for (const kind of ["staghorn", "brain", "branch"] as CoralKind[]) {
       const color = coralGeometry(kind).attributes.color;
       expect(color, kind).toBeDefined();
       let max = 0;
@@ -176,10 +199,13 @@ describe("coral clearances", () => {
   it("keeps six metres of water around every crevice and mound", () => {
     const reef = new Reef();
     const field = new CoralField(SEEDS.coral);
-    // Five since W-M3: the abyss den joins the four bowl crevices, and the
-    // loop below now also proves the garden — all of it in-bowl — stands
-    // clear of the canyon spot for free.
-    expect(reef.hidingSpots.length).toBe(5);
+    // At least five: the four bowl crevices and the abyss den (W-M3), plus
+    // however many wing dens the wave-8 moray package has landed by the time
+    // this runs — the count is theirs mid-wave, so what is pinned here is the
+    // floor, and the loop below covers every den present either way. The
+    // garden — all of it in-bowl — stands clear of the canyon and wing spots
+    // for free.
+    expect(reef.hidingSpots.length).toBeGreaterThanOrEqual(5);
 
     for (const spot of reef.hidingSpots) {
       const head = new Vector2(spot.position.x, spot.position.z);
@@ -250,7 +276,9 @@ describe("model requests", () => {
   });
 
   it("names a file for each modelled species and nothing else", () => {
-    expect(Object.keys(CORAL_MODELS).sort()).toEqual(["brain", "staghorn"]);
+    // Five since W11: the two landmarks plus the tube, the fan and the
+    // branch, the three kinds the owner called lazy.
+    expect(Object.keys(CORAL_MODELS).sort()).toEqual(["brain", "branch", "fan", "staghorn", "tube"]);
     for (const path of Object.values(CORAL_MODELS)) {
       expect(path).toMatch(/^models\/.+\.glb$/);
     }

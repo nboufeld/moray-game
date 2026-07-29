@@ -27,8 +27,10 @@ export const SANDFALL_DUNES: WingDef = {
   },
   wedge: { floorHalf: 0.075, gateHalf: 0.115, endHalf: 0.165 },
   mood: {
-    fog: { colorScale: [1.0, 0.9, 0.72], densityGain: 0.008, backdropFade: 0.3 },
-    light: { sun: 0.15, hemisphere: 0.1, ambient: 0.05 },
+    // Warm tan water, a hair thicker than the bowl's, the rig gently
+    // lowered all round: the quietest register of the reef's own palette.
+    fog: { colorScale: [1.0, 0.9, 0.72], densityGain: 0.009, backdropFade: 0.34 },
+    light: { sun: 0.15, hemisphere: 0.1, ambient: 0.06 },
   },
   moodSurface: 10,
   moodDescent: 5,
@@ -36,4 +38,15 @@ export const SANDFALL_DUNES: WingDef = {
   ceilingInside: 8,
   floorClearance: 0.7,
   seedKey: "wingSandfallDunes",
+  /**
+   * Warm cream lift: pale dunes in soft light — red and green up a touch,
+   * blue down — identity at the wedge's edges per the paint contract.
+   */
+  paint: (_x, _z, _y, blend) => {
+    if (blend < 0.02) {
+      return null;
+    }
+    const w = blend;
+    return [1 + 0.045 * w, 1 + 0.018 * w, 1 - 0.03 * w];
+  },
 };

@@ -248,7 +248,9 @@ describe("the diver is bounded", () => {
   it("keeps the fifth hiding spot on the canyon floor, facing the gate", () => {
     const spot = reef.hidingSpots.find((s) => s.speciesId === "abyss");
     expect(spot).toBeDefined();
-    expect(reef.hidingSpots).toHaveLength(5);
+    // Nine since wave 8: the frozen four, this one, and the four wing dens
+    // (`WING_DENS`) the scaffold's reef loop appends after it.
+    expect(reef.hidingSpots).toHaveLength(9);
     expect(Math.hypot(spot!.position.x, spot!.position.z)).toBeCloseTo(44, 0);
     // The head sits in the twilight, metres below dune level…
     expect(spot!.position.y).toBeLessThan(-5);

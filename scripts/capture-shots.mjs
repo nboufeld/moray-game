@@ -155,10 +155,20 @@ const SHOTS = [
 ];
 
 const SAVE_KEY = "reef-between-seas.save.v1";
-// W-M3 added the abyssal moray, so a "completed save" is five species now —
-// which is a deliberate visible change in shots E and S: the sanctuary gains
-// its fifth resident on the new low lane.
-const ALL_SPECIES = ["snowflake-moray", "ribbon-moray", "zebra-moray", "dragon-moray", "abyss"];
+// Wave 8 added four wing morays, so a "completed save" is nine species now —
+// a deliberate visible change in shots E and S: the sanctuary fills its
+// widened nine-lane fan.
+const ALL_SPECIES = [
+  "snowflake-moray",
+  "ribbon-moray",
+  "zebra-moray",
+  "dragon-moray",
+  "abyss",
+  "golden-dwarf-moray",
+  "frost-moray",
+  "ember-moray",
+  "pearl-moray",
+];
 
 function stamp() {
   const now = new Date();

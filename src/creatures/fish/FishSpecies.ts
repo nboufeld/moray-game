@@ -125,9 +125,10 @@ export const FISH_SPECIES: readonly FishSpeciesConfig[] = [
   {
     /**
      * The mid-water shoaler, and largely the animal the whole old file was:
-     * same body, same colour, same thirteen shoals from the same seed — only
-     * the population came down (120 → 91, seven fish a shoal), because four
-     * other species now share the water it used to fill alone.
+     * same colour, same thirteen shoals from the same seed, same envelope the
+     * swim shader is tuned against — the body is the wave-8 re-sculpt at the
+     * old proportions (a real snout, a modest sail, the deep fork it always
+     * wore), because every archived capture was composed against this animal.
      */
     name: "fusilier",
     color: 0xdfeef2,
@@ -137,7 +138,10 @@ export const FISH_SPECIES: readonly FishSpeciesConfig[] = [
       height: 0.75,
       length: 1.9,
       tailTaper: 0.42,
-      fork: { radius: 0.075, length: 0.16, pinch: 0.28, splay: 0.055, z: -0.3 },
+      dorsal: 1.0,
+      pectoral: 0.5,
+      tail: { reach: 1.55, lobe: 0.95, notch: 1.0 },
+      paintSeed: SEEDS.fishBodies ^ 0x0001,
     },
     sway: { frequency: 7.0, amplitude: 0.06, tailLength: 0.42 },
     scale: [0.45, 0.8],
@@ -166,11 +170,17 @@ export const FISH_SPECIES: readonly FishSpeciesConfig[] = [
     color: 0xe2efdc,
     count: 12,
     body: {
+      // Longer and leaner than its first cut: the sculpt's whole read is the
+      // silhouette, so the lance gets another half body-length and a lower
+      // sail — a needle, not a ribbon.
       width: 0.3,
       height: 0.35,
-      length: 3.4,
-      tailTaper: 0.5,
-      fork: { radius: 0.045, length: 0.1, pinch: 0.3, splay: 0.025, z: -0.5 },
+      length: 3.6,
+      tailTaper: 0.45,
+      dorsal: 0.3,
+      pectoral: 0.3,
+      tail: { reach: 1.3, lobe: 0.95, notch: 0.95 },
+      paintSeed: SEEDS.fishBodies ^ 0x0002,
     },
     sway: { frequency: 8.5, amplitude: 0.035, tailLength: 0.6 },
     scale: [0.55, 0.75],
@@ -205,11 +215,16 @@ export const FISH_SPECIES: readonly FishSpeciesConfig[] = [
     color: 0xe8b273,
     count: 16,
     body: {
-      width: 0.2,
-      height: 1.5,
+      // The disc: flattened further and pulled taller, with the sail at half
+      // again the authored height — broadside on, the fin *is* the silhouette.
+      width: 0.16,
+      height: 1.65,
       length: 1.15,
       tailTaper: 0.5,
-      fork: { radius: 0.09, length: 0.12, pinch: 0.35, splay: 0.05, z: -0.19 },
+      dorsal: 1.5,
+      pectoral: 0.6,
+      tail: { reach: 1.67, lobe: 0.75, notch: 1.05 },
+      paintSeed: SEEDS.fishBodies ^ 0x0003,
     },
     sway: { frequency: 3.6, amplitude: 0.045, tailLength: 0.3 },
     scale: [0.5, 0.72],
@@ -243,7 +258,10 @@ export const FISH_SPECIES: readonly FishSpeciesConfig[] = [
       height: 0.9,
       length: 1.25,
       tailTaper: 0.45,
-      fork: { radius: 0.06, length: 0.11, pinch: 0.3, splay: 0.04, z: -0.21 },
+      dorsal: 0.9,
+      pectoral: 0.5,
+      tail: { reach: 1.63, lobe: 0.85, notch: 1.0 },
+      paintSeed: SEEDS.fishBodies ^ 0x0004,
     },
     sway: { frequency: 11, amplitude: 0.035, tailLength: 0.32 },
     scale: [0.22, 0.34],
@@ -272,11 +290,17 @@ export const FISH_SPECIES: readonly FishSpeciesConfig[] = [
     color: 0xc08a72,
     count: 3,
     body: {
-      width: 0.55,
+      // Fuller through the shoulder and the rear (the one fish designed to be
+      // looked at from nearby): wider, taper eased, a low long sail and a
+      // paddle-shallow fork.
+      width: 0.62,
       height: 0.75,
       length: 2.5,
-      tailTaper: 0.38,
-      fork: { radius: 0.1, length: 0.2, pinch: 0.32, splay: 0.06, z: -0.42 },
+      tailTaper: 0.32,
+      dorsal: 0.7,
+      pectoral: 0.7,
+      tail: { reach: 1.6, lobe: 1.1, notch: 1.25 },
+      paintSeed: SEEDS.fishBodies ^ 0x0005,
     },
     sway: { frequency: 2.6, amplitude: 0.07, tailLength: 0.55 },
     scale: [1.25, 1.5],

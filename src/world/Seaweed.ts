@@ -45,6 +45,21 @@ import { createSunViewUniform, injectLeafGlow, trackSunView } from "./SeaGrass";
 const BUSH_COUNT = 16;
 const FROND_COUNT = 16;
 
+/**
+ * The real bush layer (Wave 8, W11): rounded, dense clumps of overlapping
+ * curved leaves on the open sand between the set pieces — the owner's "some
+ * kind of bushes". The lobed cushions above stay exactly what they were; this
+ * is a third silhouette, leafy where they are smooth, and it draws only from
+ * `SEEDS.bushes`, the stream the wave pre-registered for it, so neither the
+ * cushions nor the fronds above re-roll.
+ *
+ * One instanced mesh — a third draw call, inside the round's seaweed budget
+ * of six — and at 48 clumps of 256 triangles it is most of the package's
+ * allowance spent on the thing the player will actually see: 12,288
+ * triangles against a ceiling of 18k.
+ */
+const LEAFY_COUNT = 48;
+
 /** Scatter bounds. Inside the rim's foot, so nothing floats on the ridge. */
 const FIELD = 27;
 
@@ -55,6 +70,31 @@ const FIELD = 27;
  */
 const BUSH_TONES = [0x7d8a45, 0x8f9a52, 0x7a4f62, 0x6e4557, 0x86904e];
 const FROND_TONES = [0x74904c, 0x5f8747, 0x8a5d68];
+
+/**
+ * The leafies' deep greens (W11). Darker than everything else this module
+ * grows on purpose: a dense leafy clump is the shadow mass of the undergrowth
+ * layer, and against the meadow's bright spring key it should read as the
+ * cool, shaded thing the bright thing grows over. The warm undersides the
+ * brief asks for live in the geometry's vertex paint, not here — the instance
+ * colour stays the hue owner, per-instance spread and all.
+ */
+const LEAFY_TONES = [0x3f6b3a, 0x527a3d, 0x38592f, 0x476b46, 0x5d7a3a];
+
+/** The bush geometry's crown height, measured; the paint and sway key off it. */
+const LEAFY_CROWN = 0.53;
+
+/**
+ * The three bush sizes, as (cumulative roll edge, min scale, max scale) —
+ * about half small, a third mid, a sixth large. A stand of one age is a
+ * plantation, and the big ones are the ones a diver navigates by. Against the
+ * geometry's measured crown these land at the brief's 0.5–1.2 m.
+ */
+const LEAFY_BANDS: readonly (readonly [number, number, number])[] = [
+  [0.45, 0.95, 1.25],
+  [0.8, 1.3, 1.7],
+  [1.0, 1.75, 2.25],
+];
 
 export class Seaweed {
   readonly group = new Group();
@@ -70,6 +110,7 @@ export class Seaweed {
 
     this.group.add(this.buildBushes(random));
     this.group.add(this.buildFronds(random));
+    this.group.add(this.buildLeafy());
   }
 
   /** Plump lobed clumps: six squashed lobes welded into one worn cushion. */
@@ -157,6 +198,80 @@ export class Seaweed {
 
       color.setHex(FROND_TONES[Math.floor(random.next() * FROND_TONES.length)] ?? FROND_TONES[0]!);
       color.multiplyScalar(random.range(0.88, 1.08));
+      mesh.setColorAt(i, color);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) {
+      mesh.instanceColor.needsUpdate = true;
+    }
+    return mesh;
+  }
+
+  /**
+   * The real bushes (W11): dense clumps of curved, cupped leaves in deep
+   * greens with warm undersides, scattered on the open sand between the set
+   * pieces under exactly the law the cushions and fronds answer to — the same
+   * `scatter`, the same `isClear`. Everything is drawn from `SEEDS.bushes`,
+   * the stream the wave pre-registered for this layer: the geometry's leaves
+   * first, then the placements, so neither existing accent moves a number.
+   */
+  private buildLeafy(): InstancedMesh {
+    const random = new Random(SEEDS.bushes);
+    const geometry = leafyBushGeometry(random);
+    const material = createToonMaterial({ side: DoubleSide, vertexColors: true });
+    material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
+      shader.uniforms.uSway = this.sway;
+      shader.uniforms.uWind = this.windStrength;
+      shader.vertexShader = shader.vertexShader
+        .replace(
+          "#include <common>",
+          `#include <common>
+           uniform float uSway;
+           uniform float uWind;`,
+        )
+        .replace(
+          "#include <begin_vertex>",
+          `#include <begin_vertex>
+           // The fronds' trick at half amplitude: a dense clump rustles at
+           // its crown rather than leaning at the root.
+           float phase = instanceMatrix[3][0] * 0.53 + instanceMatrix[3][2] * 0.47;
+           float tip = clamp(transformed.y / ${LEAFY_CROWN.toFixed(2)}, 0.0, 1.0);
+           float bend = sin(uSway * 0.9 + phase) * 0.6 + sin(uSway * 0.37 + phase * 1.7) * 0.4;
+           transformed.x += bend * 0.05 * uWind * tip * tip;
+           transformed.z += bend * 0.03 * uWind * tip * tip;`,
+        );
+      // The vertex paint's green channel climbs toward the leaf tips, the
+      // same stand-in for "how far up" the fronds use.
+      injectLeafGlow(
+        shader,
+        this.sunView,
+        "vec3(0.10, 0.20, 0.15)",
+        "vec3(0.30, 0.24, 0.09)",
+        "clamp(vColor.g * 1.5, 0.0, 1.0)",
+      );
+    };
+    const mesh = new InstancedMesh(geometry, material, LEAFY_COUNT);
+    mesh.name = "seaweed-leafy";
+    mesh.castShadow = false;
+    mesh.receiveShadow = true;
+    trackSunView(mesh, this.sunView);
+    this.owned.push(geometry, material);
+
+    const dummy = new Object3D();
+    const color = new Color();
+    for (let i = 0; i < LEAFY_COUNT; i++) {
+      const spot = scatter(random);
+      dummy.position.set(spot.x, seabedHeight(spot.x, spot.z) - 0.05, spot.z);
+      dummy.rotation.set(random.signed(0.08), random.range(0, Math.PI * 2), random.signed(0.08));
+      const roll = random.next();
+      const band = LEAFY_BANDS.find(([edge]) => roll < edge) ?? LEAFY_BANDS[LEAFY_BANDS.length - 1]!;
+      const size = random.range(band[1], band[2]);
+      dummy.scale.set(size * random.range(0.9, 1.15), size * random.range(0.9, 1.1), size);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+
+      color.setHex(LEAFY_TONES[Math.floor(random.next() * LEAFY_TONES.length)] ?? LEAFY_TONES[0]!);
+      color.multiplyScalar(random.range(0.85, 1.08));
       mesh.setColorAt(i, color);
     }
     mesh.instanceMatrix.needsUpdate = true;
@@ -316,4 +431,104 @@ function strapGeometry(length: number, width: number): BufferGeometry {
   geometry.computeVertexNormals();
   geometry.setAttribute("color", new BufferAttribute(colors, 3));
   return geometry;
+}
+
+/**
+ * One bush leaf (W11): a tapered plane, bowed over its length and cupped
+ * across it. The cup rides the centre column, which is the whole reason for
+ * the second width segment — a flat leaf catches one toon band across its
+ * width, and a bush of flat leaves is the "flat plastic" complaint growing
+ * back at a smaller scale.
+ */
+function leafGeometry(length: number, width: number): BufferGeometry {
+  const segments = 4;
+  const geometry = new PlaneGeometry(width, length, 2, segments);
+  const position = geometry.attributes.position!;
+
+  const rows = segments + 1;
+  const arcY = new Float32Array(rows);
+  const arcZ = new Float32Array(rows);
+  const step = length / segments;
+  let y = 0;
+  let z = 0;
+  for (let row = 0; row < rows; row++) {
+    arcY[row] = y;
+    arcZ[row] = z;
+    // 0.9 rad by the tip: a leaf bowed toward the light, not a drooping strap.
+    const angle = 0.9 * Math.pow((row + 0.5) / segments, 1.4);
+    y += Math.cos(angle) * step;
+    z += Math.sin(angle) * step;
+  }
+
+  const half = width / 2;
+  for (let i = 0; i < position.count; i++) {
+    const t = (position.getY(i) + length / 2) / length;
+    const row = Math.round(t * segments);
+    const column = position.getX(i) / half;
+    const taper = 1 - t * 0.55;
+    const across = column * half * taper;
+    const cup = (1 - Math.abs(column)) * half * taper * 0.5;
+    position.setXYZ(i, across, arcY[row] ?? 0, (arcZ[row] ?? 0) + cup);
+  }
+  position.needsUpdate = true;
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+/**
+ * A dense rounded clump of overlapping leaves (W11): three rings — a skirt
+ * leaning out, a middle tier, a near-upright heart — so the clump reads as a
+ * mass of foliage from every angle rather than a rosette from above and a
+ * fan from the side. Sixteen leaves of sixteen triangles: 256 per clump,
+ * and the whole layer is one geometry, one mesh, one draw.
+ *
+ * The paint is the brief's "deep greens with warm undersides" written as a
+ * multiplier: dark and warm toward the root tangle at the sand, climbing to
+ * the full instance hue at the crown. The hue itself stays with the
+ * per-instance colour, the garden's rule one module over.
+ */
+function leafyBushGeometry(random: Random): BufferGeometry {
+  const leaves: BufferGeometry[] = [];
+  const rings: readonly { count: number; tilt: readonly [number, number]; length: number; width: number; rise: number }[] = [
+    { count: 7, tilt: [0.38, 0.58], length: 0.6, width: 0.17, rise: 0 },
+    { count: 5, tilt: [0.22, 0.38], length: 0.52, width: 0.15, rise: 0.04 },
+    { count: 4, tilt: [0.08, 0.2], length: 0.44, width: 0.14, rise: 0.08 },
+  ];
+  for (const ring of rings) {
+    for (let i = 0; i < ring.count; i++) {
+      const leaf = leafGeometry(
+        ring.length * random.range(0.85, 1.15),
+        ring.width * random.range(0.85, 1.2),
+      );
+      const tilt = random.range(ring.tilt[0], ring.tilt[1]);
+      const around = (i / ring.count) * Math.PI * 2 + random.signed(0.5);
+      leaf.applyMatrix4(
+        new Matrix4()
+          .makeRotationY(around)
+          .multiply(new Matrix4().makeRotationX(tilt))
+          .multiply(new Matrix4().makeTranslation(0, ring.rise, 0)),
+      );
+      leaves.push(leaf);
+    }
+  }
+
+  const merged = mergeGeometries(leaves, false);
+  for (const leaf of leaves) {
+    leaf.dispose();
+  }
+  if (!merged) {
+    throw new Error("leafy bush leaves could not be merged");
+  }
+
+  const position = merged.attributes.position!;
+  const colors = new Float32Array(position.count * 3);
+  for (let i = 0; i < position.count; i++) {
+    const t = Math.min(1, Math.max(0, position.getY(i) / LEAFY_CROWN));
+    const shade = 0.5 + t * 0.55;
+    colors[i * 3] = shade * (1 + 0.24 * (1 - t));
+    colors[i * 3 + 1] = shade;
+    colors[i * 3 + 2] = shade * (0.82 + 0.18 * t);
+  }
+  merged.setAttribute("color", new BufferAttribute(colors, 3));
+  return merged;
 }

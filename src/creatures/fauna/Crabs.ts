@@ -8,6 +8,7 @@ import {
   type BufferGeometry,
 } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { requestModel } from "../../rendering/AssetLibrary";
 import { createToonMaterial } from "../../rendering/ToonShading";
 import { Random, SEEDS } from "../../util/Random";
 import { isClear } from "../../world/CoralField";
@@ -15,6 +16,17 @@ import { seabedHeight } from "../../world/Seabed";
 import type { LifeContext } from "../life/LifeSystem";
 import { playReefEvent } from "./FaunaAudio";
 import { FaunaSystem, paintVertices } from "./FaunaSystem";
+
+/**
+ * The GLB is authored at the exact world size of the procedural body it
+ * replaces — carapace 0.143 m across, feet at y = 0 — so the swap is geometry
+ * alone and every instance matrix stays bit-identical. The constant exists for
+ * the same reason `SHRIMP_SCALE` does: it is the one place the size contract
+ * between the atelier and the reef is written down. (The shrimp's GLB is true
+ * 50 mm and needs 2.75; the crab's is already a hand-sized storybook animal
+ * and needs 1.)
+ */
+const CRAB_SCALE = 1.0;
 
 /**
  * Where each crab lives. Authored rather than scattered, for the same reason
@@ -69,7 +81,11 @@ interface CrabState {
 /**
  * The sand crabs: a handful of storybook crabs that scuttle in short sideways
  * bursts between pauses, click when they move near the diver, and dash when a
- * body arrives too fast. One instanced mesh, one draw call, no shadows.
+ * body arrives too fast. One instanced mesh wearing the sculpted GLB when it
+ * lands and the procedural stand-in until then (and forever, in the no-assets
+ * build), one draw call, no shadows — the shrimp's asset contract, one shelf
+ * down. Behaviour, placement, audio and the instance stream are unchanged;
+ * this was a re-sculpt, not a redesign.
  */
 export class Crabs extends FaunaSystem {
   private mesh: InstancedMesh | null = null;
@@ -99,10 +115,20 @@ export class Crabs extends FaunaSystem {
     this.mesh = mesh;
     this.group.add(mesh);
 
+    // The sculpted animal, when it arrives. The stand-in geometry stays owned
+    // by this system and is disposed on teardown; the GLB is the library's,
+    // shared with any future caller, and must never be disposed here — the
+    // shrimp's one-door asset contract, verbatim.
+    requestModel("models/creature-crab.glb", (geometry) => {
+      mesh.geometry = geometry;
+    });
+
     const color = new Color();
-    // Dusty shell tones in the reef's own chroma range — swatch red is a
-    // plastic toy ten metres under water.
-    const shells = [0xb56a4a, 0xc27e55, 0x9c5f52, 0xb0765e];
+    // The shell hue now lives in the geometry (the GLB's authored terracotta,
+    // and the fallback is repainted to match), so the per-instance tint
+    // becomes a near-neutral warm multiplier — a GLB bringing its own
+    // terracotta must not have terracotta multiplied over it. The two draws
+    // per crab keep their order and ranges: the stream is bit-identical.
     for (let i = 0; i < HOMES.length; i++) {
       const home = HOMES[i]!;
       const rng = new Random((this.seed ^ (i * 0x9e37_79b9)) >>> 0);
@@ -123,7 +149,8 @@ export class Crabs extends FaunaSystem {
       };
       this.crabs.push(crab);
 
-      color.setHex(shells[Math.floor(random.next() * shells.length)] ?? shells[0]!);
+      const warm = random.next();
+      color.setRGB(1, 0.94 + 0.05 * warm, 0.88 + 0.08 * warm);
       color.multiplyScalar(random.range(0.85, 1.1));
       mesh.setColorAt(i, color);
       this.pose(i, crab, 0);
@@ -249,7 +276,7 @@ export class Crabs extends FaunaSystem {
   private pose(index: number, crab: CrabState, bob: number): void {
     this.dummy.position.set(crab.x, seabedHeight(crab.x, crab.z) + 0.008 + bob, crab.z);
     this.dummy.rotation.set(0, crab.yaw, 0);
-    this.dummy.scale.setScalar(crab.scale);
+    this.dummy.scale.setScalar(crab.scale * CRAB_SCALE);
     this.dummy.updateMatrix();
     this.mesh?.setMatrixAt(index, this.dummy.matrix);
   }
@@ -267,19 +294,27 @@ function pathClear(fromX: number, fromZ: number, toX: number, toZ: number): bool
 }
 
 /**
- * A storybook crab, facing +Z: a rounded carapace, two bead eyes, two folded
+ * The stand-in crab, facing +Z: a rounded carapace, two bead eyes, two folded
  * claws, and three flattened legs a side. About 230 triangles — every part is
  * an indexed grid, so the merge cannot silently reject one the way the fish's
- * tail was once lost. Vertex colours carry the markings (dark eyes, shaded
- * legs) under a per-instance shell tint.
+ * tail was once lost.
+ *
+ * It is painted in the GLB's own palette — the linear equivalent of the old
+ * per-instance shell hexes moved into the vertex colours — because the
+ * instance tint is a near-neutral multiplier now (see `build`). Under that
+ * tint the stand-in reads the same dusty terracotta it always did, and the
+ * GLB reads its authored colour: same matrices, same palette story, either
+ * door. The markings (dark eyes, pale claws, shaded legs) keep their old
+ * relative values against the shell.
  */
 function createCrabGeometry(): BufferGeometry {
   const parts: BufferGeometry[] = [];
+  const shell = new Color(0xb06e4e);
 
   const carapace = new SphereGeometry(0.055, 8, 5);
   carapace.scale(1.3, 0.6, 1.0);
   carapace.translate(0, 0.052, 0);
-  parts.push(paintVertices(carapace, 1, 1, 1));
+  parts.push(paintVertices(carapace, shell.r, shell.g, shell.b));
 
   for (const side of [-1, 1]) {
     const eye = new SphereGeometry(0.011, 4, 3);
@@ -289,7 +324,7 @@ function createCrabGeometry(): BufferGeometry {
     const claw = new SphereGeometry(0.016, 5, 4);
     claw.scale(1.1, 0.8, 1.25);
     claw.translate(side * 0.042, 0.028, 0.056);
-    parts.push(paintVertices(claw, 1, 0.93, 0.86));
+    parts.push(paintVertices(claw, shell.r, shell.g * 0.93, shell.b * 0.86));
 
     for (let leg = 0; leg < 3; leg++) {
       const limb = new CylinderGeometry(0.0045, 0.008, 0.078, 4, 1, true);
@@ -297,7 +332,7 @@ function createCrabGeometry(): BufferGeometry {
       limb.rotateZ(side * (Math.PI / 2 - 0.55));
       limb.rotateY(side * (leg - 1) * 0.45);
       limb.translate(side * 0.062, 0.028, (leg - 1) * 0.036);
-      parts.push(paintVertices(limb, 0.78, 0.75, 0.78));
+      parts.push(paintVertices(limb, shell.r * 0.78, shell.g * 0.75, shell.b * 0.78));
     }
   }
 
@@ -308,7 +343,7 @@ function createCrabGeometry(): BufferGeometry {
   if (!merged) {
     // Cannot happen while every part above is an indexed grid; the fallback
     // keeps the reef alive rather than correct if a refactor breaks that.
-    return paintVertices(new SphereGeometry(0.055, 8, 5), 1, 1, 1);
+    return paintVertices(new SphereGeometry(0.055, 8, 5), shell.r, shell.g, shell.b);
   }
   merged.computeBoundingSphere();
   return merged;

@@ -27,15 +27,62 @@ function instancePositions(seaweed: Seaweed): Vector3[] {
 }
 
 describe("the seaweed accents", () => {
-  it("comes to two instanced draws, neither casting a shadow", () => {
+  it("comes to three instanced draws, none casting a shadow", () => {
+    // Two since W-L9, three since W11: the lobed cushions and the frond
+    // rosettes are joined by the leafy bushes, and the round's seaweed
+    // budget of six draws still has three in hand.
     const seaweed = new Seaweed();
     const meshes = seaweed.group.children.filter(
       (child): child is InstancedMesh => child instanceof InstancedMesh,
     );
-    expect(meshes).toHaveLength(2);
+    expect(meshes).toHaveLength(3);
     for (const mesh of meshes) {
       expect(mesh.castShadow).toBe(false);
     }
+    seaweed.dispose();
+  });
+
+  it("grows real bushes inside their triangle budget (W11)", () => {
+    // The bush layer's contract, in numbers: 48 clumps of curved, cupped
+    // leaves, one draw call, and a hard ceiling of 18,000 triangles.
+    const seaweed = new Seaweed();
+    const leafy = seaweed.group.children.find(
+      (child): child is InstancedMesh => child instanceof InstancedMesh && child.name === "seaweed-leafy",
+    );
+    expect(leafy).toBeDefined();
+    const position = leafy!.geometry.attributes.position!;
+    const index = leafy!.geometry.index;
+    const tris = index ? index.count / 3 : position.count / 3;
+    expect(tris * leafy!.count).toBeLessThanOrEqual(18_000);
+
+    // The sizes the brief asked for: 0.5–1.2 m, measured through the
+    // instance matrices against the geometry's own span.
+    leafy!.geometry.computeBoundingBox();
+    const box = leafy!.geometry.boundingBox!;
+    const span = box.max.y - box.min.y;
+    const matrix = new Matrix4();
+    const basisY = new Vector3();
+    let low = Infinity;
+    let high = -Infinity;
+    for (let i = 0; i < leafy!.count; i++) {
+      leafy!.getMatrixAt(i, matrix);
+      basisY.set(matrix.elements[4], matrix.elements[5], matrix.elements[6]);
+      const height = basisY.length() * span;
+      low = Math.min(low, height);
+      high = Math.max(high, height);
+    }
+    expect(low).toBeGreaterThanOrEqual(0.49);
+    expect(high).toBeLessThanOrEqual(1.21);
+    expect(high).toBeGreaterThan(1.0);
+
+    // The warm-underside paint is a multiplier, not a colour: it stays in
+    // the same near-1 band the module's other accents keep.
+    const color = leafy!.geometry.attributes.color!;
+    let paintHigh = -Infinity;
+    for (let i = 0; i < color.count; i++) {
+      paintHigh = Math.max(paintHigh, color.getX(i), color.getY(i), color.getZ(i));
+    }
+    expect(paintHigh).toBeLessThanOrEqual(1.1);
     seaweed.dispose();
   });
 

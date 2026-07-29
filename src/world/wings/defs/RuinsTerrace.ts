@@ -27,11 +27,19 @@ export const RUINS_TERRACE: WingDef = {
   },
   wedge: { floorHalf: 0.075, gateHalf: 0.115, endHalf: 0.165 },
   mood: {
-    fog: { colorScale: [0.82, 0.86, 0.62], densityGain: 0.012, backdropFade: 0.35 },
-    light: { sun: 0.3, hemisphere: 0.25, ambient: 0.12 },
+    // Gold-green water like light through old glass — bright, never dim:
+    // majesty without menace is a value story, so the sun is barely touched.
+    fog: { colorScale: [0.86, 0.88, 0.64], densityGain: 0.01, backdropFade: 0.3 },
+    light: { sun: 0.22, hemisphere: 0.22, ambient: 0.08 },
   },
   moodSurface: 8,
-  moodDescent: 5,
+  moodDescent: 4.5,
+  // The terrace floor wears the moss its monuments do: a gold-green wash
+  // over the baked sand, easing to identity at the wedge's edges.
+  paint: (_x, _z, _y, blend) => {
+    const k = blend * blend * (3 - 2 * blend);
+    return [1 + 0.05 * k, 1 + 0.035 * k, 1 - 0.1 * k];
+  },
   ceilingAtGate: 12,
   ceilingInside: 9,
   floorClearance: 0.7,

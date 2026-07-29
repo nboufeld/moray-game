@@ -121,6 +121,10 @@ export const DEFAULT_PERSONALITY: MorayPersonality = {
  *   runs 2.6× — rare, calm, prolonged. Startle means almost nothing to it:
  *   a high trigger, and a withdraw at 6× the startle tau, a slow fold back
  *   into the dark rather than a bolt.
+ *
+ * Wave 8 (W6) appended four more — **golden dwarf** the playful one,
+ * **frost** the calm one, **ember** the shy one, **pearl** the gentle one —
+ * each stated where its loudest numbers land.
  */
 const PROFILES: readonly MorayPersonality[] = [
   {
@@ -286,6 +290,168 @@ const PROFILES: readonly MorayPersonality[] = [
     },
     codexLine:
       "A hermit of the far dark — she emerges rarely, calmly, and on no clock but her own.",
+  },
+  // ─── Wave 8 (W6): the four wing residents ────────────────────────────────
+  // Same rule as the five above: biases on W-L7's measured baselines, no new
+  // machinery, and the flourish stays the dancer's alone (ripple and
+  // extendFlare are 0 here, which `tests/morayPersonality.test.ts` pins).
+  {
+    // The playful one: quick, frequent peeks and the shortest tucks in the
+    // game — a small animal that cannot stop coming out to look. Curiosity
+    // is windowed highest of any species so a calm diver earns the lean
+    // quickly; the startle is a small animal's flinch, but the recovery is
+    // nearly the ribbon's pace because the curiosity pulls it back out.
+    id: "golden-dwarf-moray",
+    presence: {
+      ...NEUTRAL_PRESENCE_STYLE,
+      boldness: { min: 0.5, max: 0.75 },
+      wariness: { min: 0.2, max: 0.4 },
+      curiosity: { min: 0.75, max: 0.95 },
+      tuckedHoldScale: 0.55,
+      peekingHoldScale: 0.5,
+      extendedHoldScale: 0.7,
+      extendChanceScale: 1.25,
+      reachScale: 1.05,
+      startleSpeedScale: 0.9,
+      startleHoldScale: 0.55,
+      startleTauScale: 0.9,
+      waryEmergeScale: 0.55,
+      emergeTauScale: 0.75,
+      retreatTauScale: 0.85,
+    },
+    motion: {
+      ...NEUTRAL_MOTION_STYLE,
+      swayAmplitude: 1.15,
+      swayTempo: 1.25,
+      scanSway: 1.2,
+      curiositySway: 0.4,
+      lookRate: 1.3,
+      lookGain: 1.1,
+      breatheTempo: 1.25,
+      attendGape: 1.1,
+      curiousGape: 1.2,
+    },
+    codexLine:
+      "A scrap of sunlight with a face — she darts out to look at you, thinks better of it, and darts out again.",
+  },
+  {
+    // The calm one: every hold stretched long and the clock closed a third
+    // toward its midpoint, so the grotto's resident lives on slow, even
+    // rounds. A startle means little (1.5× trigger) and happens slowly
+    // (2.5× tau) — a heavy body folding back, not a bolt. The gaze arrives
+    // late and stays: the slowest lookRate in the game.
+    id: "frost-moray",
+    presence: {
+      ...NEUTRAL_PRESENCE_STYLE,
+      boldness: { min: 0.4, max: 0.6 },
+      wariness: { min: 0.25, max: 0.45 },
+      curiosity: { min: 0.15, max: 0.35 },
+      tuckedHoldScale: 1.7,
+      peekingHoldScale: 1.8,
+      extendedHoldScale: 2.3,
+      clockSpread: 0.6,
+      extendChanceScale: 0.85,
+      reachScale: 0.9,
+      startleSpeedScale: 1.5,
+      startleHoldScale: 1.1,
+      startleTauScale: 2.5,
+      waryEmergeScale: 1.2,
+      emergeTauScale: 1.5,
+      retreatTauScale: 1.4,
+    },
+    motion: {
+      ...NEUTRAL_MOTION_STYLE,
+      swayAmplitude: 0.8,
+      swayTempo: 0.65,
+      scanSway: 0.8,
+      lookRate: 0.45,
+      lookGain: 0.75,
+      breatheTempo: 0.7,
+      gapeBias: 1.5,
+      attendGape: 0.6,
+      curiousGape: 0.5,
+    },
+    codexLine:
+      "Patient as the ice he keeps — he has never once hurried, and is not about to start for you.",
+  },
+  {
+    // The shy one: tucks second in length only to the hermit's, and the
+    // briefest extends of any species — the glow is earned. But curiosity
+    // sits mid-high rather than low, which is what separates it from the
+    // abyss: this animal *wants* to come out, and a calm diver at the vent
+    // mouth shortens every sulk.
+    id: "ember-moray",
+    presence: {
+      ...NEUTRAL_PRESENCE_STYLE,
+      boldness: { min: 0.08, max: 0.28 },
+      wariness: { min: 0.6, max: 0.85 },
+      curiosity: { min: 0.35, max: 0.6 },
+      tuckedHoldScale: 2.6,
+      peekingHoldScale: 1.2,
+      extendedHoldScale: 0.55,
+      extendChanceScale: 0.6,
+      reachScale: 0.8,
+      startleSpeedScale: 0.85,
+      startleHoldScale: 1.3,
+      startleTauScale: 1.1,
+      waryEmergeScale: 1.35,
+      emergeTauScale: 1.25,
+      retreatTauScale: 1.15,
+    },
+    motion: {
+      ...NEUTRAL_MOTION_STYLE,
+      swayAmplitude: 0.85,
+      swayTempo: 0.85,
+      scanSway: 0.8,
+      curiositySway: 0.2,
+      lookRate: 0.6,
+      lookGain: 0.7,
+      breatheTempo: 0.9,
+      attendGape: 0.7,
+      curiousGape: 0.6,
+    },
+    codexLine:
+      "A banked coal in the warm dark — hold still, and her glow comes out to meet you.",
+  },
+  {
+    // The gentle one: nothing pushed to an extreme — holds a third again
+    // longer across the board, a slow dreamy clock, and a curiosity window
+    // just past midpoint so she notices a quiet diver without ever mobbing
+    // them. The startle is a slow fold (1.6× tau), the ethereal version of
+    // the hermit's 6× one.
+    id: "pearl-moray",
+    presence: {
+      ...NEUTRAL_PRESENCE_STYLE,
+      boldness: { min: 0.3, max: 0.5 },
+      wariness: { min: 0.35, max: 0.55 },
+      curiosity: { min: 0.5, max: 0.75 },
+      tuckedHoldScale: 1.3,
+      peekingHoldScale: 1.3,
+      extendedHoldScale: 1.6,
+      extendChanceScale: 0.9,
+      reachScale: 0.95,
+      startleSpeedScale: 1.1,
+      startleHoldScale: 1.1,
+      startleTauScale: 1.6,
+      waryEmergeScale: 1.1,
+      emergeTauScale: 1.3,
+      retreatTauScale: 1.3,
+    },
+    motion: {
+      ...NEUTRAL_MOTION_STYLE,
+      swayAmplitude: 0.9,
+      swayTempo: 0.7,
+      scanSway: 0.9,
+      curiositySway: 0.35,
+      lookRate: 0.6,
+      lookGain: 0.85,
+      breatheTempo: 0.8,
+      gapeBias: 1.2,
+      attendGape: 0.75,
+      curiousGape: 0.8,
+    },
+    codexLine:
+      "The reef's own gentle ghost — she drifts through the pale water like a thought it is thinking.",
   },
 ];
 

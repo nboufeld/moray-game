@@ -114,3 +114,20 @@ Blender 4.5 LTS is only needed to regenerate the hero GLBs
 
 Keep the critic honest, keep the ledger current, and keep the seeds
 frozen. Good diving.
+
+---
+
+## Wave 8 addendum (2026-07-29)
+
+The owner chose scope over rest: Wave 8 shipped fifteen new wing biomes
+through the rim, four wing morays, eight mythic creatures, the great asset
+uplift (crabs, fish, corals, meadow, bushes, anemones, clownfish), and
+swim-where-you-look movement — one scaffold commit plus twelve parallel
+workers, merged and verified (unit 484/484, e2e 20/20 quiet). Read the
+Wave 8 section at the end of AGENTS.md, then `docs/WAVE8.md` (design,
+frozen geometry) and `docs/wave8-ledger/*.md` (per-worker ledgers) before
+touching anything the wave built. Showcase captures:
+`visual-qa/*WING-*_wave8*`; canonical diff base moves to
+`visual-qa/*wave8-merged*`. The open flags list at the end of AGENTS.md is
+the next polish wave's starting brief; an independent critic pass over the
+new wings has not run yet and should be the next visual step.
