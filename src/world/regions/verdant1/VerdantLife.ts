@@ -423,7 +423,7 @@ function buildSerpent(giants: readonly KelpFoot[]): {
   }
   const path = new CatmullRomCurve3(points, true, "centripetal", 0.5);
 
-  const count = 88;
+  const count = 80;
   const geometry = createFishGeometry({
     width: 0.85,
     height: 0.95,

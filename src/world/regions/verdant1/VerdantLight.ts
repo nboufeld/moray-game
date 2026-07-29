@@ -126,7 +126,7 @@ export function buildVerdantLight(): { meshes: Mesh[] } {
 /** The pool of light on the Sunwell's floor. */
 function buildSunwellPool(): Mesh {
   const { x, z } = worldOf(SUNWELL.u, SUNWELL.v);
-  const ring = new RingGeometry(0, 7.5, 28, 6);
+  const ring = new RingGeometry(0, 9, 28, 6);
   ring.rotateX(-Math.PI / 2);
   const position = ring.attributes.position!;
   const fade = new Float32Array(position.count * 3);
@@ -134,7 +134,7 @@ function buildSunwellPool(): Mesh {
     const lx = position.getX(i);
     const lz = position.getZ(i);
     position.setY(i, seabedHeight(x + lx, z + lz) + 0.08);
-    const edge = 1 - smoothstep01((Math.hypot(lx, lz) / 7.5 - 0.35) / 0.65);
+    const edge = 1 - smoothstep01((Math.hypot(lx, lz) / 9 - 0.35) / 0.65);
     fade[i * 3] = edge;
     fade[i * 3 + 1] = edge;
     fade[i * 3 + 2] = edge;
@@ -149,7 +149,7 @@ function buildSunwellPool(): Mesh {
     color: 0xdcecac,
     vertexColors: true,
     transparent: true,
-    opacity: 0.22,
+    opacity: 0.3,
     blending: AdditiveBlending,
     depthWrite: false,
     fog: false,

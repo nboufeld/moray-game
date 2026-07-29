@@ -177,7 +177,7 @@ export function buildVerdantKelp(): VerdantKelpBuild {
   const aisleAt = (u: number): number =>
     58 * smoothstep01((u - 300) / 165) + 6 * Math.sin(u * 0.05);
   let attempts = 0;
-  while (placed.length < 29 && attempts < 400) {
+  while (placed.length < 27 && attempts < 400) {
     attempts++;
     const angle = random.range(0, Math.PI * 2);
     const spread = Math.sqrt(random.next()) * 104;
@@ -207,6 +207,14 @@ export function buildVerdantKelp(): VerdantKelpBuild {
   // The tallest living thing in the province, alone on its hillock where
   // the aisle bends — the serpent circles it.
   grow(chunks.forestEast!, 430, -22, ELDER_HEIGHT, "giant", FOREST_TONES);
+
+  // ─── The outriders ───────────────────────────────────────────────────────
+  // Two lone giants standing ahead of the treeline in the meadows: from
+  // the vale's lip they are the ghosts in the fog that say the forest is
+  // coming — the reveal's middle distance, without which the horizon is
+  // one flat band of green water.
+  grow(chunks.meadow!, 334, -16, 19, "giant", FOREST_TONES);
+  grow(chunks.meadow!, 356, 28, 21, "giant", FOREST_TONES);
 
   // ─── The Sunwell ring ────────────────────────────────────────────────────
   // Eight giants on the bowl's rim, crowns biased inward so the clearing is
@@ -391,7 +399,7 @@ function growPlant(
 
   // The base foliage, spiralled a golden angle apart and crowd-topped.
   const count = Math.round(
-    giant ? leafRandom.range(16, 21) * (kind === "mid" ? 0.7 : 1) : leafRandom.range(9, 13),
+    giant ? leafRandom.range(16, 21) * (kind === "mid" ? 0.85 : 1) : leafRandom.range(9, 13),
   );
   const topBias = giant ? 0.6 : 0.72;
   for (let i = 0; i < count; i++) {

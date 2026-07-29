@@ -129,20 +129,24 @@ function bakeVerdantPaint(geometry: PlaneGeometry, contacts: readonly ContactPat
     const sward =
       smoothstep01((fbm(x * 0.016, z * 0.016, { seed: SEED ^ 0x5ade, period: 7, octaves: 3 }) - 0.46) / 0.22);
 
-    // Meadow base: sunlit gold-green, swarded hard.
-    let r = 1.02 - sward * 0.3;
-    let g = 1.0 - sward * 0.04;
-    let b = 0.78 - sward * 0.3;
+    // Meadow base: sunlit gold-green, swarded hard. The multipliers here
+    // look brutal on paper because the sand wash under them is strongly
+    // warm — "a tile and a tint cannot both carry the colour", so green
+    // ground means red is *cut*, not green raised. Round 2 measured the
+    // polite version as beige.
+    let r = 0.95 - sward * 0.4;
+    let g = 0.99 - sward * 0.08;
+    let b = 0.62 - sward * 0.14;
 
     if (u < VALE_TO) {
       // The vale: mossy green walls banded by height, and a violet-leaning
       // shadow pooled in the deep narrows.
       const deep = smoothstep01((-valeFloor(u) - 5.0) / 2.4);
       const inChannel = 1 - smoothstep01((Math.abs(v - valeChannelCenter(u)) - valeChannelHalf(u)) / 8);
-      const moss = 0.35 + sward * 0.45;
-      const vr = 0.9 - moss * 0.26 - deep * inChannel * 0.12;
-      const vg = 0.98 - moss * 0.06 - deep * inChannel * 0.2;
-      const vb = 0.82 - moss * 0.2 + deep * inChannel * 0.14;
+      const moss = 0.4 + sward * 0.5;
+      const vr = 0.85 - moss * 0.36 - deep * inChannel * 0.1;
+      const vg = 0.98 - moss * 0.1 - deep * inChannel * 0.18;
+      const vb = 0.74 - moss * 0.2 + deep * inChannel * 0.2;
       const s = 1 - smoothstep01((u - 250) / 42);
       r += (vr - r) * s;
       g += (vg - g) * s;
@@ -154,28 +158,28 @@ function bakeVerdantPaint(geometry: PlaneGeometry, contacts: readonly ContactPat
     const forest = forestWeight(u, v);
     if (forest > 0) {
       const warm = smoothstep01((litter(x, z) - 0.6) / 0.2);
-      r += (0.56 + warm * 0.34 - r) * forest;
-      g += (0.78 - warm * 0.08 - g) * forest;
-      b += (0.5 + warm * 0.04 - b) * forest;
+      r += (0.42 + warm * 0.42 - r) * forest;
+      g += (0.72 - warm * 0.1 - g) * forest;
+      b += (0.42 + warm * 0.08 - b) * forest;
       value -= forest * 0.05;
     }
 
     // The Sunwell: the palest, warmest ground in the region.
     const sun = sunwellWeight(u, v);
     if (sun > 0) {
-      r += (1.1 - r) * sun;
-      g += (1.08 - g) * sun;
-      b += (0.72 - b) * sun;
-      value += sun * 0.14;
+      r += (0.92 - r) * sun;
+      g += (1.06 - g) * sun;
+      b += (0.56 - b) * sun;
+      value += sun * 0.16;
     }
 
     // The maze: violet shadow — red above green, never a black.
     const maze = mazeWeight(u, v);
     if (maze > 0) {
       const gully = smoothstep01((-y - 19.0) / 2.6);
-      r += (0.6 - gully * 0.06 - r) * maze;
-      g += (0.52 - gully * 0.1 - g) * maze;
-      b += (0.74 + gully * 0.02 - b) * maze;
+      r += (0.52 - gully * 0.06 - r) * maze;
+      g += (0.44 - gully * 0.08 - g) * maze;
+      b += (0.68 + gully * 0.04 - b) * maze;
       value -= maze * (0.12 + gully * 0.1);
     }
 

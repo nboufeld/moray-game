@@ -43,9 +43,9 @@ const TIP_BOW = 1.0;
 const BLADE_TWIST = 0.55;
 const BLADE_CUP = 0.4;
 
-const PATCHES = 46;
-const BLADES_PER_PATCH = 32;
-const PATCH_RADIUS = 3.8;
+const PATCHES = 44;
+const BLADES_PER_PATCH = 38;
+const PATCH_RADIUS = 3.4;
 
 const FAMILIES: readonly (readonly number[])[] = [
   [0x6cc084, 0x92d788, 0x50a771],
@@ -97,7 +97,7 @@ export function buildVerdantMeadow(): VerdantMeadowBuild {
   };
   material.customProgramCacheKey = () => "verdant-meadow";
 
-  const capacity = PATCHES * BLADES_PER_PATCH + 260;
+  const capacity = PATCHES * BLADES_PER_PATCH + 520;
   const mesh = new InstancedMesh(bladeGeometry(), material, capacity);
   mesh.name = "verdant-meadow";
   mesh.castShadow = false;
@@ -143,16 +143,18 @@ export function buildVerdantMeadow(): VerdantMeadowBuild {
     }
   }
 
-  // The Sunwell's floor: its own pale family, dense at the pool of light.
-  for (let i = 0; i < 260; i++) {
+  // The Sunwell's floor: its own pale family, dense at the pool of light —
+  // the clearing is a meadow bowl, not a bare stage, and its lushness is
+  // most of what "calmest place in the region" looks like.
+  for (let i = 0; i < 520; i++) {
     const angle = random.range(0, Math.PI * 2);
-    const spread = Math.sqrt(random.next()) * 26;
+    const spread = Math.sqrt(random.next()) * 27;
     const u = SUNWELL.u + Math.cos(angle) * spread;
     const v = SUNWELL.v + Math.sin(angle) * spread;
-    if (sunwellWeight(u, v) < 0.2) {
+    if (sunwellWeight(u, v) < 0.15) {
       continue;
     }
-    plant(u, v, SUNWELL_FAMILY, 0.85);
+    plant(u, v, SUNWELL_FAMILY, 1.0);
   }
 
   // Park anything unplanted far below the world.

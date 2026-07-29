@@ -202,7 +202,7 @@ export const VERDANT_1: RegionDef = {
     // as electric emerald — the value key's "read the red channel first"
     // failure — so the green arrives by *ratio*, not by gutting red; the
     // density gain came down with it so the vistas breathe to ~70 m.
-    fog: { colorScale: [0.72, 0.92, 0.66], densityGain: 0.0045, backdropFade: 0.32 },
+    fog: { colorScale: [0.78, 0.93, 0.72], densityGain: 0.003, backdropFade: 0.3 },
     light: { sun: 0.12, hemisphere: 0.2, ambient: 0.05 },
   },
   // The mood fades out above 18 m, so climbing through the canopy into the
