@@ -106,9 +106,11 @@ export function buildSmokingDistance(): { meshes: (Mesh | InstancedMesh)[] } {
 
   // The standing smokers of the far country: instanced silhouette cards
   // in two ink bands, crossed blades so they read from every azimuth.
+  // Taller than round 4's: a 20 m card at 250 m read as a shrub — the
+  // far country's smokers are giants or they are nothing.
   for (const [band, spec] of [
-    { rFrom: 242, rTo: 256, count: 22, fade: 0.46, hMin: 16, hMax: 26 },
-    { rFrom: 262, rTo: 282, count: 16, fade: 0.68, hMin: 20, hMax: 32 },
+    { rFrom: 242, rTo: 256, count: 22, fade: 0.46, hMin: 26, hMax: 42 },
+    { rFrom: 262, rTo: 282, count: 16, fade: 0.68, hMin: 32, hMax: 50 },
   ].entries()) {
     const material = new MeshBasicMaterial({
       color: new Color(0x6a5450),
@@ -127,16 +129,18 @@ export function buildSmokingDistance(): { meshes: (Mesh | InstancedMesh)[] } {
     let guard = 0;
     while (placed < spec.count && guard++ < 400) {
       const theta = random.range(0, Math.PI * 2);
-      if (angleBetween(theta, gapAt) < GAP_HALF + 0.1) {
+      // A wide margin off the gap: a lone card on the taper's shoulder
+      // read as a palm tree on a rooftop in rounds 1–4.
+      if (angleBetween(theta, gapAt) < GAP_HALF + 0.5) {
         continue;
       }
       const r = random.range(spec.rFrom, spec.rTo);
       dummy.position.set(CENTER_X + Math.cos(theta) * r, FOOT + 2, CENTER_Z + Math.sin(theta) * r);
       dummy.rotation.set(0, random.range(0, Math.PI), random.signed(0.04));
       dummy.scale.set(
-        random.range(1.0, 1.6),
+        random.range(1.3, 2.0),
         random.range(spec.hMin, spec.hMax) / CARD_HEIGHT,
-        random.range(1.0, 1.6),
+        random.range(1.3, 2.0),
       );
       dummy.updateMatrix();
       mesh.setMatrixAt(placed, dummy.matrix);
@@ -216,9 +220,9 @@ function ridgeRing(layer: RidgeLayer, noiseSeed: number): BufferGeometry {
       column = 0;
       continue;
     }
-    // A long taper: round 2's short ramp stood at the gap's edge as a
-    // flat-topped block that read as a building.
-    const end = smoothstep01((off - GAP_HALF) / 0.34);
+    // A long taper: rounds 2–4's shorter ramps stood at the gap's edge
+    // as flat-topped blocks that read as buildings.
+    const end = smoothstep01((off - GAP_HALF) / 0.55);
     const x = CENTER_X + Math.cos(theta) * layer.radius;
     const z = CENTER_Z + Math.sin(theta) * layer.radius;
 

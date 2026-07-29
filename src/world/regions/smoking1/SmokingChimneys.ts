@@ -303,8 +303,8 @@ export function buildSmokingChimneys(): SmokingChimneysBuild {
   // The Scout: one lone smoker on the ash flats past the lip, standing
   // where the reveal's fog can just reach it — the ghost that says the
   // forest is coming (the pilot's outrider lesson: 50–65 m is where a
-  // ghost actually ghosts).
-  stands.push(seat(318, 18, 7.5));
+  // ghost actually ghosts; round 4 measured 66 m as invisible).
+  stands.push(seat(308, 14, 8));
 
   // Instanced across three archetypes.
   const archetypes = [0, 1, 2].map((variant) => smokerGeometry(variant));

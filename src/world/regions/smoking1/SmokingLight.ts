@@ -46,6 +46,10 @@ const SHAFTS: readonly Shaft[] = [
   // The caldera's fall of light: broad, dim, the haze made visible.
   { u: CALDERA.u, v: CALDERA.v, top: 24, width: 11, opacity: 0.1 },
   { u: CALDERA.u - 9, v: CALDERA.v + 7, top: 20, width: 4, opacity: 0.07 },
+  // The kiln's own breath: a warm column standing in the bowl, so the
+  // "something old and calm at its centre" breaches the haze before the
+  // kiln itself does (round 4 read the bowl as empty from its rim).
+  { u: KILN.u + 1, v: KILN.v - 1, top: -1, width: 7, opacity: 0.15 },
   // The spring stair's two glimmers, where the pools shine back.
   { u: SPRINGS.u + 4, v: SPRINGS.v + 6, top: 13, width: 2.6, opacity: 0.08 },
   { u: SPRINGS.u - 10, v: SPRINGS.v - 8, top: 11, width: 2.2, opacity: 0.07 },

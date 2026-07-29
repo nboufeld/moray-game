@@ -147,14 +147,16 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "colonnade", u: 381, v: 40, lift: 2.4, atU: COLONNADE.u + 8, atV: COLONNADE.v + 6, pitch: 0.04 },
   // The Organ Steps: the crown's rank of pipes.
   { name: "organ-steps", u: 406, v: 74, lift: 3.2, atU: ORGAN.u, atV: ORGAN.v, pitch: 0.08, settle: 4 },
-  // The Spring Terraces: looking up the stair of pale pools.
-  { name: "spring-stair", u: 389, v: -102, lift: 2.4, atU: SPRINGS.u, atV: SPRINGS.v, pitch: 0.1 },
+  // The Spring Terraces: oblique from above, so the stacked pools read
+  // as pools (round 4's ground-level look up the slope saw only risers).
+  { name: "spring-stair", u: 407, v: -98, lift: 7.5, atU: SPRINGS.u - 4, atV: SPRINGS.v + 2, pitch: -0.06 },
   // The Chimney Forest's eaves: smokers layered into the fog.
   { name: "chimney-forest", u: 484, v: -30, lift: 2.8, atU: 516, atV: -56, pitch: 0.06, settle: 5 },
   // The Twin Kings: looking up the smoke, the riders spiralling.
   { name: "twin-kings", u: 504, v: -38, lift: 1.8, atU: 512, atV: -48, pitch: 0.8, settle: 6 },
-  // The caldera's rim: the bowl of haze, the kiln, the procession.
-  { name: "caldera-rim", u: 464, v: 28, lift: 2.6, atU: KILN.u, atV: KILN.v, pitch: -0.16, settle: 6 },
+  // The caldera's rim: the bowl of haze, the kiln's breath, the
+  // procession — stepped inside the lip so the centre is within the fog.
+  { name: "caldera-rim", u: 472, v: 32, lift: 2.4, atU: KILN.u, atV: KILN.v, pitch: -0.14, settle: 6 },
   // On the caldera's floor: the Old Kiln and its Keeper. The aim rides a
   // step off the target so a settle-completed discovery plate never
   // covers the frame being judged.
@@ -197,7 +199,7 @@ export const SMOKING_1: RegionDef = {
     // red is an eighth of green, so a "warm" scale below one is a
     // rounding error. 3.2 on red is what "red above green" costs here;
     // the product (0.28, 0.23, 0.18) is the warm grey the palette keys to.
-    fog: { colorScale: [3.2, 0.52, 0.36], densityGain: 0.011, backdropFade: 0.5 },
+    fog: { colorScale: [3.2, 0.52, 0.36], densityGain: 0.009, backdropFade: 0.5 },
     light: { sun: 0.22, hemisphere: 0.3, ambient: 0.16 },
   },
   moodSurface: 20,

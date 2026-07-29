@@ -195,10 +195,12 @@ function bakeSmoulderPaint(geometry: PlaneGeometry, contacts: readonly ContactPa
       const rim = smoothstep01((frac - 0.66) / 0.14);
       const spill = smoothstep01((frac - 0.42) / 0.18) * (1 - rim);
       const heart = 1 - smoothstep01((frac - 0.4) / 0.2);
-      r += (0.8 + heart * 0.16 + rim * 0.4 + spill * 0.28 - r) * springs;
-      g += (0.76 + heart * 0.16 + rim * 0.38 + spill * 0.08 - g) * springs;
-      b += (0.68 + heart * 0.14 + rim * 0.3 - spill * 0.2 - b) * springs;
-      value += springs * (0.04 + rim * 0.24 - spill * 0.08);
+      // Round 5: three tints, not one — aqua-milk hearts, amber spill
+      // risers, white rims. The stair reads by hue steps or not at all.
+      r += (0.76 + heart * 0.1 + rim * 0.44 + spill * 0.32 - r) * springs;
+      g += (0.72 + heart * 0.26 + rim * 0.42 + spill * 0.06 - g) * springs;
+      b += (0.64 + heart * 0.3 + rim * 0.36 - spill * 0.22 - b) * springs;
+      value += springs * (0.04 + rim * 0.26 - spill * 0.08);
     }
 
     // The Chimney Forest: the darkest resting ground, warm-charcoal with
@@ -289,13 +291,14 @@ export function buildSmokingGround(contacts: readonly ContactPatch[]): Mesh[] {
   }
 
   // The gorge sheet: from the bowl sheet's x = −56 edge out to the disc
-  // tiles' near edge, overlapping by three metres and sunk 4 cm (the
-  // pilot's seam fix — abutting different grids cracks open on steep
-  // wall slopes; overlapped and sunk, the crack is backed by ground).
+  // tiles' near edge, overlapping INTO the tiles by three metres and
+  // sunk 4 cm (the pilot's seam fix). Round 4's cyan slashes were this
+  // exact arithmetic with the sign flipped — a three-metre GAP at the
+  // fog line instead of an overlap.
   const discEdgeX = CENTER_X + DISC_TILE;
-  const gorgeSize = BOWL_SHEET_EDGE - (discEdgeX + 3);
+  const gorgeSize = BOWL_SHEET_EDGE - (discEdgeX - 3);
   const gorgeGeometry = createSeabedGeometryAt(
-    (BOWL_SHEET_EDGE + discEdgeX + 3) / 2,
+    (BOWL_SHEET_EDGE + discEdgeX - 3) / 2,
     44,
     gorgeSize,
     GORGE_SEGMENTS,

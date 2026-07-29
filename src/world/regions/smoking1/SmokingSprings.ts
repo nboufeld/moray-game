@@ -84,7 +84,7 @@ export function buildSmokingSprings(): SmokingSpringsBuild {
     const glisten =
       0.75 + fbm(x * 0.11, z * 0.11, { seed: SEED ^ 0x91f7, period: 8, octaves: 2 }) * 0.5;
     const own = smoothstep01((w - 0.3) / 0.4);
-    shade.copy(WATER_TINT).multiplyScalar(0.12 * heart * glisten * own * own);
+    shade.copy(WATER_TINT).multiplyScalar(0.18 * heart * glisten * own * own);
     colors[i * 3] = shade.r;
     colors[i * 3 + 1] = shade.g;
     colors[i * 3 + 2] = shade.b;

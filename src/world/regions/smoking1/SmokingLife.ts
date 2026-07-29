@@ -206,7 +206,7 @@ function buildThermalRiders(kings: readonly ChimneyStand[]): {
   points.push(new Vector3(cx - 14, floor + 2.2, cz - 8));
   const path = new CatmullRomCurve3(points, true, "centripetal", 0.5);
 
-  const count = 64;
+  const count = 84;
   const geometry = createFishGeometry({
     width: 0.9,
     height: 1.0,
@@ -247,7 +247,9 @@ function buildThermalRiders(kings: readonly ChimneyStand[]): {
     mesh.instanceColor.needsUpdate = true;
   }
 
-  const bodySpan = 0.3;
+  // Nearly half the loop is occupied, so from the kings' feet some of
+  // the ribbon is always in frame — round 4 caught the loop's empty leg.
+  const bodySpan = 0.45;
   const dummy = new Object3D();
   const at = new Vector3();
   const ahead = new Vector3();

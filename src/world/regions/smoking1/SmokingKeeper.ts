@@ -54,7 +54,8 @@ const LEG_VERTS = LEG_RINGS.length * 2 * 2;
 
 /** One patrol of the kiln, in seconds — a calm animal. */
 const LOOP_SECONDS = 34;
-const BODY_SPAN = 0.16;
+/** Round 5: shortened and thickened — 0.16 of the loop drew an eel. */
+const BODY_SPAN = 0.13;
 
 export interface KeeperBuild {
   readonly meshes: Mesh[];
@@ -112,7 +113,7 @@ export function buildKeeper(): KeeperBuild {
   const material = createToonMaterial({
     vertexColors: true,
     emissive: 0xff8c3a,
-    emissiveIntensity: 0.4,
+    emissiveIntensity: 0.55,
   });
   applyVeinGlow(material, "smoulder-keeper");
   const mesh = new Mesh(geometry, material);
@@ -202,9 +203,9 @@ export function buildKeeper(): KeeperBuild {
         position.setXYZ(base, bx, by, bz);
         position.setXYZ(
           base + 1,
-          bx + side.x * dir * 0.3 + tangent.x * swing - lift.x * 0.2,
-          by + side.y * dir * 0.3 + tangent.y * swing - lift.y * 0.2,
-          bz + side.z * dir * 0.3 + tangent.z * swing - lift.z * 0.2,
+          bx + side.x * dir * 0.5 + tangent.x * swing - lift.x * 0.3,
+          by + side.y * dir * 0.5 + tangent.y * swing - lift.y * 0.3,
+          bz + side.z * dir * 0.5 + tangent.z * swing - lift.z * 0.3,
         );
       }
     }
@@ -242,11 +243,11 @@ function bodyRadius(along: number): number {
   const head = smoothstep01(along / 0.05) * (1 - smoothstep01((along - 0.06) / 0.1) * 0.18);
   const shoulder = 1 + 0.28 * Math.exp(-(((along - 0.24) / 0.14) ** 2));
   const taper = 1 - smoothstep01((along - 0.4) / 0.6) * 0.9;
-  return 0.17 * head * shoulder * taper + 0.012;
+  return 0.28 * head * shoulder * taper + 0.015;
 }
 
 function crestHeight(along: number): number {
-  return 0.09 * Math.sin(Math.PI * Math.min(1, along * 1.1)) ** 0.8 * (1 - along * 0.25);
+  return 0.15 * Math.sin(Math.PI * Math.min(1, along * 1.1)) ** 0.8 * (1 - along * 0.25);
 }
 
 function buildKeeperBody(): BufferGeometry {
