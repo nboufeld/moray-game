@@ -442,11 +442,13 @@ function buildSerpent(giants: readonly KelpFoot[]): {
     pectoral: 0.8,
     tail: { reach: 1.5, lobe: 0.6, notch: 1.05 },
   });
-  // Same emissive whisper as the shoals — see `buildShoal`.
+  // A stronger emissive than the shoals': the serpent is the region's
+  // moving centrepiece and reads at forty metres, where a shaded fish
+  // otherwise falls under the water's value and turns complement-warm.
   const material = createToonMaterial({
     vertexColors: true,
-    emissive: 0x24443c,
-    emissiveIntensity: 0.5,
+    emissive: 0x3a5f52,
+    emissiveIntensity: 0.7,
   });
   const mesh = new InstancedMesh(geometry, material, count);
   mesh.name = "verdant-current-serpent";
@@ -456,10 +458,13 @@ function buildSerpent(giants: readonly KelpFoot[]): {
   mesh.instanceMatrix.setUsage(DynamicDrawUsage);
 
   const tint = new Color();
-  // Green-silver, taken down a real step. Measured across three rounds:
-  // any pale tint under the 1.6 warm key overexposes into salmon, so the
-  // body colour itself must sit below the blowout and carry green.
-  const silver = new Color(0xa8cfc0);
+  // Green-silver, *bright*. Measured off the round-7 frame: the shoal's
+  // pixels were already grey-green (106, 164, 154) against cyan water at
+  // (65, 166, 167) — the salmon read was the eye supplying the complement
+  // of a darker, low-chroma shape on a saturated field, the fish
+  // community's own documented failure. The cure is value: the ribbon
+  // must sit *above* the water's value, not below it.
+  const silver = new Color(0xcdeedd);
   const offsets: { lateral: number; phase: number; scale: number }[] = [];
   for (let i = 0; i < count; i++) {
     offsets.push({
