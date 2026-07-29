@@ -62,8 +62,13 @@ export interface GoldenFallsBuild {
   update(dt: number, reducedMotion: boolean): void;
 }
 
-/** The slip-face ribbons' authored stations: lateral seat + search start. */
+/**
+ * The slip-face ribbons' authored stations: lateral seat + search start.
+ * The first sits just past the saddle lip, so the reveal opens onto a
+ * crescent already smoking — round 2's reveal opened onto bare sand.
+ */
 const RIBBON_SEATS: readonly { v: number; from: number }[] = [
+  { v: 10, from: 288 },
   { v: -12, from: 306 },
   { v: 26, from: 322 },
   { v: -46, from: 348 },
@@ -80,13 +85,15 @@ function drawFalls(random: Random): Fall[] {
   const centre = worldOf(HOURGLASS.u, HOURGLASS.v);
   for (let k = 0; k < 12; k++) {
     const phi = (k / 12) * Math.PI * 2 + random.signed(0.1);
-    const d = 45.5;
+    // Hung a step inside the lip (round 2 laid them on the wall slope,
+    // where the buried corners cut hard triangles against the terraces).
+    const d = 43.5;
     const cx = centre.x + Math.cos(phi) * d;
     const cz = centre.z + Math.sin(phi) * d;
     const topY = seabedHeight(
-      centre.x + Math.cos(phi) * (d + 3),
-      centre.z + Math.sin(phi) * (d + 3),
-    ) + random.range(0.4, 1.0);
+      centre.x + Math.cos(phi) * (d + 4),
+      centre.z + Math.sin(phi) * (d + 4),
+    ) + random.range(0.3, 0.8);
     falls.push({
       cx,
       cz,
@@ -96,7 +103,7 @@ function drawFalls(random: Random): Fall[] {
       height: random.range(13, 16.5),
       width: random.range(6.5, 9.5),
       streaks: 10,
-      alpha: 0.72,
+      alpha: 0.55,
     });
   }
 
@@ -187,14 +194,16 @@ function buildCurtains(falls: readonly Fall[]): Mesh {
       const u = position.getX(i) / fall.width + 0.5;
       const v = position.getY(i) / fall.height + 0.5;
       const bell = Math.pow(Math.max(0, Math.cos((u - 0.5) * Math.PI)), 1.3);
-      const envelope = smoothstep01((v - 0.02) / 0.16) * (1 - smoothstep01((v - 0.86) / 0.14));
+      // The lower fade starts earlier than the wing's, so the veil is
+      // gone before its plane can meet a terrace and cut an edge.
+      const envelope = smoothstep01((v - 0.02) / 0.16) * (1 - smoothstep01((v - 0.7) / 0.26));
       const streak =
-        0.6 +
-        0.7 * fbm(u * 2.5, index * 7.3, { seed: SEED ^ 0x5a1f, period: 3, octaves: 2 });
+        0.35 +
+        1.0 * fbm(u * 2.5, index * 7.3, { seed: SEED ^ 0x5a1f, period: 3, octaves: 2 });
       const alpha = Math.min(fall.alpha, bell * envelope * streak * fall.alpha);
       // Brighter than the wing's: these veils must separate from sand
       // walls of nearly their own colour at ten times the distance.
-      const lift = 0.95 + 0.4 * v;
+      const lift = 0.9 + 0.3 * v;
       colors[i * 4] = FALL_CREAM.r * lift;
       colors[i * 4 + 1] = FALL_CREAM.g * lift;
       colors[i * 4 + 2] = FALL_CREAM.b * lift;

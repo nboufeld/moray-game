@@ -302,6 +302,20 @@ function buildGoldSeagrass(sway: { value: number }, wind: { value: number }): In
     }
   }
 
+  // The saddle's own tufts: small dry-gold clumps along the corridor's
+  // shoulders, so the 200 m approach is a place and not a hallway.
+  for (let i = 0; i < 10; i++) {
+    const u = 96 + i * 19 + random.signed(5);
+    const side = i % 2 === 0 ? 1 : -1;
+    const v = side * random.range(5, 10);
+    const family = GRASS_FAMILIES[Math.floor(paletteRandom.next() * GRASS_FAMILIES.length)]!;
+    for (let blade = 0; blade < 10; blade++) {
+      const s = 1.8 * Math.sqrt(random.next());
+      const a = random.range(0, Math.PI * 2);
+      plant(u + Math.cos(a) * s, v + Math.sin(a) * s, family, 0.7);
+    }
+  }
+
   // The tufts: thin trails through the dune troughs and along the flats'
   // edge — the green creeping out to meet the wanderer.
   for (let patch = 20; patch < patches; patch++) {

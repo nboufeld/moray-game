@@ -4,16 +4,12 @@ import {
   Color,
   DoubleSide,
   FogExp2,
-  InstancedMesh,
-  Matrix4,
   Mesh,
   MeshBasicMaterial,
-  Object3D,
   type Scene,
 } from "three";
-import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { fbm } from "../../../rendering/ProceduralTexture";
-import { Random, SEEDS } from "../../../util/Random";
+import { SEEDS } from "../../../util/Random";
 import { smoothstep01 } from "./GoldenShared";
 import { CENTER_X, CENTER_Z, GOLDEN_SLOT } from "./GoldenTerrain";
 
@@ -21,11 +17,12 @@ import { CENTER_X, CENTER_Z, GOLDEN_SLOT } from "./GoldenTerrain";
  * The Hourglass Sea's painted distance: the `DistantReef` idiom
  * re-authored as stacked dune lines — gold near, violet far. Where the
  * pilots' silhouettes were forests and volcano fields, these are dune
- * seas: each ring's top edge is a slow swell of crescent-backed ridges
- * (only horizontals — every in-ring vertical the pilots tried rendered
- * as a mountain), and the verticals are their own sparse instanced
- * cards: far greater monoliths of the deeper waste, bare tapering
- * standing stones — the one silhouette that is honest for a monolith.
+ * seas: each ring's top edge is a slow swell of crescent-backed ridges,
+ * and there are NO verticals at all — every vertical card the pilots or
+ * the early rounds tried either read as a mountain or poked over the
+ * Hourglass's rim like a chimney on a roof (rounds 1–2 here). The dune
+ * lines are the horizon; the standing-stone motif lives only in the
+ * near monoliths.
  *
  * The inks re-derive from `scene.fog` per frame (one hex compare), and
  * each layer carries its own ink so the stack runs gold → violet with
@@ -57,11 +54,9 @@ const FOOT = -12;
 /** Half-angle of the gap the rings leave over the saddle's approach. */
 const GAP_HALF = 0.42;
 
-export function buildGoldenDistance(): { meshes: (Mesh | InstancedMesh)[] } {
-  const random = new Random(SEEDS.regionGolden1 ^ 0xd15b);
-  const meshes: (Mesh | InstancedMesh)[] = [];
+export function buildGoldenDistance(): { meshes: Mesh[] } {
+  const meshes: Mesh[] = [];
   const materials: MeshBasicMaterial[] = [];
-  const cardMaterials: { material: MeshBasicMaterial; fade: number; ink: Color }[] = [];
   let lastFog = -1;
 
   const followFog = (scene: Scene): void => {
@@ -77,9 +72,6 @@ export function buildGoldenDistance(): { meshes: (Mesh | InstancedMesh)[] } {
     for (const [index, layer] of LAYERS.entries()) {
       const ink = fog.color.clone().multiply(layer.ink);
       materials[index]?.color.copy(ink).lerp(fog.color, layer.fade);
-    }
-    for (const { material, fade, ink } of cardMaterials) {
-      material.color.copy(fog.color.clone().multiply(ink)).lerp(fog.color, fade);
     }
   };
 
@@ -102,95 +94,14 @@ export function buildGoldenDistance(): { meshes: (Mesh | InstancedMesh)[] } {
     materials.push(material);
   }
 
-  // The far monoliths: sparse instanced silhouette cards in two ink
-  // bands, crossed blades so they read from every azimuth. Standing
-  // stones are the one shape whose honest silhouette IS a bare vertical
-  // taper — the pilots' card lessons applied from the start.
-  // Shrunk in round 2: the round-1 giants (up to 30 m) poked over the
-  // Hourglass's rim from the lip pose — chimneys on a roof. At these
-  // heights the cards stay within the dune lines' own band.
-  for (const [band, spec] of [
-    { rFrom: 244, rTo: 256, count: 5, fade: 0.44, hMin: 10, hMax: 15, ink: new Color(0.7, 0.56, 0.64) },
-    { rFrom: 262, rTo: 282, count: 4, fade: 0.62, hMin: 13, hMax: 19, ink: new Color(0.64, 0.5, 0.68) },
-  ].entries()) {
-    const material = new MeshBasicMaterial({
-      color: new Color(0x74605c),
-      fog: false,
-      side: DoubleSide,
-      toneMapped: true,
-    });
-    cardMaterials.push({ material, fade: spec.fade, ink: spec.ink });
-    const mesh = new InstancedMesh(monolithCardGeometry(), material, spec.count);
-    mesh.name = `hourglass-distance-monoliths-${band}`;
-    mesh.castShadow = false;
-    mesh.receiveShadow = false;
-    const dummy = new Object3D();
-    const gapAt = GOLDEN_SLOT.azimuth + Math.PI;
-    let placed = 0;
-    let guard = 0;
-    while (placed < spec.count && guard++ < 400) {
-      const theta = random.range(0, Math.PI * 2);
-      // A wide margin off the gap: a lone card on the taper's shoulder
-      // reads as a rooftop ornament (the pilots' lesson).
-      if (angleBetween(theta, gapAt) < GAP_HALF + 0.5) {
-        continue;
-      }
-      const r = random.range(spec.rFrom, spec.rTo);
-      dummy.position.set(CENTER_X + Math.cos(theta) * r, FOOT + 2, CENTER_Z + Math.sin(theta) * r);
-      dummy.rotation.set(0, random.range(0, Math.PI), random.signed(0.05));
-      dummy.scale.set(
-        random.range(1.2, 1.9),
-        random.range(spec.hMin, spec.hMax) / CARD_HEIGHT,
-        random.range(1.2, 1.9),
-      );
-      dummy.updateMatrix();
-      mesh.setMatrixAt(placed, dummy.matrix);
-      placed++;
-    }
-    mesh.count = placed;
-    mesh.instanceMatrix.needsUpdate = true;
-    mesh.computeBoundingSphere();
-    meshes.push(mesh);
-  }
+  // No vertical cards. Round 1's far monoliths poked over the
+  // Hourglass's rim like chimneys on a roof; round 2's shorter ones
+  // still did. A chasm's up-shots see every horizon, so this region's
+  // painted distance carries NO verticals at all — the dune lines are
+  // the horizon, and the standing-stone motif lives only in the near
+  // monoliths the diver can reach.
 
   return { meshes };
-}
-
-/** The card's authored height; instances scale it to their drawn height. */
-const CARD_HEIGHT = 20;
-
-/**
- * One far monolith: two crossed silhouette blades — a broad foot, one
- * leaning waist, a narrow crown. Measured off the near monoliths'
- * proportions (foot ~2.7:1 height, slight lean) then simplified.
- */
-let monolithCard: BufferGeometry | undefined;
-function monolithCardGeometry(): BufferGeometry {
-  if (monolithCard) {
-    return monolithCard;
-  }
-  const blade = (spin: number): BufferGeometry => {
-    const h = CARD_HEIGHT;
-    const positions = new Float32Array([
-      -2.6, 0, 0, 2.6, 0, 0, 1.9, h * 0.3, 0,
-      -2.6, 0, 0, 1.9, h * 0.3, 0, -1.7, h * 0.32, 0,
-      -1.7, h * 0.32, 0, 1.9, h * 0.3, 0, 1.35, h * 0.7, 0,
-      -1.7, h * 0.32, 0, 1.35, h * 0.7, 0, -1.05, h * 0.72, 0,
-      -1.05, h * 0.72, 0, 1.35, h * 0.7, 0, 0.8, h * 1.0, 0,
-      -1.05, h * 0.72, 0, 0.8, h * 1.0, 0, 0.05, h * 0.97, 0,
-    ]);
-    const geometry = new BufferGeometry();
-    geometry.setAttribute("position", new BufferAttribute(positions, 3));
-    geometry.applyMatrix4(new Matrix4().makeRotationY(spin));
-    return geometry;
-  };
-  const merged = mergeGeometries([blade(0), blade(Math.PI / 2)], false);
-  if (!merged) {
-    throw new Error("hourglass distance card blades could not be merged");
-  }
-  merged.computeBoundingSphere();
-  monolithCard = merged;
-  return monolithCard;
 }
 
 /**
@@ -219,15 +130,15 @@ function duneRing(layer: DuneLayer, noiseSeed: number): BufferGeometry {
     const z = CENTER_Z + Math.sin(theta) * layer.radius;
 
     const t = i / SEGMENTS;
-    // A dune skyline: a slow rolling swell whose crests are gently
-    // sharpened (1 − |…|^1.5 turns a sine's round top into a dune back)
-    // over a long drifting base.
-    const roll = fbm(t * 6, layer.radius * 0.013, { seed: noiseSeed, period: 6, octaves: 2 }) - 0.5;
+    // A dune skyline: a rolling swell whose crests are gently sharpened
+    // over a long drifting base. The roll's weight went up in round 3 —
+    // flat stretches of ridge read as mesas against the backdrop.
+    const roll = fbm(t * 6, layer.radius * 0.013, { seed: noiseSeed, period: 6, octaves: 3 }) - 0.5;
     const crest = Math.pow(
       Math.abs(Math.sin(t * Math.PI * 14 + roll * 6)),
       1.5,
     );
-    const ridge = layer.ridgeBase + (roll * 1.1 + crest * 0.9) * layer.ridgeVary;
+    const ridge = layer.ridgeBase + (roll * 1.9 + crest * 0.9) * layer.ridgeVary;
 
     positions.push(x, FOOT, z, x, FOOT + Math.max(1.4, ridge - FOOT) * end + 0.2, z);
     if (column > 0) {

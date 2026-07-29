@@ -62,9 +62,14 @@ const SADDLE_SEGMENTS = 80;
 /** Where the bowl's own sheet ends and the saddle sheet must begin. */
 const BOWL_SHEET_EDGE = 56;
 
-/** The painted low sun's direction on the flats, in spoke coordinates. */
-const SHADOW_DIR_U = 0.42;
-const SHADOW_DIR_V = 0.91;
+/**
+ * The painted low sun's direction on the flats, in spoke coordinates.
+ * Chosen lateral to the flats poses' sightlines (round 2 threw shadows
+ * directly away from the camera, and each read as a disconnected
+ * stain): the streaks now sweep across the frame from their stones.
+ */
+const SHADOW_DIR_U = -0.6;
+const SHADOW_DIR_V = 0.8;
 
 function keepGround(x: number, z: number): boolean {
   const rc = Math.hypot(x - CENTER_X, z - CENTER_Z);
@@ -151,10 +156,10 @@ function bakeGoldenPaint(geometry: PlaneGeometry, contacts: readonly ContactPatc
       shoreWeight(u),
     );
     const slip = rank.slip * (1 - calm) * (u > 250 ? 1 : 0.4);
-    r += (0.52 - r) * slip;
-    g += (0.4 - g) * slip;
-    b += (0.9 - b) * slip;
-    value -= slip * 0.2;
+    r += (0.44 - r) * slip;
+    g += (0.34 - g) * slip;
+    b += (0.95 - b) * slip;
+    value -= slip * 0.24;
     // And the windward crests catch the sun.
     const crest = rank.rise * (1 - rank.slip) * (1 - calm);
     value += crest * 0.14;
@@ -174,14 +179,21 @@ function bakeGoldenPaint(geometry: PlaneGeometry, contacts: readonly ContactPatc
         warm *
         (0.4 + 0.6 * inChannel);
       const wallT = smoothstep01((y - saddleFloor(u)) / 7);
-      const honeyR = 0.86 + stain * 0.24 + wallT * 0.16;
-      const honeyG = 0.74 + stain * 0.14 + wallT * 0.15;
-      const honeyB = 0.5 - stain * 0.1 + wallT * 0.1;
+      // The crescent dunelings' lee shadow: the same wave the terrain
+      // draws, read back as violet where the little faces fall away —
+      // round 2's corridor floor was a monotone.
+      const lee =
+        Math.max(0, -Math.cos(u * 0.21 + Math.sin(v * 0.18) * 1.3)) *
+        smoothstep01((u - 110) / 60) *
+        (1 - wallT);
+      const honeyR = 0.86 + stain * 0.24 + wallT * 0.16 - lee * 0.3;
+      const honeyG = 0.74 + stain * 0.14 + wallT * 0.15 - lee * 0.3;
+      const honeyB = 0.5 - stain * 0.1 + wallT * 0.1 + lee * 0.28;
       const s = 1 - smoothstep01((u - 250) / 42);
       r += (honeyR - r) * s;
       g += (honeyG - g) * s;
       b += (honeyB - b) * s;
-      value += (stain * 0.08 + wallT * 0.05) * s;
+      value += (stain * 0.08 + wallT * 0.05 - lee * 0.1) * s;
     }
 
     // The Glass Reach: sea-glass pale, grooves a step deeper and greener,
@@ -252,8 +264,8 @@ function bakeGoldenPaint(geometry: PlaneGeometry, contacts: readonly ContactPatc
       if (inBowl > 0) {
         const raw = HOURGLASS_FLOOR * smoothstep01((46 - d) / 32);
         const frac = raw / TERRACE_STEP - Math.floor(raw / TERRACE_STEP);
-        const rim = smoothstep01((frac - 0.68) / 0.14);
-        const riser = smoothstep01((frac - 0.4) / 0.2) * (1 - rim);
+        const rim = smoothstep01((frac - 0.6) / 0.16);
+        const riser = smoothstep01((frac - 0.36) / 0.2) * (1 - rim);
         const depthT = smoothstep01(-y / 26);
         const theta = Math.atan2(v - HOURGLASS.v, u - HOURGLASS.u);
         const run = smoothstep01(

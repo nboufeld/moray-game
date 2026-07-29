@@ -25,7 +25,7 @@ import { createToonMaterial } from "../../../rendering/ToonShading";
 import { Random, SEEDS } from "../../../util/Random";
 import { seabedHeight } from "../../Seabed";
 import { smoothstep01 } from "./GoldenShared";
-import { FLATS, HOURGLASS, RANK_WAVELENGTH, worldOf } from "./GoldenTerrain";
+import { FLATS, RANK_WAVELENGTH, worldOf } from "./GoldenTerrain";
 
 /**
  * The Hourglass Sea's ambient life:
@@ -435,8 +435,8 @@ function buildGardenEels(): {
   const material = createToonMaterial({
     vertexColors: true,
     side: DoubleSide,
-    emissive: 0x8a6a40,
-    emissiveIntensity: 0.35,
+    emissive: 0xb99a5e,
+    emissiveIntensity: 0.6,
   });
   const mesh = new InstancedMesh(eelGeometry(), material, eels.length);
   mesh.name = "hourglass-garden-eels";
@@ -523,29 +523,29 @@ function buildRayCaravan(): {
 } {
   const random = new Random(SEED ^ 0x4a71);
 
-  // The line: a long closed tour — up the flats past the monolith row,
-  // around the Hourglass's lip, out over the dune ranks and home.
+  // The line: one wobbled circuit of the Singing Flats, through the
+  // monolith row and past the eel colonies. Round 2's grand tour (out
+  // past the Hourglass and the dune ranks) was never in any frame — a
+  // caravan that is always somewhere else is not a centrepiece. This
+  // loop keeps the whole file within the flats, so both flats poses and
+  // any wanderer there will meet it.
   const station = (u: number, v: number, lift: number): Vector3 => {
     const { x, z } = worldOf(u, v);
     return new Vector3(x, seabedHeight(x, z) + lift, z);
   };
   const points: Vector3[] = [
-    station(560, 96, 4.5),
-    station(532, 108, 5),
-    station(505, 92, 4.5),
-    station(486, 66, 5.5),
-    station(HOURGLASS.u + 6, HOURGLASS.v + 54, 6), // skirting the chasm's lip
-    station(HOURGLASS.u - 34, HOURGLASS.v + 22, 7),
-    station(390, 26, 6),
-    station(356, -6, 5),
-    station(392, -34, 5.5),
-    station(452, -20, 6),
-    station(506, 10, 5),
-    station(544, 48, 4.5),
+    station(FLATS.u + 40, FLATS.v + 4, 4.5),
+    station(FLATS.u + 30, FLATS.v + 34, 5.5),
+    station(FLATS.u + 2, FLATS.v + 42, 4.5),
+    station(FLATS.u - 26, FLATS.v + 30, 5),
+    station(FLATS.u - 38, FLATS.v + 2, 6),
+    station(FLATS.u - 26, FLATS.v - 26, 5),
+    station(FLATS.u + 4, FLATS.v - 36, 4.5),
+    station(FLATS.u + 30, FLATS.v - 24, 5.5),
   ];
   const path = new CatmullRomCurve3(points, true, "centripetal", 0.5);
 
-  const count = 5;
+  const count = 7;
   const sway = { value: 0 };
   const material = createToonMaterial({
     vertexColors: true,
@@ -589,18 +589,17 @@ function buildRayCaravan(): {
     mesh.instanceColor.needsUpdate = true;
   }
 
-  // Single file: the caravan occupies a short arc of the long loop.
-  const fileSpan = 0.085;
+  // Single file: the procession spreads over a third of the loop, so
+  // from anywhere on the flats some of it is inside the fog.
+  const fileSpan = 0.32;
   const dummy = new Object3D();
   const at = new Vector3();
   const ahead = new Vector3();
 
   const update = (_dt: number, time: number, calm: number): void => {
     sway.value = time * calm;
-    // Slowed to a stately ~1 m/s in round 2 (the round-1 caravan crossed
-    // its framed leg before any capture could settle); the head start
-    // puts the file on that leg through the whole settle window.
-    const head = (0.05 + time * calm * 0.002) % 1;
+    // Stately ~1 m/s around the ~250 m circuit.
+    const head = (0.05 + time * calm * 0.004) % 1;
     for (let i = 0; i < count; i++) {
       const s = (((head - (i / count) * fileSpan) % 1) + 1) % 1;
       path.getPointAt(s, at);

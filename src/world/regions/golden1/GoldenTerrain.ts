@@ -274,7 +274,10 @@ export function duneRank(u: number, v: number): { rise: number; slip: number } {
       smoothstep01(
         (fbm(u * 0.006, v * 0.013, { seed: SEED ^ 0xdca1, period: 5, octaves: 2 }) - 0.36) / 0.3,
       );
-  const slip = smoothstep01((s - 0.7) / 0.3) * crescent;
+  // The slip term reaches 1 quickly past the crest (round 2's gentler
+  // ramp painted the lee a timid mauve), and only half-follows the
+  // crescent gaps so even low saddles keep their shadow.
+  const slip = smoothstep01((s - 0.68) / 0.24) * (0.5 + 0.5 * crescent);
   return { rise: rise * fall * crescent, slip };
 }
 

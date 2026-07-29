@@ -142,12 +142,15 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // The first crescents and the second vale fall — the wing's idiom
   // continuing into open country.
   { name: "first-crescent", u: 146, v: 0, lift: 2.2, atU: 172, atV: 6, pitch: 0.02, settle: 4 },
-  // The reveal: standing at the lip, the Dune Ocean opening below.
-  { name: "saddle-reveal", u: 252, v: 0, lift: 2.6, atU: 330, atV: 16, pitch: -0.08 },
+  // The reveal: standing at the lip, the Dune Ocean opening below —
+  // the first ribboned crescent smoking thirty metres out.
+  { name: "saddle-reveal", u: 252, v: 0, lift: 2.6, atU: 300, atV: 10, pitch: -0.12 },
   // The Dune Ocean: ranked crescents layering gold into the fog.
   { name: "dune-ocean", u: 306, v: -8, lift: 2.8, atU: 352, atV: 18, pitch: 0.0, settle: 4 },
-  // The slip-face: the shoal surfing the dune's steep lee.
-  { name: "slip-face", u: 332, v: 2, lift: 2.6, atU: 344, atV: 16, pitch: 0.06, settle: 6 },
+  // The slip-face: the shoal surfing the dune's steep lee. The stand
+  // point is corrected at build time to the scanned crest (round 2's
+  // authored guess stood buried in the dune's own windward slope).
+  { name: "slip-face", u: 330, v: 30, lift: 3.0, atU: 344, atV: 12, pitch: 0.02, settle: 6 },
   // The Glass Reach: pale fins and the Fused Arch.
   { name: "glass-reach", u: 378, v: -56, lift: 2.6, atU: GLASS.u + 4, atV: GLASS.v - 2, pitch: 0.03 },
   // The Hourglass from its lip: composing DOWN into the chasm — the
@@ -163,24 +166,42 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "oasis", u: 502, v: -50, lift: 2.4, atU: OASIS_A.u, atV: OASIS_A.v, pitch: 0.02, settle: 5 },
   // The Singing Flats: monoliths, long violet shadows, garden eels.
   { name: "singing-flats", u: 512, v: 62, lift: 2.6, atU: 540, atV: 92, pitch: 0.02, settle: 5 },
-  // The caravan's crossing: framed on the leg the rays reach in the
-  // capture's own settle window.
-  { name: "ray-crossing", u: 520, v: 70, lift: 3.2, atU: 515, atV: 96, pitch: 0.1, settle: 6 },
+  // The caravan's crossing: the file circles the flats, so from here
+  // some of it is always inside the fog.
+  { name: "ray-crossing", u: 496, v: 60, lift: 3.4, atU: 528, atV: 84, pitch: 0.1, settle: 6 },
   // The Gilded Shore: the shelf, the stacks, the painted distance.
   { name: "gilded-shore", u: 585, v: 30, lift: 3, atU: 645, atV: 20, pitch: 0.02 },
 ];
 
 function buildPoses(): RegionCapturePose[] {
+  // The slip-face pose rides the same crest scan the shoal and the
+  // ribbons use, so all three always agree which dune is the subject.
+  const laneV = 14;
+  let crestU = 330;
+  let crestY = -Infinity;
+  for (let u = 330; u <= 330 + 46; u += 0.5) {
+    const spot = worldOf(u, laneV);
+    const y = goldenTerrainTarget(spot.x, spot.z);
+    if (y > crestY) {
+      crestY = y;
+      crestU = u;
+    }
+  }
+
   return POSE_SPECS.map((spec) => {
-    const { x, z } = worldOf(spec.u, spec.v);
-    const y = goldenTerrainTarget(x, z) + spec.lift;
-    const at = worldOf(spec.atU, spec.atV);
+    const resolved =
+      spec.name === "slip-face"
+        ? { ...spec, u: crestU - 13, v: laneV + 16, atU: crestU + 5, atV: laneV - 2 }
+        : spec;
+    const { x, z } = worldOf(resolved.u, resolved.v);
+    const y = goldenTerrainTarget(x, z) + resolved.lift;
+    const at = worldOf(resolved.atU, resolved.atV);
     return {
-      name: spec.name,
+      name: resolved.name,
       position: [x, y, z] as const,
       yaw: yawToward(x, z, at.x, at.z),
-      pitch: spec.pitch,
-      settle: spec.settle ?? 2.5,
+      pitch: resolved.pitch,
+      settle: resolved.settle ?? 2.5,
     };
   });
 }
