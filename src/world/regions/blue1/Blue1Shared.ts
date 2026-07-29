@@ -25,10 +25,13 @@ export function smoothstep01(t: number): number {
   return k * k * (3 - 2 * k);
 }
 
-/** The steppe grass families: blue-green, spring to seafoam. */
-export const STEPPE_TONES = [0x59a68e, 0x6cb8a0, 0x4b9382] as const;
+/** The steppe grass families: blue-green, spring to seafoam. Brightened in
+ * round 2 — at seventeen metres down the mood takes enough light that the
+ * round-1 tones rendered as navy sticks, the value inversion the pilot's
+ * serpent already paid for: the grass must sit above the sand's value. */
+export const STEPPE_TONES = [0x6cc4a8, 0x82d6b8, 0x58b096] as const;
 /** Pale wind-silver the bending tips lean toward. */
-export const TIP_SILVER = new Color(0xbcd8c8);
+export const TIP_SILVER = new Color(0xd2ecdd);
 /** The megaliths' stone: cool blue-grey, pale where the light lands. */
 export const STONE_BLUE = 0x5e6f88;
 export const STONE_PALE = 0x8593a8;

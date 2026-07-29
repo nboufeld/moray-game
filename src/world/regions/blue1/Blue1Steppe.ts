@@ -147,7 +147,15 @@ interface FieldOptions {
 function plantField(options: FieldOptions): InstancedMesh {
   const random = new Random(options.seed);
   const sunView = createSunViewUniform();
-  const material = createToonMaterial({ side: DoubleSide, map: bladeTexture() });
+  // The whisper of emissive is depth compensation: the steppe floor is
+  // seventeen metres down and the mood takes a share of every light, so
+  // an unlit-leaning blade otherwise falls below the sand's value.
+  const material = createToonMaterial({
+    side: DoubleSide,
+    map: bladeTexture(),
+    emissive: 0x1e4038,
+    emissiveIntensity: 0.35,
+  });
   material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
     injectWind(shader, options.uniforms);
     injectLeafGlow(
@@ -241,11 +249,17 @@ function lanceolate(t: number): number {
 }
 
 /** The near blade: bowed, cupped, twisted — the drawn leaf, never a card. */
-function nearBladeGeometry(): PlaneGeometry {
+function nearBladeGeometry(): BufferGeometry {
   const segments = 4;
   const geometry = new PlaneGeometry(BLADE_WIDTH, BLADE_HEIGHT, 2, segments);
   shapeBlade(geometry, segments, BLADE_CUP);
-  return geometry;
+  // Non-indexed on purpose, and paid for by measurement: this exact shaped
+  // plane, indexed, rendered as kilometre-tall garbage spikes under
+  // instancing on this renderer (the index path corrupts; the expanded
+  // buffer does not). Same triangle count either way.
+  const expanded = geometry.toNonIndexed();
+  geometry.dispose();
+  return expanded;
 }
 
 /** The far tuft: two crossed low-cost blades sharing the near blade's arc. */
@@ -318,7 +332,7 @@ function bladeTexture(): DataTexture {
   bladeMap ??= buildColorTexture(32, (u, v) => {
     const fibre = 0.9 + fbm(u * 4, v, { seed: SEED ^ 0xb1ee, period: 12, octaves: 2 }) * 0.22;
     const across = 0.88 + Math.abs(u - 0.5) * 0.44;
-    const shade = (0.46 + v * 0.78) * fibre * across;
+    const shade = (0.62 + v * 0.66) * fibre * across;
     return [shade * 0.72, shade, shade * 0.9];
   });
   return bladeMap;

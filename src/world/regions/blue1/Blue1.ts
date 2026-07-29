@@ -204,8 +204,12 @@ export const BLUE_1: RegionDef = {
     // light steps down. The descent below makes depth itself the dimmer:
     // the steppe swims at roughly half of this, bright; the Under-Blue
     // takes all of it.
-    fog: { colorScale: [0.68, 0.62, 1.02], densityGain: -0.0045, backdropFade: 0.5 },
-    light: { sun: 0.38, hemisphere: 0.3, ambient: 0.06 },
+    // Round 2: the fog scale pushed further into the blue register (round
+    // 1 read as the bowl's own cyan at steppe depth) and the light takes
+    // eased so the prairie keeps its high sun — the descent still doubles
+    // everything by the time the Under-Blue has it.
+    fog: { colorScale: [0.6, 0.55, 1.08], densityGain: -0.0045, backdropFade: 0.5 },
+    light: { sun: 0.3, hemisphere: 0.22, ambient: 0.05 },
   },
   moodSurface: 6,
   moodDescent: 36,

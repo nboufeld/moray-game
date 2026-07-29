@@ -145,7 +145,7 @@ function slopeHeight(x: number, z: number, u: number, v: number): number {
   const away = Math.abs(v - slopeChannelCenter(u));
   // Soft dune shoulders, not walls: the glide is bounded by swells the eye
   // reads as prairie beginning, and the colliders do the actual sealing.
-  const shoulder = 3.6 * smoothstep01((away - slopeChannelHalf(u)) / 12);
+  const shoulder = 4.5 * smoothstep01((away - slopeChannelHalf(u)) / 12);
   const detail =
     (fbm(x * 0.017, z * 0.017, { seed: SEED ^ 0x51de, period: 7, octaves: 2 }) - 0.5) * 1.1;
   // Beyond the tongue's own width the authored slope returns to dune level:
@@ -189,7 +189,7 @@ export function steppeSwell(x: number, z: number, u: number): number {
   // Crests lie across the line of travel (keyed on u), wavelength ~42 m,
   // wobbled by a slow field so they read as dunes and never as corduroy.
   const wobble = fbm(x * 0.006, z * 0.006, { seed: SEED ^ 0x4012, period: 4, octaves: 2 }) * 5;
-  const ridge = 1.5 * Math.sin(u * 0.149 + wobble);
+  const ridge = 2.0 * Math.sin(u * 0.149 + wobble);
   return roll + ridge;
 }
 

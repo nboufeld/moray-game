@@ -63,7 +63,7 @@ export function buildBlue1Life(): Blue1LifeBuild {
   const updaters: ((dt: number, time: number, calm: number) => void)[] = [];
 
   const river = buildMigrationLine();
-  meshes.push(river.mesh);
+  meshes.push(river.mesh, river.glint);
   updaters.push(river.update);
 
   const ray = buildPilgrim();
@@ -111,6 +111,7 @@ const RIVER_STATIONS: readonly [number, number, number][] = [
 
 function buildMigrationLine(): {
   mesh: InstancedMesh;
+  glint: Points;
   update: (dt: number, time: number, calm: number) => void;
 } {
   const random = new Random(SEED ^ 0x1a5e);
@@ -125,7 +126,7 @@ function buildMigrationLine(): {
   }
   const path = new CatmullRomCurve3(points, true, "centripetal", 0.5);
 
-  const count = 260;
+  const count = 300;
   const geometry = createFishGeometry({
     width: 0.8,
     height: 0.95,
@@ -139,8 +140,8 @@ function buildMigrationLine(): {
   // pilot's measured lesson): bright blue-silver with a cool emissive.
   const material = createToonMaterial({
     vertexColors: true,
-    emissive: 0x35586b,
-    emissiveIntensity: 0.7,
+    emissive: 0x3d6478,
+    emissiveIntensity: 0.85,
   });
   const mesh = new InstancedMesh(geometry, material, count);
   mesh.name = "blue1-migration-line";
@@ -149,7 +150,7 @@ function buildMigrationLine(): {
   mesh.frustumCulled = false;
   mesh.instanceMatrix.setUsage(DynamicDrawUsage);
 
-  const silver = new Color(0xd9ecf2);
+  const silver = new Color(0xe2f2f6);
   const tint = new Color();
   const offsets: { along: number; lateral: number; rise: number; phase: number; scale: number }[] =
     [];
@@ -157,12 +158,12 @@ function buildMigrationLine(): {
     offsets.push({
       // The whole loop is occupied: a migration, not a school.
       along: i / count + random.signed(0.0012),
-      lateral: random.signed(2.4),
-      rise: random.signed(1.1),
+      lateral: random.signed(2.1),
+      rise: random.signed(1.0),
       phase: random.range(0, Math.PI * 2),
-      scale: random.range(1.0, 1.5),
+      scale: random.range(1.15, 1.7),
     });
-    tint.copy(silver).multiplyScalar(random.range(0.82, 1.06));
+    tint.copy(silver).multiplyScalar(random.range(0.85, 1.08));
     mesh.setColorAt(i, tint);
   }
   if (mesh.instanceColor) {
@@ -196,7 +197,39 @@ function buildMigrationLine(): {
     mesh.instanceMatrix.needsUpdate = true;
   };
   update(0, 0, 1);
-  return { mesh, update };
+
+  // The glint: a static thread of pale additive sparks along the river's
+  // own line, unfogged, so the band reads from the far side of the steppe
+  // the way a river reads from a hill — the fish carry the close view.
+  const glintCount = 220;
+  const glintPositions = new Float32Array(glintCount * 3);
+  const glintAt = new Vector3();
+  for (let i = 0; i < glintCount; i++) {
+    path.getPointAt(i / glintCount, glintAt);
+    glintPositions[i * 3] = glintAt.x + random.signed(1.6);
+    glintPositions[i * 3 + 1] = glintAt.y + random.signed(0.9);
+    glintPositions[i * 3 + 2] = glintAt.z + random.signed(1.6);
+  }
+  const glintGeometry = new BufferGeometry();
+  glintGeometry.setAttribute("position", new BufferAttribute(glintPositions, 3));
+  glintGeometry.computeBoundingSphere();
+  const glint = new Points(
+    glintGeometry,
+    new PointsMaterial({
+      color: 0xd9eef8,
+      size: 0.28,
+      map: moteTexture(),
+      transparent: true,
+      opacity: 0.38,
+      blending: AdditiveBlending,
+      depthWrite: false,
+      sizeAttenuation: true,
+      fog: false,
+    }),
+  );
+  glint.name = "blue1-migration-glint";
+
+  return { mesh, glint, update };
 }
 
 // ─── The Grey Pilgrim ────────────────────────────────────────────────────────

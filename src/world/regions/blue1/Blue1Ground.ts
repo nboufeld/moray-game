@@ -126,18 +126,19 @@ function bakeBlue1Paint(geometry: PlaneGeometry, contacts: readonly ContactPatch
 
     // The sward: blue-green turf drawn in patches at two scales, never a
     // wash (the pilot's round-2 lesson: polite tints under a warm wash
-    // read as beige — green ground means red is *cut*).
+    // read as beige — green ground means red is *cut*, hard). Round 2 here
+    // cut it harder still: the round-1 mix measured beige everywhere.
     const sward = smoothstep01(
-      (fbm(x * 0.014, z * 0.014, { seed: SEED ^ 0x5aa2, period: 6, octaves: 3 }) - 0.4) / 0.28,
+      (fbm(x * 0.014, z * 0.014, { seed: SEED ^ 0x5aa2, period: 6, octaves: 3 }) - 0.36) / 0.22,
     );
     const fine = fbm(x * 0.06, z * 0.06, { seed: SEED ^ 0x5aa3, period: 14, octaves: 2 }) - 0.5;
 
     // Steppe base: pale blue-grey sand between swards, cool teal turf on
     // them, crests half a value lighter and a touch warmer.
-    let r = 0.9 - sward * 0.38 + crest * 0.1 + fine * 0.08;
-    let g = 0.99 - sward * 0.06 + crest * 0.08 + fine * 0.06;
-    let b = 1.0 + sward * 0.02 - crest * 0.06;
-    value += crest * 0.09 - sward * 0.03;
+    let r = 0.88 - sward * 0.48 + crest * 0.12 + fine * 0.08;
+    let g = 1.0 - sward * 0.02 + crest * 0.07 + fine * 0.06;
+    let b = 1.0 + sward * 0.06 - crest * 0.1;
+    value += crest * 0.12 - sward * 0.03;
 
     if (u < SLOPE_TO + 20) {
       // The slope: the reef's warm sand at the mouth, falling away to the

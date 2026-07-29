@@ -43,10 +43,12 @@ interface HorizonLayer {
   readonly fade: number;
 }
 
+// Raised in round 2: the round-1 tops (0.5–5) barely cleared the rim's own
+// dune-level ground and the rings read as thin water-lines, not swells.
 const PRAIRIE_LAYERS: readonly HorizonLayer[] = [
-  { radius: 240, base: 0.5, vary: 1.6, fade: 0.42 },
-  { radius: 262, base: 2.6, vary: 2.0, fade: 0.6 },
-  { radius: 288, base: 5.0, vary: 2.6, fade: 0.76 },
+  { radius: 240, base: 3.2, vary: 2.4, fade: 0.42 },
+  { radius: 262, base: 6.5, vary: 3.0, fade: 0.6 },
+  { radius: 288, base: 10.0, vary: 3.8, fade: 0.76 },
 ];
 const PRAIRIE_FOOT = -9;
 
