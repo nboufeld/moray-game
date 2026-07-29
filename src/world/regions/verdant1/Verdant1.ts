@@ -165,7 +165,7 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // The grotto: the Weaver braiding under the slab. The aim rides a step
   // off the anchor so the settle does not complete a discovery and drop
   // the ceremony plate over the frame being judged.
-  { name: "weaver-grotto", u: 497, v: -97, lift: 2.2, atU: 507, atV: -104, pitch: -0.04, settle: 6 },
+  { name: "weaver-grotto", u: 496, v: -96, lift: 2.6, atU: 504, atV: -107, pitch: -0.08, settle: 6 },
   // The Falling Edge: the shelf, the stones, the painted distance.
   { name: "falling-edge", u: 578, v: 14, lift: 3, atU: 640, atV: 0, pitch: 0.02 },
 ];

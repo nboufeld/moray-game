@@ -10,6 +10,7 @@ import {
 } from "three";
 import { fbm } from "../../../rendering/ProceduralTexture";
 import { Random, SEEDS } from "../../../util/Random";
+import { smoothstep01 } from "./VerdantShared";
 import { CENTER_X, CENTER_Z, VERDANT_SLOT } from "./VerdantTerrain";
 
 /**
@@ -44,9 +45,11 @@ interface ForestLayer {
 }
 
 const LAYERS: readonly ForestLayer[] = [
-  { radius: 246, canopyBase: 8, canopyVary: 3.2, trunks: 26, trunkHeight: 13, fade: 0.4 },
-  { radius: 264, canopyBase: 11, canopyVary: 4, trunks: 20, trunkHeight: 16, fade: 0.58 },
-  { radius: 286, canopyBase: 14, canopyVary: 5, trunks: 14, trunkHeight: 19, fade: 0.74 },
+  // A near-flat canopy line with tall standing trunks: round 3's ±3-4 m
+  // canopy swell ate its own trunks and the horizon read as bare hills.
+  { radius: 246, canopyBase: 7, canopyVary: 1.8, trunks: 26, trunkHeight: 17, fade: 0.4 },
+  { radius: 264, canopyBase: 10, canopyVary: 2.2, trunks: 20, trunkHeight: 21, fade: 0.58 },
+  { radius: 286, canopyBase: 13, canopyVary: 2.8, trunks: 14, trunkHeight: 26, fade: 0.74 },
 ];
 
 const SEGMENTS = 220;
@@ -130,10 +133,14 @@ function forestRing(layer: ForestLayer, random: Random, noiseSeed: number): Buff
   const gapAt = VERDANT_SLOT.azimuth + Math.PI;
   for (let i = 0; i <= SEGMENTS; i++) {
     const theta = (i / SEGMENTS) * Math.PI * 2;
-    if (angleBetween(theta, gapAt) < GAP_HALF) {
+    const off = angleBetween(theta, gapAt);
+    if (off < GAP_HALF) {
       column = 0;
       continue;
     }
+    // The arc's ends sink into the ground over a short run, so the gap's
+    // cut edges never stand as vertical green cliffs in a side view.
+    const end = smoothstep01((off - GAP_HALF) / 0.14);
     const x = CENTER_X + Math.cos(theta) * layer.radius;
     const z = CENTER_Z + Math.sin(theta) * layer.radius;
 
@@ -154,7 +161,7 @@ function forestRing(layer: ForestLayer, random: Random, noiseSeed: number): Buff
       }
     }
 
-    positions.push(x, FOOT, z, x, Math.max(1.4, canopy + spike), z);
+    positions.push(x, FOOT, z, x, FOOT + Math.max(1.4, canopy + spike - FOOT) * end + 0.2, z);
     if (column > 0) {
       const a = positions.length / 3 - 4;
       indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);

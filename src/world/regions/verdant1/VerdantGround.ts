@@ -127,7 +127,7 @@ function bakeVerdantPaint(geometry: PlaneGeometry, contacts: readonly ContactPat
     // whole region read as bare dunes — the sward is the correction, and
     // it is a *drawing* (patchy, two scales) rather than a wash.
     const sward =
-      smoothstep01((fbm(x * 0.016, z * 0.016, { seed: SEED ^ 0x5ade, period: 7, octaves: 3 }) - 0.46) / 0.22);
+      smoothstep01((fbm(x * 0.016, z * 0.016, { seed: SEED ^ 0x5ade, period: 7, octaves: 3 }) - 0.42) / 0.26);
 
     // Meadow base: sunlit gold-green, swarded hard. The multipliers here
     // look brutal on paper because the sand wash under them is strongly
@@ -155,12 +155,14 @@ function bakeVerdantPaint(geometry: PlaneGeometry, contacts: readonly ContactPat
     }
 
     // The forest floor: deep cool moss, drifted with warm leaf-litter.
+    // The litter stays golden-olive — round 3's redder mix dried into
+    // rust at close range.
     const forest = forestWeight(u, v);
     if (forest > 0) {
-      const warm = smoothstep01((litter(x, z) - 0.6) / 0.2);
-      r += (0.42 + warm * 0.42 - r) * forest;
-      g += (0.72 - warm * 0.1 - g) * forest;
-      b += (0.42 + warm * 0.08 - b) * forest;
+      const warm = smoothstep01((litter(x, z) - 0.64) / 0.18);
+      r += (0.42 + warm * 0.3 - r) * forest;
+      g += (0.72 - warm * 0.04 - g) * forest;
+      b += (0.42 - warm * 0.02 - b) * forest;
       value -= forest * 0.05;
     }
 
@@ -173,14 +175,16 @@ function bakeVerdantPaint(geometry: PlaneGeometry, contacts: readonly ContactPat
       value += sun * 0.16;
     }
 
-    // The maze: violet shadow — red above green, never a black.
+    // The maze: violet shadow — red above green, never a black. Cooled and
+    // dropped a step in round 4; the gully floors take the deepest violet,
+    // so the tangle's passages read as passages.
     const maze = mazeWeight(u, v);
     if (maze > 0) {
-      const gully = smoothstep01((-y - 19.0) / 2.6);
-      r += (0.52 - gully * 0.06 - r) * maze;
-      g += (0.44 - gully * 0.08 - g) * maze;
-      b += (0.68 + gully * 0.04 - b) * maze;
-      value -= maze * (0.12 + gully * 0.1);
+      const gully = smoothstep01((-y - 18.6) / 2.8);
+      r += (0.46 - gully * 0.08 - r) * maze;
+      g += (0.4 - gully * 0.08 - g) * maze;
+      b += (0.66 + gully * 0.02 - b) * maze;
+      value -= maze * (0.16 + gully * 0.14);
     }
 
     // The Falling Edge: milky-bright, the distance rule written into the ground.

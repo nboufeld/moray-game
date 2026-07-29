@@ -45,10 +45,14 @@ export interface VerdantRocksBuild {
   readonly grotto: { x: number; z: number; y: number; facing: number };
 }
 
-/** Root tones: living holdfast wood, from wine-brown to pale sapwood. */
-const ROOT_DARK = new Color(0x4e3b33);
-const ROOT_LIGHT = new Color(0x8a7350);
-const ROOT_OLIVE = new Color(0x5c6b40);
+/**
+ * Root tones: living holdfast wood, wine-dark to olive sapwood. Cooled in
+ * round 4 — the warmer sapwood measured rust under the key, and rust is a
+ * shipwreck's colour, not a living root's.
+ */
+const ROOT_DARK = new Color(0x453832);
+const ROOT_LIGHT = new Color(0x74684c);
+const ROOT_OLIVE = new Color(0x596b42);
 
 export function buildVerdantRocks(): VerdantRocksBuild {
   const random = new Random(SEED ^ 0x50c7);
@@ -291,6 +295,10 @@ export function buildVerdantRocks(): VerdantRocksBuild {
   const grottoU = ROOT_MAZE.u + 8;
   const grottoV = ROOT_MAZE.v - 26;
   const grottoPos = worldOf(grottoU, grottoV);
+  // The weaver's haunt sits at the grotto's *mouth*, a body-length out
+  // from under the slab, so the braid crosses open water where a diver
+  // standing off the grotto can actually watch it.
+  const grottoMouth = worldOf(grottoU, grottoV + 2.6);
   const grottoY = seabedHeight(grottoPos.x, grottoPos.z);
   for (const [i, side] of [-1, 1].entries()) {
     stand(
@@ -353,10 +361,10 @@ export function buildVerdantRocks(): VerdantRocksBuild {
     colliders,
     contacts,
     grotto: {
-      x: grottoPos.x,
-      z: grottoPos.z,
-      y: grottoY + 1.1,
-      facing: Math.atan2(-grottoPos.x, -grottoPos.z),
+      x: grottoMouth.x,
+      z: grottoMouth.z,
+      y: seabedHeight(grottoMouth.x, grottoMouth.z) + 1.1,
+      facing: Math.atan2(-grottoMouth.x, -grottoMouth.z),
     },
   };
 }
@@ -386,7 +394,7 @@ function rootTube(from: Vector3, to: Vector3, radius: number, random: Random): B
       period: 4,
       octaves: 2,
     });
-    shade.lerp(ROOT_OLIVE, drift * 0.35);
+    shade.lerp(ROOT_OLIVE, drift * 0.5);
     colors[i * 3] = shade.r;
     colors[i * 3 + 1] = shade.g;
     colors[i * 3 + 2] = shade.b;

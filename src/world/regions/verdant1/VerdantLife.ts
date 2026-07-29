@@ -98,9 +98,10 @@ export function buildVerdantLife(giants: readonly KelpFoot[]): VerdantLifeBuild 
   const grazers = buildShoal({
     seed: SEED ^ 0x5a02,
     count: 44,
-    // Olive-cream, not warm gold: a small warm body on a cyan field reads
-    // salmon-pink (the fish community's own documented value failure).
-    color: new Color(0xd9d68e),
+    // Green-gold outright: even olive-cream measured salmon against the
+    // cyan in round 3 — a small body under the warm key needs green *in*
+    // the colour, not adjacent to it.
+    color: new Color(0xb9d774),
     profile: { width: 1.0, height: 1.35, length: 0.8, tailTaper: 0.5, dorsal: 0.9, pectoral: 1.1, tail: { reach: 1.35, lobe: 0.7, notch: 1.0 } },
     scale: 0.6,
     behaviour: {

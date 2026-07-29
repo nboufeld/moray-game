@@ -211,10 +211,10 @@ export function buildVerdantKelp(): VerdantKelpBuild {
   // ─── The outriders ───────────────────────────────────────────────────────
   // Two lone giants standing ahead of the treeline in the meadows: from
   // the vale's lip they are the ghosts in the fog that say the forest is
-  // coming — the reveal's middle distance, without which the horizon is
-  // one flat band of green water.
-  grow(chunks.meadow!, 334, -16, 19, "giant", FOREST_TONES);
-  grow(chunks.meadow!, 356, 28, 21, "giant", FOREST_TONES);
+  // coming. Round 3 placed them 80–100 m out, past everything the fog
+  // leaves visible — 50–65 m is where a ghost actually ghosts.
+  grow(chunks.meadow!, 306, -12, 17, "giant", FOREST_TONES);
+  grow(chunks.meadow!, 321, 14, 19, "giant", FOREST_TONES);
 
   // ─── The Sunwell ring ────────────────────────────────────────────────────
   // Eight giants on the bowl's rim, crowns biased inward so the clearing is
@@ -232,9 +232,11 @@ export function buildVerdantKelp(): VerdantKelpBuild {
   }
 
   // ─── The vale lip pair ───────────────────────────────────────────────────
-  // Two crooked mid giants flanking the saddle — the reveal's repoussoir.
-  grow(chunks.meadow!, 263, -8.5, 13.5, "mid", FOREST_TONES);
-  grow(chunks.meadow!, 267, 7.5, 12, "mid", FOREST_TONES);
+  // Two crooked giants flanking the saddle — the reveal's repoussoir. Full
+  // giant treatment (crowns and pads): round 3's "mid" build read as
+  // bamboo, and a repoussoir that reads as a prop undoes the reveal.
+  grow(chunks.meadow!, 263, -8.5, 13.5, "giant", FOREST_TONES);
+  grow(chunks.meadow!, 267, 7.5, 12, "giant", FOREST_TONES);
 
   // ─── The Rolling Meadows' young stands ───────────────────────────────────
   for (let stand = 0; stand < 9; stand++) {
@@ -302,6 +304,10 @@ export function buildVerdantKelp(): VerdantKelpBuild {
       FOREST_TONES,
     );
   }
+  // Two authored young stands where the falling-edge pose actually looks,
+  // between the leaning stones and the painted distance.
+  grow(chunks.edge!, 592, 18, 5.6, "young", FOREST_TONES);
+  grow(chunks.edge!, 589, 3, 4.4, "young", FOREST_TONES);
 
   // ─── The meshes ──────────────────────────────────────────────────────────
   const meshes: Mesh[] = [];

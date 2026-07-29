@@ -48,12 +48,12 @@ const BLADES_PER_PATCH = 38;
 const PATCH_RADIUS = 3.4;
 
 const FAMILIES: readonly (readonly number[])[] = [
-  [0x6cc084, 0x92d788, 0x50a771],
-  [0x93b25b, 0xaec96e, 0x74984f],
-  [0x74c79e, 0x97d8b0, 0x5aab86],
+  [0x7fd194, 0xa2e296, 0x62b981],
+  [0xa5c46a, 0xbed67f, 0x86aa5e],
+  [0x86d8ad, 0xa6e4be, 0x6cbd96],
 ];
 /** The Sunwell's floor family: the palest grass in the region. */
-const SUNWELL_FAMILY: readonly number[] = [0xa8d98c, 0xc2e69a, 0x8cc47e];
+const SUNWELL_FAMILY: readonly number[] = [0xb8e79a, 0xd0f2a8, 0x9cd48c];
 
 export interface VerdantMeadowBuild {
   readonly mesh: InstancedMesh;
@@ -97,7 +97,7 @@ export function buildVerdantMeadow(): VerdantMeadowBuild {
   };
   material.customProgramCacheKey = () => "verdant-meadow";
 
-  const capacity = PATCHES * BLADES_PER_PATCH + 520;
+  const capacity = PATCHES * BLADES_PER_PATCH + 700;
   const mesh = new InstancedMesh(bladeGeometry(), material, capacity);
   mesh.name = "verdant-meadow";
   mesh.castShadow = false;
@@ -123,7 +123,7 @@ export function buildVerdantMeadow(): VerdantMeadowBuild {
     dummy.updateMatrix();
     mesh.setMatrixAt(placed, dummy.matrix);
     color.setHex(family[Math.floor(random.next() * family.length)] ?? family[0]!);
-    color.multiplyScalar(random.range(0.78, 1.15));
+    color.multiplyScalar(random.range(0.88, 1.18));
     mesh.setColorAt(placed, color);
     placed++;
   };
@@ -140,6 +140,20 @@ export function buildVerdantMeadow(): VerdantMeadowBuild {
       const spread = PATCH_RADIUS * Math.sqrt(random.next());
       const angle = random.range(0, Math.PI * 2);
       plant(patchU + Math.cos(angle) * spread, patchV + Math.sin(angle) * spread, family);
+    }
+  }
+
+  // The Falling Edge's thin turf: the forest fades, the grass keeps going
+  // a little further — eight sparse patches so the shelf is a place and
+  // not a parking lot.
+  for (let patch = 0; patch < 8; patch++) {
+    const patchU = random.range(552, 612);
+    const patchV = random.signed(60);
+    const family = FAMILIES[Math.floor(paletteRandom.next() * FAMILIES.length)] ?? FAMILIES[0]!;
+    for (let blade = 0; blade < 22; blade++) {
+      const spread = 4.4 * Math.sqrt(random.next());
+      const angle = random.range(0, Math.PI * 2);
+      plant(patchU + Math.cos(angle) * spread, patchV + Math.sin(angle) * spread, family, 0.85);
     }
   }
 
