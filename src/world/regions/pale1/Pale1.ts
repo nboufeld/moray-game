@@ -136,8 +136,8 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "bone-forest", u: 314, v: -2, lift: 2.6, atU: 358, atV: -22, pitch: 0.03, settle: 4 },
   // The Bone Cathedral, the tallest skeleton in the province.
   { name: "bone-cathedral", u: 334, v: -20, lift: 3.0, atU: 352, atV: -34, pitch: 0.14, settle: 4 },
-  // The Quiet Gallery: monuments alone on the white pan.
-  { name: "quiet-gallery", u: 350, v: 50, lift: 2.4, atU: 386, atV: 78, pitch: 0.02, settle: 4 },
+  // The Quiet Gallery: down the monument avenue on the white pan.
+  { name: "quiet-gallery", u: 351, v: 46, lift: 2.6, atU: 392, atV: 84, pitch: 0.02, settle: 4 },
   // The Blush Arch: the first colour climbing the white doorway.
   { name: "blush-arch", u: 441, v: -13, lift: 2.2, atU: 456, atV: -7, pitch: 0.05, settle: 4 },
   // The Gardener at its round, the walking garden.
@@ -183,10 +183,10 @@ export const PALE_1: RegionDef = {
   mood: {
     // The milk, region-sized: paler and denser than open water but a
     // step clearer than the Ghost Reef's room, so the vistas breathe to
-    // ~65 m. Red held up (the value key's rule — a milk with red gutted
-    // is poster cyan), green and blue lifted, the backdrop giving up a
-    // third of its level so the white world dissolves into paper.
-    fog: { colorScale: [1.06, 1.1, 1.08], densityGain: 0.008, backdropFade: 0.38 },
+    // ~65 m. Round 1 measured the first table as electric poster-cyan —
+    // the value key's "read the red channel first" failure — so the red
+    // now leads the lift: the water warms toward paper as it pales.
+    fog: { colorScale: [1.18, 1.12, 1.08], densityGain: 0.011, backdropFade: 0.45 },
     light: { sun: 0.1, hemisphere: -0.1, ambient: -0.03 },
   },
   moodSurface: 16,

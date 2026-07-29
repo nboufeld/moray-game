@@ -202,7 +202,7 @@ function buildBlushDarters(): {
       r: random.range(0, 1),
       h: random.signed(1),
       phase: random.range(0, Math.PI * 2),
-      scale: random.range(0.75, 1.1),
+      scale: random.range(1.0, 1.4),
     });
     tint.copy(silver).multiplyScalar(random.range(0.88, 1.06));
     mesh.setColorAt(i, tint);
@@ -216,11 +216,11 @@ function buildBlushDarters(): {
     const angle = time * calm * 0.05 * Math.PI * 2;
     for (const [i, o] of offsets.entries()) {
       const a = angle + o.a * 0.24;
-      const u = BLOOM_SHELF.u + Math.cos(a) * 46 * (0.8 + o.r * 0.26);
-      const v = BLOOM_SHELF.v + Math.sin(a) * 34 * (0.8 + o.r * 0.26);
+      const u = BLOOM_SHELF.u + Math.cos(a) * 38 * (0.8 + o.r * 0.26);
+      const v = BLOOM_SHELF.v + Math.sin(a) * 28 * (0.8 + o.r * 0.26);
       const { x, z } = worldOf(u, v);
       const y =
-        seabedHeight(x, z) + 3.6 + Math.sin(time * calm * 0.5 + o.phase) * 1.0 + o.h * 1.2;
+        seabedHeight(x, z) + 4.4 + Math.sin(time * calm * 0.5 + o.phase) * 1.0 + o.h * 1.2;
       dummy.position.set(x, y, z);
       const from = worldOf(u, v);
       const to = worldOf(u - Math.sin(a) * 0.46, v + Math.cos(a) * 0.34);
@@ -273,10 +273,18 @@ function buildPetalCurrent(motherCrown: { x: number; y: number; z: number }): {
   }
   const path = new CatmullRomCurve3(points, false, "centripetal", 0.5);
 
-  const count = 120;
-  const petal = new CircleGeometry(0.11, 5);
+  const count = 140;
+  const petal = new CircleGeometry(0.16, 5);
   petal.scale(1, 0.6, 1);
-  const material = createToonMaterial({ color: 0xffffff, side: DoubleSide });
+  // The whisper of emissive keeps a petal rose when the toon shade takes
+  // its lit side away: round 1's petals fell under the water's value and
+  // the eye read the complement — orange-red confetti instead of spawn.
+  const material = createToonMaterial({
+    color: 0xffffff,
+    side: DoubleSide,
+    emissive: 0x6b3b44,
+    emissiveIntensity: 0.55,
+  });
   const mesh = new InstancedMesh(petal, material, count);
   mesh.name = "pale-petal-current";
   mesh.castShadow = false;
@@ -284,7 +292,7 @@ function buildPetalCurrent(motherCrown: { x: number; y: number; z: number }): {
   mesh.frustumCulled = false;
   mesh.instanceMatrix.setUsage(DynamicDrawUsage);
 
-  const petalTints = [0xf3c1cd, 0xf0d8ac, 0xe8a9b8, 0xf6e6da] as const;
+  const petalTints = [0xf6ccd6, 0xf2ddb6, 0xecb3c2, 0xf8ece2] as const;
   const tint = new Color();
   const rides: { offset: number; lateral: number; phase: number; spin: number; scale: number }[] =
     [];

@@ -10,14 +10,14 @@ import {
   Quaternion,
   Vector3,
   type BufferGeometry,
+  type DataTexture,
 } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import { fbm } from "../../../rendering/ProceduralTexture";
+import { buildColorTexture, fbm } from "../../../rendering/ProceduralTexture";
 import { smoothNormals } from "../../../rendering/SmoothNormals";
 import { createToonMaterial } from "../../../rendering/ToonShading";
 import { Random, SEEDS } from "../../../util/Random";
 import type { SphereCollider } from "../../CollisionField";
-import { createRockMaterial } from "../../RockMaterial";
 import { archGeometry, slabGeometry, stackGeometry } from "../../RockShapes";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
 import { BONE_COOL, BONE_WARM, smoothstep01 } from "./PaleShared";
@@ -56,6 +56,24 @@ const SEED = SEEDS.regionPale1;
 
 const UP = new Vector3(0, 1, 0);
 
+/**
+ * The chalk skin: pale strata with a fine tooth. Round 1 used the shared
+ * rock wash and every "chalk" plate rendered moss-green and violet — the
+ * rock material's lichen mottle is the wrong story here, so the ravine's
+ * stone carries its own map: paper value, faint cool strata, no lichen.
+ */
+let chalkMap: DataTexture | undefined;
+function chalkTexture(): DataTexture {
+  chalkMap ??= buildColorTexture(64, (u, v) => {
+    const wobble = (fbm(u, v, { seed: SEED ^ 0xc4a7, period: 4, octaves: 2 }) - 0.5) * 0.8;
+    const strata = 0.5 + 0.5 * Math.sin((v * 6 + wobble) * Math.PI * 2);
+    const tooth = fbm(u * 3, v * 3, { seed: SEED ^ 0xc4a8, period: 9, octaves: 3 });
+    const shade = 0.88 + strata * 0.1 + tooth * 0.1;
+    return [shade, shade * 0.99, shade * 0.94 + strata * 0.03];
+  });
+  return chalkMap;
+}
+
 export interface PaleBonesBuild {
   readonly meshes: Mesh[];
   readonly colliders: SphereCollider[];
@@ -74,7 +92,7 @@ export interface PaleBonesBuild {
  * once per archetype and instanced across the forest; unit-height so the
  * instance matrix owns the drawn size.
  */
-function boneTreeGeometry(random: Random, depth: number, spread: number): BufferGeometry {
+function boneTreeGeometry(random: Random, depth: number, spread: number, girth = 1): BufferGeometry {
   const parts: BufferGeometry[] = [];
 
   const grow = (
@@ -118,7 +136,7 @@ function boneTreeGeometry(random: Random, depth: number, spread: number): Buffer
       new Vector3(Math.cos(around) * 0.06, 0, Math.sin(around) * 0.06),
       new Vector3(Math.cos(around) * lean, 1, Math.sin(around) * lean).normalize(),
       level === depth ? 0.42 : 0.32,
-      0.055,
+      0.055 * girth,
       level,
     );
   });
@@ -140,15 +158,18 @@ function boneTreeGeometry(random: Random, depth: number, spread: number): Buffer
 
   // The bone ramp: violet crotch to paper-white tip. The vertex colour
   // multiplies the instance's warm/cool bone, so the violet lives in the
-  // ratio — blue held up, green cut hardest.
+  // ratio — blue held up, green cut hardest. Warmed a step in round 2:
+  // round 1's whole trees read lilac, and the violet belongs only in the
+  // lowest reach where the light never gets.
   const position = merged.attributes.position!;
   const colors = new Float32Array(position.count * 3);
   for (let i = 0; i < position.count; i++) {
     const t = Math.min(1, Math.max(0, position.getY(i)));
-    const value = 0.58 + smoothstep01(t / 0.85) * 0.46;
-    colors[i * 3] = value * (0.86 + t * 0.14);
-    colors[i * 3 + 1] = value * (0.78 + t * 0.2);
-    colors[i * 3 + 2] = value * (0.94 + t * 0.06);
+    const value = 0.62 + smoothstep01(t / 0.7) * 0.46;
+    const crotch = 1 - smoothstep01(t / 0.3);
+    colors[i * 3] = value * (1.0 - crotch * 0.08);
+    colors[i * 3 + 1] = value * (1.0 - crotch * 0.18);
+    colors[i * 3 + 2] = value * (1.0 - crotch * 0.02);
   }
   merged.setAttribute("color", new BufferAttribute(colors, 3));
   merged.computeVertexNormals();
@@ -194,7 +215,8 @@ function monumentGeometry(seed: number, cycles: number): BufferGeometry {
   smoothNormals(geometry);
 
   // Furrow shade, re-read where the vertices landed: ridge crowns warm
-  // white, furrow floors violet.
+  // white, furrow floors a violet held to the cuts alone — round 1's
+  // whole-dome violet read as a lilac balloon.
   const colors = new Float32Array(position.count * 3);
   for (let i = 0; i < position.count; i++) {
     const x = position.getX(i);
@@ -205,10 +227,11 @@ function monumentGeometry(seed: number, cycles: number): BufferGeometry {
     const v = Math.asin(Math.max(-1, Math.min(1, y / length))) / Math.PI + 0.5;
     const warp = (fbm(u, v, { seed, period: 4, octaves: 2 }) - 0.5) * 2;
     const ridge = 0.5 + 0.5 * Math.sin((v * cycles + warp * 1.6 + u * 2.4) * Math.PI * 2);
-    const value = 0.66 + ridge * 0.38;
-    colors[i * 3] = value * (0.9 + ridge * 0.1);
-    colors[i * 3 + 1] = value * (0.84 + ridge * 0.16);
-    colors[i * 3 + 2] = value * (0.97 + ridge * 0.03);
+    const cut = (1 - ridge) ** 2;
+    const value = 0.74 + ridge * 0.34;
+    colors[i * 3] = value * (1.0 - cut * 0.06);
+    colors[i * 3 + 1] = value * (1.0 - cut * 0.16);
+    colors[i * 3 + 2] = value * (1.0 - cut * 0.01);
   }
   geometry.setAttribute("color", new BufferAttribute(colors, 3));
 
@@ -321,7 +344,10 @@ export function buildPaleBones(): PaleBonesBuild {
       );
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
-      tint.copy(BONE_WARM).lerp(BONE_COOL, treeRandom.next()).multiplyScalar(treeRandom.range(0.92, 1.06));
+      tint
+        .copy(BONE_WARM)
+        .lerp(BONE_COOL, treeRandom.next() * 0.55)
+        .multiplyScalar(treeRandom.range(0.94, 1.08));
       mesh.setColorAt(i, tint);
 
       contacts.push({ x, z, radius: Math.min(2.4, spot.height * 0.3), strength: 0.42 });
@@ -344,12 +370,13 @@ export function buildPaleBones(): PaleBonesBuild {
   // ─── The Bone Cathedral ──────────────────────────────────────────────────
   // The tallest skeleton in the province: a dead colossus whose crown
   // once shaded this whole quarter, alone on its hummock where the aisle
-  // bends. Its own merged geometry — a landmark is not an instance.
-  const cathedral = boneTreeGeometry(new Random(SEED ^ 0x0bca), 4, 0.88);
+  // bends. Its own merged geometry — a landmark is not an instance — with
+  // real girth (round 1's cathedral read as one more thicket).
+  const cathedral = boneTreeGeometry(new Random(SEED ^ 0x0bca), 4, 0.82, 1.7);
   const cathedralAt = worldOf(352, -34);
   const cathedralFoot = seabedHeight(cathedralAt.x, cathedralAt.z);
   {
-    const height = 12.5;
+    const height = 14.5;
     const geometry = cathedral.clone();
     geometry.scale(height * 0.95, height, height * 0.95);
     geometry.translate(cathedralAt.x, cathedralFoot - 0.1, cathedralAt.z);
@@ -370,17 +397,19 @@ export function buildPaleBones(): PaleBonesBuild {
   cathedral.dispose();
 
   // ─── The Quiet Gallery's monuments ───────────────────────────────────────
-  // Five bleached colossi alone on the white pan, spaced like statues in
-  // a hall — the region's most austere composition. Two furrow patterns,
-  // instanced; each stands on its own contact ring and collider stack.
+  // Five bleached colossi on the white pan, arranged as a loose *avenue*
+  // the approach pose looks down — statues in a hall, alternating flanks,
+  // the tallest at the heart (round 1 scattered them and the pose caught
+  // one). Two furrow patterns, instanced; each stands on its own contact
+  // ring and collider stack.
   const monumentShapes = [monumentGeometry(SEED ^ 0x0d01, 2.4), monumentGeometry(SEED ^ 0x0d02, 3.1)];
   const monumentMaterial = createToonMaterial({ vertexColors: true });
   const monumentSpots: { u: number; v: number; height: number; width: number }[] = [
-    { u: QUIET_GALLERY.u - 18, v: QUIET_GALLERY.v - 14, height: 5.6, width: 1.15 },
-    { u: QUIET_GALLERY.u + 6, v: QUIET_GALLERY.v + 2, height: 6.8, width: 0.95 },
-    { u: QUIET_GALLERY.u + 24, v: QUIET_GALLERY.v - 20, height: 4.4, width: 1.3 },
-    { u: QUIET_GALLERY.u - 4, v: QUIET_GALLERY.v + 26, height: 5.0, width: 1.05 },
-    { u: QUIET_GALLERY.u + 30, v: QUIET_GALLERY.v + 18, height: 3.8, width: 1.2 },
+    { u: 360.6, v: 66.9, height: 5.8, width: 1.15 },
+    { u: 383.4, v: 62.0, height: 4.8, width: 1.3 },
+    { u: 381.9, v: 85.0, height: 7.2, width: 0.98 },
+    { u: 404.4, v: 79.8, height: 4.2, width: 1.25 },
+    { u: 399.7, v: 102.6, height: 5.4, width: 1.05 },
   ];
   const monuments: { x: number; z: number; height: number }[] = [];
   for (const [index, spot] of monumentSpots.entries()) {
@@ -419,8 +448,8 @@ export function buildPaleBones(): PaleBonesBuild {
   }
 
   // ─── The Chalk Ravine's dressing ─────────────────────────────────────────
-  const chalk = createRockMaterial(0xc7c0b0);
-  const coolChalk = createRockMaterial(0xb4b6bd);
+  const chalk = createToonMaterial({ map: chalkTexture(), color: 0xf6efdd });
+  const coolChalk = createToonMaterial({ map: chalkTexture(), color: 0xe3e5ee });
 
   const stand = (
     geometry: BufferGeometry,

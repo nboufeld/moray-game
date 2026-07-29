@@ -105,13 +105,19 @@ const KIND_WEIGHTS: readonly (readonly [CoralKind, number])[] = [
   ["fan", 0.18],
 ];
 
+/**
+ * Region-scaled: round 1 planted the wing's one-metre garden pieces into
+ * a hundred-and-fifty-thousand-square-metre basin and they vanished. The
+ * shelf's colonies are two to three metres — young gardens at the scale
+ * the fog can actually deliver to the eye.
+ */
 const KIND_SCALE: Record<CoralKind, readonly [number, number]> = {
-  staghorn: [0.9, 1.6],
-  brain: [0.8, 1.4],
-  plateStack: [0.55, 0.9],
-  tube: [0.7, 1.3],
-  fan: [0.9, 1.5],
-  branch: [0.6, 1.2],
+  staghorn: [2.0, 3.4],
+  brain: [1.7, 2.9],
+  plateStack: [1.2, 2.0],
+  tube: [1.5, 2.6],
+  fan: [1.9, 3.1],
+  branch: [1.3, 2.5],
   boulder: [1, 1],
   polyp: [1, 1],
 };
@@ -176,7 +182,7 @@ export function buildPaleBloom(archCrown: { x: number; y: number; z: number }): 
       continue;
     }
     sites++;
-    const pieces = 2 + Math.floor(gardenRandom.next() * (2 + k * 3));
+    const pieces = 3 + Math.floor(gardenRandom.next() * (3 + k * 4));
     for (let p = 0; p < pieces; p++) {
       const du = gardenRandom.signed(3.2);
       const dv = gardenRandom.signed(3.2);
@@ -190,13 +196,25 @@ export function buildPaleBloom(archCrown: { x: number; y: number; z: number }): 
     }
   }
 
-  // Two authored garden stands framing the Blooming Shelf pose's view.
-  for (const [su, sv] of [
-    [516, -62],
-    [538, -34],
+  // Authored garden beds framing the Blooming Shelf pose's view — the
+  // shelf must read as *gardens* from its own canonical camera, so three
+  // dense beds stand exactly where it looks, and one at the Gardener's
+  // Round (the crab plants where it walks).
+  for (const [su, sv, pieces] of [
+    [520, -50, 9],
+    [534, -63, 8],
+    [547, -46, 8],
+    [509, -30, 6],
+    [494, 30, 5],
   ] as const) {
-    for (let p = 0; p < 5; p++) {
-      plant(su + gardenRandom.signed(3), sv + gardenRandom.signed(3), drawKind(gardenRandom), gardenRandom, 0.15);
+    for (let p = 0; p < pieces; p++) {
+      plant(
+        su + gardenRandom.signed(4.5),
+        sv + gardenRandom.signed(4.5),
+        drawKind(gardenRandom),
+        gardenRandom,
+        0.15,
+      );
     }
   }
 
@@ -213,12 +231,14 @@ export function buildPaleBloom(archCrown: { x: number; y: number; z: number }): 
       const v = SEED_GROVE.v + Math.sin(heading) * d + nurseryRandom.signed(0.5);
       const kind: CoralKind = seat % 2 === 0 ? "branch" : "tube";
       const [scaleMin] = KIND_SCALE[kind];
+      // Juveniles: a third of a grown colony, but planted in rows dense
+      // enough that the rows themselves read from the grove's rim.
       stands.push({
         kind,
         u,
         v,
         tint: recoveryTint(nurseryRandom, 1, 0.8),
-        scale: scaleMin * nurseryRandom.range(0.5, 0.75),
+        scale: scaleMin * nurseryRandom.range(0.34, 0.5),
         yaw: nurseryRandom.range(0, Math.PI * 2),
       });
     }
@@ -341,12 +361,14 @@ export function buildPaleBloom(archCrown: { x: number; y: number; z: number }): 
       budSpots.push({ x, y: seabedHeight(x, z) + 0.04, z, s: budRandom.range(0.6, 1.4) });
     }
   }
-  // The arch's crown, and reaching down its beam.
-  for (let i = 0; i < 14; i++) {
+  // The arch's crown, hugging the beam's own curve — round 1 scattered
+  // these in a loose box and they read as floating confetti.
+  for (let i = 0; i < 16; i++) {
+    const along = budRandom.signed(1.9);
     budSpots.push({
-      x: archCrown.x + budRandom.signed(2.2),
-      y: archCrown.y - Math.abs(budRandom.signed(1.6)) - 0.2,
-      z: archCrown.z + budRandom.signed(2.2),
+      x: archCrown.x + along * 0.42 + budRandom.signed(0.5),
+      y: archCrown.y - along * along * 0.42 - budRandom.range(0.1, 0.6),
+      z: archCrown.z - along * 0.9 + budRandom.signed(0.5),
       s: budRandom.range(0.8, 1.5),
     });
   }
@@ -456,8 +478,8 @@ function buildMother(random: Random): {
   }
   profile.push(new Vector2(0.2, height * 0.74));
   const trunk = new LatheGeometry(profile, 9);
-  const trunkBase = new Color(0x7a5a74);
-  const trunkTop = new Color(0xd9a06e);
+  const trunkBase = new Color(0x8a5570);
+  const trunkTop = new Color(0xdf9a62);
   const trunkShade = new Color();
   paint(trunk, (y, x, z) => {
     const t = Math.min(1, Math.max(0, y / (height * 0.74)));
@@ -478,31 +500,35 @@ function buildMother(random: Random): {
     { radius: 2.1, at: 0.82, offset: -0.3 },
   ];
   for (const [index, tier] of tiers.entries()) {
-    const plate = new CylinderGeometry(tier.radius, tier.radius * 0.82, 0.24, 18);
+    const plate = new CylinderGeometry(tier.radius, tier.radius * 0.82, 0.24, 22);
     const position = plate.attributes.position!;
     for (let i = 0; i < position.count; i++) {
       const x = position.getX(i);
       const z = position.getZ(i);
       const angle = Math.atan2(z, x) / (Math.PI * 2) + 0.5;
       const radial = Math.min(1, Math.hypot(x, z) / tier.radius);
+      // Deep lobing: round 1's near-circular plates read as parasols.
       const lobe =
         1 +
-        (fbm(angle, 0.5, { seed: SEED ^ (0x31b0 + index), period: 4, octaves: 2 }) - 0.5) * 0.5;
+        (fbm(angle, 0.5, { seed: SEED ^ (0x31b0 + index), period: 4, octaves: 2 }) - 0.5) * 1.0;
       const warp =
         (fbm(angle, 0.31, { seed: SEED ^ (0x32c0 + index), period: 6, octaves: 2 }) - 0.5) *
-        0.9 *
+        1.1 *
         radial;
       const crownLift = 0.24 * (1 - radial * radial);
       position.setXYZ(i, x * lobe, position.getY(i) + warp + crownLift, z * lobe);
     }
     position.needsUpdate = true;
     plate.computeVertexNormals();
-    const rose = new Color(0xc76e8c);
-    const cream = new Color(0xf4e3d2);
+    // Saturated rose deepening at the mature centre, cream only at the
+    // growing margin — round 1's paler ramp washed to grey-mauve in the
+    // milk.
+    const rose = new Color(0xbe5578);
+    const cream = new Color(0xf4ddc8);
     const plateShade = new Color();
     paint(plate, (_y, x, z) => {
       const radial = Math.min(1, Math.hypot(x, z) / (tier.radius * 1.2));
-      plateShade.copy(rose).lerp(cream, smoothstep01((radial - 0.35) / 0.6));
+      plateShade.copy(rose).lerp(cream, smoothstep01((radial - 0.5) / 0.45));
       return [plateShade.r, plateShade.g, plateShade.b];
     });
     const around = random.range(0, Math.PI * 2);
@@ -525,8 +551,8 @@ function buildMother(random: Random): {
 
   // The crown: an antler reach above the last tier, gold at every tip.
   const antlerFrom = height * 0.74;
-  const gold = new Color(0xe8c874);
-  const roseDeep = new Color(0xa85f78);
+  const gold = new Color(0xecc153);
+  const roseDeep = new Color(0xb35270);
   const antlerShade = new Color();
   const up = new Vector3(0, 1, 0);
   const grow = (base: Vector3, direction: Vector3, length: number, radius: number, level: number): void => {
@@ -565,8 +591,8 @@ function buildMother(random: Random): {
     grow(
       new Vector3(Math.cos(around) * 0.3, antlerFrom, Math.sin(around) * 0.3),
       new Vector3(Math.cos(around) * 0.5, 1, Math.sin(around) * 0.5).normalize(),
-      height * 0.11,
-      0.16,
+      height * 0.15,
+      0.26,
       2,
     );
   }

@@ -42,18 +42,18 @@ interface ReefLayer {
 }
 
 const LAYERS: readonly ReefLayer[] = [
-  { radius: 246, crestBase: 6, crestVary: 1.6, fade: 0.4 },
-  { radius: 264, crestBase: 9, crestVary: 2.0, fade: 0.58 },
-  { radius: 286, crestBase: 12, crestVary: 2.6, fade: 0.74 },
+  { radius: 246, crestBase: 5, crestVary: 2.4, fade: 0.4 },
+  { radius: 264, crestBase: 8, crestVary: 2.8, fade: 0.58 },
+  { radius: 286, crestBase: 11, crestVary: 3.2, fade: 0.74 },
 ];
 
 const SEGMENTS = 220;
 const FOOT = -12;
 
-/** Bone ink: barely below the fog — the white horizon nearly dissolves. */
-const INK_BONE = new Color(0.94, 0.94, 0.97);
+/** Bone ink: a breath *above* the fog — the white horizon reads as milk. */
+const INK_BONE = new Color(1.03, 1.02, 1.04);
 /** Bloom ink: rose-violet taken down from the fog, red held above green. */
-const INK_BLOOM = new Color(0.78, 0.6, 0.68);
+const INK_BLOOM = new Color(0.84, 0.6, 0.7);
 
 /** Half-angle of the gap the rings leave over the ravine's approach. */
 const GAP_HALF = 0.42;
@@ -267,7 +267,9 @@ function reefRing(layer: ReefLayer, noiseSeed: number, gapAt: number): BufferGeo
       column = 0;
       continue;
     }
-    const end = smoothstep01((off - GAP_HALF) / 0.14);
+    // A long ease: round 1's 0.14 rad cut rendered the arc ends as
+    // rectangular stair-steps standing in open water.
+    const end = smoothstep01((off - GAP_HALF) / 0.4);
     const x = CENTER_X + Math.cos(theta) * layer.radius;
     const z = CENTER_Z + Math.sin(theta) * layer.radius;
 

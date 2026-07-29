@@ -38,14 +38,16 @@ export const BLUSH_GOLD = new Color(0xeccf96);
 /**
  * The returning colour families, in the order the story deals them:
  * rose, gold, lavender, seafoam, ember. Soft gouache — a recovered reef,
- * not a carnival.
+ * not a carnival — but with real chroma: round 1's paler mixes washed to
+ * grey under the milk, and a colour that cannot survive its own fog is
+ * not a colour.
  */
 export const BLOOM_FAMILIES = [
-  new Color(0xe08fa6),
-  new Color(0xdfb165),
-  new Color(0xa98fd4),
-  new Color(0x8cc9a4),
-  new Color(0xd88f68),
+  new Color(0xd9748f),
+  new Color(0xd9a446),
+  new Color(0x9678cf),
+  new Color(0x63bd8a),
+  new Color(0xcf7247),
 ] as const;
 
 /**

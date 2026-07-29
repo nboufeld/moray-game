@@ -207,9 +207,10 @@ export function buildGardener(): GardenerBuild {
       const yaw = random.range(0, Math.PI * 2);
       const tilt = random.range(0.15, 0.55);
       const direction = new Vector3(Math.cos(yaw) * tilt, 1, Math.sin(yaw) * tilt).normalize();
-      const length = random.range(0.35, 0.75);
+      const length = random.range(0.4, 0.85);
       const tip = base.clone().addScaledVector(direction, length);
-      const segment = new CapsuleGeometry(random.range(0.035, 0.06), length, 1, 5);
+      // Real girth: round 1's thin sticks read as neon wires.
+      const segment = new CapsuleGeometry(random.range(0.07, 0.11), length, 1, 5);
       segment.applyMatrix4(
         new Matrix4().compose(
           base.clone().add(tip).multiplyScalar(0.5),

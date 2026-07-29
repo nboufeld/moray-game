@@ -125,39 +125,41 @@ function bakePalePaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
     const { u, v } = spokeOf(x, z);
 
     // Value structure from the ground's own relief: hollows a step deeper
-    // in tone than swells — the cheapest honest occlusion.
+    // in tone than swells — the cheapest honest occlusion. The amplitude
+    // came down from round 1: strong value mottle on a white ground read
+    // as dirt, not form.
     const life = fbm(x * 0.024, z * 0.024, { seed: SEED ^ 0x9d07, period: 9, octaves: 2 }) - 0.5;
-    let value = 0.94 + life * 0.42;
+    let value = 1.1 + life * 0.28;
 
-    // The two whites. The warm/cool patching is a drawing at two scales,
-    // not a wash — one flat lift reads as fogged beige (the pilot's
-    // round-2 lesson translated into white).
+    // The two whites. Round 1's polite lift measured beige — the sand
+    // wash under this paint is strongly warm, so white means green and
+    // blue are *raised hard*, red merely held (the pilot's "a tile and a
+    // tint cannot both carry the colour", inverted for chalk).
     const cool = smoothstep01(
       (fbm(x * 0.014, z * 0.014, { seed: SEED ^ 0x5eaf, period: 6, octaves: 3 }) - 0.46) / 0.24,
     );
-    // Warm paper-white base: red held up, blue eased down a touch...
-    let r = 1.06 - cool * 0.1;
-    let g = 1.07 - cool * 0.04;
+    let r = 1.12 - cool * 0.08;
+    let g = 1.14 - cool * 0.03;
     // ...and the cool patches lean violet: blue rises over green.
-    let b = 0.96 + cool * 0.14;
+    let b = 1.06 + cool * 0.18;
 
     if (u < RAVINE_TO) {
-      // The Chalk Ravine: plate-banded walls, violet shadow pooled in the
-      // channel. The bands ride height above the channel floor at a 2.2 m
-      // rhythm — stacked plates in paint where the benches carry them in
-      // silhouette.
+      // The Chalk Ravine: strata-banded walls, violet shadow pooled in
+      // the channel. The bands ride height above the channel floor at a
+      // 2.2 m rhythm — stacked plates in paint where the benches carry
+      // them in silhouette.
       const above = y - ravineFloor(u);
       const band = 0.5 + 0.5 * Math.sin((above / 2.2) * Math.PI * 2);
       const inChannel =
         1 - smoothstep01((Math.abs(v - ravineChannelCenter(u)) - ravineChannelHalf(u)) / 7);
       const s = 1 - smoothstep01((u - 250) / 42);
-      const vr = 1.02 + band * 0.05 - inChannel * 0.16;
-      const vg = 1.03 + band * 0.04 - inChannel * 0.22;
-      const vb = 1.0 + band * 0.02 - inChannel * 0.04;
+      const vr = 1.1 + band * 0.06 - inChannel * 0.22;
+      const vg = 1.12 + band * 0.05 - inChannel * 0.3;
+      const vb = 1.06 + band * 0.02 - inChannel * 0.02;
       r += (vr - r) * s;
       g += (vg - g) * s;
       b += (vb - b) * s;
-      value -= inChannel * 0.12 * s;
+      value -= inChannel * 0.16 * s;
     }
 
     // The Bone Forest floor: milk-white with violet thicket shade drifting
@@ -167,10 +169,10 @@ function bakePalePaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
       const shade = smoothstep01(
         (fbm(x * 0.03, z * 0.03, { seed: SEED ^ 0x517b, period: 11, octaves: 3 }) - 0.52) / 0.2,
       );
-      r += (1.0 - shade * 0.24 - r) * forest;
-      g += (1.02 - shade * 0.32 - g) * forest;
-      b += (1.02 - shade * 0.1 - b) * forest;
-      value -= forest * shade * 0.08;
+      r += (1.08 - shade * 0.3 - r) * forest;
+      g += (1.1 - shade * 0.42 - g) * forest;
+      b += (1.1 - shade * 0.12 - b) * forest;
+      value -= forest * shade * 0.1;
     }
 
     // The Quiet Gallery: the palest, most even ground in the region — the
@@ -178,9 +180,9 @@ function bakePalePaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
     // it paper, not plaster.
     const gallery = galleryWeight(u, v);
     if (gallery > 0) {
-      r += (1.1 - r) * gallery;
-      g += (1.1 - g) * gallery;
-      b += (1.02 - b) * gallery;
+      r += (1.2 - r) * gallery;
+      g += (1.21 - g) * gallery;
+      b += (1.12 - b) * gallery;
       value += gallery * 0.1;
     }
 
@@ -192,17 +194,17 @@ function bakePalePaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
         (fbm(x * 0.05, z * 0.05, { seed: SEED ^ 0xb1d5, period: 13, octaves: 3 }) - 0.56) / 0.16,
       );
       const blush = Math.min(1, k * 2.2) * freckle;
-      r += (1.12 - r) * blush * 0.5;
-      g += (0.92 - g) * blush * 0.5;
-      b += (0.98 - b) * blush * 0.5;
+      r += (1.18 - r) * blush * 0.6;
+      g += (0.88 - g) * blush * 0.6;
+      b += (1.0 - b) * blush * 0.6;
 
       const turfPatch = smoothstep01(
         (fbm(x * 0.021, z * 0.021, { seed: SEED ^ 0x70af, period: 8, octaves: 3 }) - 0.44) / 0.24,
       );
       const turf = smoothstep01((k - 0.35) / 0.5) * turfPatch;
-      r += (0.98 - r) * turf;
-      g += (0.9 - g) * turf;
-      b += (0.66 - b) * turf;
+      r += (1.02 - r) * turf;
+      g += (0.86 - g) * turf;
+      b += (0.52 - b) * turf;
     }
 
     // The Blooming Shelf beds deepen the turf's warmth where the gardens
@@ -210,18 +212,18 @@ function bakePalePaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
     // to violet-rose at the heart — depth painted as colour, never black.
     const bloom = bloomWeight(u, v) * smoothstep01((k - 0.3) / 0.4);
     if (bloom > 0) {
-      r += (1.04 - r) * bloom * 0.5;
-      g += (0.88 - g) * bloom * 0.5;
-      b += (0.72 - b) * bloom * 0.5;
+      r += (1.08 - r) * bloom * 0.55;
+      g += (0.84 - g) * bloom * 0.55;
+      b += (0.62 - b) * bloom * 0.55;
     }
     const grove = groveWeight(u, v);
     if (grove > 0) {
       const d = Math.hypot(u - SEED_GROVE.u, v - SEED_GROVE.v);
       const heart = 1 - smoothstep01((d - 6) / 20);
-      r += (1.02 - r) * grove;
-      g += (0.86 - g) * grove;
-      b += (0.8 - b) * grove;
-      value -= grove * heart * 0.1;
+      r += (1.08 - r) * grove;
+      g += (0.84 - g) * grove;
+      b += (0.78 - b) * grove;
+      value -= grove * heart * 0.12;
     }
 
     // Contact shade under everything that stands on the sand.
