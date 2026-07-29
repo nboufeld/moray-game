@@ -30,6 +30,7 @@ import { Random, SEEDS } from "../../../util/Random";
 import type { SphereCollider } from "../../CollisionField";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
 import {
+  BLOOM_FAMILIES,
   BLUSH_GOLD,
   BLUSH_PINK,
   mergedMesh,
@@ -149,11 +150,18 @@ export function buildPaleBloom(archCrown: { x: number; y: number; z: number }): 
   const plant = (u: number, v: number, kind: CoralKind, random: Random, boost = 0): void => {
     const k = Math.min(1, recovery(u, v) + boost);
     const [scaleMin, scaleMax] = KIND_SCALE[kind];
+    // The brain mounds are the shelf's biggest solids and their skin map
+    // is the darkest of the kinds — at full depth they rendered as maroon
+    // livers (round 5). They stay pastel: half the chroma, extra value.
+    const tint =
+      kind === "brain"
+        ? recoveryTint(random, k, 0.5).multiplyScalar(1.15)
+        : recoveryTint(random, k);
     stands.push({
       kind,
       u,
       v,
-      tint: recoveryTint(random, k),
+      tint,
       scale: random.range(scaleMin, scaleMax) * (0.7 + k * 0.5),
       yaw: random.range(0, Math.PI * 2),
     });
@@ -225,24 +233,35 @@ export function buildPaleBloom(archCrown: { x: number; y: number; z: number }): 
   // region is a tended garden.
   for (let row = 0; row < 6; row++) {
     const heading = (row / 6) * Math.PI * 2 + 0.35;
-    for (let seat = 0; seat < 8; seat++) {
-      const d = 13 + seat * 2.6;
-      const u = SEED_GROVE.u + Math.cos(heading) * d + nurseryRandom.signed(0.4);
-      const v = SEED_GROVE.v + Math.sin(heading) * d + nurseryRandom.signed(0.4);
-      // Branch and fan alternating — the bright silhouettes; round 2's
-      // tube juveniles read as dark specks on the bowl.
-      const kind: CoralKind = seat % 2 === 0 ? "branch" : "fan";
-      const [scaleMin] = KIND_SCALE[kind];
-      // Juveniles: a third of a grown colony, but planted in rows dense
-      // enough that the rows themselves read from the grove's rim.
-      stands.push({
-        kind,
-        u,
-        v,
-        tint: recoveryTint(nurseryRandom, 1, 0.8),
-        scale: scaleMin * nurseryRandom.range(0.5, 0.66),
-        yaw: nurseryRandom.range(0, Math.PI * 2),
-      });
+    // Paired lines per spoke: a single file of seats 2.6 m apart never
+    // read as a *row* through the milk (round 6) — a double hedge does.
+    for (let line = 0; line < 2; line++) {
+      const side = (line === 0 ? -1 : 1) * 1.1;
+      const acrossU = -Math.sin(heading) * side;
+      const acrossV = Math.cos(heading) * side;
+      for (let seat = 0; seat < 10; seat++) {
+        const d = 11 + seat * 2.2;
+        const u = SEED_GROVE.u + Math.cos(heading) * d + acrossU + nurseryRandom.signed(0.35);
+        const v = SEED_GROVE.v + Math.sin(heading) * d + acrossV + nurseryRandom.signed(0.35);
+        // Branch and fan alternating — the bright silhouettes; round 2's
+        // tube juveniles read as dark specks on the bowl.
+        const kind: CoralKind = seat % 2 === 0 ? "branch" : "fan";
+        const [scaleMin] = KIND_SCALE[kind];
+        // Juveniles: half a grown colony — round 5's third-scale rows
+        // vanished under the bowl's slope from the grove pose's 25 m —
+        // and tinted seafoam/gold on purpose: the bowl's own bed is rose,
+        // and a rose juvenile on a rose bed is invisible (round 6's
+        // read). The complement against the ground makes the rows *rows*.
+        const family = BLOOM_FAMILIES[seat % 2 === 0 ? 3 : 1]!;
+        stands.push({
+          kind,
+          u,
+          v,
+          tint: family.clone().multiplyScalar(nurseryRandom.range(1.05, 1.25)),
+          scale: scaleMin * nurseryRandom.range(0.72, 0.95),
+          yaw: nurseryRandom.range(0, Math.PI * 2),
+        });
+      }
     }
   }
 
@@ -534,15 +553,16 @@ function buildMother(random: Random): {
     }
     position.needsUpdate = true;
     plate.computeVertexNormals();
-    // Saturated rose deepening at the mature centre, cream only at the
-    // growing margin — round 1's paler ramp washed to grey-mauve in the
-    // milk.
-    const rose = new Color(0xbe5578);
+    // Saturated rose over almost the whole plate, cream held to the last
+    // quarter — round 5 kept cream from half-radius out, and from the
+    // grove pose's 25 m of milk the mother read grey-beige: the margins
+    // are all the eye gets at that range, so the margins must carry rose.
+    const rose = new Color(0xd25a80);
     const cream = new Color(0xf4ddc8);
     const plateShade = new Color();
     paint(plate, (_y, x, z) => {
       const radial = Math.min(1, Math.hypot(x, z) / (tier.radius * 1.2));
-      plateShade.copy(rose).lerp(cream, smoothstep01((radial - 0.5) / 0.45));
+      plateShade.copy(rose).lerp(cream, smoothstep01((radial - 0.78) / 0.22));
       return [plateShade.r, plateShade.g, plateShade.b];
     });
     const around = random.range(0, Math.PI * 2);
@@ -615,7 +635,7 @@ function buildMother(random: Random): {
   // mother is the one thing in the region allowed to truly glow.
   const mesh = mergedMesh(
     parts,
-    createToonMaterial({ vertexColors: true, emissive: 0x552b35, emissiveIntensity: 0.85 }),
+    createToonMaterial({ vertexColors: true, emissive: 0x6b3040, emissiveIntensity: 1.0 }),
     "pale-mother-coral",
   );
   mesh.geometry.translate(at.x, foot, at.z);
