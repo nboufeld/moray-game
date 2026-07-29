@@ -130,6 +130,10 @@ test("the offline render carries signal, and silence when the level is zero", as
 test("the volume slider drives the mix, sleeps the context at zero, and persists", async ({
   page,
 }) => {
+  // Chronically marginal: two full page loads plus RMS probes put a healthy
+  // run at ~47-50 s, so the default 60 s budget flakes under any load. The
+  // spec's own waits are all bounded; the extra headroom only absorbs boot.
+  test.setTimeout(120_000);
   await page.goto("/?reset=1");
   const state = await startAudio(page);
 

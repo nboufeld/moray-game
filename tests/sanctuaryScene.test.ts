@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  InstancedMesh,
   Mesh,
+  Scene,
   SkinnedMesh,
   type BufferGeometry,
   type Material,
@@ -8,7 +10,8 @@ import {
   type Skeleton,
 } from "three";
 import { MORAY_SPECIES } from "../src/creatures/morays/MoraySpeciesConfig";
-import { SanctuaryScene } from "../src/sanctuary/SanctuaryScene";
+import { SanctuaryLife } from "../src/sanctuary/SanctuaryLife";
+import { SANCTUARY_LANES, SanctuaryScene } from "../src/sanctuary/SanctuaryScene";
 
 function collectResources(roots: readonly Object3D[]): {
   geometries: Set<BufferGeometry>;
@@ -87,5 +90,169 @@ describe("SanctuaryScene", () => {
     for (const fixture of fixtures) {
       expect(sanctuary.scene.children).toContain(fixture);
     }
+  });
+
+  it("authors five properly staggered lanes — height, phase, heading and pitch", () => {
+    // W-N3: E and S read as "five nearly parallel horizontal sticks" while
+    // the lanes shared their pitch and clustered their turns. These are the
+    // stagger rules the table's comment states, read back so a retune cannot
+    // quietly fold two residents onto the same line again.
+    expect(SANCTUARY_LANES).toHaveLength(MORAY_SPECIES.length);
+
+    for (let a = 0; a < SANCTUARY_LANES.length; a++) {
+      for (let b = a + 1; b < SANCTUARY_LANES.length; b++) {
+        const laneA = SANCTUARY_LANES[a]!;
+        const laneB = SANCTUARY_LANES[b]!;
+        // No two lanes share a band of water...
+        expect(Math.abs(laneA.y - laneB.y), `lanes ${a}/${b} height`).toBeGreaterThanOrEqual(0.45);
+        // ...or a heading cluster...
+        expect(Math.abs(laneA.turn - laneB.turn), `lanes ${a}/${b} turn`).toBeGreaterThanOrEqual(
+          0.1,
+        );
+        // ...or a lobe of the shared beat.
+        const phaseGap = Math.abs(laneA.phase - laneB.phase) % (Math.PI * 2);
+        const circular = Math.min(phaseGap, Math.PI * 2 - phaseGap);
+        expect(circular, `lanes ${a}/${b} phase`).toBeGreaterThanOrEqual(0.8);
+      }
+    }
+
+    const rises = SANCTUARY_LANES.map((lane) => lane.rise);
+    // Pitch variety: a near-level glide and a real climb both present.
+    expect(Math.min(...rises)).toBeLessThanOrEqual(0.35);
+    expect(Math.max(...rises)).toBeGreaterThanOrEqual(0.55);
+
+    for (const lane of SANCTUARY_LANES) {
+      // Inside the end-on trap's band: a lemniscate parks at turn ± 45°, and
+      // the sweep covers ±30° of azimuth, so |turn| must stay modest.
+      expect(Math.abs(lane.turn)).toBeLessThanOrEqual(0.35);
+      // Under the jellies' 4.55 m drift floor at the top of every lobe.
+      expect(lane.y + lane.rise).toBeLessThanOrEqual(4.55);
+      // And off the sand at the bottom of every lobe.
+      expect(lane.y - lane.rise).toBeGreaterThanOrEqual(0.4);
+    }
+    // Both directions of travel, so the room never becomes a carousel.
+    expect(SANCTUARY_LANES.some((lane) => lane.speed < 0)).toBe(true);
+    expect(SANCTUARY_LANES.some((lane) => lane.speed > 0)).toBe(true);
+  });
+
+  it("staggers the low lanes laterally, so no chimera can form (W-O2)", () => {
+    // Height stagger is necessary and was not sufficient: the zebra and
+    // dragon lanes were near-concentric in plan view at a relative angular
+    // rate of 0.03 rad/s, so the dragon's head sat screen-adjacent to the
+    // zebra's flank for ~30 s at a stretch and the round critic read one
+    // impossible animal at both canonical settles. Depth along the camera
+    // axis cannot separate two bodies on screen — lateral distance can.
+    // The species take lanes in codex order: zebra 2, dragon 3, abyss 4.
+    const zebra = SANCTUARY_LANES[2]!;
+    const dragon = SANCTUARY_LANES[3]!;
+    const abyss = SANCTUARY_LANES[4]!;
+    // The zebra runs the west half and the dragon the east: centres at
+    // least four metres apart, so their eights only graze at the lobes.
+    expect(dragon.x - zebra.x).toBeGreaterThanOrEqual(4);
+    // And they travel in opposite directions, so a residual adjacency is
+    // two animals passing nose-to-tail, never one continuing into the other.
+    expect(Math.sign(zebra.speed)).not.toBe(Math.sign(dragon.speed));
+    // The hermit keeps the middle water between the two low neighbours.
+    expect(Math.abs(abyss.x - zebra.x)).toBeGreaterThanOrEqual(2);
+    expect(Math.abs(abyss.x - dragon.x)).toBeGreaterThanOrEqual(1.5);
+  });
+
+  it("carries its life as a fixture that survives resident rebuilds", () => {
+    const sanctuary = new SanctuaryScene();
+    const life = sanctuary.scene.children.find((child) => child.name === "sanctuary-life");
+    expect(life).toBeDefined();
+
+    const fish = life!.children.find((child) => child.name === "sanctuary-fish");
+    expect(fish).toBeInstanceOf(InstancedMesh);
+    expect((fish as InstancedMesh).count).toBeGreaterThan(0);
+
+    const jellies = life!.children.filter((child) => child.name === "sanctuary-jelly");
+    expect(jellies.length).toBeGreaterThanOrEqual(2);
+
+    // The life is set dressing: `setSpecies` must never rebuild or detach it.
+    sanctuary.setSpecies(MORAY_SPECIES);
+    sanctuary.setSpecies([]);
+    expect(sanctuary.scene.children).toContain(life);
+    expect(life!.children).toContain(fish);
+  });
+});
+
+describe("SanctuaryLife", () => {
+  it("poses deterministically from its own seeds", () => {
+    const a = new SanctuaryLife();
+    const b = new SanctuaryLife();
+    for (const life of [a, b]) {
+      life.update(1 / 60);
+      life.update(1 / 60);
+    }
+
+    const matrices = (life: SanctuaryLife): Float32Array => {
+      const fish = life.group.children.find(
+        (child): child is InstancedMesh => child.name === "sanctuary-fish",
+      );
+      expect(fish).toBeDefined();
+      return fish!.instanceMatrix.array as Float32Array;
+    };
+    expect(Array.from(matrices(a))).toEqual(Array.from(matrices(b)));
+
+    const jellyPositions = (life: SanctuaryLife): number[] =>
+      life.group.children
+        .filter((child) => child.name === "sanctuary-jelly")
+        .flatMap((jelly) => jelly.position.toArray());
+    expect(jellyPositions(a)).toEqual(jellyPositions(b));
+
+    a.dispose();
+    b.dispose();
+  });
+
+  it("dresses its bells in the bloom's shared rim-lit skin", () => {
+    // W-N3: "flat purple buttons with zero translucency". The bell material
+    // is the one exported from `JellyBloom` — one recipe for the reef's bloom
+    // and the room — and it injects the fresnel rim that stands in for
+    // translucency. Exercised directly, the way the outline hull's chunk is,
+    // because nothing compiles in Node.
+    const life = new SanctuaryLife();
+    const jelly = life.group.children.find((child) => child.name === "sanctuary-jelly");
+    expect(jelly).toBeDefined();
+    const bell = jelly!.children[0] as Mesh;
+    const material = bell.material as Material & {
+      onBeforeCompile: (shader: unknown, renderer: unknown) => void;
+    };
+    expect(material.name).toBe("jelly-bell");
+
+    const shader = {
+      vertexShader: "",
+      fragmentShader: "void main() {\n  #include <normal_fragment_maps>\n}",
+      uniforms: {},
+    };
+    material.onBeforeCompile(shader, null);
+    expect(shader.fragmentShader).toContain("bellRim");
+    expect(shader.fragmentShader).toContain("totalEmissiveRadiance");
+    expect(shader.fragmentShader).toContain("#include <normal_fragment_maps>");
+    life.dispose();
+  });
+
+  it("releases everything it built, and detaches, on dispose", () => {
+    const scene = new Scene();
+    const life = new SanctuaryLife();
+    life.addTo(scene);
+    life.update(1 / 60);
+
+    const { geometries, materials } = collectResources([life.group]);
+    // Fish geometry, bell lathe, tentacle ribbons; fish, bell and tentacle
+    // materials. The GLB never arrives in Node, so everything traversed here
+    // was built by the system and must be released by it.
+    expect(geometries.size).toBeGreaterThanOrEqual(3);
+    expect(materials.size).toBeGreaterThanOrEqual(3);
+
+    const disposed = new Set<BufferGeometry | Material>();
+    for (const resource of [...geometries, ...materials]) {
+      resource.addEventListener("dispose", () => disposed.add(resource));
+    }
+
+    life.dispose();
+
+    expect(disposed.size).toBe(geometries.size + materials.size);
+    expect(scene.children).not.toContain(life.group);
   });
 });

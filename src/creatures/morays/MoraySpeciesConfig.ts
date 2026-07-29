@@ -6,7 +6,7 @@
  */
 export type BodyArchetype = "ribbon" | "standard" | "robust" | "compact";
 
-export type PatternKind = "spots" | "bands" | "plain";
+export type PatternKind = "spots" | "bands" | "plain" | "speckle";
 
 export interface MoraySpeciesConfig {
   readonly id: string;
@@ -104,5 +104,34 @@ export const MORAY_SPECIES: readonly MoraySpeciesConfig[] = [
     girthScale: 0.95,
     fact: "An ornate face of orange and cream with raised nasal tubes and hooked jaws — the reef's most dramatic reveal.",
     habitatHint: "Deeper in, behind you and to the left, an ornate face waits in the darker rocks.",
+  },
+  {
+    /**
+     * The fifth moray (W-M3), and the only animal that does not live in the
+     * bowl: its den is on the canyon floor past the rim's gate, so finding it
+     * is a journey rather than a turn of the head. Deliberately procedural —
+     * no `albedoAsset` — because the fallback skin is a shipping surface in
+     * this project and a creature of the dark is the one animal a hand-glazed
+     * painting serves least: its markings are points of pallor on a body that
+     * is mostly value, which is exactly what `MorayPattern`'s speckle draws.
+     */
+    id: "abyss",
+    commonName: "Abyssal moray",
+    scientificName: "Gymnothorax bathyphilus",
+    archetype: "standard",
+    // Dark violet-charcoal, not black: the darkest thing in this world is a
+    // colour, and this animal lives beside the violet the canyon's fog and
+    // shadows are mixed from.
+    bodyColor: 0x37324e,
+    // Moonlit pale blue-white — the "luminous" is value against the body,
+    // not emission; nothing on an animal may bloom.
+    patternColor: 0xdde6f4,
+    accentColor: 0x8fa8d8,
+    pattern: "speckle",
+    nasalAppendages: false,
+    lengthScale: 1.2,
+    girthScale: 0.9,
+    fact: "A hermit of the twilight canyon, charcoal-violet and dusted with pale speckles like a night of faint stars.",
+    habitatHint: "Past the rim itself — over your right shoulder from where you began, a gate of stone opens into darker water.",
   },
 ];

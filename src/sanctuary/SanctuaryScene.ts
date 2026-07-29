@@ -27,6 +27,7 @@ import {
   type ContactPatch,
 } from "../world/Seabed";
 import { SeaGrass, type GrassClump } from "../world/SeaGrass";
+import { SanctuaryLife } from "./SanctuaryLife";
 import type { MoraySpeciesConfig } from "../creatures/morays/MoraySpeciesConfig";
 
 /**
@@ -222,33 +223,80 @@ interface Lane {
    * face on it — which is exactly what a quarter-turned lane looked like.
    */
   readonly turn: number;
+  /**
+   * How far the animal rises over one lobe of its eight (W-N3, per lane).
+   *
+   * This is the lever that actually broke the "five nearly parallel
+   * horizontal sticks" read the round critic saw in E and S: heading can only
+   * be staggered inside the narrow band the end-on trap above allows, but an
+   * eel climbing at seventeen degrees and one gliding nearly level are
+   * different lines whatever their yaw. The pitch a lane's rise buys is about
+   * `atan(rise / (radius·√2))` at the crossing, so the spread below runs from
+   * a near-level glide to a visible climb-and-dive.
+   */
+  readonly rise: number;
 }
 
 /**
- * One lane per resident, layered in depth and height rather than lined up.
+ * One lane per resident, layered in depth and height rather than lined up —
+ * and staggered in phase, heading *and* pitch (W-N3), because the sweep holds
+ * all five in one frame and five copies of the same line are a fish-market
+ * display, not a dream.
  *
  * They are deliberately small. Everything has to stay inside the frame at both
  * ends of the sweep, and an eel is not a point: a four metre body curving out
  * of a two metre loop already reaches most of the way to the edge.
+ *
+ * The stagger, stated as the rules the numbers obey (exported so
+ * `tests/sanctuaryScene.test.ts` can read them back): five distinct lanes;
+ * centre heights spread across the water column, no two closer than 0.45 m;
+ * turns pairwise at least 0.1 rad apart, all inside the ±0.35 the end-on trap
+ * allows; phases pairwise at least 0.8 rad apart; both directions of travel
+ * present; rises from 0.35 to 0.65 so no two animals cut the water at the
+ * same angle. The tops stay under the jellies' 4.55 m drift floor.
+ *
+ * The stagger rules are necessary and were not sufficient (W-O2). The zebra
+ * and dragon lanes were near-concentric in plan view at a relative angular
+ * rate of 0.03 rad/s — so whenever their beat drifted into alignment, the
+ * dragon's orange head sat screen-adjacent to the zebra's banded flank for
+ * ~30 s at a stretch and the round critic read one impossible animal at both
+ * canonical settles. Height stagger cannot prevent that: a lower animal a few
+ * metres deeper projects onto the same screen band, and depth along the
+ * camera axis is exactly what a chimera is made of. So the low trio is now
+ * staggered *laterally* — the screen-x lever — as well: the zebra runs the
+ * west half (reversed, so any residual dragon adjacency is two animals
+ * passing nose-to-tail rather than one continuing into the other), the
+ * dragon glides across the east half, and the hermit keeps the deep water
+ * between them. Measured over the first 40 s of a visit with a screen-space
+ * body simulation (near-parallel adjacency under 70 px), the old table
+ * carried ~44 s of same-direction adjacency; this one carries under 2 s of
+ * sub-second flickers inside the whole capture window.
  */
-const LANES: readonly Lane[] = [
+export const SANCTUARY_LANES: readonly Lane[] = [
   // The far lane runs the other way, so the deepest animal is the one heading
-  // away — and it is anti-phase with the last lane, which is the one it is
-  // closest to in height: two animals on the same lobe read as one. The species
-  // take these in codex order, and the snowflake is the one that can afford the
-  // back of the room: it is the palest animal here and still reads at depth,
-  // where the dragon's dark red went to a brown stick.
-  { x: -2, y: 2.95, z: -4.2, radius: 2, speed: -0.3, phase: 3.1, turn: -0.15 },
+  // away. The species take these in codex order, and the snowflake is the one
+  // that can afford the back of the room: it is the palest animal here and
+  // still reads at depth, where the dragon's dark red went to a brown stick.
+  { x: -2, y: 3.1, z: -4.2, radius: 2, speed: -0.3, phase: 6.1, turn: -0.32, rise: 0.42 },
   // The tightest lane, because the ribbon is the longest animal by half again:
   // head offset plus body length is what has to clear the frame edge, and this
-  // one spends most of its length covering ground on its own.
-  { x: -1.4, y: 3.7, z: 1.0, radius: 1.6, speed: 0.235, phase: 2.2, turn: -0.3 },
-  { x: 0.5, y: 1.5, z: -1.2, radius: 2.3, speed: 0.27, phase: 4.3, turn: 0.1 },
-  { x: 1.1, y: 2.3, z: -0.4, radius: 2.4, speed: 0.3, phase: 0, turn: 0.3 },
+  // one spends most of its length covering ground on its own. The dancer takes
+  // the highest water and a real climb.
+  { x: -1.4, y: 3.65, z: 1.0, radius: 1.6, speed: 0.235, phase: 3.3, turn: 0.22, rise: 0.55 },
+  // The zebra: low water, the widest vertical travel in the room — and the
+  // west half of the frame, run backwards (W-O2, see the header).
+  { x: -1.7, y: 1.5, z: -1.75, radius: 2.3, speed: -0.27, phase: 4.7, turn: -0.1, rise: 0.65 },
+  // The dragon glides nearly level across the east half of the frame: the
+  // sovereign does not bob, and he no longer shares his water (W-O2).
+  { x: 2.65, y: 2.35, z: -0.75, radius: 2.4, speed: 0.3, phase: 0.9, turn: 0.34, rise: 0.35 },
+  // W-M3: the fifth resident's lane. Low, slow and deep like its canyon: it
+  // hugs the sand below every other lane and runs its eight backwards so it
+  // mostly heads away, in the middle water the other two low lanes now leave
+  // clear.
+  { x: 0.9, y: 1.0, z: -2.4, radius: 2.1, speed: -0.24, phase: 2.4, turn: 0.06, rise: 0.5 },
 ];
 
-/** How far a resident rises over one lobe of its eight. */
-const LANE_RISE = 0.5;
+const LANES = SANCTUARY_LANES;
 
 /**
  * Body length the residents are normalised toward, in units of the rig's
@@ -292,6 +340,9 @@ export class SanctuaryScene {
   private readonly motes = new Particles(120, 14, SEEDS.sanctuaryMotes);
   private readonly bubbles = new Bubbles(22, BUBBLE_VENTS, SEEDS.sanctuaryBubbles);
   private readonly grass = new SeaGrass(SEEDS.sanctuaryGrass, LENS_CLEARANCE, GRASS_CLUMPS);
+  /** W-L8: the shoal and the bells. Set dressing, like everything above —
+   * built once, never part of the `setSpecies` path. */
+  private readonly life = new SanctuaryLife();
   private sweep = 0;
 
   constructor() {
@@ -368,6 +419,7 @@ export class SanctuaryScene {
     this.caustics.addTo(this.scene);
     this.motes.addTo(this.scene);
     this.bubbles.addTo(this.scene);
+    this.life.addTo(this.scene);
 
     this.placeCamera();
   }
@@ -475,6 +527,8 @@ export class SanctuaryScene {
     }
 
     this.grass.update(dt, reducedMotion);
+    // Already scaled by the room's own calm factor, like the residents.
+    this.life.update(dt * motion);
     this.caustics.update(dt, reducedMotion);
     // `playerProxy` is this frame's camera position, read above.
     this.shafts.update(dt, reducedMotion, this.playerProxy);
@@ -523,7 +577,7 @@ export class SanctuaryScene {
     const root = resident.moray.asset.root;
     root.position.set(
       lane.x + acrossPath * cosTurn + alongPath * sinTurn,
-      lane.y + sinA * LANE_RISE,
+      lane.y + sinA * lane.rise,
       lane.z - acrossPath * sinTurn + alongPath * cosTurn,
     );
 
@@ -534,7 +588,7 @@ export class SanctuaryScene {
     const direction = lane.speed < 0 ? -1 : 1;
     const alongX = cosA * lane.radius * direction;
     const alongZ = cos2A * lane.radius * direction;
-    const alongY = cosA * LANE_RISE * direction;
+    const alongY = cosA * lane.rise * direction;
     const yawRate =
       ((-sinA * cos2A + 2 * Math.sin(2 * a) * cosA) / (cosA * cosA + cos2A * cos2A)) * lane.speed;
     // Eased rather than taken raw: the ends of a lemniscate turn hard enough

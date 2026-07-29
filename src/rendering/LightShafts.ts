@@ -3,6 +3,7 @@ import {
   BufferAttribute,
   CanvasTexture,
   ClampToEdgeWrapping,
+  Color,
   DoubleSide,
   Group,
   Matrix4,
@@ -19,6 +20,7 @@ import {
 import { Random, SEEDS } from "../util/Random";
 import { seabedHeight } from "../world/Seabed";
 import { buildScalarTexture, fbm } from "./ProceduralTexture";
+import type { WeatherMoods } from "./WeatherMoods";
 
 /**
  * A ceiling on grounded light pools, independent of how many beams get authored
@@ -141,6 +143,13 @@ const POOL_TEXTURE_FADE_OUT = 0.95;
  */
 const EDGE_ON_FADE_IN = 0.06;
 const EDGE_ON_FADE_OUT = 0.3;
+
+/**
+ * The pools' warm white, as one constant rather than a literal in `addPool`:
+ * a weather mood (W-M1) tints a pool by multiplying *this*, so the base the
+ * tint works from and the base identity restores are the same object.
+ */
+const POOL_COLOR = new Color(0xffefd6);
 
 function smoothStep(edge0: number, edge1: number, x: number): number {
   const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
@@ -276,6 +285,10 @@ export class LightShafts {
   private readonly poolOpacity = 0.45;
   private readonly viewScratch = new Vector3();
   private time = 0;
+  /** The sky's slow moods (W-M1); null — and identity — everywhere but the reef. */
+  private weather: WeatherMoods | null = null;
+  /** Whether a mood has written the tints, so identity restores them once. */
+  private tinted = false;
 
   /**
    * `placements` defaults to the reef's authored beams. The sanctuary lights
@@ -413,7 +426,7 @@ export class LightShafts {
       // The same warm white the beam above it is painted in. A cool pool under
       // a warm ribbon is two light sources, and the sand it lands on says which
       // one is lying.
-      color: 0xffefd6,
+      color: POOL_COLOR.clone(),
       // Multiplies the map, and carries the rim fade the filtering cannot
       // reach.
       vertexColors: true,
@@ -438,6 +451,11 @@ export class LightShafts {
     scene.add(this.group);
   }
 
+  /** Opts the beams into the sky's slow moods (W-M1). Only the reef attaches. */
+  attachWeather(weather: WeatherMoods): void {
+    this.weather = weather;
+  }
+
   /**
    * `cameraPosition` is optional so that a caller with no camera to hand — the
    * unit tests, and anything driving the shafts before a frame has been posed —
@@ -446,19 +464,60 @@ export class LightShafts {
    */
   update(dt: number, reducedMotion: boolean, cameraPosition?: Vector3): void {
     this.time += dt * (reducedMotion ? 0.25 : 1);
+    // W-M1: a mood scales every beam's (and pool's) opacity by one gain and
+    // tints them by one colour. The gain rides the existing product — a
+    // trailing × 1 at identity is exact in IEEE floats — and the tint is only
+    // ever written while a mood is on, then restored once, so the default
+    // frame's materials are the shipped ones untouched.
+    const weather =
+      this.weather !== null && !this.weather.isIdentity ? this.weather.channels : null;
+    const gain = weather === null ? 1 : weather.shaftOpacity;
+    // W-N4: a full overcast takes the gain to *exactly* zero — there is no
+    // focused light under a cloud — and a zero-opacity additive quad still
+    // pays its overdraw, so the materials are hidden outright there. The
+    // crossfade fades the opacity all the way down first (the lerp's
+    // endpoints are exact), so the flip can never pop.
+    const hidden = weather !== null && gain === 0;
     // A slow breathing pulse; the surface above is never quite still. Each
     // shaft runs on its own phase so the swell reads as water, not a dimmer.
     const calm = reducedMotion ? 0.75 : 1;
     for (const beam of this.beams) {
       const pulse = 1 + Math.sin(this.time * 0.35 + beam.phase) * 0.28;
-      const opacity = this.baseOpacity * calm * beam.strength * pulse;
+      const opacity = this.baseOpacity * calm * beam.strength * pulse * gain;
       for (const blade of beam.blades) {
         blade.material.opacity = opacity * this.facing(blade, beam.center, cameraPosition);
+        if (weather !== null) {
+          blade.material.color.setRGB(weather.shaftRed, weather.shaftGreen, weather.shaftBlue);
+          blade.material.visible = !hidden;
+        }
       }
       if (beam.pool) {
         // Same phase as its shaft: a pool that brightens while its beam dims
         // immediately stops looking like the beam is what lit it.
-        beam.pool.opacity = this.poolOpacity * calm * beam.strength * pulse;
+        beam.pool.opacity = this.poolOpacity * calm * beam.strength * pulse * gain;
+        if (weather !== null) {
+          beam.pool.color.setRGB(
+            POOL_COLOR.r * weather.shaftRed,
+            POOL_COLOR.g * weather.shaftGreen,
+            POOL_COLOR.b * weather.shaftBlue,
+          );
+          beam.pool.visible = !hidden;
+        }
+      }
+    }
+    if (weather !== null) {
+      this.tinted = true;
+    } else if (this.tinted) {
+      this.tinted = false;
+      for (const beam of this.beams) {
+        for (const blade of beam.blades) {
+          blade.material.color.setRGB(1, 1, 1);
+          blade.material.visible = true;
+        }
+        beam.pool?.color.copy(POOL_COLOR);
+        if (beam.pool) {
+          beam.pool.visible = true;
+        }
       }
     }
   }

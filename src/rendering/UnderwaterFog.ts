@@ -3,15 +3,18 @@ import {
   Color,
   EquirectangularReflectionMapping,
   FogExp2,
+  LinearFilter,
   SRGBColorSpace,
   Vector3,
   type Scene,
   type Texture,
 } from "three";
 import { Random, SEEDS } from "../util/Random";
+import { ABYSS_FOG, abyssMood, onSceneRender } from "../world/Abyss";
 import { requestBackdrop } from "./AssetLibrary";
 import { readImage, readImageRows, textureFromPixels } from "./ImagePixels";
 import { SUN_POSITION } from "./Lighting";
+import type { WeatherMoods } from "./WeatherMoods";
 
 export interface UnderwaterFogOptions {
   /** Deep water tint the fog fades toward, and the colour at the horizon. */
@@ -198,7 +201,93 @@ function bytes(color: Color): [number, number, number] {
 }
 
 /**
- * The panorama with its red channel stood on {@link RED_PEDESTAL}.
+ * Columns blended on each side of the panorama's wrap join, and the vertical
+ * window (in rows) the join's mismatch is smoothed over before it is used.
+ *
+ * The join is the seam fix (W-N4). The painting's left and right edges do not
+ * agree — measured off the file, they differ by 36 parts of red at the zenith
+ * rows and six to ten parts of green and blue down the whole water column,
+ * against an interior column-to-column step of well under one part — and an
+ * equirectangular background puts that join *somewhere* in every panning
+ * frame. With the backdrop turned so its painted sun sits over the world's
+ * (−1.9912 rad), the join lands at azimuth −1.15 rad, which shot A's yaw-0
+ * fov-70 camera projects to x = 1087 of 1600: the hard vertical line in the
+ * open water of A, F, W and Y, standing still while the fish swim past it.
+ * It was diagnosed as a colour *step* rather than an additive mark — red
+ * falls across it while green and blue rise, which no shaft can do.
+ *
+ * The seal is a per-row cross-ramp: each row's low-frequency edge mismatch
+ * (edge means over {@link WRAP_EDGE_COLS} columns, smoothed vertically over
+ * {@link WRAP_SMOOTH_ROWS} rows so the painting's grain cannot streak) is
+ * split between the two sides, fading linearly to nothing {@link WRAP_BLEND}
+ * columns in. The two edges then meet at their mutual average and the join is
+ * a gradient spread over 8° of azimuth instead of a step at one column. Every
+ * pixel outside the two ramps is untouched, and the horizon strip the fog is
+ * sampled from moves by under a part in ten thousand — the ramps are 4.7% of
+ * its width and shift it by half a mismatch each, in opposite directions.
+ */
+const WRAP_BLEND = 48;
+const WRAP_EDGE_COLS = 4;
+const WRAP_SMOOTH_ROWS = 15;
+
+/**
+ * Cross-fades the panorama's wrap join closed, in place. Runs after the red
+ * lift so the values it reconciles are the values the GPU will sample.
+ */
+function sealWrap(pixels: ImageData): void {
+  const { width, height, data } = pixels;
+  if (width <= WRAP_BLEND * 2) {
+    return;
+  }
+
+  // Per-row mismatch, left edge minus right edge, from a few columns of mean.
+  const mismatch = new Float32Array(height * 3);
+  for (let y = 0; y < height; y++) {
+    for (let c = 0; c < 3; c++) {
+      let left = 0;
+      let right = 0;
+      for (let k = 0; k < WRAP_EDGE_COLS; k++) {
+        left += data[(y * width + k) * 4 + c] ?? 0;
+        right += data[(y * width + (width - 1 - k)) * 4 + c] ?? 0;
+      }
+      mismatch[y * 3 + c] = (left - right) / WRAP_EDGE_COLS;
+    }
+  }
+
+  // Smoothed vertically: the correction is a shift by a smooth field, so the
+  // grain of one edge can never print onto the other as horizontal streaks.
+  const half = (WRAP_SMOOTH_ROWS - 1) / 2;
+  const smoothed = new Float32Array(height * 3);
+  for (let y = 0; y < height; y++) {
+    const from = Math.max(0, y - half);
+    const to = Math.min(height - 1, y + half);
+    for (let c = 0; c < 3; c++) {
+      let sum = 0;
+      for (let k = from; k <= to; k++) {
+        sum += mismatch[k * 3 + c] ?? 0;
+      }
+      smoothed[y * 3 + c] = sum / (to - from + 1);
+    }
+  }
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < WRAP_BLEND; x++) {
+      // 1 at the edge column, 0 one column past the ramp.
+      const ramp = 1 - x / WRAP_BLEND;
+      const leftIndex = (y * width + x) * 4;
+      const rightIndex = (y * width + (width - 1 - x)) * 4;
+      for (let c = 0; c < 3; c++) {
+        const shift = ((smoothed[y * 3 + c] ?? 0) / 2) * ramp;
+        data[leftIndex + c] = (data[leftIndex + c] ?? 0) - shift;
+        data[rightIndex + c] = (data[rightIndex + c] ?? 0) + shift;
+      }
+    }
+  }
+}
+
+/**
+ * The panorama with its red channel stood on {@link RED_PEDESTAL} and its
+ * wrap join sealed (see {@link sealWrap}).
  *
  * Memoised, because this is two megapixels of arithmetic and a second upload:
  * the copy is what gets hung, so the texture the library loaded is read once
@@ -226,6 +315,7 @@ function liftRed(texture: Texture): Texture {
   for (let i = 0; i < data.length; i += 4) {
     data[i] = RED_PEDESTAL + (data[i] ?? 0) * gain;
   }
+  sealWrap(pixels);
 
   const lifted = textureFromPixels(pixels, texture);
   if (!lifted) {
@@ -235,6 +325,16 @@ function liftRed(texture: Texture): Texture {
   // surface map needs, and this is not a surface. Without it three would treat
   // the panorama as a flat UV texture and the sky would be one stretched pixel.
   lifted.mapping = EquirectangularReflectionMapping;
+  // No mipmaps, and this is the other half of the seam fix: equirect UVs jump
+  // from 1 back to 0 along one screen column, the rasteriser reads that as a
+  // derivative of the whole texture width and samples the smallest mip, and
+  // that column renders as the panorama's global average — a one-pixel line
+  // no amount of pixel sealing can touch. Measured after the seal: a residual
+  // two-part red step at the join, gone with the mips. The painting is never
+  // minified anywhere a camera can look (2048 columns over 360° is magnified
+  // ~2.7× at fov 70 on a 1600px frame), so the mips bought nothing anyway.
+  lifted.generateMipmaps = false;
+  lifted.minFilter = LinearFilter;
   liftedBackdrop = lifted;
   return lifted;
 }
@@ -260,6 +360,12 @@ export class UnderwaterFog {
   private readonly abyssColor: Color;
   private readonly sunDirection: Vector3;
   private readonly backdropAsset: string | undefined;
+  /** What the backdrop renders at with no twilight over it; see `applyTo`. */
+  private backgroundLevel = 1;
+  private readonly twilight = new Color();
+  /** The sky's slow moods (W-M1); null — and identity — everywhere but the reef. */
+  private weather: WeatherMoods | null = null;
+  private readonly weatherBase = new Color();
 
   constructor(options: UnderwaterFogOptions = {}) {
     // Every one of these carries far more red than a photograph of this water
@@ -273,6 +379,16 @@ export class UnderwaterFog {
     this.abyssColor = new Color(options.abyssColor ?? 0x2b7f91);
     this.sunDirection = (options.sunDirection ?? SUN_POSITION).clone().normalize();
     this.backdropAsset = options.backdropAsset;
+  }
+
+  /**
+   * Opts this water into the sky's slow moods (W-M1). Only the reef attaches;
+   * the sanctuary's fog never sees weather, so the room keeps its own noon —
+   * the same "not a different ocean, but not this one's sky" line WP-G6 drew
+   * when the room declined the painted backdrop.
+   */
+  attachWeather(weather: WeatherMoods): void {
+    this.weather = weather;
   }
 
   applyTo(scene: Scene): void {
@@ -290,6 +406,59 @@ export class UnderwaterFog {
         this.adoptBackdrop(scene, texture, gradient);
       });
     }
+
+    // W-M3: the twilight, as a function of where the camera is. Runs at the
+    // top of every render, before the render lists or the background, so the
+    // whole frame sees one consistent water — and at a mood of exactly zero,
+    // which is everywhere the bowl is playable, it writes the base values
+    // back verbatim: no lerp, no drift, and every in-bowl capture renders
+    // through arithmetic this hook never touches. The base is read live off
+    // `this.color`/`this.density` rather than snapshotted, because
+    // `adoptBackdrop` re-derives the colour when the painting lands.
+    //
+    // Everything downstream follows for free: WP-G5's pooling reads
+    // `scene.fog` each frame, and `DistantReef` and the canyon's own curtains
+    // re-mix their inks from it — so the whole painted distance turns violet
+    // with the water and turns back, with nothing plumbed.
+    // W-M1 layers the sky's slow moods over the same hook: the weather
+    // *scales the base* — colour, density, backdrop level — and the twilight
+    // then modulates the scaled base, exactly as it always modulated the
+    // shipped one. Time and place are two channels over one quantity, so the
+    // canyon at golden hour is the golden water taken down into twilight and
+    // there is no second writer to fight. With no weather attached (the
+    // sanctuary, the unit tests) or at the identity mood — which is the whole
+    // opening stretch of every dive — the branch below is not entered and the
+    // arithmetic is W-M3's to the character.
+    onSceneRender(scene, (camera) => {
+      const position = camera.position;
+      const mood = abyssMood(position.x, position.y, position.z);
+      const weather =
+        this.weather !== null && !this.weather.isIdentity ? this.weather.channels : null;
+      let base = this.color;
+      let density = this.density;
+      let level = this.backgroundLevel;
+      if (weather !== null) {
+        base = this.weatherBase.setRGB(
+          this.color.r * weather.fogRed,
+          this.color.g * weather.fogGreen,
+          this.color.b * weather.fogBlue,
+        );
+        density = this.density * weather.fogDensity;
+        level = this.backgroundLevel * weather.backdrop;
+      }
+
+      fog.color.copy(base);
+      if (mood === 0) {
+        fog.density = density;
+        scene.backgroundIntensity = level;
+        return;
+      }
+      const [r, g, b] = ABYSS_FOG.colorScale;
+      this.twilight.setRGB(r, g, b).multiply(base);
+      fog.color.lerp(this.twilight, mood);
+      fog.density = density + ABYSS_FOG.densityGain * mood;
+      scene.backgroundIntensity = level * (1 - ABYSS_FOG.backdropFade * mood);
+    });
   }
 
   /**
@@ -325,6 +494,9 @@ export class UnderwaterFog {
 
     scene.background = painting;
     scene.backgroundIntensity = BACKDROP_EXPOSURE;
+    // The twilight hook scales the backdrop from this level, so it has to
+    // know what "no twilight" renders at once the painting owns the sky.
+    this.backgroundLevel = BACKDROP_EXPOSURE;
     // The painted sun is turned onto the real one. `equirectUv` measures
     // azimuth as atan2(z, x) and three negates the background rotation before
     // handing it to the shader, so the sampled azimuth is the view's plus this.

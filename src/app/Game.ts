@@ -7,6 +7,7 @@ import {
 import { ReefSoundscape } from "../audio/ReefSoundscape";
 import { AnemoneGarden } from "../creatures/fauna/AnemoneGarden";
 import { Crabs } from "../creatures/fauna/Crabs";
+import { Shrimp } from "../creatures/fauna/Shrimp";
 import { Starfish } from "../creatures/fauna/Starfish";
 import { Urchins } from "../creatures/fauna/Urchins";
 import { FishSchoolSystem } from "../creatures/fish/FishSchoolSystem";
@@ -31,6 +32,7 @@ import { Lighting } from "../rendering/Lighting";
 import { Particles } from "../rendering/Particles";
 import { SandPuffs } from "../rendering/SandPuffs";
 import { UnderwaterFog } from "../rendering/UnderwaterFog";
+import { WeatherMoods, type WeatherState } from "../rendering/WeatherMoods";
 import { SanctuaryScene } from "../sanctuary/SanctuaryScene";
 import { SaveSystem } from "../save/SaveSystem";
 import { Codex } from "../ui/Codex";
@@ -41,6 +43,7 @@ import { SettingsPanel } from "../ui/SettingsPanel";
 import { CollisionField } from "../world/CollisionField";
 import { Reef } from "../world/Reef";
 import { GameLoop } from "./GameLoop";
+import { MorayCuriosity } from "./MorayCuriosity";
 import { RendererAdapter } from "./RendererAdapter";
 
 const PLAYER_RADIUS = 0.6;
@@ -49,6 +52,14 @@ interface MorayInstance {
   readonly config: MoraySpeciesConfig;
   readonly moray: Moray;
   readonly target: DiscoveryTarget;
+  /**
+   * When this animal watches the diver (W-N5). It used to be
+   * `curious = discovered`, which pinned every discovered head on the diver
+   * for the rest of the session and hid the presence-cycle poses forever;
+   * the latch engages on genuine attention and relaxes after a sustained
+   * quiet spell. See `MorayCuriosity`.
+   */
+  readonly curiosity: MorayCuriosity;
 }
 
 export interface GameOptions {
@@ -76,6 +87,10 @@ export class Game {
   private readonly collision: CollisionField;
   private readonly caustics = new CausticsSystem();
   private readonly shafts: LightShafts;
+  /** The sky's slow moods (W-M1). The reef's, only: the sanctuary keeps noon. */
+  private readonly weather = new WeatherMoods();
+  /** Whether the weather has written the grade, so identity restores it once. */
+  private gradeTinted = false;
   private readonly particles = new Particles();
   private readonly bubbles = new Bubbles();
   private readonly fish = new FishSchoolSystem();
@@ -96,6 +111,7 @@ export class Game {
     new Ray(),
     new JellyBloom(),
     new SandPuffs(),
+    new Shrimp(),
   ]);
   private readonly lifeContext: LifeContext = {
     diverPosition: new Vector3(),
@@ -130,6 +146,13 @@ export class Game {
   private readonly headScratch = new Vector3();
 
   private mode: Mode = "reef";
+  /**
+   * Which moray the focus scanner held last step, for the curiosity latch.
+   * One fixed step stale by construction — `discovery.update` needs the
+   * heads this step's moray updates produce, so it runs after them — and a
+   * sixtieth of a second of lag on an 18-second relax window is nothing.
+   */
+  private lastFocusedId: string | null = null;
   private hintLevel = -1;
   private lastTime = 0;
   private running = false;
@@ -151,11 +174,19 @@ export class Game {
     this.camera = new PerspectiveCamera(this.settings.fieldOfView, 1, 0.1, 160);
     this.renderer = new RendererAdapter(canvas);
 
-    new UnderwaterFog({ backdropAsset: "world/backdrop.png" }).applyTo(this.scene);
+    // W-M1: the reef's water, lights, beams and dapples opt into the sky's
+    // slow moods. The sanctuary's own instances never attach, so the room
+    // stays at its own noon by construction.
+    const fog = new UnderwaterFog({ backdropAsset: "world/backdrop.png" });
+    fog.attachWeather(this.weather);
+    fog.applyTo(this.scene);
     const lighting = new Lighting();
+    lighting.attachWeather(this.weather);
     lighting.addTo(this.scene);
     this.shafts = new LightShafts(lighting.sun.position);
+    this.shafts.attachWeather(this.weather);
     this.shafts.addTo(this.scene);
+    this.caustics.attachWeather(this.weather);
     this.caustics.addTo(this.scene);
     this.particles.addTo(this.scene);
     this.bubbles.addTo(this.scene);
@@ -176,7 +207,7 @@ export class Game {
       this.scene.add(moray.asset.root);
       const target: DiscoveryTarget = { speciesId: config.id, position: spot.position.clone() };
       targets.push(target);
-      this.morays.push({ config, moray, target });
+      this.morays.push({ config, moray, target, curiosity: new MorayCuriosity() });
     }
     this.discovery = new DiscoverySystem(targets);
 
@@ -250,6 +281,11 @@ export class Game {
     return this.soundscape;
   }
 
+  /** The adaptive scaler's current internal resolution; a W-L8 QA door. */
+  get renderScale(): number {
+    return this.renderer.currentRenderScale;
+  }
+
   /**
    * Read-only diver position. End-to-end tests swim by holding a key and need
    * to know when the diver has actually arrived: the simulation only advances
@@ -302,6 +338,11 @@ export class Game {
 
     this.rig.update(delta, this.dive.position, this.dive.velocity, this.settings);
     this.reef.update(paused ? 0 : delta, this.settings.reducedMotion);
+    // The weather rides the frame clock like the caustics and shafts below,
+    // which read its channels inside their own updates — so it advances
+    // first, and keeps passing while the comfort panel holds the simulation.
+    this.weather.update(delta);
+    this.applyWeatherGrade();
     this.caustics.update(delta, this.settings.reducedMotion);
     // After the rig has placed the camera: the shafts fade whichever of their
     // quads the eye is looking along, and that is a property of where it is
@@ -347,8 +388,18 @@ export class Game {
     this.collision.resolve(this.dive.position, PLAYER_RADIUS);
 
     for (const instance of this.morays) {
-      const discovered = this.discovery.isDiscovered(instance.config.id);
-      instance.moray.update(step, this.dive.position, discovered);
+      // Curiosity is attention with a slow release, not a permanent flag:
+      // a discovered moray watches a diver who is focusing it or standing
+      // close, and lets go after a sustained quiet spell — so a completed
+      // save's reef returns to its den poses instead of holding every head
+      // on the diver forever. Pre-discovery the latch always reports false,
+      // exactly as the old `curious = discovered` did.
+      const curious = instance.curiosity.update(step, {
+        discovered: this.discovery.isDiscovered(instance.config.id),
+        focused: this.lastFocusedId === instance.config.id,
+        distance: this.dive.position.distanceTo(instance.target.position),
+      });
+      instance.moray.update(step, this.dive.position, curious);
       instance.moray.getHeadWorldPosition(this.headScratch);
       instance.target.position.copy(this.headScratch);
     }
@@ -362,6 +413,7 @@ export class Game {
       },
       step,
     );
+    this.lastFocusedId = result.focused?.speciesId ?? null;
 
     this.hud.setFocus(
       result.progress,
@@ -372,6 +424,43 @@ export class Game {
     if (result.newlyDiscovered) {
       this.onDiscovered(result.newlyDiscovered.speciesId);
     }
+  }
+
+  /**
+   * Writes W-M1's grade tilt through the renderer's one door — only while a
+   * mood is actually on, with one reset on the way back, so the default
+   * frame's grade uniforms are the shipped values untouched.
+   */
+  private applyWeatherGrade(): void {
+    if (!this.weather.isIdentity) {
+      const channels = this.weather.channels;
+      this.renderer.setWeatherGrade(
+        channels.gradeRed,
+        channels.gradeGreen,
+        channels.gradeBlue,
+        channels.gradeSaturation,
+      );
+      this.gradeTinted = true;
+    } else if (this.gradeTinted) {
+      this.renderer.setWeatherGrade(1, 1, 1, 1);
+      this.gradeTinted = false;
+    }
+  }
+
+  /**
+   * W-M1's QA door, exposed on `window.__reef`: pins the sky at `blend` of
+   * the way from bright noon into the named mood (1 is the mood in full,
+   * 0.5 is mid-crossfade), or resumes the schedule on `null`. The grade is
+   * pushed immediately so a held capture frame needs no further advance.
+   */
+  setMood(name: string | null, blend = 1): void {
+    this.weather.setMood(name, blend);
+    this.applyWeatherGrade();
+  }
+
+  /** Where the weather schedule stands, for the probes and the harness. */
+  get weatherState(): WeatherState {
+    return this.weather.state;
   }
 
   /** Whether the player is holding any of the swim keys. */
@@ -445,8 +534,10 @@ export class Game {
       return;
     }
     const nearest = this.nearestUndiscovered();
+    const countWords = ["No", "One", "Two", "Three", "Four", "Five", "Six", "Seven"];
+    const countWord = countWords[this.discovery.totalCount] ?? String(this.discovery.totalCount);
     const rungs = [
-      "Four morays hide across the reef. Drift slowly and watch for small movements.",
+      `${countWord} morays hide across the reef. Drift slowly and watch for small movements.`,
       nearest ? `Nearest clue: ${nearest.habitatHint}` : "Explore the far edges of the reef.",
       nearest
         ? `Seek the ${nearest.commonName.toLowerCase()} — centre the reticle on its eye and hold steady.`
@@ -511,6 +602,13 @@ export class Game {
   private toggleSanctuary(): void {
     if (this.mode === "reef") {
       this.mode = "sanctuary";
+      // The room keeps its own noon, and the grade pass is shared between the
+      // two scenes — take the weather's tilt off before the room draws. The
+      // reef's advance() puts it back on the first frame after the return.
+      if (this.gradeTinted) {
+        this.renderer.setWeatherGrade(1, 1, 1, 1);
+        this.gradeTinted = false;
+      }
       this.soundscape.setSanctuary(true);
       this.sanctuary.setSpecies(this.discoveredConfigs());
       this.sanctuaryOverlay.show(this.discoveredConfigs());

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { Raycaster, Vector3 } from "three";
 import { Reef } from "../src/world/Reef";
 import { CollisionField } from "../src/world/CollisionField";
+import { seabedHeight } from "../src/world/Seabed";
 
 /**
  * Line of sight to every moray, checked the way the game checks it.
@@ -74,6 +75,72 @@ describe("every moray can be seen from its open side", () => {
       // narrow the view — but the open side has to be broadly open.
       expect(clear / reachableCount).toBeGreaterThan(0.75);
     });
+  }
+});
+
+// ─── W-M3: the canyon approach ───────────────────────────────────────────────
+//
+// The generic suite above already covers the abyss den at the bowl's eye
+// heights — the annex permits them — but the way the animal is actually found
+// is from the descending shelf, eyes a metre and a half over a floor that is
+// six metres below dune level. These cases stand there. New cases only; the
+// four bowl morays' cases are untouched.
+
+it("the abyss moray is visible from the descending shelf", () => {
+  const spot = reef.hidingSpots.find((s) => s.speciesId === "abyss");
+  expect(spot).toBeDefined();
+  const head = spot!.position;
+  const forward = new Vector3(Math.sin(spot!.facing), 0, Math.cos(spot!.facing));
+  const right = new Vector3(forward.z, 0, -forward.x);
+
+  let reachableCount = 0;
+  let clear = 0;
+  for (const distance of [3, 4.5, 6, 7.5, 9, 11]) {
+    for (const offset of [-0.4, -0.2, 0, 0.2, 0.4]) {
+      for (const above of [1.1, 1.6, 2.3]) {
+        const from = spot!.position
+          .clone()
+          .addScaledVector(forward, distance)
+          .addScaledVector(right, distance * offset);
+        from.setY(seabedHeight(from.x, from.z) + above);
+        if (from.distanceTo(head) > MAX_DISTANCE || !reachable(from)) {
+          continue;
+        }
+        reachableCount++;
+        if (!isObstructed(from, head)) {
+          clear++;
+        }
+      }
+    }
+  }
+
+  expect(reachableCount).toBeGreaterThan(20);
+  expect(clear / reachableCount).toBeGreaterThan(0.75);
+});
+
+it("the canyon's own floor never rises into the abyss sightline", () => {
+  // The terrain is not an obstruction mesh, so the raycast above cannot see
+  // it — but a terrace lip between the shelf and the den would hide the head
+  // from the descent as surely as a boulder. Walk the approach at eye height
+  // and check the ground under the line of sight stays below it.
+  const spot = reef.hidingSpots.find((s) => s.speciesId === "abyss")!;
+  const head = spot.position;
+  const forward = new Vector3(Math.sin(spot.facing), 0, Math.cos(spot.facing));
+
+  for (const distance of [4, 6, 8, 10]) {
+    const from = head.clone().addScaledVector(forward, distance);
+    from.setY(seabedHeight(from.x, from.z) + 1.5);
+    const steps = 20;
+    for (let i = 1; i < steps; i++) {
+      const t = i / steps;
+      const x = from.x + (head.x - from.x) * t;
+      const z = from.z + (head.z - from.z) * t;
+      const lineY = from.y + (head.y - from.y) * t;
+      expect(
+        lineY - seabedHeight(x, z),
+        `ground clears the sightline at t=${t} from ${distance}m`,
+      ).toBeGreaterThan(0.15);
+    }
   }
 });
 

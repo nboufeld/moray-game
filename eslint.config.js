@@ -9,7 +9,7 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   {
     // Tooling scripts run under Node and evaluate snippets inside the page.
-    files: ["scripts/**/*.mjs"],
+    files: ["scripts/**/*.mjs", "tools/**/*.mjs"],
     languageOptions: {
       globals: {
         console: "readonly",

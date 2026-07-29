@@ -146,6 +146,13 @@ export interface MorayBodyGeometry {
    * archetype has its own; see `projectHeadUvs`.
    */
   readonly neckV: number;
+  /**
+   * The tube's radius at the body root (`g = 0`), in metres — its vertical
+   * half-height, since the ring is squashed to {@link LATERAL} across. This is
+   * the girth the sculpted head has to meet without a step, so it is what the
+   * head's scale is derived from; see `glbHeadScale`.
+   */
+  readonly neckRadius: number;
 }
 
 /** One cross-section of the animal, and the joints it is carried by. */
@@ -190,6 +197,8 @@ export function buildMorayBody({
     // `v` is linear in `z` from 0 at the front station to 1 at the back one, so
     // the value at `z = 0` is where the root falls between the two ends.
     neckV: front.z / (front.z - back.z),
+    // The profile at `g = 0` exactly: the tuck and the taper are both 1 there.
+    neckRadius: NECK_GIRTH * girthScale * 0.5,
   };
 }
 

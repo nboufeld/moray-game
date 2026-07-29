@@ -15,7 +15,10 @@ const BASE_URL = process.env.SHOT_URL ?? "http://localhost:5173";
 const label = process.argv[2] ?? "current";
 const SAMPLE_MS = 5000;
 
-const browser = await chromium.launch();
+// `SHOT_HEADED=1` opens a real window and rasterises on the actual GPU —
+// the only way to get an absolute frame-rate answer rather than a relative
+// SwiftShader comparison. Keep the window visible; occluded windows throttle.
+const browser = await chromium.launch({ headless: !process.env.SHOT_HEADED });
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 // `SHOT_NO_ASSETS=1` measures the same scene built from procedural maps only,
 // which is the cheapest same-session baseline there is for what the painted
@@ -62,9 +65,14 @@ const stats = await page.evaluate(async (sampleMs) => {
   };
 }, SAMPLE_MS);
 
+// Where the adaptive scaler actually settled during the sample — the half of
+// "what does a player get" the frame times alone cannot say (W-L8).
+const settledScale = await page.evaluate(() => window.__reef.renderScale ?? null);
+
 console.info(
   `${label}: ${stats.frames} frames | median ${stats.medianMs.toFixed(1)}ms ` +
-    `(${(1000 / stats.medianMs).toFixed(1)} fps) | p95 ${stats.p95Ms.toFixed(1)}ms`,
+    `(${(1000 / stats.medianMs).toFixed(1)} fps) | p95 ${stats.p95Ms.toFixed(1)}ms | ` +
+    `settled scale ${settledScale === null ? "n/a" : settledScale.toFixed(2)}`,
 );
 
 await browser.close();

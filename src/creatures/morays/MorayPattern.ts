@@ -117,6 +117,18 @@ function markingMask(config: MoraySpeciesConfig, u: number, v: number, seed: num
       // No markings; a faint lengthwise mottle keeps it from looking printed.
       return clamp01((fbm(u, v * 2, { seed, period: 8, octaves: 3 }) - 0.62) * 1.2);
     }
+    case "speckle": {
+      // Small pale points on a dark ground — the abyssal moray's night-sky
+      // dusting (W-M3). A voronoi cell centre makes a dot; a low-frequency
+      // gate collects the dots into loose drifts, because an even field of
+      // specks is a print and an animal's markings pool and thin. The dots
+      // are far smaller than the spots pattern's rosettes and never merge:
+      // this skin reads as points of pallor, not as a pattern colour.
+      const { f1 } = voronoi(u * 2, v * 5, 16, seed);
+      const speck = clamp01(1 - f1 / 0.03);
+      const drift = fbm(u * 2, v * 3, { seed: seed ^ 0x6d, period: 7, octaves: 2 });
+      return clamp01(speck * 1.9) * clamp01((drift - 0.34) * 2.8);
+    }
     default: {
       const exhaustive: never = config.pattern;
       throw new Error(`Unhandled moray pattern: ${String(exhaustive)}`);

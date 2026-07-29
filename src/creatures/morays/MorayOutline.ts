@@ -77,6 +77,32 @@ export const OUTLINE_NAME = "moray-outline";
 export const OUTLINE_THICKNESS = HULL_THICKNESS;
 
 /**
+ * Where the line starts thinning with camera distance, and where it bottoms
+ * out (W-N3). A drawn contour is the close-range charm — at the four to seven
+ * metres a crevice is studied from it is what separates a character from the
+ * background — but held at full width into the distance it becomes the
+ * loudest thing about the animal: at the twenty-two metres shot A reads the
+ * zebra from, an 18 mm cream line on a near-black body is one to two pixels
+ * of maximum-contrast edging, and the round critic named it "most of the
+ * sticker read". So the push itself attenuates from {@link FADE_NEAR} metres
+ * out, reaching {@link FADE_FLOOR} of its width by {@link FADE_FAR} — which
+ * at that range is deeply sub-pixel, i.e. a painted animal with no line —
+ * while everything inside the focus band (1.2–14 m, and every probe-moray
+ * pose) keeps most or all of the drawn line. Thinning rather than fading
+ * opacity is deliberate: an inverted hull made transparent would leave the
+ * opaque queue and need sorting; a hull thinned to nothing simply falls
+ * behind the surface it copies and the depth test retires it.
+ *
+ * The distance is the mesh origin's, not the vertex's: `begin_vertex` runs
+ * before `skinning_vertex`, so a per-vertex position here is in bind space
+ * and means nothing in the world. Every hull's origin rides within a body
+ * length of the head, which at a ten-metre ramp is well inside the noise.
+ */
+export const OUTLINE_FADE_NEAR = 10;
+export const OUTLINE_FADE_FAR = 20;
+export const OUTLINE_FADE_FLOOR = 0.15;
+
+/**
  * Push every vertex out along its own normal, in object space.
  *
  * Object space rather than view space is what makes this work on a skinned
@@ -92,7 +118,9 @@ export const OUTLINE_THICKNESS = HULL_THICKNESS;
  */
 const HULL_CHUNK = /* glsl */ `
   #include <begin_vertex>
-  transformed += normalize( normal ) * ${HULL_THICKNESS};
+  float hullDistance = distance( cameraPosition, ( modelMatrix * vec4( 0.0, 0.0, 0.0, 1.0 ) ).xyz );
+  float hullRange = 1.0 - ${(1 - OUTLINE_FADE_FLOOR).toFixed(2)} * smoothstep( ${OUTLINE_FADE_NEAR.toFixed(1)}, ${OUTLINE_FADE_FAR.toFixed(1)}, hullDistance );
+  transformed += normalize( normal ) * ${HULL_THICKNESS} * hullRange;
 `;
 
 const inflate: MeshBasicMaterial["onBeforeCompile"] = (shader) => {
@@ -171,26 +199,18 @@ export interface MorayOutlineParts {
  * Every hull is a sibling of what it outlines rather than a child, so nothing
  * in the animal's own hierarchy moves: `getHeadWorldPosition`, the focus cone
  * and the portrait's framing all read the same numbers they did before.
+ *
+ * @returns The one hull material, so a part that arrives *after* the animal
+ * is assembled — the sculpted head, which comes in through `AssetLibrary` on
+ * its own schedule — can join the same contour through
+ * {@link addSkinnedHull} instead of mixing a second ink.
  */
-export function addMorayOutline(bodyColor: number, parts: MorayOutlineParts): void {
+export function addMorayOutline(bodyColor: number, parts: MorayOutlineParts): MeshBasicMaterial {
   const material = new MeshBasicMaterial({ color: inkFor(bodyColor), side: BackSide });
   material.onBeforeCompile = inflate;
 
   for (const source of parts.skinned) {
-    const hull = new SkinnedMesh(source.geometry, material);
-    // The same bounds the surface carries. Three would otherwise bound a
-    // skinned mesh from the first pose it happens to be drawn in and never
-    // again; the source's sphere already has the slack for every pose the rig
-    // can reach, and a shell twelve millimetres proud of it is well inside
-    // that. Culled together with the animal, which is the point — a body in
-    // frame with its line culled would be a body that lost its outline.
-    hull.boundingSphere = source.boundingSphere?.clone() ?? null;
-    attach(source, hull);
-    // The bind matrix is copied rather than recomputed from the hull's own
-    // world matrix: it is the pose the skeleton's inverses were taken in, and
-    // taking it from the source is exact whatever order the animal was
-    // assembled in.
-    hull.bind(source.skeleton, source.bindMatrix);
+    addSkinnedHull(source, material);
   }
 
   for (const source of parts.rigid) {
@@ -208,6 +228,30 @@ export function addMorayOutline(bodyColor: number, parts: MorayOutlineParts): vo
     hull.quaternion.copy(source.quaternion);
     attach(source, hull);
   }
+
+  return material;
+}
+
+/**
+ * One skinned part's hull: the same geometry, the same skeleton, the same
+ * bind matrix, so there is no second copy of anything and no second pose to
+ * keep in step.
+ */
+export function addSkinnedHull(source: SkinnedMesh, material: MeshBasicMaterial): void {
+  const hull = new SkinnedMesh(source.geometry, material);
+  // The same bounds the surface carries. Three would otherwise bound a
+  // skinned mesh from the first pose it happens to be drawn in and never
+  // again; the source's sphere already has the slack for every pose the rig
+  // can reach, and a shell twelve millimetres proud of it is well inside
+  // that. Culled together with the animal, which is the point — a body in
+  // frame with its line culled would be a body that lost its outline.
+  hull.boundingSphere = source.boundingSphere?.clone() ?? null;
+  attach(source, hull);
+  // The bind matrix is copied rather than recomputed from the hull's own
+  // world matrix: it is the pose the skeleton's inverses were taken in, and
+  // taking it from the source is exact whatever order the animal was
+  // assembled in.
+  hull.bind(source.skeleton, source.bindMatrix);
 }
 
 function attach(source: Mesh, hull: Mesh): void {

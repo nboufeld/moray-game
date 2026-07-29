@@ -1,11 +1,14 @@
 import {
   AmbientLight,
+  Color,
   DirectionalLight,
   Group,
   HemisphereLight,
   Vector3,
   type Scene,
 } from "three";
+import { ABYSS_LIGHT, abyssMood, onSceneRender } from "../world/Abyss";
+import type { WeatherMoods } from "./WeatherMoods";
 
 /**
  * Where the sun sits, shared rather than repeated. The backdrop's bright lobe,
@@ -37,6 +40,17 @@ export const SUN_POSITION = new Vector3(17, 24, 13);
 export class Lighting {
   readonly group = new Group();
   readonly sun: DirectionalLight;
+
+  private readonly hemisphere: HemisphereLight;
+  private readonly ambient: AmbientLight;
+  /** The rig's shipped levels; the twilight hook scales down from these. */
+  private readonly baseLevels = { sun: 0, hemisphere: 0, ambient: 0 };
+  /** The key's shipped colour, so a mood's tint always multiplies the base. */
+  private readonly baseSunColor = new Color();
+  /** The sky's slow moods (W-M1); null — and identity — everywhere but the reef. */
+  private weather: WeatherMoods | null = null;
+  /** Whether a mood has written the key's colour, so identity restores it once. */
+  private tinted = false;
 
   constructor() {
     // Off-axis rather than straight overhead: a steep sun is physically right
@@ -82,7 +96,8 @@ export class Lighting {
     // turn it up far enough to be the fill and the sand goes the colour of the
     // sky, and a cast shadow on it is merely that same cyan with the sun taken
     // away. The violet has to be the larger half for a shadow to be violet.
-    const hemisphere = new HemisphereLight(0xa9dfe8, 0xf7dfae, 0.44);
+    this.hemisphere = new HemisphereLight(0xa9dfe8, 0xf7dfae, 0.44);
+    const hemisphere = this.hemisphere;
     // Omnidirectional and blue-violet — red *above* green, which is the whole
     // difference between a violet and the ordinary cool blue a water scene
     // falls into on its own. It reaches the faces the hemisphere's two poles
@@ -91,12 +106,65 @@ export class Lighting {
     // Down from 0.8 with the key's rise, which keeps the frame mean near where
     // it was: a ramp's shade band is a floor under the key, so the fill no
     // longer has to hold the shadows up on its own.
-    const ambient = new AmbientLight(0xb083dd, 0.74);
+    this.ambient = new AmbientLight(0xb083dd, 0.74);
+    const ambient = this.ambient;
 
     this.group.add(this.sun, this.sun.target, hemisphere, ambient);
+    this.baseLevels.sun = this.sun.intensity;
+    this.baseLevels.hemisphere = hemisphere.intensity;
+    this.baseLevels.ambient = ambient.intensity;
+    this.baseSunColor.copy(this.sun.color);
+  }
+
+  /** Opts the rig into the sky's slow moods (W-M1). Only the reef attaches. */
+  attachWeather(weather: WeatherMoods): void {
+    this.weather = weather;
   }
 
   addTo(scene: Scene): void {
     scene.add(this.group);
+
+    // W-M3: the twilight takes the key down as the camera descends into the
+    // canyon — scarce light is the second biome's whole argument — while the
+    // violet ambient keeps most of its floor, so the place darkens into
+    // colour rather than into black. Positional, eased by `abyssMood`'s own
+    // ramps, and *exactly* the shipped rig at a mood of zero: each intensity
+    // is base × (1 − share × 0), which is base to the bit, so every in-bowl
+    // frame is lit by arithmetic this hook never touches. Reduced motion
+    // needs nothing here — nothing is animated, only positioned.
+    // W-M1 layers the sky's slow moods over the same hook, by the standing
+    // composition rule: the weather scales the base and the twilight
+    // modulates the scaled base. With no weather attached, or at the identity
+    // mood, the arithmetic below is W-M3's shipped expression untouched — and
+    // the key wears its shipped colour, restored once on the way back to
+    // identity rather than rewritten every frame.
+    onSceneRender(scene, (camera) => {
+      const position = camera.position;
+      const mood = abyssMood(position.x, position.y, position.z);
+      const weather =
+        this.weather !== null && !this.weather.isIdentity ? this.weather.channels : null;
+      if (weather === null) {
+        this.sun.intensity = this.baseLevels.sun * (1 - ABYSS_LIGHT.sun * mood);
+        this.hemisphere.intensity =
+          this.baseLevels.hemisphere * (1 - ABYSS_LIGHT.hemisphere * mood);
+        this.ambient.intensity = this.baseLevels.ambient * (1 - ABYSS_LIGHT.ambient * mood);
+        if (this.tinted) {
+          this.sun.color.copy(this.baseSunColor);
+          this.tinted = false;
+        }
+        return;
+      }
+      this.sun.intensity = this.baseLevels.sun * weather.sun * (1 - ABYSS_LIGHT.sun * mood);
+      this.hemisphere.intensity =
+        this.baseLevels.hemisphere * weather.hemisphere * (1 - ABYSS_LIGHT.hemisphere * mood);
+      this.ambient.intensity =
+        this.baseLevels.ambient * weather.ambient * (1 - ABYSS_LIGHT.ambient * mood);
+      this.sun.color.setRGB(
+        this.baseSunColor.r * weather.sunRed,
+        this.baseSunColor.g * weather.sunGreen,
+        this.baseSunColor.b * weather.sunBlue,
+      );
+      this.tinted = true;
+    });
   }
 }

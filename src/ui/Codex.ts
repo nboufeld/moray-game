@@ -1,3 +1,4 @@
+import { personalityFor } from "../creatures/morays/MorayPersonality";
 import type { MoraySpeciesConfig } from "../creatures/morays/MoraySpeciesConfig";
 import { requireElement } from "./dom";
 
@@ -58,6 +59,11 @@ export class Codex {
     this.recorded.add(config.id);
     this.emptyState?.remove();
 
+    // The personality line (W-M2): one storybook sentence of who this animal
+    // is, under the field-guide fact. A species without a profile wears the
+    // default's gentle line, so a new species is never a broken card. It is
+    // a second `<p>` on purpose — `.codex__entry p` already styles it, and
+    // the card's markup contract (classes, roles, order) is untouched.
     const entry = document.createElement("div");
     entry.className = "codex__entry";
     entry.dataset.speciesId = config.id;
@@ -67,6 +73,7 @@ export class Codex {
         <h3>${config.commonName}</h3>
         <div class="sci">${config.scientificName}</div>
         <p>${config.fact}</p>
+        <p class="codex__personality"><em>${personalityFor(config.id).codexLine}</em></p>
       </div>
     `;
     this.entries.appendChild(entry);

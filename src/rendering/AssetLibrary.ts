@@ -4,11 +4,16 @@ import {
   EquirectangularReflectionMapping,
   LinearFilter,
   LinearMipmapLinearFilter,
+  Mesh,
   RepeatWrapping,
   SRGBColorSpace,
   TextureLoader,
+  type BufferGeometry,
+  type Material,
+  type Object3D,
   type Texture,
 } from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 /**
  * The one place authored art enters the renderer.
@@ -42,14 +47,31 @@ const ASSET_ROOT = "assets/";
 /** Matches the procedural maps' sampling, so a swap changes only the pixels. */
 const ANISOTROPY = 4;
 
-const loaded = new Map<string, Texture>();
+/**
+ * What has arrived, per path. Two caches because there are two kinds of thing
+ * on disk now, and one lookup table would have to be widened at every use.
+ */
+/**
+ * What has arrived and who is waiting for it, per kind of asset.
+ *
+ * A pair of maps per kind rather than one pair of wider ones: a path is a
+ * texture or a model for the whole life of the process, and keeping them apart
+ * is what lets {@link fetchAsset} stay generic without a cast at either end.
+ */
+interface AssetKind<T> {
+  readonly ready: Map<string, T>;
+  readonly waiting: Map<string, ((value: T) => void)[]>;
+}
+
+const textures: AssetKind<Texture> = { ready: new Map(), waiting: new Map() };
+const models: AssetKind<BufferGeometry> = { ready: new Map(), waiting: new Map() };
+
 const failed = new Set<string>();
-/** Callbacks waiting on a load that is already under way. */
-const waiting = new Map<string, ((texture: Texture) => void)[]>();
 /** One entry per request in flight; see {@link whenAssetsSettled}. */
 const inFlight = new Map<string, Promise<void>>();
 
-let loader: TextureLoader | null = null;
+let textureLoader: TextureLoader | null = null;
+let modelLoader: GLTFLoader | null = null;
 
 /**
  * Asks for an authored albedo map, delivering it to `onReady` when it arrives.
@@ -87,7 +109,94 @@ export function requestAlbedo(
   onReady: (texture: Texture) => void,
   options?: AlbedoOptions,
 ): void {
-  request(assetPath, onReady, (texture) => configureAlbedo(texture, options?.tile === true));
+  fetchAsset(textures, assetPath, onReady, (url, deliver, fail) => {
+    textureLoader ??= new TextureLoader();
+    textureLoader.load(
+      url,
+      (texture) => {
+        configureAlbedo(texture, options?.tile === true);
+        deliver(texture);
+      },
+      undefined,
+      fail,
+    );
+  });
+}
+
+/**
+ * Asks for a built model, delivering its geometry when it arrives.
+ *
+ * Same contract as {@link requestAlbedo}, one asset class over: the caller
+ * keeps whatever geometry it already had until this returns, a failure leaves
+ * it there forever, and nothing happens at all without a `window`. What that
+ * buys is a hero coral that is a `CoralShapes` fallback in the unit tests, a
+ * `CoralShapes` fallback in the `SHOT_NO_ASSETS` build, and a Blender piece in
+ * the game — all three built by the same constructor, none of them a branch.
+ *
+ * Only the geometry crosses over. A GLB can carry a material and this one
+ * deliberately does not: every lit surface in the project comes out of
+ * `createToonMaterial`, so a material from disk would be the one thing in the
+ * reef not reading the shared ramp. The pieces are exported with no UVs and no
+ * material for that reason, and what they *do* carry — `COLOR_0` — is a
+ * measured linear multiplier; see `tools/blender/coral_common.py`.
+ *
+ * The geometry is cached per path and handed to every caller, which makes it
+ * the library's to own exactly as the textures are: an `InstancedMesh` that
+ * takes one must not dispose it.
+ *
+ * @param assetPath Path under `public/assets/`, e.g. `models/coral-brain.glb`.
+ */
+export function requestModel(assetPath: string, onReady: (geometry: BufferGeometry) => void): void {
+  fetchAsset(models, assetPath, onReady, (url, deliver, fail) => {
+    modelLoader ??= new GLTFLoader();
+    modelLoader.load(
+      url,
+      (gltf) => {
+        const geometry = extractGeometry(gltf.scene);
+        if (geometry) {
+          deliver(geometry);
+        } else {
+          fail();
+        }
+      },
+      undefined,
+      fail,
+    );
+  });
+}
+
+/**
+ * Takes the first mesh's geometry out of a loaded scene, in world space.
+ *
+ * The build scripts export one mesh, but they export it through Blender's
+ * scene graph, which is free to hang it under a transform — so the node's
+ * world matrix is baked in rather than trusted to be identity. Everything else
+ * the file brought is dropped here: the loader builds a `MeshStandardMaterial`
+ * per primitive whether or not the GLB declared one, and nothing in this
+ * project renders one of those.
+ */
+function extractGeometry(scene: Object3D): BufferGeometry | null {
+  let found: BufferGeometry | null = null;
+  scene.updateMatrixWorld(true);
+  scene.traverse((node) => {
+    if (!(node instanceof Mesh)) {
+      return;
+    }
+    const geometry = node.geometry as BufferGeometry;
+    if (!found) {
+      geometry.applyMatrix4(node.matrixWorld);
+      // An `InstancedMesh` culls on the geometry's bounding sphere, and the
+      // loader only computes one lazily on first raycast.
+      geometry.computeBoundingSphere();
+      found = geometry;
+    } else {
+      geometry.dispose();
+    }
+    for (const material of Array.isArray(node.material) ? node.material : [node.material]) {
+      (material as Material).dispose();
+    }
+  });
+  return found;
 }
 
 /**
@@ -108,19 +217,40 @@ export function requestAlbedo(
  * read.
  */
 export function requestBackdrop(assetPath: string, onReady: (texture: Texture) => void): void {
-  request(assetPath, onReady, configureBackdrop);
+  fetchAsset(textures, assetPath, onReady, (url, deliver, fail) => {
+    textureLoader ??= new TextureLoader();
+    textureLoader.load(
+      url,
+      (texture) => {
+        configureBackdrop(texture);
+        deliver(texture);
+      },
+      undefined,
+      fail,
+    );
+  });
 }
 
-function request(
+/**
+ * The shared half of every request: the cache, the queue, the in-flight
+ * bookkeeping and the promise that a failure is not an error.
+ *
+ * `begin` is the only part that differs between an image and a model, and it
+ * is handed a `deliver`/`fail` pair rather than being allowed to touch any of
+ * the above — which is what keeps "a missing file leaves the caller exactly
+ * where it was" a property of this function rather than of each loader.
+ */
+function fetchAsset<T>(
+  kind: AssetKind<T>,
   assetPath: string,
-  onReady: (texture: Texture) => void,
-  configure: (texture: Texture) => void,
+  onReady: (value: T) => void,
+  begin: (url: string, deliver: (value: T) => void, fail: () => void) => void,
 ): void {
   if (typeof window === "undefined") {
     return;
   }
 
-  const ready = loaded.get(assetPath);
+  const ready = kind.ready.get(assetPath);
   if (ready) {
     onReady(ready);
     return;
@@ -129,12 +259,12 @@ function request(
     return;
   }
 
-  const queue = waiting.get(assetPath);
+  const queue = kind.waiting.get(assetPath);
   if (queue) {
     queue.push(onReady);
     return;
   }
-  waiting.set(assetPath, [onReady]);
+  kind.waiting.set(assetPath, [onReady]);
 
   let settle = (): void => {};
   inFlight.set(
@@ -145,21 +275,20 @@ function request(
   );
 
   const url = `${import.meta.env.BASE_URL}${ASSET_ROOT}${assetPath}`;
-  loader ??= new TextureLoader();
-  loader.load(
+  begin(
     url,
-    (texture) => {
-      configure(texture);
-      loaded.set(assetPath, texture);
-      for (const callback of waiting.get(assetPath) ?? []) {
-        callback(texture);
+    (value) => {
+      kind.ready.set(assetPath, value);
+      for (const callback of kind.waiting.get(assetPath) ?? []) {
+        callback(value);
       }
+      kind.waiting.delete(assetPath);
       finish(assetPath, settle);
     },
-    undefined,
     () => {
-      console.warn(`[assets] ${url} did not load; keeping the procedural map.`);
+      console.warn(`[assets] ${url} did not load; keeping the procedural stand-in.`);
       failed.add(assetPath);
+      kind.waiting.delete(assetPath);
       finish(assetPath, settle);
     },
   );
@@ -184,7 +313,6 @@ export async function whenAssetsSettled(): Promise<void> {
 }
 
 function finish(assetPath: string, settle: () => void): void {
-  waiting.delete(assetPath);
   inFlight.delete(assetPath);
   settle();
 }

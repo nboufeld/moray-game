@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import { BackSide, Box3, Color, Mesh, MeshBasicMaterial, SkinnedMesh } from "three";
 import { Moray } from "../src/creatures/morays/Moray";
 import {
+  OUTLINE_FADE_FAR,
+  OUTLINE_FADE_FLOOR,
+  OUTLINE_FADE_NEAR,
   OUTLINE_HALO,
   OUTLINE_INK,
   OUTLINE_NAME,
@@ -195,5 +198,21 @@ describe("Moray contour", () => {
     );
     expect(shader.vertexShader).toContain("#include <begin_vertex>");
     expect(shader.vertexShader).toContain(`normalize( normal ) * ${OUTLINE_THICKNESS}`);
+
+    // W-N3: the push thins with camera distance, so a moray twenty metres out
+    // is a painted animal rather than a sticker — and it thins by attenuating
+    // the offset (a hull inside its surface is retired by the depth test),
+    // never by transparency, which would take it out of the opaque queue.
+    expect(shader.vertexShader).toContain(
+      `smoothstep( ${OUTLINE_FADE_NEAR.toFixed(1)}, ${OUTLINE_FADE_FAR.toFixed(1)}, hullDistance )`,
+    );
+    expect(shader.vertexShader).toContain("cameraPosition");
+    // The floor is a fraction of the width, not zero and not full: the fade
+    // must neither kill the close-range line nor keep the far sticker.
+    expect(OUTLINE_FADE_FLOOR).toBeGreaterThan(0);
+    expect(OUTLINE_FADE_FLOOR).toBeLessThan(0.5);
+    // And the ramp starts beyond the discovery focus band's heart, so poses C
+    // and K1 (four to seven metres) keep the drawn contour at full width.
+    expect(OUTLINE_FADE_NEAR).toBeGreaterThanOrEqual(8);
   });
 });

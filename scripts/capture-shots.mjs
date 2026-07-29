@@ -73,8 +73,33 @@ const SHOTS = [
   },
   {
     // B's viewpoint, held nine seconds — the open water a visitor crosses.
+    // The schedule's first natural arrival is minutes out, so the turtle is
+    // summoned through the deterministic force-hook the visitors package
+    // hangs on `window.__reefVisitors`, `secondsIn` chosen so the nine-second
+    // settle ends with the crossing mid-frame.
     name: "H-visitor-arc",
     pose: { position: [10, 3, 12], yaw: 0.72, pitch: -0.1, settle: 9 },
+    summonVisitor: { kind: "turtle", secondsIn: 15.5 },
+  },
+  // W-M3's two. The gate azimuth is drawn from SEEDS.abyss and lands at
+  // 0.7901 rad (45.3°, north-east); both poses stand on the canyon's axis,
+  // which is where these literals come from — re-derive them if the draw
+  // band in src/world/Abyss.ts ever moves.
+  {
+    // From inside the bowl, eight metres short of the notch: the two gate
+    // stacks flanking the saddle, and the doorway of darker blue between
+    // them — the far curtains seen through the gate.
+    name: "I-abyss-gate",
+    pose: { position: [15.8, 2.0, 16.0], yaw: -2.3609, pitch: -0.04, settle: 2 },
+  },
+  {
+    // On the descending shelf inside the canyon, four metres down, looking
+    // at the twilight floor: the den, the glow accents, the ghost kelp and
+    // the far curtains under the mood fog. The position is below dune level,
+    // so this frame is the modulation working — every other shot in this set
+    // is proof it is exactly off.
+    name: "J-canyon-floor",
+    pose: { position: [25.3, -4.0, 28.4], yaw: -2.03, pitch: -0.13, settle: 2 },
   },
   {
     // E's pose, later in the sweep, for whatever comes to live in the room.
@@ -83,10 +108,57 @@ const SHOTS = [
     seedDiscoveries: true,
     openSanctuary: true,
   },
+  // W-M1's three. The sky's slow moods hold bright noon far longer than any
+  // capture takes, so every shot above renders at the identity untouched;
+  // these pin the other three moods through the `__reef.setMood` QA door and
+  // re-photograph cameras the set already owns — same world, different sky.
+  {
+    // A's camera under the warm key: amber shafts, honeyed sand.
+    name: "W-golden-afternoon",
+    pose: { position: [0, 2, 22], yaw: 0, pitch: 0, settle: 2 },
+    setMood: "golden-afternoon",
+  },
+  {
+    // B's camera under the flat milky key: the beams gone, the water grey.
+    name: "X-overcast-drift",
+    pose: { position: [10, 3, 12], yaw: 0.72, pitch: -0.1, settle: 3 },
+    setMood: "overcast-drift",
+  },
+  {
+    // A's camera again, because a haze is a property of *distance*: exp² fog
+    // barely acts inside ten metres, so a ground-level pose cannot see this
+    // mood at all (G's was tried first and read as noon). Same settle as W,
+    // so the two moods can be compared over an identical world state.
+    name: "Y-plankton-haze",
+    pose: { position: [0, 2, 22], yaw: 0, pitch: 0, settle: 2 },
+    setMood: "plankton-haze",
+  },
+  // W-N2's money shot: standing inside the NW kelp grove on the bench,
+  // looking up-sun (the sun is at (17, 24, 13), due east of this camera and
+  // 48° up), so the giant crowns hang between the lens and the light and the
+  // leaf-glow shader has its say. The pose exists because no canonical camera
+  // ever looked *up* — the whole canopy layer is invisible to every shot
+  // above, exactly as the tidepool's fauna were before G.
+  {
+    name: "Z-kelp-canopy",
+    pose: { position: [-18.2, 1.8, 14.8], yaw: -1.45, pitch: 0.78, settle: 2 },
+  },
+  // W-O1's look-back: standing at the den's doorstep on the twilight floor,
+  // facing back up the shelf at the gate — the view a returning diver gets,
+  // and the one direction no canonical camera ever framed (the round critic's
+  // NV4 angle, taken verbatim). The pose stands on the canyon's axis like I
+  // and J; re-derive if the draw band in src/world/Abyss.ts ever moves.
+  {
+    name: "R-canyon-lookback",
+    pose: { position: [28.9, -4.4, 29.2], yaw: 0.7807, pitch: 0.12, settle: 2 },
+  },
 ];
 
 const SAVE_KEY = "reef-between-seas.save.v1";
-const ALL_SPECIES = ["snowflake-moray", "ribbon-moray", "zebra-moray", "dragon-moray"];
+// W-M3 added the abyssal moray, so a "completed save" is five species now —
+// which is a deliberate visible change in shots E and S: the sanctuary gains
+// its fifth resident on the new low lane.
+const ALL_SPECIES = ["snowflake-moray", "ribbon-moray", "zebra-moray", "dragon-moray", "abyss"];
 
 function stamp() {
   const now = new Date();
@@ -141,6 +213,17 @@ for (const shot of SHOTS) {
   }
   if (shot.openSanctuary) {
     await page.keyboard.press("KeyV");
+  }
+  if (shot.summonVisitor) {
+    await page.evaluate(
+      (summon) => window.__reefVisitors?.summon(summon.kind, summon.secondsIn),
+      shot.summonVisitor,
+    );
+  }
+  if (shot.setMood) {
+    // W-M1: pin the sky before posing; capture()'s own advance carries the
+    // pinned channels into the shafts, caustics and grade.
+    await page.evaluate((mood) => window.__reef.setMood(mood, 1), shot.setMood);
   }
 
   await page.evaluate((pose) => window.__reef.capture(pose), shot.pose);

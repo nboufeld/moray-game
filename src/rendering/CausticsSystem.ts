@@ -11,6 +11,7 @@ import { SEEDS } from "../util/Random";
 import { createSeabedGeometry } from "../world/Seabed";
 import { requestAlbedo } from "./AssetLibrary";
 import { buildColorTexture, fbm, voronoi } from "./ProceduralTexture";
+import type { WeatherMoods } from "./WeatherMoods";
 
 /** Edge length of the tiling caustics pattern, in texels. */
 const SIZE = 256;
@@ -18,15 +19,38 @@ const SIZE = 256;
 /**
  * How much sand one repeat of a layer covers, in metres.
  *
- * A dapple is authored as a physical size — a little under a metre across for
- * the near layer, a little over for the far one — so the repeat has to be
- * derived from the sheet's extent rather than fixed. The reef's sheet is 72m
- * and the sanctuary's is 40m, and at a fixed repeat the same pattern came out
- * nearly half the size in the smaller room.
+ * A dapple is authored as a physical size — a bit over a metre across for the
+ * near layer, half again for the far one — so the repeat has to be derived
+ * from the sheet's extent rather than fixed. The reef's sheet is 72m and the
+ * sanctuary's is 40m, and at a fixed repeat the same pattern came out nearly
+ * half the size in the smaller room.
+ *
+ * 7 and 11 since W-O3, from 5.5 and 8. The round critic's overhead pose read
+ * the dapples as "polka dots", and from twelve metres up that is what a
+ * sub-metre blob on a 5.5-metre lattice is: at that distance a dapple is a
+ * dozen pixels, too small to show its soft rim, and thirteen repeats of one
+ * tile fit inside the frame with their spacing legible. Larger tiles enlarge
+ * every blob *and its falloff* together (the painting scales as one), and
+ * they widen the two layers' scale ratio from 1.45 to 1.57, so the beat
+ * between the sheets repeats less often inside a frame. Energy is untouched:
+ * the same image at a larger repeat covers the same fraction of sand, so the
+ * opacity note below still means what it says.
  */
-const TILE_METRES = [5.5, 8] as const;
+const TILE_METRES = [7, 11] as const;
 
-/** Feature points per tile. With the tiles above, one cell is roughly a metre. */
+/**
+ * How far each layer's pattern is turned, in radians about the tile centre.
+ *
+ * Both layers wear clones of the *same* painted sheet, and axis-aligned they
+ * are one lattice at two scales — from overhead their repeats line up along
+ * the world axes and the eye finds the grid immediately. Turning the far
+ * layer breaks the shared axes without touching the pattern; a seamless tile
+ * rotated is still seamless. The generated fallback layers are two different
+ * seeds and never aligned, so only the painted swap applies these.
+ */
+const LAYER_SPIN = [0, 1.07] as const;
+
+/** Feature points per tile. With the tiles above, one cell is under 1.5 m. */
 const CELLS = 5;
 
 /**
@@ -84,10 +108,15 @@ export class CausticsSystem {
     material: MeshBasicMaterial;
     texture: Texture;
     repeat: number;
+    spin: number;
     drift: number;
     weight: number;
   }[] = [];
   private time = 0;
+  /** The sky's slow moods (W-M1); null — and identity — everywhere but the reef. */
+  private weather: WeatherMoods | null = null;
+  /** Whether a mood has written the tints, so identity restores them once. */
+  private tinted = false;
 
   // `height` must clear the seabed: the overlay is depth tested like anything
   // else, so a sheet at or below the sand never draws. It also has to follow
@@ -98,7 +127,7 @@ export class CausticsSystem {
       buildLayerMaterial(SEEDS.caustics, repeatFor(size, TILE_METRES[0])),
     );
     this.mesh.renderOrder = 1;
-    this.registerLayer(this.mesh, repeatFor(size, TILE_METRES[0]), 1);
+    this.registerLayer(this.mesh, repeatFor(size, TILE_METRES[0]), LAYER_SPIN[0], 1);
 
     // The second sheet sits a hair higher, with larger dapples and its own
     // drift, so the two scatters beat against each other.
@@ -110,14 +139,14 @@ export class CausticsSystem {
     this.mesh.add(second);
     // Deliberately fainter than the first. Two scatters at equal strength stop
     // reading as one light shimmering and start reading as twice as many spots.
-    this.registerLayer(second, repeatFor(size, TILE_METRES[1]), -0.62, 0.5);
+    this.registerLayer(second, repeatFor(size, TILE_METRES[1]), LAYER_SPIN[1], -0.62, 0.5);
 
     this.requestPaintedDapples();
   }
 
-  private registerLayer(mesh: Mesh, repeat: number, drift: number, weight = 1): void {
+  private registerLayer(mesh: Mesh, repeat: number, spin: number, drift: number, weight = 1): void {
     const material = mesh.material as MeshBasicMaterial;
-    this.layers.push({ material, texture: material.map as Texture, repeat, drift, weight });
+    this.layers.push({ material, texture: material.map as Texture, repeat, spin, drift, weight });
   }
 
   /**
@@ -141,6 +170,11 @@ export class CausticsSystem {
         for (const layer of this.layers) {
           const painted = texture.clone();
           painted.repeat.set(layer.repeat, layer.repeat);
+          // See LAYER_SPIN: the two clones are one image, so the far layer is
+          // turned off the near one's axes. Centre first, or the rotation
+          // pivots about the tile corner and shears the drift.
+          painted.center.set(0.5, 0.5);
+          painted.rotation = layer.spin;
           layer.material.map = painted;
           layer.material.needsUpdate = true;
           layer.texture.dispose();
@@ -155,8 +189,39 @@ export class CausticsSystem {
     scene.add(this.mesh);
   }
 
+  /** Opts the dapples into the sky's slow moods (W-M1). Only the reef attaches. */
+  attachWeather(weather: WeatherMoods): void {
+    this.weather = weather;
+  }
+
   update(dt: number, reducedMotion: boolean): void {
     this.time += dt * (reducedMotion ? 0.15 : 1);
+    // W-M1: one gain over both layers — an overcast dims the dapples, a
+    // golden hour warms them up a step. A trailing × 1 at identity is exact.
+    // W-N4: the dapples also wear the mood's *shaft* tint — a dapple is where
+    // a beam lands, so the beam, its pool and its dapple are one light and
+    // take one colour; splitting them would let a golden hour pour amber
+    // beams onto neutral dapples. And a gain of exactly 0 (a full overcast)
+    // hides the sheets outright: a zero-opacity additive layer over the whole
+    // seabed still pays its fill. The tint and visibility are written only
+    // while a mood is on and restored once, like the shafts' own.
+    const weather =
+      this.weather !== null && !this.weather.isIdentity ? this.weather.channels : null;
+    const gain = weather === null ? 1 : weather.caustics;
+    const hidden = weather !== null && gain === 0;
+    if (weather !== null) {
+      for (const layer of this.layers) {
+        layer.material.color.setRGB(weather.shaftRed, weather.shaftGreen, weather.shaftBlue);
+        layer.material.visible = !hidden;
+      }
+      this.tinted = true;
+    } else if (this.tinted) {
+      this.tinted = false;
+      for (const layer of this.layers) {
+        layer.material.color.setRGB(1, 1, 1);
+        layer.material.visible = true;
+      }
+    }
 
     for (const layer of this.layers) {
       layer.texture.offset.set(
@@ -177,7 +242,8 @@ export class CausticsSystem {
       // median where the generated sheet had it and keeps the cores.
       layer.material.opacity =
         ((reducedMotion ? 0.12 : 0.17) + Math.sin(this.time * 0.5 * layer.drift) * 0.02) *
-        layer.weight;
+        layer.weight *
+        gain;
     }
   }
 }
@@ -225,9 +291,12 @@ function buildLayerMaterial(seed: number, repeat: number): MeshBasicMaterial {
     const { f1 } = voronoi(warpX, warpY, CELLS, seed);
     // Thresholding f1 alone would give every dapple the same radius, which is
     // a polka dot. Scaling the distance by low-frequency noise varies each
-    // blob's size by about a quarter and puts a slow wobble in its rim — the
-    // two things that separate a painted blob from a stamped circle.
-    const wobble = 0.78 + 0.44 * fbm(u, v, { seed: seed ^ 0x33, period: 3, octaves: 2 });
+    // blob's size and puts a slow wobble in its rim — the two things that
+    // separate a painted blob from a stamped circle. The swing widened from
+    // ±22% to ±38% in W-O3, when the overhead pose showed the fallback's
+    // blobs still reading as one population at one size; the mean stays 1, so
+    // the sheet's energy does not move with it.
+    const wobble = 0.62 + 0.76 * fbm(u, v, { seed: seed ^ 0x33, period: 3, octaves: 2 });
     const dapple = smoothstep01(
       (DAPPLE_EDGE - f1 * CELLS * wobble) / (DAPPLE_EDGE - DAPPLE_CORE),
     );

@@ -52,6 +52,9 @@ export class RendererAdapter {
   private readonly bloomPass: UnrealBloomPass;
   private readonly gradePass: ShaderPass;
   private readonly grain: DataTexture;
+  /** The grade's shipped tilt, so W-M1's weather always multiplies the base. */
+  private readonly gradeBaseHighlight = new Vector3(1, 1, 1);
+  private gradeBaseSaturation = 1;
   private pixelRatioCap = 1.5;
   private width = 1;
   private height = 1;
@@ -116,6 +119,14 @@ export class RendererAdapter {
     // them. One sheet, uploaded once, released in `dispose`.
     this.grain = createPaperGrain();
     this.gradePass.uniforms.tGrain!.value = this.grain;
+    // Snapshot the shipped grade values off the pass's own cloned uniforms,
+    // so `setWeatherGrade` scales the base rather than compounding on itself.
+    const baseHighlight = this.gradePass.uniforms.uHighlightTint?.value as Vector3 | undefined;
+    if (baseHighlight) {
+      this.gradeBaseHighlight.copy(baseHighlight);
+    }
+    this.gradeBaseSaturation =
+      (this.gradePass.uniforms.uSaturation?.value as number | undefined) ?? 1;
     this.composer.addPass(this.gradePass);
 
     // Last: applies the renderer's tone mapping and output colour space.
@@ -132,6 +143,36 @@ export class RendererAdapter {
     if (uniform) {
       uniform.value = Math.max(0, Math.min(1, value));
     }
+  }
+
+  /**
+   * W-M1's weather tilt on the grade: multipliers on the *shipped* highlight
+   * tint and saturation, through the same one door `setGradePulse` uses —
+   * the pass's uniforms are cloned, so nothing but this adapter can reach
+   * them. All-ones restores the shipped values exactly (x × 1 is exact in
+   * IEEE floats), and `Game` writes it only while a mood is on, so the
+   * default frame's grade is untouched arithmetic.
+   */
+  setWeatherGrade(red: number, green: number, blue: number, saturation: number): void {
+    const tint = this.gradePass.uniforms.uHighlightTint?.value as Vector3 | undefined;
+    tint?.set(
+      this.gradeBaseHighlight.x * red,
+      this.gradeBaseHighlight.y * green,
+      this.gradeBaseHighlight.z * blue,
+    );
+    const sat = this.gradePass.uniforms.uSaturation;
+    if (sat) {
+      sat.value = this.gradeBaseSaturation * saturation;
+    }
+  }
+
+  /**
+   * Where the adaptive scaler currently sits (W-L8). Read-only, for the QA
+   * harness: "what scale does this pose settle at" is a question the global
+   * ledger has to answer with a number rather than an inference.
+   */
+  get currentRenderScale(): number {
+    return this.renderScale;
   }
 
   /**
