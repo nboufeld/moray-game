@@ -43,11 +43,11 @@ export const BLUSH_GOLD = new Color(0xeccf96);
  * not a colour.
  */
 export const BLOOM_FAMILIES = [
-  new Color(0xd9748f),
-  new Color(0xd9a446),
-  new Color(0x9678cf),
-  new Color(0x63bd8a),
-  new Color(0xcf7247),
+  new Color(0xe289a4),
+  new Color(0xe9b968),
+  new Color(0xb193e2),
+  new Color(0x84d3a7),
+  new Color(0xdf8f63),
 ] as const;
 
 /**

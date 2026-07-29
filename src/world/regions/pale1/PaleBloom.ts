@@ -290,8 +290,18 @@ export function buildPaleBloom(archCrown: { x: number; y: number; z: number }): 
   for (const [kind, parts] of byKind) {
     const geometry = coralGeometry(kind);
     let material: MeshToonMaterial;
+    // The emissive whisper on every kind: the milk's flat violet light
+    // (round 4's sun cut) otherwise drops a saturated colony under the
+    // water's value, and a colony below the water's value reads as its
+    // complement — the fish community's documented failure, in coral.
     if (kind === "fan") {
-      material = createToonMaterial({ color: 0xffffff, map: fanTexture(), side: DoubleSide });
+      material = createToonMaterial({
+        color: 0xffffff,
+        map: fanTexture(),
+        side: DoubleSide,
+        emissive: 0x2a1d1c,
+        emissiveIntensity: 0.5,
+      });
       material.alphaTest = FAN_ALPHA_TEST;
       addSway(material, 0.055);
     } else {
@@ -301,6 +311,8 @@ export function buildPaleBloom(archCrown: { x: number; y: number; z: number }): 
         map: skin.map,
         normalMap: skin.normal,
         vertexColors: geometry.hasAttribute("color"),
+        emissive: 0x2a1d1c,
+        emissiveIntensity: 0.5,
       });
       if (kind === "staghorn") {
         addSway(material, 0.024);

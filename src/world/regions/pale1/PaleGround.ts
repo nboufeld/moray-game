@@ -137,9 +137,9 @@ const SHADOW_VIOLET_GROUND = story(0x8d78ab);
 const GALLERY_WHITE = story(0xf8f4e9);
 const BLUSH_GROUND = story(0xe9b0c1);
 const TURF_GOLD = story(0xc0a95c);
-const BED_ROSE = story(0xd28a78);
-const GROVE_ROSE = story(0xcf8090);
-const GROVE_HEART = story(0xa9647f);
+const BED_ROSE = story(0xdcab94);
+const GROVE_ROSE = story(0xd898a4);
+const GROVE_HEART = story(0xb37890);
 
 /**
  * The region's ground paint. The rules compose an absolute story colour
@@ -223,7 +223,7 @@ function bakePalePaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
     // to violet-rose at the heart — depth painted as colour, never black.
     const bloom = bloomWeight(u, v) * smoothstep01((k - 0.3) / 0.4);
     if (bloom > 0) {
-      col.lerp(BED_ROSE, bloom * 0.5);
+      col.lerp(BED_ROSE, bloom * 0.35);
     }
     const grove = groveWeight(u, v);
     if (grove > 0) {
@@ -254,7 +254,10 @@ function bakePalePaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
 
     // The division: story colour over the wash's own mean, so the map's
     // marks survive as grain and the colour on screen is the one above.
-    const total = value * (0.72 + shade * 0.28);
+    // The 1.16 rides over the milk's flat light — measured, not guessed:
+    // round 4's first pass hit (167, 143, 127) on the gallery pan where
+    // paper wants ~(210, 200, 190).
+    const total = value * (0.72 + shade * 0.28) * 1.16;
     colors[i * 3] = Math.max(0.2, Math.min(3.2, (col.r / WASH_MEAN.r) * total));
     colors[i * 3 + 1] = Math.max(0.2, Math.min(3.2, (col.g / WASH_MEAN.g) * total));
     colors[i * 3 + 2] = Math.max(0.2, Math.min(3.2, (col.b / WASH_MEAN.b) * total));

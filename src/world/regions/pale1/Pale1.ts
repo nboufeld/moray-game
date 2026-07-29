@@ -194,8 +194,16 @@ export const PALE_1: RegionDef = {
     // Density eased a step from round 2 so the shelf's authored beds
     // layer inside the fog instead of drowning at forty metres — the
     // reveal rhythm wants ~55 m of legible water.
-    fog: { colorScale: [4.4, 1.3, 1.12], densityGain: 0.009, backdropFade: 0.22 },
-    light: { sun: 0.1, hemisphere: -0.1, ambient: -0.03 },
+    fog: { colorScale: [3.6, 1.26, 1.1], densityGain: 0.009, backdropFade: 0.3 },
+    // Round 3's finding: the paint was never the problem — the light was.
+    // The warm key at 1.6 dominates every up-facing surface, so chalk
+    // painted white rendered gold-cream whatever the bake said. The milk
+    // takes nearly half the sun away, eases the cyan hemisphere, and
+    // gives the level back as violet ambient: white ground lit flat
+    // paper, shadows violet — the Ghost Reef's "grief lit flat" grown to
+    // region size, with the bloom's saturated tints carrying the warmth
+    // instead of the light.
+    light: { sun: 0.45, hemisphere: 0.2, ambient: -0.5 },
   },
   moodSurface: 16,
   moodDescent: 8,
