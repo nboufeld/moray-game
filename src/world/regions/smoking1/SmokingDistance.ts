@@ -172,21 +172,25 @@ function chimneyCardGeometry(): BufferGeometry {
   }
   const blade = (spin: number): BufferGeometry => {
     const h = CARD_HEIGHT;
+    // Redrawn in round 6: the round-5 cut put a symmetric lump either
+    // side of the crown and every card on the horizon read as a
+    // telephone-pole cross. The stack is wider, and the plume is one
+    // drifting smudge leaning off to +x — smoke has a wind side.
     const positions = new Float32Array([
-      // The stack: a foot flare and two leaning segments.
-      -2.2, 0, 0, 2.2, 0, 0, 1.1, h * 0.18, 0,
-      -2.2, 0, 0, 1.1, h * 0.18, 0, -1.1, h * 0.2, 0,
-      -1.1, h * 0.2, 0, 1.1, h * 0.18, 0, 0.85, h * 0.6, 0,
-      -1.1, h * 0.2, 0, 0.85, h * 0.6, 0, -0.75, h * 0.62, 0,
-      -0.75, h * 0.62, 0, 0.85, h * 0.6, 0, 0.6, h * 0.92, 0,
-      -0.75, h * 0.62, 0, 0.6, h * 0.92, 0, -0.5, h * 0.93, 0,
+      // The stack: a broad foot flare and two leaning segments.
+      -3.4, 0, 0, 3.4, 0, 0, 1.8, h * 0.18, 0,
+      -3.4, 0, 0, 1.8, h * 0.18, 0, -1.8, h * 0.2, 0,
+      -1.8, h * 0.2, 0, 1.8, h * 0.18, 0, 1.3, h * 0.6, 0,
+      -1.8, h * 0.2, 0, 1.3, h * 0.6, 0, -1.2, h * 0.62, 0,
+      -1.2, h * 0.62, 0, 1.3, h * 0.6, 0, 0.95, h * 0.92, 0,
+      -1.2, h * 0.62, 0, 0.95, h * 0.92, 0, -0.8, h * 0.93, 0,
       // The crown lip.
-      -0.9, h * 0.9, 0, 1.0, h * 0.89, 0, 0.1, h * 0.99, 0,
-      // The plume: two soft lumps leaning off the crown.
-      -0.4, h * 0.96, 0, 1.6, h * 0.98, 0, 0.6, h * 1.1, 0,
-      -0.4, h * 0.96, 0, 0.6, h * 1.1, 0, -1.2, h * 1.06, 0,
-      0.4, h * 1.06, 0, 2.6, h * 1.1, 0, 1.5, h * 1.22, 0,
-      0.4, h * 1.06, 0, 1.5, h * 1.22, 0, -0.4, h * 1.16, 0,
+      -1.2, h * 0.9, 0, 1.3, h * 0.89, 0, 0.1, h * 1.0, 0,
+      // The plume: one smudge drifting off to the same side, twice.
+      -0.5, h * 0.97, 0, 1.5, h * 0.98, 0, 1.0, h * 1.1, 0,
+      -0.5, h * 0.97, 0, 1.0, h * 1.1, 0, -0.1, h * 1.06, 0,
+      0.4, h * 1.05, 0, 2.9, h * 1.12, 0, 2.0, h * 1.2, 0,
+      0.4, h * 1.05, 0, 2.0, h * 1.2, 0, 0.6, h * 1.13, 0,
     ]);
     const geometry = new BufferGeometry();
     geometry.setAttribute("position", new BufferAttribute(positions, 3));

@@ -101,11 +101,13 @@ export function buildKeeper(): KeeperBuild {
   // slow climb over the kiln's shoulder once a lap — tending the seams.
   const pathAt = (t: number, out: Vector3): Vector3 => {
     const theta = t * Math.PI * 2;
-    const r = 5.4 + 1.1 * Math.sin(theta * 2 + phase);
+    // Widened in round 6: at 5.4 m the kiln itself occluded half of
+    // every patrol from the pose's distance.
+    const r = 7.0 + 1.2 * Math.sin(theta * 2 + phase);
     const x = kilnSpot.x + Math.cos(theta) * r;
     const z = kilnSpot.z + Math.sin(theta) * r;
-    const overShoulder = Math.max(0, Math.sin(theta - phase)) ** 3 * 2.6;
-    out.set(x, kilnY + 1.0 + 0.5 * Math.sin(theta * 3 + phase * 0.7) + overShoulder, z);
+    const overShoulder = Math.max(0, Math.sin(theta - phase)) ** 3 * 3.2;
+    out.set(x, kilnY + 1.3 + 0.5 * Math.sin(theta * 3 + phase * 0.7) + overShoulder, z);
     return out;
   };
 
@@ -371,10 +373,11 @@ function kilnGeometry(): BufferGeometry {
     const t = Math.min(1, Math.max(0, y / 4.95));
     const theta = Math.atan2(z, x);
     shade.copy(bodyLow).lerp(bodyHigh, t);
-    // The seams: meridian cracks, widening toward the crown.
+    // The seams: meridian cracks, widening toward the crown. Threshold
+    // raised in round 6 — at 0.6 the whole dome read as a red balloon.
     const seam = smoothstep01(
-      (fbm(theta * 1.6, y * 0.5, { seed: SEED ^ 0x5ea3, period: 4, octaves: 2 }) - (0.6 - t * 0.08)) /
-        0.1,
+      (fbm(theta * 1.6, y * 0.5, { seed: SEED ^ 0x5ea3, period: 4, octaves: 2 }) - (0.68 - t * 0.09)) /
+        0.08,
     );
     shade.multiplyScalar(1 - seam * 0.5);
     shade.r += seam * EMBER.r * (0.5 + t * 0.5);
