@@ -57,9 +57,9 @@ const DISC_GROUND_R = 240;
 
 /** Disc tile edge length; two tiles span the disc with margin. */
 const DISC_TILE = 231;
-/** ~2.1 m per vertex on the disc, ~1.7 in the vale — see the ledger note. */
-const DISC_SEGMENTS = 108;
-const VALE_SEGMENTS = 88;
+/** ~2.2 m per vertex on the disc, ~1.75 in the vale — see the ledger note. */
+const DISC_SEGMENTS = 104;
+const VALE_SEGMENTS = 84;
 
 /** Where the bowl's own sheet ends and the vale sheet must begin. */
 const BOWL_SHEET_EDGE = 56;

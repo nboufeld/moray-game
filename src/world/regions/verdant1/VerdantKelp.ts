@@ -88,7 +88,7 @@ const MID_MAX = 13;
 
 const GIANT_RINGS = 16;
 const STALK_SIDES = 7;
-const YOUNG_RINGS = 8;
+const YOUNG_RINGS = 6;
 
 /** Tip sweep as a fraction of height. A 22 m giant's crown rides ~1.7 m. */
 const GIANT_SWAY = 0.075;
@@ -399,7 +399,7 @@ function growPlant(
 
   // The base foliage, spiralled a golden angle apart and crowd-topped.
   const count = Math.round(
-    giant ? leafRandom.range(16, 21) * (kind === "mid" ? 0.85 : 1) : leafRandom.range(9, 13),
+    giant ? leafRandom.range(16, 21) * (kind === "mid" ? 0.85 : 1) : leafRandom.range(8, 11),
   );
   const topBias = giant ? 0.6 : 0.72;
   for (let i = 0; i < count; i++) {

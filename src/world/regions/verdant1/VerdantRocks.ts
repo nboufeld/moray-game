@@ -369,7 +369,7 @@ function rootTube(from: Vector3, to: Vector3, radius: number, random: Random): B
   mid.x += random.signed(0.5);
   mid.z += random.signed(0.5);
   const curve = new CatmullRomCurve3([from, mid, to]);
-  const geometry = new TubeGeometry(curve, 7, radius, 5, false);
+  const geometry = new TubeGeometry(curve, 6, radius, 5, false);
 
   const position = geometry.attributes.position!;
   const colors = new Float32Array(position.count * 3);
