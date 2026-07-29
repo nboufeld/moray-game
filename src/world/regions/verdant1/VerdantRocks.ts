@@ -253,7 +253,7 @@ export function buildVerdantRocks(): VerdantRocksBuild {
   // Root hubs: each a knuckle of arcing roots gripping the gully ridges —
   // the maze's own flora, dead giants' anchors grown into architecture.
   const rootParts: BufferGeometry[] = [];
-  for (let hub = 0; hub < 12; hub++) {
+  for (let hub = 0; hub < 11; hub++) {
     const angle = random.range(0, Math.PI * 2);
     const spread = 8 + Math.sqrt(random.next()) * 34;
     const u = ROOT_MAZE.u + Math.cos(angle) * spread;

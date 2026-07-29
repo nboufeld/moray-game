@@ -43,7 +43,7 @@ const TIP_BOW = 1.0;
 const BLADE_TWIST = 0.55;
 const BLADE_CUP = 0.4;
 
-const PATCHES = 44;
+const PATCHES = 42;
 const BLADES_PER_PATCH = 38;
 const PATCH_RADIUS = 3.4;
 

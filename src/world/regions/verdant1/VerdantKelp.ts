@@ -177,7 +177,7 @@ export function buildVerdantKelp(): VerdantKelpBuild {
   const aisleAt = (u: number): number =>
     58 * smoothstep01((u - 300) / 165) + 6 * Math.sin(u * 0.05);
   let attempts = 0;
-  while (placed.length < 27 && attempts < 400) {
+  while (placed.length < 26 && attempts < 400) {
     attempts++;
     const angle = random.range(0, Math.PI * 2);
     const spread = Math.sqrt(random.next()) * 104;
