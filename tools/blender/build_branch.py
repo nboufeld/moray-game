@@ -86,10 +86,36 @@ def vid(point):
     return vmap[key]
 
 
+#: Each joint's wobble, drawn once and shared by every segment that meets
+#: there. Jittering each segment's own copy of a shared joint tears the tree
+#: into disconnected two-vertex islands, and the Skin modifier collapses any
+#: island without a root to its bare polyline — the wave-8 GLB shipped as a
+#: mesh of zero-area triangles that rendered as a single spike (atelier fix:
+#: geometry, because no paint can fix a face with no area).
+wobble = {}
+
+
+def wobbled(point):
+    key = (round(point[0], 5), round(point[1], 5), round(point[2], 5))
+    if key not in wobble:
+        wobble[key] = tuple(c + rng.uniform(-0.012, 0.012) for c in key)
+    return wobble[key]
+
+
+#: First vertex of every disconnected chain: the stem's foot and each tine's
+#: buried attach point. The Skin modifier needs a root per island or the
+#: island's hull is garbage; the tines stay topologically separate on
+#: purpose — their roots sit inside the parent's hull, which is how the
+#: stand-in always attached them.
+roots = []
+
 for start, end, radius in SEGMENTS:
     # A hand-grown wobble at each joint; an antler is not a cylinder tree.
-    jittered_end = tuple(c + rng.uniform(-0.012, 0.012) for c in end)
-    a, b = vid(start), vid(jittered_end)
+    known = len(verts)
+    a = vid(wobbled(start))
+    if len(verts) > known:
+        roots.append(a)
+    b = vid(wobbled(end))
     edges.append((a, b))
     radii[a] = max(radii.get(a, 0.0), radius)
     radii[b] = max(radii.get(b, 0.0), radius * TIP_TAPER)
@@ -104,7 +130,8 @@ skin.use_smooth_shade = True
 for i, vertex in enumerate(obj.data.skin_vertices[0].data):
     r = radii.get(i, 0.02)
     vertex.radius = (r, r)
-obj.data.skin_vertices[0].data[0].use_root = True
+for root in roots:
+    obj.data.skin_vertices[0].data[root].use_root = True
 
 subsurf = obj.modifiers.new("subsurf", "SUBSURF")
 #: Zero, where the staghorn took one — and the reason is the instance count.
