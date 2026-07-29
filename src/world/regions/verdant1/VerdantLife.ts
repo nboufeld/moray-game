@@ -77,7 +77,7 @@ export function buildVerdantLife(giants: readonly KelpFoot[]): VerdantLifeBuild 
   const shimmer = buildShoal({
     seed: SEED ^ 0x5a01,
     count: 60,
-    color: new Color(0xdcecf0),
+    color: new Color(0xaed2cd),
     profile: { width: 0.9, height: 0.9, length: 1.05, tailTaper: 0.5, dorsal: 0.5, pectoral: 0.9, tail: { reach: 1.5, lobe: 0.62, notch: 1.05 } },
     scale: 0.85,
     behaviour: {
@@ -101,7 +101,7 @@ export function buildVerdantLife(giants: readonly KelpFoot[]): VerdantLifeBuild 
     // Green-gold outright: even olive-cream measured salmon against the
     // cyan in round 3 — a small body under the warm key needs green *in*
     // the colour, not adjacent to it.
-    color: new Color(0xa5cf68),
+    color: new Color(0x8fb85c),
     profile: { width: 1.0, height: 1.35, length: 0.8, tailTaper: 0.5, dorsal: 0.9, pectoral: 1.1, tail: { reach: 1.35, lobe: 0.7, notch: 1.0 } },
     scale: 0.6,
     behaviour: {
@@ -443,10 +443,10 @@ function buildSerpent(giants: readonly KelpFoot[]): {
   mesh.instanceMatrix.setUsage(DynamicDrawUsage);
 
   const tint = new Color();
-  // Green-leaned silver. Plain silver measured salmon from below in two
-  // rounds running — under a warm key against green water, a small body
-  // must carry green in its own colour or the eye supplies the complement.
-  const silver = new Color(0xd8eee0);
+  // Green-silver, taken down a real step. Measured across three rounds:
+  // any pale tint under the 1.6 warm key overexposes into salmon, so the
+  // body colour itself must sit below the blowout and carry green.
+  const silver = new Color(0xa8cfc0);
   const offsets: { lateral: number; phase: number; scale: number }[] = [];
   for (let i = 0; i < count; i++) {
     offsets.push({
@@ -454,7 +454,7 @@ function buildSerpent(giants: readonly KelpFoot[]): {
       phase: random.range(0, Math.PI * 2),
       scale: random.range(0.9, 1.25),
     });
-    tint.copy(silver).multiplyScalar(random.range(0.9, 1.08));
+    tint.copy(silver).multiplyScalar(random.range(0.85, 1.05));
     mesh.setColorAt(i, tint);
   }
   if (mesh.instanceColor) {

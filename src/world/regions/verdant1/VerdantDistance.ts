@@ -49,11 +49,13 @@ interface ForestLayer {
 }
 
 const LAYERS: readonly ForestLayer[] = [
-  // A near-flat canopy line with tall standing trunks: round 3's ±3-4 m
-  // canopy swell ate its own trunks and the horizon read as bare hills.
-  { radius: 246, canopyBase: 7, canopyVary: 1.8, trunks: 26, trunkHeight: 17, fade: 0.4 },
-  { radius: 264, canopyBase: 10, canopyVary: 2.2, trunks: 20, trunkHeight: 21, fade: 0.58 },
-  { radius: 286, canopyBase: 13, canopyVary: 2.8, trunks: 14, trunkHeight: 26, fade: 0.74 },
+  // A near-flat canopy line, and nothing else: every in-ring "trunk" ever
+  // tried rendered as a mountain (a ring feature is metres wide before it
+  // can exist at all), so the rings carry the horizontals and the
+  // instanced silhouette cards below carry every vertical.
+  { radius: 246, canopyBase: 7, canopyVary: 1.8, trunks: 0, trunkHeight: 0, fade: 0.4 },
+  { radius: 264, canopyBase: 10, canopyVary: 2.2, trunks: 0, trunkHeight: 0, fade: 0.58 },
+  { radius: 286, canopyBase: 13, canopyVary: 2.8, trunks: 0, trunkHeight: 0, fade: 0.74 },
 ];
 
 const SEGMENTS = 220;
@@ -117,8 +119,8 @@ export function buildVerdantDistance(): { meshes: (Mesh | InstancedMesh)[] } {
   // tapered cards with crown blobs, standing on the rings' own radii in
   // two distance bands that share the rings' ink.
   for (const [band, spec] of [
-    { rFrom: 242, rTo: 256, count: 26, fade: 0.44, hMin: 16, hMax: 24 },
-    { rFrom: 262, rTo: 282, count: 18, fade: 0.66, hMin: 20, hMax: 30 },
+    { rFrom: 242, rTo: 256, count: 30, fade: 0.44, hMin: 24, hMax: 34 },
+    { rFrom: 262, rTo: 282, count: 22, fade: 0.66, hMin: 28, hMax: 40 },
   ].entries()) {
     const material = new MeshBasicMaterial({
       color: new Color(0x3f8f7a),
@@ -144,9 +146,9 @@ export function buildVerdantDistance(): { meshes: (Mesh | InstancedMesh)[] } {
       dummy.position.set(CENTER_X + Math.cos(theta) * r, FOOT + 2, CENTER_Z + Math.sin(theta) * r);
       dummy.rotation.set(0, random.range(0, Math.PI), random.signed(0.06));
       dummy.scale.set(
-        random.range(0.8, 1.4),
+        random.range(1.2, 2.1),
         random.range(spec.hMin, spec.hMax) / TRUNK_CARD_HEIGHT,
-        random.range(0.8, 1.4),
+        random.range(1.2, 2.1),
       );
       dummy.updateMatrix();
       mesh.setMatrixAt(placed, dummy.matrix);
