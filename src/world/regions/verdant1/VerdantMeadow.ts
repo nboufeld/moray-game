@@ -44,8 +44,8 @@ const BLADE_TWIST = 0.55;
 const BLADE_CUP = 0.4;
 
 const PATCHES = 46;
-const BLADES_PER_PATCH = 26;
-const PATCH_RADIUS = 4.2;
+const BLADES_PER_PATCH = 32;
+const PATCH_RADIUS = 3.8;
 
 const FAMILIES: readonly (readonly number[])[] = [
   [0x6cc084, 0x92d788, 0x50a771],
@@ -97,7 +97,7 @@ export function buildVerdantMeadow(): VerdantMeadowBuild {
   };
   material.customProgramCacheKey = () => "verdant-meadow";
 
-  const capacity = PATCHES * BLADES_PER_PATCH + 220;
+  const capacity = PATCHES * BLADES_PER_PATCH + 260;
   const mesh = new InstancedMesh(bladeGeometry(), material, capacity);
   mesh.name = "verdant-meadow";
   mesh.castShadow = false;
@@ -117,7 +117,7 @@ export function buildVerdantMeadow(): VerdantMeadowBuild {
     dummy.rotation.set(random.signed(0.12), random.range(0, Math.PI * 2), random.signed(0.12));
     dummy.scale.set(
       random.range(0.75, 1.25),
-      random.range(0.4, 1.05) * heightScale,
+      random.range(0.55, 1.15) * heightScale,
       1,
     );
     dummy.updateMatrix();
@@ -144,7 +144,7 @@ export function buildVerdantMeadow(): VerdantMeadowBuild {
   }
 
   // The Sunwell's floor: its own pale family, dense at the pool of light.
-  for (let i = 0; i < 220; i++) {
+  for (let i = 0; i < 260; i++) {
     const angle = random.range(0, Math.PI * 2);
     const spread = Math.sqrt(random.next()) * 26;
     const u = SUNWELL.u + Math.cos(angle) * spread;

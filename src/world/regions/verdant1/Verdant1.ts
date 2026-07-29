@@ -154,16 +154,18 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "forest-aisle", u: 414, v: 8, lift: 3, atU: 470, atV: 46, pitch: 0.04, settle: 6 },
   // The Elder and the serpent that circles it.
   { name: "elder-serpent", u: 441, v: -32, lift: 4, atU: 430, atV: -21, pitch: 0.08, settle: 10 },
-  // Up through the crowns: the light-dapple ceiling.
-  { name: "canopy-up", u: 452, v: -2, lift: 2, atU: 448, atV: 4, pitch: 0.9 },
+  // Up through the Elder's own crown: the light-dapple ceiling.
+  { name: "canopy-up", u: 433, v: -25, lift: 1.6, atU: 430, atV: -22, pitch: 1.05 },
   // Breaching the canopy into the thin bright water.
-  { name: "canopy-breach", u: 448, v: 12, lift: 0, absoluteY: 16.5, atU: 475, atV: 58, pitch: -0.18 },
+  { name: "canopy-breach", u: 448, v: 12, lift: 0, absoluteY: 15, atU: 475, atV: 58, pitch: -0.14 },
   // The Sunwell: the clearing and its fall of light.
   { name: "sunwell", u: 452, v: 40, lift: 2.4, atU: SUNWELL.u, atV: SUNWELL.v, pitch: 0.06, settle: 5 },
   // The Root Maze's half-light: arch, roots, the fallen giant.
   { name: "root-maze", u: 468, v: -52, lift: 2.6, atU: ROOT_MAZE.u, atV: ROOT_MAZE.v, pitch: -0.12 },
-  // The grotto: the Weaver braiding under the slab.
-  { name: "weaver-grotto", u: 497, v: -97, lift: 2.2, atU: 503, atV: -108, pitch: -0.06, settle: 10 },
+  // The grotto: the Weaver braiding under the slab. The aim rides a step
+  // off the anchor so the settle does not complete a discovery and drop
+  // the ceremony plate over the frame being judged.
+  { name: "weaver-grotto", u: 497, v: -97, lift: 2.2, atU: 507, atV: -104, pitch: -0.04, settle: 6 },
   // The Falling Edge: the shelf, the stones, the painted distance.
   { name: "falling-edge", u: 578, v: 14, lift: 3, atU: 640, atV: 0, pitch: 0.02 },
 ];
@@ -196,11 +198,12 @@ export const VERDANT_1: RegionDef = {
   floorClearance: 0.7,
 
   mood: {
-    // Deep living green that keeps its sun: the fog leans hard into green,
-    // thickens a shade, and takes only a modest cut of the light rig — the
-    // forest's darkness comes from its own canopy, not from the rig.
-    fog: { colorScale: [0.58, 0.94, 0.62], densityGain: 0.006, backdropFade: 0.35 },
-    light: { sun: 0.16, hemisphere: 0.22, ambient: 0.06 },
+    // Deep living green that keeps its sun. Round 1 measured red at 0.58
+    // as electric emerald — the value key's "read the red channel first"
+    // failure — so the green arrives by *ratio*, not by gutting red; the
+    // density gain came down with it so the vistas breathe to ~70 m.
+    fog: { colorScale: [0.72, 0.92, 0.66], densityGain: 0.0045, backdropFade: 0.32 },
+    light: { sun: 0.12, hemisphere: 0.2, ambient: 0.05 },
   },
   // The mood fades out above 18 m, so climbing through the canopy into the
   // thin water over it is a climb back into the bright — the breach moment

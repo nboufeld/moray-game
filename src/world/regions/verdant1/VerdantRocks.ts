@@ -122,6 +122,28 @@ export function buildVerdantRocks(): VerdantRocksBuild {
     paleStone,
   );
 
+  // ─── The vale's wall stones ──────────────────────────────────────────────
+  // Six boulders seated on alternating wall feet down the channel: with
+  // the ledge kelp they are what breaches the fog every thirty metres of
+  // the approach, and each one is a place the eye can rest against the
+  // walls' big soft masses.
+  for (let i = 0; i < 6; i++) {
+    const u = 88 + i * 32 + random.signed(6);
+    const side = i % 2 === 0 ? -1 : 1;
+    const lateral = valeChannelCenter(u) + side * random.range(4.6, 7);
+    const radius = random.range(1.1, 2.2);
+    const height = radius * random.range(0.9, 1.3);
+    stand(
+      boulderGeometry({ seed: SEED ^ (0x0aa0 + i), radius, height }),
+      u,
+      lateral,
+      random.range(0, Math.PI * 2),
+      radius,
+      height,
+      i % 3 === 0 ? paleStone : mazeStone,
+    );
+  }
+
   // ─── The Overlook stone ──────────────────────────────────────────────────
   // A slab beside the lip: something to hold the frame's edge while the
   // meadows open below.
@@ -227,7 +249,7 @@ export function buildVerdantRocks(): VerdantRocksBuild {
   // Root hubs: each a knuckle of arcing roots gripping the gully ridges —
   // the maze's own flora, dead giants' anchors grown into architecture.
   const rootParts: BufferGeometry[] = [];
-  for (let hub = 0; hub < 8; hub++) {
+  for (let hub = 0; hub < 12; hub++) {
     const angle = random.range(0, Math.PI * 2);
     const spread = 8 + Math.sqrt(random.next()) * 34;
     const u = ROOT_MAZE.u + Math.cos(angle) * spread;
@@ -422,10 +444,11 @@ function buildWreck(random: Random): {
   );
   parts.push(fallenRib);
 
-  // Old wood: near-black wine below, silvered drift-grey along the top
-  // edges where a century of thin light has bleached it.
-  const wine = new Color(0x463229);
-  const silver = new Color(0x9a948a);
+  // Old wood: wine below, silvered drift-grey along the top edges where a
+  // century of thin light has bleached it. Round 2 opened the spread —
+  // at round 1's values the whole wreck read as one tan mass.
+  const wine = new Color(0x54322c);
+  const silver = new Color(0xb5b0a2);
   for (const part of parts) {
     const position = part.attributes.position!;
     const colors = new Float32Array(position.count * 3);

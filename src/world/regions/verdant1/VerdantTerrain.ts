@@ -230,9 +230,10 @@ function discHeight(x: number, z: number, u: number, v: number): number {
   h += fallingEdgeWeight(u) * (shelf - h);
 
   // The Root Maze, last so its depth wins its own quarter: gullies ridge
-  // the floor for the holdfast tangle to grow through.
+  // the floor for the holdfast tangle to grow through. Deepened in round
+  // 2 — at ±2.3 the "maze" read as dunes with ornaments on it.
   const gullies =
-    (fbm(x * 0.03, z * 0.03, { seed: SEED ^ 0x3a7e, period: 10, octaves: 3 }) - 0.5) * 4.6;
+    (fbm(x * 0.03, z * 0.03, { seed: SEED ^ 0x3a7e, period: 10, octaves: 3 }) - 0.5) * 6.4;
   h += mazeWeight(u, v) * (MAZE_FLOOR + gullies - h);
 
   // Ground life at the scale the sheets can carry.

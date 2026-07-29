@@ -98,7 +98,9 @@ export function buildVerdantLife(giants: readonly KelpFoot[]): VerdantLifeBuild 
   const grazers = buildShoal({
     seed: SEED ^ 0x5a02,
     count: 44,
-    color: new Color(0xe4c07c),
+    // Olive-cream, not warm gold: a small warm body on a cyan field reads
+    // salmon-pink (the fish community's own documented value failure).
+    color: new Color(0xd9d68e),
     profile: { width: 1.0, height: 1.35, length: 0.8, tailTaper: 0.5, dorsal: 0.9, pectoral: 1.1, tail: { reach: 1.35, lobe: 0.7, notch: 1.0 } },
     scale: 0.6,
     behaviour: {
@@ -152,9 +154,10 @@ function buildMotes(): { points: Points; update: (dt: number, time: number, calm
   const phases = new Float32Array(count);
 
   for (let i = 0; i < count; i++) {
-    // Drift thickest under the forest and the Sunwell, where the light is.
-    const u = random.range(300, 590);
-    const v = random.signed(120);
+    // Drift through the whole sea, vale included — the forest upstream is
+    // always shedding, and a mote crossing a beam is the vale's only spark.
+    const u = random.range(90, 590);
+    const v = u < 292 ? random.signed(14) : random.signed(120);
     const { x, z } = worldOf(u, v);
     const floor = seabedHeight(x, z);
     base[i * 3] = x;
@@ -420,7 +423,7 @@ function buildSerpent(giants: readonly KelpFoot[]): {
   }
   const path = new CatmullRomCurve3(points, true, "centripetal", 0.5);
 
-  const count = 96;
+  const count = 88;
   const geometry = createFishGeometry({
     width: 0.85,
     height: 0.95,
@@ -439,23 +442,27 @@ function buildSerpent(giants: readonly KelpFoot[]): {
   mesh.instanceMatrix.setUsage(DynamicDrawUsage);
 
   const tint = new Color();
-  const silver = new Color(0xe3ecea);
+  // Brighter and bluer than round 1's silver: the school is the region's
+  // one cool accent, and the extra value is what keeps a fish six pixels
+  // long from reading as its background's pink complement.
+  const silver = new Color(0xeef6f8);
   const offsets: { lateral: number; phase: number; scale: number }[] = [];
   for (let i = 0; i < count; i++) {
     offsets.push({
-      lateral: random.signed(0.55),
+      lateral: random.signed(0.32),
       phase: random.range(0, Math.PI * 2),
-      scale: random.range(0.75, 1.05),
+      scale: random.range(0.9, 1.25),
     });
-    tint.copy(silver).multiplyScalar(random.range(0.88, 1.1));
+    tint.copy(silver).multiplyScalar(random.range(0.9, 1.08));
     mesh.setColorAt(i, tint);
   }
   if (mesh.instanceColor) {
     mesh.instanceColor.needsUpdate = true;
   }
 
-  // The body covers this fraction of the loop, nose to tail.
-  const bodySpan = 0.16;
+  // The body covers this fraction of the loop, nose to tail — tightened
+  // in round 2 so the shoal reads as one ribbon, not scattered dots.
+  const bodySpan = 0.12;
   const dummy = new Object3D();
   const at = new Vector3();
   const ahead = new Vector3();
@@ -471,7 +478,7 @@ function buildSerpent(giants: readonly KelpFoot[]): {
       side.subVectors(ahead, at).cross(up).normalize();
       // The braid: each fish rides a little off the line, swinging with
       // its neighbours so the body's edge ripples like a ribbon.
-      const swing = Math.sin(time * calm * 1.7 + i * 0.32 + o.phase * 0.2) * 0.4;
+      const swing = Math.sin(time * calm * 1.7 + i * 0.32 + o.phase * 0.2) * 0.22;
       at.addScaledVector(side, o.lateral + swing);
       at.y += Math.sin(time * calm * 1.3 + i * 0.21) * 0.22;
       dummy.position.copy(at);

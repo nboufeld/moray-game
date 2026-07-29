@@ -44,9 +44,9 @@ interface ForestLayer {
 }
 
 const LAYERS: readonly ForestLayer[] = [
-  { radius: 246, canopyBase: 9, canopyVary: 4, trunks: 22, trunkHeight: 9, fade: 0.4 },
-  { radius: 264, canopyBase: 13, canopyVary: 5, trunks: 16, trunkHeight: 11, fade: 0.58 },
-  { radius: 286, canopyBase: 17, canopyVary: 6, trunks: 12, trunkHeight: 13, fade: 0.74 },
+  { radius: 246, canopyBase: 8, canopyVary: 3.2, trunks: 26, trunkHeight: 13, fade: 0.4 },
+  { radius: 264, canopyBase: 11, canopyVary: 4, trunks: 20, trunkHeight: 16, fade: 0.58 },
+  { radius: 286, canopyBase: 14, canopyVary: 5, trunks: 14, trunkHeight: 19, fade: 0.74 },
 ];
 
 const SEGMENTS = 220;
@@ -107,13 +107,17 @@ export function buildVerdantDistance(): { meshes: Mesh[] } {
  * The vale's azimuth sector is skipped — the ring is an open arc.
  */
 function forestRing(layer: ForestLayer, random: Random, noiseSeed: number): BufferGeometry {
+  // Round 2: a spike narrower than one ring segment (2π/220 ≈ 0.029 rad)
+  // simply vanishes between vertices, which is why round 1's "forest
+  // skyline" read as bare mountains. Every trunk now spans at least two
+  // segments, and the crown bulge rides proportionally wider.
   const trunks: { at: number; height: number; halfWidth: number; crown: number }[] = [];
   for (let i = 0; i < layer.trunks; i++) {
     trunks.push({
       at: random.range(0, Math.PI * 2),
-      height: layer.trunkHeight * random.range(0.6, 1),
-      halfWidth: random.range(0.008, 0.02),
-      crown: random.range(1.6, 3),
+      height: layer.trunkHeight * random.range(0.65, 1),
+      halfWidth: random.range(0.02, 0.045),
+      crown: random.range(1.4, 2.4),
     });
   }
 

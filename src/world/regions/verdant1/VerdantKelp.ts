@@ -31,7 +31,14 @@ import {
   smoothstep01,
   type SwayUniforms,
 } from "./VerdantShared";
-import { FOREST_BASIN, ROOT_MAZE, SUNWELL, mazeWeight, worldOf } from "./VerdantTerrain";
+import {
+  FOREST_BASIN,
+  ROOT_MAZE,
+  SUNWELL,
+  mazeWeight,
+  valeChannelCenter,
+  worldOf,
+} from "./VerdantTerrain";
 
 /**
  * The High Forest, and every kelp plant in the Great Kelp Sea.
@@ -87,10 +94,17 @@ const YOUNG_RINGS = 8;
 const GIANT_SWAY = 0.075;
 const YOUNG_SWAY = 0.12;
 
-/** The stipe's three paint stops. */
-const HOLDFAST_TINT = new Color(0x584438);
-const STIPE_TINT = new Color(0x6d8448);
-const STIPE_CROWN_TINT = new Color(0x93a355);
+/**
+ * The stipe's three paint stops. Lifted a step in round 2: at round 1's
+ * values a trunk two metres from the lens read as a charcoal pipe — the
+ * darkest thing in the region must still be a colour with light in it.
+ */
+const HOLDFAST_TINT = new Color(0x6b5442);
+const STIPE_TINT = new Color(0x7e9855);
+const STIPE_CROWN_TINT = new Color(0xa3b264);
+
+/** The vale's ledge kelp: cooler and deeper than the meadow's spring key. */
+const VALE_TONES = [0x548a52, 0x639a58, 0x477a4a] as const;
 
 export interface KelpFoot {
   readonly x: number;
@@ -163,7 +177,7 @@ export function buildVerdantKelp(): VerdantKelpBuild {
   const aisleAt = (u: number): number =>
     58 * smoothstep01((u - 300) / 165) + 6 * Math.sin(u * 0.05);
   let attempts = 0;
-  while (placed.length < 31 && attempts < 400) {
+  while (placed.length < 29 && attempts < 400) {
     attempts++;
     const angle = random.range(0, Math.PI * 2);
     const spread = Math.sqrt(random.next()) * 104;
@@ -215,7 +229,7 @@ export function buildVerdantKelp(): VerdantKelpBuild {
   grow(chunks.meadow!, 267, 7.5, 12, "mid", FOREST_TONES);
 
   // ─── The Rolling Meadows' young stands ───────────────────────────────────
-  for (let stand = 0; stand < 11; stand++) {
+  for (let stand = 0; stand < 9; stand++) {
     const u = random.range(298, 392);
     const v = random.signed(70);
     if (Math.abs(v - aisleAt(u)) < 6) {
@@ -226,6 +240,40 @@ export function buildVerdantKelp(): VerdantKelpBuild {
       const du = random.signed(2.2);
       const dv = random.signed(2.2);
       grow(chunks.meadow!, u + du, v + dv, random.range(YOUNG_MIN, YOUNG_MAX), "young", MEADOW_TONES);
+    }
+  }
+  // One young stand just past the lip, close enough for the reveal to
+  // read plants before the fog: the meadows' welcome.
+  for (let i = 0; i < 3; i++) {
+    grow(
+      chunks.meadow!,
+      296 + random.signed(2.5),
+      6 + random.signed(3),
+      random.range(YOUNG_MIN + 1, YOUNG_MAX + 1),
+      "young",
+      MEADOW_TONES,
+    );
+  }
+
+  // ─── The Long Vale's ledge kelp ──────────────────────────────────────────
+  // Nine clusters on alternating wall feet down the vale — the something
+  // that breaches the fog every thirty metres of a two-hundred-metre
+  // approach, and the green the walls' moss paint is reaching toward.
+  for (let i = 0; i < 9; i++) {
+    const u = 78 + i * 23 + random.signed(5);
+    const side = i % 2 === 0 ? 1 : -1;
+    const vc = valeChannelCenter(u);
+    const lateral = vc + side * random.range(5.5, 8.5);
+    const count = 1 + Math.floor(random.next() * 2);
+    for (let k = 0; k < count; k++) {
+      grow(
+        chunks.meadow!,
+        u + random.signed(1.6),
+        lateral + random.signed(1.2),
+        random.range(2.6, 4.8),
+        "young",
+        VALE_TONES,
+      );
     }
   }
 
@@ -376,14 +424,14 @@ function growPlant(
   // The canopy pads, giants only: the ceiling of leaf the breach swims
   // through. Fanned in a ring so they tile the sky.
   if (kind === "giant") {
-    const padCount = Math.round(canopyRandom.range(5, 7));
+    const padCount = Math.round(canopyRandom.range(6, 8));
     for (let i = 0; i < padCount; i++) {
       const t = canopyRandom.range(0.955, 1.0);
       const around =
         (crownBias !== undefined ? crownBias : yaw) +
         (i / padCount) * Math.PI * 2 +
         canopyRandom.signed(0.4);
-      const length = canopyRandom.range(1.3, 1.9) * crownReach;
+      const length = canopyRandom.range(1.6, 2.3) * crownReach;
       const width = length * canopyRandom.range(0.5, 0.66);
       const droop = canopyRandom.range(0.16, 0.34);
       attach(t, around, length, width, droop, tones[(i + 1) % tones.length]!, true, canopyRandom);
@@ -423,7 +471,7 @@ function bendedStalk(
     } else {
       shade.copy(STIPE_TINT).lerp(STIPE_CROWN_TINT, smoothstep01((t - 0.3) / 0.7));
     }
-    shade.multiplyScalar(0.72 + t * 0.42);
+    shade.multiplyScalar(0.84 + t * 0.32);
     colors[i * 3] = shade.r;
     colors[i * 3 + 1] = shade.g;
     colors[i * 3 + 2] = shade.b;

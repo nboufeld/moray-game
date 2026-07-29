@@ -58,7 +58,7 @@ const DISC_GROUND_R = 240;
 /** Disc tile edge length; two tiles span the disc with margin. */
 const DISC_TILE = 231;
 /** ~2.1 m per vertex on the disc, ~1.7 in the vale — see the ledger note. */
-const DISC_SEGMENTS = 112;
+const DISC_SEGMENTS = 108;
 const VALE_SEGMENTS = 88;
 
 /** Where the bowl's own sheet ends and the vale sheet must begin. */
@@ -122,61 +122,69 @@ function bakeVerdantPaint(geometry: PlaneGeometry, contacts: readonly ContactPat
     const life = fbm(x * 0.024, z * 0.024, { seed: SEED ^ 0x9d01, period: 9, octaves: 2 }) - 0.5;
     let value = 0.9 + life * 0.5;
 
-    // Meadow base: sunlit warm gold-green.
-    let r = 1.03;
-    let g = 1.0;
-    let b = 0.8;
+    // The sward: drifting patches of algal turf that green the ground
+    // itself. Round 1's paint sat politely under the sand wash and the
+    // whole region read as bare dunes — the sward is the correction, and
+    // it is a *drawing* (patchy, two scales) rather than a wash.
+    const sward =
+      smoothstep01((fbm(x * 0.016, z * 0.016, { seed: SEED ^ 0x5ade, period: 7, octaves: 3 }) - 0.46) / 0.22);
+
+    // Meadow base: sunlit gold-green, swarded hard.
+    let r = 1.02 - sward * 0.3;
+    let g = 1.0 - sward * 0.04;
+    let b = 0.78 - sward * 0.3;
 
     if (u < VALE_TO) {
-      // The vale: cool green walls, and a violet-leaning shadow pooled in
-      // the deep narrows (keyed on the channel's own floor curve).
+      // The vale: mossy green walls banded by height, and a violet-leaning
+      // shadow pooled in the deep narrows.
       const deep = smoothstep01((-valeFloor(u) - 5.0) / 2.4);
       const inChannel = 1 - smoothstep01((Math.abs(v - valeChannelCenter(u)) - valeChannelHalf(u)) / 8);
-      const vr = 0.84 - deep * inChannel * 0.1;
-      const vg = 0.95 - deep * inChannel * 0.2;
-      const vb = 0.86 + deep * inChannel * 0.06;
+      const moss = 0.35 + sward * 0.45;
+      const vr = 0.9 - moss * 0.26 - deep * inChannel * 0.12;
+      const vg = 0.98 - moss * 0.06 - deep * inChannel * 0.2;
+      const vb = 0.82 - moss * 0.2 + deep * inChannel * 0.14;
       const s = 1 - smoothstep01((u - 250) / 42);
       r += (vr - r) * s;
       g += (vg - g) * s;
       b += (vb - b) * s;
-      value -= deep * inChannel * 0.08;
+      value -= deep * inChannel * 0.1 * s;
     }
 
     // The forest floor: deep cool moss, drifted with warm leaf-litter.
     const forest = forestWeight(u, v);
     if (forest > 0) {
-      const warm = smoothstep01((litter(x, z) - 0.58) / 0.2);
-      r += (0.72 + warm * 0.24 - r) * forest;
-      g += (0.86 - warm * 0.06 - g) * forest;
-      b += (0.66 - warm * 0.06 - b) * forest;
-      value -= forest * 0.06;
+      const warm = smoothstep01((litter(x, z) - 0.6) / 0.2);
+      r += (0.56 + warm * 0.34 - r) * forest;
+      g += (0.78 - warm * 0.08 - g) * forest;
+      b += (0.5 + warm * 0.04 - b) * forest;
+      value -= forest * 0.05;
     }
 
     // The Sunwell: the palest, warmest ground in the region.
     const sun = sunwellWeight(u, v);
     if (sun > 0) {
-      r += (1.12 - r) * sun;
-      g += (1.06 - g) * sun;
-      b += (0.85 - b) * sun;
-      value += sun * 0.12;
+      r += (1.1 - r) * sun;
+      g += (1.08 - g) * sun;
+      b += (0.72 - b) * sun;
+      value += sun * 0.14;
     }
 
     // The maze: violet shadow — red above green, never a black.
     const maze = mazeWeight(u, v);
     if (maze > 0) {
-      const gully = smoothstep01((-y - 19.4) / 2.4);
-      r += (0.66 - gully * 0.08 - r) * maze;
-      g += (0.6 - gully * 0.1 - g) * maze;
-      b += (0.78 - gully * 0.04 - b) * maze;
-      value -= maze * (0.1 + gully * 0.08);
+      const gully = smoothstep01((-y - 19.0) / 2.6);
+      r += (0.6 - gully * 0.06 - r) * maze;
+      g += (0.52 - gully * 0.1 - g) * maze;
+      b += (0.74 + gully * 0.02 - b) * maze;
+      value -= maze * (0.12 + gully * 0.1);
     }
 
     // The Falling Edge: milky-bright, the distance rule written into the ground.
     const fe = fallingEdgeWeight(u);
     if (fe > 0) {
-      r += (1.0 - r) * fe * 0.7;
+      r += (0.98 - r) * fe * 0.7;
       g += (1.02 - g) * fe * 0.7;
-      b += (0.95 - b) * fe * 0.7;
+      b += (0.92 - b) * fe * 0.7;
       value += fe * 0.06;
     }
 
@@ -226,14 +234,19 @@ export function buildVerdantGround(contacts: readonly ContactPatch[]): Mesh[] {
     meshes.push(mesh);
   }
 
-  // The vale sheet: exactly from the bowl sheet's edge to the disc tiles'.
+  // The vale sheet: from the bowl sheet's edge, overlapping the disc
+  // tiles' lower edge by three metres and sunk 4 cm under them. Abutting
+  // exactly left a T-junction crack that opened visibly on the steep wall
+  // slopes crossing the seam (round 1's cyan slashes); overlapped and
+  // sunk, the disc tiles render on top and the crack is backed by ground.
   const discEdgeZ = CENTER_Z - DISC_TILE;
-  const valeSize = discEdgeZ - BOWL_SHEET_EDGE;
+  const valeSize = discEdgeZ + 3 - BOWL_SHEET_EDGE;
   const valeGeometry = createSeabedGeometryAt(
     30,
-    (BOWL_SHEET_EDGE + discEdgeZ) / 2,
+    (BOWL_SHEET_EDGE + discEdgeZ + 3) / 2,
     valeSize,
     VALE_SEGMENTS,
+    -0.04,
   );
   trimSheet(valeGeometry, keepGround);
   bakeVerdantPaint(valeGeometry, contacts);
