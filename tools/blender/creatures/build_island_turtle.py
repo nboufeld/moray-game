@@ -82,10 +82,13 @@ RIM_DROOP = 0.045
 RIM_SPLIT_PHI = 0.40 * math.pi
 
 #: sRGB gouache — age and gardens.
+#: Atelier repaint: seams deepened and hearts lifted — the first pass's
+#: pairs sat a half-step apart and the whole carapace washed to one amber.
 SHELL_OLIVE = (0.470, 0.440, 0.260)  # costal fields
-SHELL_SEAM = (0.365, 0.345, 0.200)  # worn dark lines between the plates
-SHELL_AMBER = (0.700, 0.560, 0.300)  # vertebral ridge and scute hearts
+SHELL_SEAM = (0.295, 0.280, 0.150)  # worn dark lines between the plates
+SHELL_AMBER = (0.755, 0.595, 0.295)  # vertebral ridge and scute hearts
 MARGINAL = (0.780, 0.715, 0.480)  # worn cream-amber rim scutes
+MARGINAL_SEAM = (0.600, 0.530, 0.330)  # the rim's own worn joints
 PLASTRON = (0.810, 0.760, 0.570)  # ivory with years
 SKIN = (0.545, 0.580, 0.370)  # sage
 SKIN_LIGHT = (0.700, 0.715, 0.500)
@@ -169,20 +172,23 @@ def shell_colour(s, phi_m):
     if phi_m < RIM_SPLIT_PHI:
         return PLASTRON
     if phi_m < 0.55 * math.pi:
-        return MARGINAL
+        # Marginal scutes tick along the rim — eleven worn plates a side.
+        mcell = (s * 11.0) % 1.0
+        mseam = smoothstep(0.0, 0.22, mcell) * (1.0 - smoothstep(0.78, 1.0, mcell))
+        return mix3(MARGINAL_SEAM, MARGINAL, 0.35 + 0.65 * mseam)
     if phi_m > 0.88 * math.pi:
         # Vertebral ridge: amber, breathing gently darker at the scute seams —
         # worn plates, not a barcode.
         cell = (s * 5.0) % 1.0
         seam = smoothstep(0.0, 0.25, cell) * (1.0 - smoothstep(0.75, 1.0, cell))
-        return mix3(mix3(SHELL_AMBER, SHELL_OLIVE, 0.45), SHELL_AMBER, 0.55 + 0.45 * seam)
+        return mix3(mix3(SHELL_AMBER, SHELL_OLIVE, 0.60), SHELL_AMBER, 0.35 + 0.65 * seam)
     # Costal fields: olive plates with dark seams and long amber hearts, all
     # on the vertebrals' own grid.
     cell = (s * 5.0) % 1.0
     heart = gauss(cell, 0.5, 0.30) * gauss(phi_m, 0.72 * math.pi, 0.16 * math.pi)
     seam = smoothstep(0.0, 0.18, cell) * (1.0 - smoothstep(0.82, 1.0, cell))
-    plate = mix3(SHELL_SEAM, SHELL_OLIVE, 0.45 + 0.55 * seam)
-    return mix3(plate, SHELL_AMBER, 0.60 * clamp(heart))
+    plate = mix3(SHELL_SEAM, SHELL_OLIVE, 0.30 + 0.70 * seam)
+    return mix3(plate, SHELL_AMBER, 0.75 * clamp(heart))
 
 
 def body_uv(s, phi_m):
@@ -411,7 +417,15 @@ def build():
                 z = czf + thick * math.sin(angle)
                 verts.append((cx, y, z))
                 uvs.append((0.05 + 0.9 * f, 0.1 + 0.3 * (0.5 + 0.5 * math.cos(angle))))
-                colours.append(SKIN if math.sin(angle) >= 0.0 else SKIN_LIGHT)
+                # Counter-shaded paddle: sage above, pale below, a shadow
+                # where the limb roots under the shell and a lit trailing
+                # edge — the flat two-tone read as sheet plastic.
+                top = 0.5 + 0.5 * math.sin(angle)
+                paddle = mix3(SKIN_LIGHT, SKIN, top)
+                paddle = mix3(paddle, SKIN_WRINKLE, 0.45 * (1.0 - smoothstep(0.05, 0.42, f)))
+                edge = smoothstep(0.45, 0.95, -math.cos(angle))
+                paddle = mix3(paddle, SKIN_LIGHT, edge * 0.5 * top)
+                colours.append(paddle)
                 index = len(verts) - 1
                 w = smoothstep(0.06, 0.35, f)
                 if w > 1e-4:

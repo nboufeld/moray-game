@@ -57,10 +57,14 @@ export const GHOST_REEF: WingDef = {
     const recovery = recoveryAt(x, z);
     const lift = 0.1 * (1 - recovery * 0.55) * blend;
     const warm = recovery * blend;
+    // Atelier repaint: the lift is bone-neutral now (red first, green a
+    // half-step under) — the old green-first lift stacked with the fog's
+    // own green gain and pushed the whole wing toward algae rather than
+    // milk.
     return [
-      1 + lift * 0.88 + warm * 0.045,
-      1 + lift + warm * 0.015,
-      1 + lift * 0.72 - warm * 0.03,
+      1 + lift + warm * 0.045,
+      1 + lift * 0.94 + warm * 0.015,
+      1 + lift * 0.82 - warm * 0.03,
     ];
   },
   ceilingAtGate: 12,

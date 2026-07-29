@@ -31,6 +31,7 @@ from creature_common import (  # noqa: E402
     catmull,
     export_glb,
     fan_faces,
+    gauss,
     grid_faces,
     mesh_from,
     mix,
@@ -98,16 +99,21 @@ MANE_PROFILE = [
 
 #: sRGB gouache. Pale gold body, cream belly, moss mane, coral antlers;
 #: the nose wears the antlers' hue, deepened — a doe's soft muzzle.
+#: Atelier repaint: the first pass's back and band sat a half-step under the
+#: body and the whole animal read as one cream tube. Three honest bands now —
+#: cream belly, gold flank, umber back — with tail rings deep enough to read
+#: and a mane/antler set that carries its own value structure.
 BODY = (0.905, 0.800, 0.575)
-BELLY = (0.945, 0.895, 0.730)
-BACK = (0.720, 0.600, 0.390)
-BAND = (0.700, 0.560, 0.360)
-MANE = (0.470, 0.545, 0.320)
-MANE_TIP = (0.610, 0.670, 0.400)
-ANTLER = (0.935, 0.615, 0.510)
-ANTLER_TIP = (0.965, 0.760, 0.640)
+BELLY = (0.955, 0.910, 0.755)
+BACK = (0.615, 0.495, 0.305)
+BAND = (0.545, 0.405, 0.260)
+MANE = (0.360, 0.445, 0.255)
+MANE_TIP = (0.665, 0.720, 0.430)
+ANTLER = (0.800, 0.480, 0.400)
+ANTLER_TIP = (0.975, 0.805, 0.680)
 NOSE = (0.560, 0.360, 0.335)
-EYE = (0.120, 0.100, 0.085)
+EYE = (0.185, 0.130, 0.115)
+BROW = (0.960, 0.930, 0.800)
 
 
 def ring_frame(t):
@@ -150,13 +156,13 @@ def body_weights(t):
 
 def body_colour(t, a):
     """a = 0 at the animal's left, pi/2 at the back, 3pi/2 at the belly."""
-    belly = smoothstep(0.25, 0.85, -math.sin(a))
-    dorsal = smoothstep(0.35, 0.9, math.sin(a))
+    belly = smoothstep(0.20, 0.80, -math.sin(a))
+    dorsal = smoothstep(0.18, 0.85, math.sin(a))
     base = mix3(mix3(BODY, BACK, dorsal), BELLY, belly)
     # Painted rings around the tail curl, fading up the belly.
     rings = 0.5 + 0.5 * math.sin(t * 9.0 * math.tau + 1.3)
-    rings = smoothstep(0.60, 0.90, rings) * (1.0 - smoothstep(0.30, 0.46, t))
-    base = mix3(base, BAND, rings * 0.65)
+    rings = smoothstep(0.58, 0.88, rings) * (1.0 - smoothstep(0.30, 0.46, t))
+    base = mix3(base, BAND, rings * 0.78)
     # The muzzle dips toward the antlers' rose.
     nose = smoothstep(0.955, 0.995, t)
     return mix3(base, NOSE, nose * 0.85)
@@ -201,14 +207,23 @@ def build():
 
     # Eyes: a dark oval per side of the skull, set forward of the ears the
     # way a deer's sit — front-flank on each side, mirrored across x.
+    # Blended, not stamped: the stamped box quantised to the ring grid. A
+    # pale brow crescent sits dorsal of each eye — the deer's lit lid.
     for i in range(RINGS):
         t = i / (RINGS - 1)
         for j in range(COLS):
             a = math.tau * j / COLS
-            for centre in (1.85 * math.pi, 1.15 * math.pi):
-                da = min(abs(a - centre), math.tau - abs(a - centre))
-                if da < 0.11 * math.pi and 0.895 < t < 0.940:
-                    colours[i * COLS + j] = EYE
+            index = i * COLS + j
+            for centre, toward_back in ((1.85 * math.pi, 1.0), (1.15 * math.pi, -1.0)):
+                da = min(abs(a - centre), math.tau - abs(a - centre)) / (0.10 * math.pi)
+                ds = (t - 0.9175) / 0.020
+                d = math.hypot(da, ds)
+                if d < 1.7:
+                    colours[index] = mix3(colours[index], EYE, 1.0 - smoothstep(0.8, 1.4, d))
+                brow_centre = centre + toward_back * 0.14 * math.pi
+                db = min(abs(a - brow_centre), math.tau - abs(a - brow_centre)) / (0.10 * math.pi)
+                dbs = math.hypot(db, (t - 0.9175) / 0.028)
+                colours[index] = mix3(colours[index], BROW, gauss(dbs, 0.0, 0.75) * 0.5)
 
     # ------------------------------------------------------------------ mane
     mane = []
@@ -218,16 +233,19 @@ def build():
             continue
         base = spine_point(t, math.pi / 2.0)
         height = catmull(MANE_PROFILE, t)[0]
-        height *= 1.0 + 0.15 * math.sin(t * 8.0 * math.tau)
+        frond = 0.5 + 0.5 * math.sin(t * 8.0 * math.tau)
+        height *= 1.0 + 0.15 * (frond * 2.0 - 1.0)
         _, _, (n2y, n2z) = ring_frame(t)
         base_i = len(verts)
         verts.append(base)
         uvs.append((0.5, t))
-        colours.append(MANE)
+        # The mane's value rides its own scallop: tall fronds catch light at
+        # the tip, the bays between sink toward the root's shade.
+        colours.append(mix3(MANE, (0.290, 0.365, 0.215), 0.5 * (1.0 - frond)))
         tip_i = len(verts)
         verts.append((base[0], base[1] + n2y * height, base[2] + n2z * height))
         uvs.append((0.53, t))
-        colours.append(MANE_TIP)
+        colours.append(mix3(MANE, MANE_TIP, 0.35 + 0.65 * frond))
         add_weights(base_i, body_weights(t))
         add_weights(tip_i, body_weights(t))
         mane.append((base_i, tip_i))
@@ -279,7 +297,7 @@ def build():
                         )
                     )
                     uvs.append((0.8 + 0.1 * ca, 0.6 + 0.35 * bt))
-                    colours.append(mix3(ANTLER, ANTLER_TIP, bt))
+                    colours.append(mix3(ANTLER, ANTLER_TIP, bt * bt))
                     add_weights(index, {"head": 1.0})
                     row.append(index)
                 rows.append(row)

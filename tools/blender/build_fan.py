@@ -85,8 +85,12 @@ for height, yaw, depth, across, cup, (du, dv), mirrored in PANELS:
             ry = x * sin_yaw + y * cos_yaw
             verts.append((rx + across, ry + depth, z))
             uvs.append(((1.0 - u if mirrored else u) + du, v + dv))
-            # Near-neutral and climbing to full: see the module header.
-            value = perceived(0.94 + v * 0.06)
+            # Near-neutral and climbing to full — but with a real root now:
+            # the atelier deepened the fan's foot (perceived 0.82 → 1.0 at
+            # the crown) because a 0.94 floor read as one flat sheet. The
+            # margin's centre stays palest, the way a sea fan thins.
+            edge = abs(u - 0.5) * 2.0
+            value = perceived(min(1.0, 0.82 + v * 0.18 - edge * 0.05 * (1.0 - v)))
             colors.append((value, value, value))
 
     for row in range(SEGS_Y):

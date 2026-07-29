@@ -130,7 +130,9 @@ function bannerTexture(): DataTexture {
   bannerMap ??= buildColorTexture(32, (u, v) => {
     const fibre = 0.9 + fbm(u * 4, v, { seed: SEEDS.wingCurrentRun ^ 0x1eaf, period: 12, octaves: 2 }) * 0.24;
     const across = 0.86 + Math.abs(u - 0.5) * 0.5;
-    const shade = (0.5 + v * 0.75) * fibre * across;
+    // Three readable bands up the blade: a deep root, a mid body, and a
+    // tip that blooms late — the old linear ramp read as only two values.
+    const shade = (0.36 + v * 0.55 + Math.pow(v, 3) * 0.36) * fibre * across;
     return [shade * 0.85, shade, shade * 0.78];
   });
   return bannerMap;

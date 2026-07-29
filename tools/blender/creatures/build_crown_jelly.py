@@ -91,16 +91,28 @@ def dome_point(t, theta):
 
 
 def bell_colour(t, theta):
-    """Outer shell: deep indigo, the coronet a bright gold-rose band."""
+    """Outer shell: deep indigo, the coronet a bright gold-rose band.
+
+    Atelier repaint: a lamp needs a shadow to sit on. The first pass put the
+    gold band straight onto mid-indigo and the bell read as two values; now a
+    deep band hugs the coronet's underside and a faint cool halo its upper
+    side, so the dome carries apex-mid / halo / lamp / shadow / margin-mid —
+    painted values, nothing emissive.
+    """
     base = mix3(APEX, MARGIN, smoothstep(0.35, 1.0, t))
     # A soft rosette at the apex: twelve deeper petals aligned with the
     # spikes, value only — the dome's own painted centre.
     petal = 0.5 + 0.5 * math.cos(SPIKES * theta)
-    rosette = smoothstep(0.55, 0.85, petal) * (1.0 - smoothstep(0.10, 0.30, t))
-    base = mix3(base, INNER, rosette * 0.45)
+    rosette = smoothstep(0.50, 0.85, petal) * (1.0 - smoothstep(0.10, 0.30, t))
+    base = mix3(base, INNER, rosette * 0.6)
     # The margin's lip lifts half a value step: a painted rim light.
     lip = smoothstep(0.93, 1.0, t)
     base = mix3(base, (0.44, 0.35, 0.66), lip * 0.5)
+    # The cool halo above the coronet and the warm-violet shadow below it.
+    halo = gauss(t, 0.375, 0.05)
+    base = mix3(base, (0.520, 0.435, 0.720), halo * 0.5)
+    seat = gauss(t, 0.745, 0.07)
+    base = mix3(base, (0.150, 0.115, 0.330), seat * 0.8)
     crown = smoothstep(0.42, 0.50, t) * (1.0 - smoothstep(0.60, 0.68, t))
     return mix3(base, CROWN, crown)
 

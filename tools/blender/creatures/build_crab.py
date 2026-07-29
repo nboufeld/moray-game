@@ -28,6 +28,7 @@ from creature_common import (  # noqa: E402
     clamp,
     export_glb,
     fan_faces,
+    gauss,
     grid_faces,
     mesh_from,
     mix3,
@@ -37,6 +38,7 @@ from creature_common import (  # noqa: E402
     render_views,
     reset_scene,
     shade_smooth,
+    smoothstep,
     stats,
     write_uvs,
 )
@@ -56,11 +58,17 @@ APEX_Z = 0.082  # dome crown
 #: sRGB, written through `color_srgb` like every asset here. A warm terracotta
 #: shell over a cream underside — the per-instance tint in `Crabs.ts` is a
 #: near-neutral warm multiplier, so what is painted here is what renders.
+#: Atelier repaint: the dome was one terracotta. Crown lifted toward cream,
+#: rim dropped a full step, paired dorsal patches added (the shore crab's
+#: field mark), eyes warmed off black with a lifted bead tip.
 SHELL = (0.70, 0.40, 0.28)
-SHELL_RIM = (0.58, 0.32, 0.23)
+SHELL_RIM = (0.475, 0.245, 0.185)
+PATCH = (0.435, 0.215, 0.170)
 CREAM = (0.90, 0.84, 0.72)
-LEG = (0.64, 0.36, 0.26)
-EYE = (0.10, 0.08, 0.09)
+MITTEN = (0.930, 0.820, 0.640)
+LEG = (0.60, 0.33, 0.24)
+EYE = (0.165, 0.105, 0.105)
+EYE_TIP = (0.235, 0.140, 0.135)
 
 COLS = 24
 #: Eight rounded teeth around the rim: the shore crab's scalloped edge. Soft:
@@ -124,13 +132,19 @@ def add_carapace(verts, faces, uvs, colours):
             verts.append((x * mod, y * mod, z))
             mirrored = min(theta, math.tau - theta)
             uvs.append((mirrored / math.pi, t))
-            # Crown a touch lighter, rim band darker, everything under cream.
+            # Crown a real step lighter, rim a real step darker, everything
+            # under cream — three values on the dome, plus the paired dorsal
+            # patches on the mid rings.
             if t > 1.0:
                 colours.append(mix3(CREAM, SHELL_RIM, 0.3))
             elif strength >= 1.0:
                 colours.append(SHELL_RIM)
             else:
-                colours.append(mix3(mix3(SHELL, CREAM, 0.18), SHELL, 0.35 + 0.65 * t))
+                light = mix3(SHELL, CREAM, 0.40 * (1.0 - t))
+                base_c = mix3(light, SHELL_RIM, 0.55 * smoothstep(0.5, 1.0, t))
+                spot = gauss(mirrored / math.pi, 0.33, 0.17)
+                spot *= smoothstep(0.05, 0.25, strength) * (1.0 - smoothstep(0.6, 0.95, strength))
+                colours.append(mix3(base_c, PATCH, spot * 0.85))
 
     apex = len(verts)
     verts.append((0.0, 0.0, APEX_Z))
@@ -240,7 +254,7 @@ def add_eye(verts, faces, uvs, colours, sign):
     ]
     add_tube(
         verts, faces, uvs, colours, path,
-        (0.0046, 0.0085, 0.0018), 6, EYE, EYE,
+        (0.0046, 0.0085, 0.0018), 6, EYE, EYE_TIP,
     )
 
 
@@ -263,7 +277,7 @@ def add_claw(verts, faces, uvs, colours, sign, s):
     # The mitten is the widest ring and the tip a blunt finger beside it: a
     # long needle past the mitten reads as a stinger from the side, not a claw.
     radii = (0.0095 * s, 0.0108 * s, 0.0088 * s, 0.0148 * s, 0.0055)
-    add_tube(verts, faces, uvs, colours, path, radii, 6, mix3(SHELL, LEG, 0.45), CREAM)
+    add_tube(verts, faces, uvs, colours, path, radii, 6, mix3(SHELL, LEG, 0.45), MITTEN)
 
 
 def build():

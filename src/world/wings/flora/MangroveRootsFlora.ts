@@ -64,9 +64,14 @@ import {
 
 /** The wood: one warm umber; the baked gradient supplies the modelling. */
 const WOOD_TINT = 0x7a6750;
-/** Crown and foot values of that gradient, as multipliers on the tint. */
-const CROWN_VALUE: readonly [number, number, number] = [1.0, 0.94, 0.82];
-const FOOT_VALUE: readonly [number, number, number] = [0.68, 0.66, 0.58];
+/**
+ * Crown and foot values of that gradient, as multipliers on the tint.
+ * The crown warms and the foot cools (red still first) so the columns
+ * separate by hue as well as value — as flat multipliers the roots read
+ * as one dark silhouette against the bright water.
+ */
+const CROWN_VALUE: readonly [number, number, number] = [1.08, 0.98, 0.78];
+const FOOT_VALUE: readonly [number, number, number] = [0.6, 0.55, 0.53];
 
 /** Warm undergrowth hues — the path's edges, not its floor. */
 const TUFT_HUES = [0x9c8a52, 0x8a7c46, 0xa7963f] as const;

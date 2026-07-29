@@ -58,8 +58,16 @@ const AXIS_CLEAR_RAD = 0.078;
 const BONE_WARM = new Color(0xefe9dc);
 const BONE_COOL = new Color(0xe8e8e2);
 
-/** The returning colours: soft pinks, golds and greens, never saturated. */
-const RECOVERY = [new Color(0xf2bcc8), new Color(0xf0cf96), new Color(0xabd9a4)] as const;
+/**
+ * The returning colours: soft pinks, golds and greens, never saturated.
+ * Atelier repaint: the green taken well toward the milk — under the wing's
+ * aqua fog and the sand's pale lift the original 0xabd9a4 rendered as
+ * saturated green beside the den, reading as "someone forgot to bleach
+ * these" instead of "colour is returning". The pink and gold keep their
+ * chroma: the far end must be unmistakably coloured or the bone→colour
+ * story has no second act (the recovery test holds the ratio).
+ */
+const RECOVERY = [new Color(0xf4bfcc), new Color(0xefc890), new Color(0xb6d8ac)] as const;
 
 /** How far toward full colour the far end gets — recovery, not a carnival. */
 const RECOVERY_DEPTH = 0.85;
