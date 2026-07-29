@@ -1,4 +1,5 @@
 import type { RegionDef } from "./RegionTypes";
+import { BLUE_1 } from "./blue1/Blue1";
 import { VERDANT_1 } from "./verdant1/Verdant1";
 
 /**
@@ -8,7 +9,7 @@ import { VERDANT_1 } from "./verdant1/Verdant1";
  * merging this file across branches — one line per branch, trivially
  * resolvable. Append-only, never reordered.
  */
-export const REGIONS: readonly RegionDef[] = [VERDANT_1];
+export const REGIONS: readonly RegionDef[] = [VERDANT_1, BLUE_1];
 
 const BY_SLOT = new Map(REGIONS.map((region) => [region.slotId, region]));
 
