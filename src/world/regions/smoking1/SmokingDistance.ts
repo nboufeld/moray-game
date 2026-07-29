@@ -23,8 +23,8 @@ import { CENTER_X, CENTER_Z, SMOKING_SLOT } from "./SmokingTerrain";
  * are forest skylines, these are *volcanic* ones: low broken ridge lines
  * (rings carry only horizontals — the pilot measured every in-ring
  * vertical rendering as a mountain), and the verticals are their own
- * instanced silhouette cards: distant smoker columns, each a thin
- * tapering stack with a smudged plume leaning off its crown.
+ * instanced silhouette cards: distant smoker columns, each a bare
+ * tapering spire — the near forest's own far skyline is the reference.
  *
  * The inks re-derive from `scene.fog` per frame (one hex compare): this
  * region's fog is the def's own warm charcoal-amber and the mood hook
@@ -172,25 +172,22 @@ function chimneyCardGeometry(): BufferGeometry {
   }
   const blade = (spin: number): BufferGeometry => {
     const h = CARD_HEIGHT;
-    // Redrawn in round 6: the round-5 cut put a symmetric lump either
-    // side of the crown and every card on the horizon read as a
-    // telephone-pole cross. The stack is wider, and the plume is one
-    // drifting smudge leaning off to +x — smoke has a wind side.
+    // Redrawn in round 7: two plume attempts both failed on the horizon
+    // (round 5's symmetric lumps read telephone-pole crosses, round 6's
+    // one-sided smudge read floating mushrooms over the caldera rim).
+    // The reference that DOES read is the near forest's own far skyline:
+    // bare tapering spires. So the card is exactly that — a broad foot,
+    // two leaning segments, and a narrow tip drifted to the wind side.
     const positions = new Float32Array([
-      // The stack: a broad foot flare and two leaning segments.
-      -3.4, 0, 0, 3.4, 0, 0, 1.8, h * 0.18, 0,
-      -3.4, 0, 0, 1.8, h * 0.18, 0, -1.8, h * 0.2, 0,
-      -1.8, h * 0.2, 0, 1.8, h * 0.18, 0, 1.3, h * 0.6, 0,
-      -1.8, h * 0.2, 0, 1.3, h * 0.6, 0, -1.2, h * 0.62, 0,
-      -1.2, h * 0.62, 0, 1.3, h * 0.6, 0, 0.95, h * 0.92, 0,
-      -1.2, h * 0.62, 0, 0.95, h * 0.92, 0, -0.8, h * 0.93, 0,
-      // The crown lip.
-      -1.2, h * 0.9, 0, 1.3, h * 0.89, 0, 0.1, h * 1.0, 0,
-      // The plume: one smudge drifting off to the same side, twice.
-      -0.5, h * 0.97, 0, 1.5, h * 0.98, 0, 1.0, h * 1.1, 0,
-      -0.5, h * 0.97, 0, 1.0, h * 1.1, 0, -0.1, h * 1.06, 0,
-      0.4, h * 1.05, 0, 2.9, h * 1.12, 0, 2.0, h * 1.2, 0,
-      0.4, h * 1.05, 0, 2.0, h * 1.2, 0, 0.6, h * 1.13, 0,
+      -3.4, 0, 0, 3.4, 0, 0, 2.0, h * 0.16, 0,
+      -3.4, 0, 0, 2.0, h * 0.16, 0, -2.0, h * 0.18, 0,
+      -2.0, h * 0.18, 0, 2.0, h * 0.16, 0, 1.4, h * 0.55, 0,
+      -2.0, h * 0.18, 0, 1.4, h * 0.55, 0, -1.3, h * 0.57, 0,
+      -1.3, h * 0.57, 0, 1.4, h * 0.55, 0, 1.05, h * 0.85, 0,
+      -1.3, h * 0.57, 0, 1.05, h * 0.85, 0, -0.85, h * 0.86, 0,
+      // The crown: a narrow tip leaning off to +x.
+      -0.85, h * 0.86, 0, 1.05, h * 0.85, 0, 0.75, h * 1.0, 0,
+      -0.85, h * 0.86, 0, 0.75, h * 1.0, 0, 0.15, h * 0.98, 0,
     ]);
     const geometry = new BufferGeometry();
     geometry.setAttribute("position", new BufferAttribute(positions, 3));

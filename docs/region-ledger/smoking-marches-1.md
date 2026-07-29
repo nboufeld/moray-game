@@ -136,16 +136,59 @@ The one change: `colorScale` red 1.3 → 3.2, green 0.52, blue 0.36 —
 measured against the linear-space base water (0.086, 0.443, 0.494),
 where a red scale below ~2.6 cannot even reach parity with green. The
 product (0.28, 0.23, 0.18) is the warm grey the whole palette keys to.
-Capture review: pending below.
+Capture review: the water finally breathes amber down the gorge and
+across the flats — the region owns its mood. Still standing: a cyan
+slash where the gorge sheet stopped 3 m short of the bowl sheet (a
+sign error in the overlap arithmetic); the spring stair reading as one
+smooth mound; the keeper lost behind the kiln for most of its loop;
+the thermal riders often out of frame; distance cards shrub-scaled.
+
+### Round 5 (`smoulder-r5`) — the seam closed, the stair terraced
+Silhouette: gorge sheet regrown over the bowl sheet (the 3 m gap was
+`discEdgeX + 3` where the overlap wanted `− 3`); distance cards grown
+to 26–50 m giants and pushed a wide margin off the gorge gap. Value:
+spring terraces re-baked in three tints (pale sinter rim, amber
+mid-shelf, violet risers) so the stair reads as steps of light under
+the water sheets; the sheets' vertex shade lifted 0.12 → 0.18. Colour:
+kiln breath given its own light shaft so the caldera advertises from
+afar. Detail: keeper grown to a spirit (body radius 0.17 → 0.28, crest
+and legs to match, emissive up) — a discovery should not need a
+magnifying glass; riders' loop pulled in so the spiral stays in the
+twin-kings frame. Found next: the round-5 card cut (symmetric crown
+lumps) read as telephone-pole crosses on every horizon.
+
+### Round 6 (`smoulder-r6`) — the cards fail differently, the keeper walks wide
+Cards redrawn one-sided (a plume smudge drifting +x): on the ember
+shore and ash flats horizons they read as periscope necks — a solid
+plume cap in flat fog ink will never read as smoke. (The domed shapes
+over the caldera rim, first misread as failed cards, are the jellies
+themselves — bell over trailing straps, the intended lantern read.) Keeper patrol widened (r 5.4 → 7.0, over-shoulder swing up)
+so it clears the kiln's silhouette most of its loop — the kiln-keeper
+pose now catches it mid-crossing, ember belly lit, codex trigger firing
+in the capture itself. Kiln seams calmed (threshold 0.6 → 0.68). All
+other poses hold: gorge warm over violet shadow, colonnade and organ
+steps carrying the columnar-jointing skyline, chimney forest layered
+smoker-over-smoker in the haze, twin kings with the rider spiral,
+ash flats quiet with grass, erratic and far skyline.
+
+### Round 7 (`smoulder-r7`) — bare spires
+The plume is gone. Two attempts proved the lesson: the reference that
+*does* read at 250 m is the near forest's own far skyline — bare
+tapering spires, nothing at the crown but a leaning tip. The card is
+now exactly that (broad foot, two leaning segments, wind-side tip),
+and the horizon finally says "distant smokers" from the ember shore
+and the ash flats alike. Verdict: every pose holds — the loop closes
+at seven rounds.
 
 ## Budgets
 
-Measured at close: see the final section (tests hold ≤ 120 draws,
-≤ 250k triangles, with honest floors of > 20 draws and > 100k tris).
+Measured on the final build (the test's own traversal, honest floors
+held): **59 draw calls** of the ≤ 120 budget, **171,543 triangles** of
+the ≤ 250k budget, 391 colliders — all inside the domain by test.
 
 ## Capture sets
 
-`smoulder-r1` … `smoulder-r4` (iteration rounds), `smoulder-final`
+`smoulder-r1` … `smoulder-r7` (iteration rounds), `smoulder-final`
 (canonical 12), `smoulder-final-noassets` (fallback build), all under
 `visual-qa/` as `*_REGION-smoking-marches-1-<pose>_<tag>.png`. Poses:
 gorge-descent, first-breath, gorge-lip, ash-flats, colonnade,
