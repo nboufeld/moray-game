@@ -75,12 +75,14 @@ const KINGS = [
 ] as const;
 
 /** The First Breath: the lone gorge smoker where the water warms. */
-const FIRST_BREATH = { u: 158, height: 5.2 } as const;
+const FIRST_BREATH = { u: 158, height: 6.4 } as const;
 
-const FOOT_TINT = new Color(0x453a4a);
-const MID_TINT = new Color(0x5f4e44);
-const SHOULDER_TINT = new Color(0x8a7460);
-const CROWN_TINT = new Color(0xbfa88c);
+// Round 2: round 1's stacks read as one orange-brick mass — the veins
+// flooded the stops. Greyer, cooler stone so the amber is an *event*.
+const FOOT_TINT = new Color(0x4c4452);
+const MID_TINT = new Color(0x5e544e);
+const SHOULDER_TINT = new Color(0x847462);
+const CROWN_TINT = new Color(0xb8a48e);
 
 /** One smoker archetype: unit height, tree-tall proportions. */
 function smokerGeometry(variant: number): BufferGeometry {
@@ -169,9 +171,10 @@ function bakeSmokerPaint(geometry: BufferGeometry, seed: number): void {
 
     // The veins: born at the waist, widening toward the crown — cut the
     // rock out first, then lay the amber in, so the vein is an inclusion.
+    // Threshold raised in round 2: at 0.62 the veins covered the stack.
     const field = fbm(u * 3, t * 1.3, { seed: seed ^ 0x4b17, period: 3, octaves: 2 });
-    const width = 0.2 - t * 0.09;
-    const vein = smoothstep01((field - (0.62 - t * 0.06)) / width) * smoothstep01((t - 0.24) / 0.3);
+    const width = 0.13 - t * 0.05;
+    const vein = smoothstep01((field - (0.7 - t * 0.05)) / width) * smoothstep01((t - 0.24) / 0.3);
     tint.multiplyScalar(1 - vein * 0.5);
     tint.r += vein * EMBER.r * 0.8;
     tint.g += vein * EMBER.g * 0.72;
@@ -297,12 +300,18 @@ export function buildSmokingChimneys(): SmokingChimneysBuild {
   const firstBreath = seat(FIRST_BREATH.u, breathV, FIRST_BREATH.height);
   stands.push(firstBreath);
 
+  // The Scout: one lone smoker on the ash flats past the lip, standing
+  // where the reveal's fog can just reach it — the ghost that says the
+  // forest is coming (the pilot's outrider lesson: 50–65 m is where a
+  // ghost actually ghosts).
+  stands.push(seat(318, 18, 7.5));
+
   // Instanced across three archetypes.
   const archetypes = [0, 1, 2].map((variant) => smokerGeometry(variant));
   const smokerMaterial = createToonMaterial({
     vertexColors: true,
     emissive: 0xff8c3a,
-    emissiveIntensity: 0.42,
+    emissiveIntensity: 0.3,
   });
   applyVeinGlow(smokerMaterial, "smoulder-smoker");
   const perArchetype = Math.ceil(stands.length / archetypes.length) + 2;
@@ -319,7 +328,9 @@ export function buildSmokingChimneys(): SmokingChimneysBuild {
   for (const stand of stands) {
     const variant = Math.floor(random.next() * archetypes.length);
     const mesh = smokerMeshes[variant]!;
-    const girth = stand.height * random.range(0.1, 0.13);
+    // Girth up a step in round 2: at 0.10–0.13 the short smokers read as
+    // poles, and a smoker is a mineral tree, not a mast.
+    const girth = stand.height * random.range(0.13, 0.17);
     dummy.position.set(stand.x, stand.y - 0.2, stand.z);
     dummy.rotation.set(0, random.range(0, Math.PI * 2), 0);
     dummy.scale.set(girth, stand.height + 0.2, girth);
@@ -391,12 +402,12 @@ export function buildSmokingChimneys(): SmokingChimneysBuild {
   // Six puffs per smoker, one instanced draw for the whole forest. Each
   // puff climbs its column, swells, and dies into the water — additive,
   // so brightness is its opacity, warm grey keyed to the ember throats.
-  const puffsPer = 6;
+  const puffsPer = 7;
   const puffCount = stands.length * puffsPer;
   const smokeMaterial = new MeshBasicMaterial({
     map: smokeTexture(),
     transparent: true,
-    opacity: 0.16,
+    opacity: 0.26,
     blending: AdditiveBlending,
     depthWrite: false,
     side: DoubleSide,
@@ -427,7 +438,7 @@ export function buildSmokingChimneys(): SmokingChimneysBuild {
   const poseSmoke = (time: number): void => {
     for (const [i, puff] of puffHomes.entries()) {
       const cycle = (time * 0.045 + puff.phase) % 1;
-      const swell = 0.8 + cycle * 3.2;
+      const swell = 1.6 + cycle * 4.6;
       dummy.position.set(
         puff.x + Math.sin(time * 0.14 + puff.drift + cycle * 3) * (0.4 + cycle * 1.6),
         puff.y + cycle * puff.rise,

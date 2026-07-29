@@ -75,13 +75,16 @@ export function buildSmokingSprings(): SmokingSpringsBuild {
     const { raw, pooled } = springsStair(u, v);
     const w = springsWeight(u, v);
     position.setY(i, pooled + 0.3);
-    // Bright over the pool hearts, dimming at rims and dying with the
-    // biome weight — additive, so colour is opacity here.
+    // Bright over the pool hearts only, dimming at rims and dying with
+    // the biome weight — additive, so colour is opacity here. Round 1
+    // measured 0.42 as a glowing glacier visible from the gorge lip: an
+    // additive sheet over pale ground compounds, so the mark whispers.
     const frac = raw / SPRING_STEP - Math.floor(raw / SPRING_STEP);
-    const heart = 1 - smoothstep01((frac - 0.6) / 0.3);
+    const heart = (1 - smoothstep01((frac - 0.5) / 0.3)) ** 2;
     const glisten =
       0.75 + fbm(x * 0.11, z * 0.11, { seed: SEED ^ 0x91f7, period: 8, octaves: 2 }) * 0.5;
-    shade.copy(WATER_TINT).multiplyScalar(0.42 * heart * glisten * smoothstep01((w - 0.2) / 0.35));
+    const own = smoothstep01((w - 0.3) / 0.4);
+    shade.copy(WATER_TINT).multiplyScalar(0.15 * heart * glisten * own * own);
     colors[i * 3] = shade.r;
     colors[i * 3 + 1] = shade.g;
     colors[i * 3 + 2] = shade.b;
@@ -191,7 +194,7 @@ totalEmissiveRadiance *= vColor;`,
       time += dt;
       // The water breathes: the whole sheet's brightness swells slowly,
       // additive opacity being the cheapest shimmer there is.
-      waterMaterial.opacity = 0.72 + Math.sin(time * 0.5) * 0.14;
+      waterMaterial.opacity = 0.56 + Math.sin(time * 0.5) * 0.1;
     },
   };
 }

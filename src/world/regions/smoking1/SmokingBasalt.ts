@@ -45,9 +45,11 @@ export const COLONNADE = { u: 393, v: 52, heading: 0.72 } as const;
 /** The Organ Steps: the crown's half-circle of pipes. */
 export const ORGAN = { u: 424, v: 96 } as const;
 
-const FOOT_TINT = new Color(0x4c4152);
-const SHAFT_TINT = new Color(0x6f6468);
-const BREAK_TINT = new Color(0xa89a90);
+// Lightened a step in round 2: the columns read as flat plum monoliths —
+// the shaft is a warm grey the violet foot can be a shadow *under*.
+const FOOT_TINT = new Color(0x554a5c);
+const SHAFT_TINT = new Color(0x7e7370);
+const BREAK_TINT = new Color(0xb4a698);
 
 /** One faceted hex column, unit height, break-top tilted along a joint. */
 function columnGeometry(variant: number): BufferGeometry {

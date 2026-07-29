@@ -221,8 +221,8 @@ function buildThermalRiders(kings: readonly ChimneyStand[]): {
   // complement, so the ribbon is bright on purpose.
   const material = createToonMaterial({
     vertexColors: true,
-    emissive: 0x6b4a30,
-    emissiveIntensity: 0.6,
+    emissive: 0x8a5a38,
+    emissiveIntensity: 0.75,
   });
   const mesh = new InstancedMesh(geometry, material, count);
   mesh.name = "smoulder-thermal-riders";
@@ -368,10 +368,10 @@ function buildJellyProcession(): {
   const count = 9;
   const mesh = new InstancedMesh(jellyGeometry(), createToonMaterial({
     vertexColors: true,
-    emissive: 0xd97a3c,
-    emissiveIntensity: 0.4,
+    emissive: 0xe8874a,
+    emissiveIntensity: 0.55,
     transparent: true,
-    opacity: 0.88,
+    opacity: 0.9,
   }), count);
   mesh.name = "smoulder-jelly-procession";
   mesh.castShadow = false;
@@ -384,7 +384,7 @@ function buildJellyProcession(): {
   const scales: number[] = [];
   for (let i = 0; i < count; i++) {
     phases.push(random.range(0, Math.PI * 2));
-    scales.push(random.range(1.3, 2.1));
+    scales.push(random.range(1.7, 2.6));
     tint.setScalar(random.range(0.9, 1.08));
     mesh.setColorAt(i, tint);
   }

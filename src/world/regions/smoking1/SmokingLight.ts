@@ -54,13 +54,16 @@ const SHAFTS: readonly Shaft[] = [
 ];
 
 /** The ember pools: warm painted light on the ground, lit from below. */
+// Round 1 whited the kiln pose out entirely: an additive fog-free pool
+// seen from two metres fills half the frame, so these marks are sized
+// and dimmed for the closest pose that can see them, not the farthest.
 const GLOWS: readonly { u: number; v: number; radius: number; opacity: number }[] = [
-  { u: KILN.u, v: KILN.v, radius: 8.5, opacity: 0.3 },
-  { u: 508, v: -44, radius: 5, opacity: 0.22 },
-  { u: 516, v: -52, radius: 5, opacity: 0.22 },
-  { u: 494, v: -68, radius: 4, opacity: 0.18 },
-  { u: 528, v: -34, radius: 4, opacity: 0.18 },
-  { u: SPRINGS.u, v: SPRINGS.v, radius: 4.5, opacity: 0.2 },
+  { u: KILN.u, v: KILN.v, radius: 5.5, opacity: 0.13 },
+  { u: 508, v: -44, radius: 4.5, opacity: 0.12 },
+  { u: 516, v: -52, radius: 4.5, opacity: 0.12 },
+  { u: 494, v: -68, radius: 3.5, opacity: 0.1 },
+  { u: 528, v: -34, radius: 3.5, opacity: 0.1 },
+  { u: SPRINGS.u, v: SPRINGS.v, radius: 4, opacity: 0.1 },
 ];
 
 export function buildSmokingLight(): { meshes: Mesh[] } {
@@ -143,7 +146,7 @@ function buildEmberPools(): Mesh {
       const lz = position.getZ(i);
       position.setY(i, seabedHeight(x + lx, z + lz) + 0.1);
       const edge =
-        (1 - smoothstep01((Math.hypot(lx, lz) / glow.radius - 0.3) / 0.7)) * glow.opacity * 3;
+        (1 - smoothstep01((Math.hypot(lx, lz) / glow.radius - 0.3) / 0.7)) * glow.opacity * 2;
       fade[i * 3] = edge;
       fade[i * 3 + 1] = edge * 0.62;
       fade[i * 3 + 2] = edge * 0.34;
@@ -167,7 +170,7 @@ function buildEmberPools(): Mesh {
     color: 0xffb070,
     vertexColors: true,
     transparent: true,
-    opacity: 0.34,
+    opacity: 0.24,
     blending: AdditiveBlending,
     depthWrite: false,
     fog: false,

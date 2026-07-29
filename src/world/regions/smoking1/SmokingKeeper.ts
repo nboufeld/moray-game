@@ -79,7 +79,7 @@ export function buildKeeper(): KeeperBuild {
   const kilnMaterial = createToonMaterial({
     vertexColors: true,
     emissive: 0xff7a38,
-    emissiveIntensity: 0.5,
+    emissiveIntensity: 0.32,
   });
   applyVeinGlow(kilnMaterial, "smoulder-kiln");
   const kilnMesh = new Mesh(kiln, kilnMaterial);
@@ -381,11 +381,11 @@ function kilnGeometry(): BufferGeometry {
     shade.b += seam * EMBER.b * 0.3;
     // The crown vent: the throat glows.
     const crown = smoothstep01((t - 0.9) / 0.1) * (1 - smoothstep01((Math.hypot(x, z) - 0.5) / 0.5));
-    shade.lerp(EMBER, crown * 0.9);
+    shade.lerp(EMBER, crown * 0.7);
     // Sinter dust on the weather side.
     const dust =
       smoothstep01((fbm(theta * 3, y * 1.2, { seed: SEED ^ 0xd057, period: 3, octaves: 2 }) - 0.6) / 0.18) *
-      0.3;
+      0.18;
     shade.lerp(SINTER_PALE, dust);
     colors[i * 3] = Math.min(1, shade.r);
     colors[i * 3 + 1] = Math.min(1, shade.g);

@@ -221,12 +221,15 @@ function ridgeRing(layer: RidgeLayer, noiseSeed: number): BufferGeometry {
     const z = CENTER_Z + Math.sin(theta) * layer.radius;
 
     const t = i / SEGMENTS;
-    // A volcanic ridge line: broken benches rather than rolling canopy —
-    // the fbm is stepped so the skyline carries flats and notches.
+    // A volcanic ridge line: broken benches rather than rolling canopy.
+    // Round 2: the hard Math.round quantisation drew literal boxes on
+    // the horizon — the bench is now a soft tread (smoothstepped riser)
+    // over a rolling base, so the skyline carries flats without corners.
     const raw =
       fbm(t * 8, layer.radius * 0.01, { seed: noiseSeed, period: 8, octaves: 3 }) - 0.5;
-    const stepped = Math.round(raw * 3) / 3 + raw * 0.4;
-    const ridge = layer.ridgeBase + stepped * 2 * layer.ridgeVary;
+    const bench = raw * 3 - Math.floor(raw * 3);
+    const stepped = (Math.floor(raw * 3) + smoothstep01((bench - 0.5) / 0.5)) / 3;
+    const ridge = layer.ridgeBase + (stepped * 0.55 + raw * 0.45) * 2 * layer.ridgeVary;
 
     positions.push(x, FOOT, z, x, FOOT + Math.max(1.4, ridge - FOOT) * end + 0.2, z);
     if (column > 0) {

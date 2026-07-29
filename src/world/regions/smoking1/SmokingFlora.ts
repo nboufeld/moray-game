@@ -44,10 +44,12 @@ const SEED = SEEDS.regionSmoking1;
 
 const BLADE_HEIGHT = 1.25;
 
+// Darkened in round 2: bone-pale blades vanished against pale dunes —
+// the grass needs to sit a value step BELOW its ground to be seen.
 const ASH_FAMILIES: readonly (readonly number[])[] = [
-  [0xb4a8bc, 0xc6bcc4, 0x9e93a8],
-  [0xc0b2a2, 0xcfc3b0, 0xa89a8e],
-  [0xa89cc0, 0xbcb2cc, 0x92879e],
+  [0x8d8098, 0xa396a4, 0x776b84],
+  [0x998a7c, 0xab9c88, 0x82746a],
+  [0x84789e, 0x998ea8, 0x6f647e],
 ] as const;
 
 const FROND_ROOT = new Color(0x6b3a40);
@@ -113,7 +115,7 @@ function buildAshGrass(sway: { value: number }, wind: { value: number }): Instan
   };
   material.customProgramCacheKey = () => "smoulder-ash-grass";
 
-  const patches = 46;
+  const patches = 58;
   const bladesPerPatch = 34;
   const capacity = patches * bladesPerPatch;
   const mesh = new InstancedMesh(bladeGeometry(), material, capacity);
@@ -146,9 +148,13 @@ function buildAshGrass(sway: { value: number }, wind: { value: number }): Instan
 
   // The flats: patches drifting across the disc's resting ground, thick
   // where nothing else owns the floor, thinning into the basalt treads.
+  // The first eight are authored into the ash-flats pose's own frame.
+  const authored: readonly [number, number][] = [
+    [306, -2], [314, 10], [322, 28], [330, 40], [318, -18], [336, 18], [346, 34], [300, 14],
+  ];
   for (let patch = 0; patch < patches; patch++) {
-    const u = random.range(290, 560);
-    const v = random.signed(120);
+    const u = patch < authored.length ? authored[patch]![0] : random.range(290, 560);
+    const v = patch < authored.length ? authored[patch]![1] : random.signed(120);
     const family = ASH_FAMILIES[Math.floor(paletteRandom.next() * ASH_FAMILIES.length)]!;
     const thin = Math.max(basaltWeight(u, v) * 0.6, smoothstep01((u - 480) / 90) * 0.4);
     const count = Math.round(bladesPerPatch * (1 - thin));

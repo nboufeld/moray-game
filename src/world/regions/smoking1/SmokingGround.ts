@@ -115,6 +115,7 @@ function bakeSmoulderPaint(geometry: PlaneGeometry, contacts: readonly ContactPa
   for (let i = 0; i < position.count; i++) {
     const x = position.getX(i);
     const z = position.getZ(i);
+    const y = position.getY(i);
     const { u, v } = spokeOf(x, z);
 
     // Value structure from the ground's own relief: the same fbm the
@@ -143,17 +144,25 @@ function bakeSmoulderPaint(geometry: PlaneGeometry, contacts: readonly ContactPa
         1 - smoothstep01((Math.abs(v - gorgeChannelCenter(u)) - gorgeChannelHalf(u)) / 7);
       const deep = smoothstep01((-gorgeFloor(u) - 6.5) / 2.2);
       const stain =
-        smoothstep01((fbm(x * 0.08, z * 0.08, { seed: SEED ^ 0x44aa, period: 9, octaves: 3 }) - 0.52) / 0.22) *
+        smoothstep01((fbm(x * 0.08, z * 0.08, { seed: SEED ^ 0x44aa, period: 9, octaves: 3 }) - 0.48) / 0.18) *
         warm;
-      const charcoalR = 0.5 + stain * 0.5 - deep * inChannel * 0.06;
-      const charcoalG = 0.44 + stain * 0.28 - deep * inChannel * 0.08;
-      const charcoalB = 0.6 - stain * 0.18 + deep * inChannel * 0.1;
+      // The walls are banded by height (round 2): charcoal at the
+      // channel, a strata ripple up the face, a pale ash crest — so a
+      // nine-metre wall is a drawn cliff, not a mauve dune.
+      const wallT = smoothstep01((y - gorgeFloor(u)) / 8);
+      const strata =
+        Math.sin(y * 1.9 + fbm(x * 0.05, z * 0.05, { seed: SEED ^ 0x57a7, period: 6, octaves: 2 }) * 3) *
+        0.06 *
+        (1 - inChannel);
+      const charcoalR = 0.44 + stain * 0.55 + wallT * 0.2 - deep * inChannel * 0.06;
+      const charcoalG = 0.38 + stain * 0.3 + wallT * 0.18 - deep * inChannel * 0.08;
+      const charcoalB = 0.56 - stain * 0.2 + wallT * 0.14 + deep * inChannel * 0.1;
       const s = 1 - smoothstep01((u - 250) / 42);
       r += (charcoalR - r) * s;
       g += (charcoalG - g) * s;
       b += (charcoalB - b) * s;
-      value -= deep * inChannel * 0.08 * s;
-      value += stain * 0.1 * s;
+      value -= deep * inChannel * 0.1 * s;
+      value += (stain * 0.12 + strata + wallT * 0.06) * s;
     }
 
     // The Basalt Steps: warm grey treads, violet risers. The riser is
