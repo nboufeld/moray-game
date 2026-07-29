@@ -786,8 +786,14 @@ export class CoralField {
       material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
         shader.fragmentShader = shader.fragmentShader.replace(
           "#include <emissivemap_fragment>",
+          // `.rgb` because the sculpted heads' GLB carries RGBA vertex
+          // colours, which makes `vColor` a vec4 (USE_COLOR_ALPHA) and a
+          // bare vec4 *= vec3 fails to compile — an invalid program that
+          // corrupted whole frames wherever these heads were drawn. The
+          // swizzle is valid on both vec3 and vec4, so the fallback build
+          // (procedural RGB colours) compiles the same line unchanged.
           `#include <emissivemap_fragment>
-           totalEmissiveRadiance *= vColor;`,
+           totalEmissiveRadiance *= vColor.rgb;`,
         );
       };
     }
