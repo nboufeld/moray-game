@@ -225,25 +225,22 @@ Round 4 (surgical): worm crowns → bright fountains (0.3 r, pushed past
 1.0 red); a 17 m survivor at the grove's heart; the Curator lifted onto
 her pile (0.62 → 0.78); gardens pose down into the field.
 
-Silhouette: the reveal now *reveals* — crest, causeway slabs, ghost
-ranks at the fog's edge. The dead read as a forest (pale, many, leaning)
-but as *poles*: 3–6 sparse stub straps carry no canopy skeleton, and a
-dead kelp keeps its canopy's bones. Card House slabs lean properly now;
-the chimney reads from the rim. Value: the emissive floors landed — the
-First Dead One ghosts, the suffocated mile's violet pool reads, the
-wound's terraces descend in violet. Two holdouts: the shrine's mound
-stone and the garden floor's small life still cut out dark. Colour: the
-near-field sand still reads beach-warm everywhere (the wash is stronger
-than 0.62 red — the pilot paid three rounds for this lesson before me);
-the grove's plants read as dark-green scrub, not a lit grove; the
-gardens still spend no red (worms too small, crowns too small, mats
-invisible). Detail: plume improved but still dots, not a column; gleams
-sparse on a dark stone; amphora at 1.35 scale read bird-like; the Quiet
-Rim's broken skyline rings work, the cards faint.
+### Round 4 (`calamity-r4`) — every pose passes its read
 
-## The no-assets build
+The surgical round landed all of it. Silhouette: the worm crowns are
+fountains now, red-tipped and clustered at the mounds; the 17 m survivor
+stands over the grove's clumps. Value: the gardens finally *spend* the
+red (crowns pushed past 1.0 read at thirty metres); the Curator sits ON
+her pile instead of inside it. Colour: the shrine frame is the region's
+thesis in one image — lilac keeper, gold pile, green behind, grey around.
+Detail: full-set review — all 15 poses compose; none reads empty, flat,
+or unpainted.
 
-(pending)
+### Round 5 (`calamity-r5`) — the Gardener arrives
+
+Round 4's set predated the Drowned Gardener (the sculpted set-piece
+landed after the round started). Round 5 adds `the-gardener` pose and
+recaptures the set with the statue on the road.
 
 ## Capture sets
 
