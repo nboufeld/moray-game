@@ -791,12 +791,20 @@ function stalkTexture(): DataTexture {
   return stalkMap;
 }
 
-/** The shafts' map: a soft bell across, brightest in the upper body. */
+/**
+ * The shafts' map: a soft bell across, brightest in the upper body.
+ *
+ * Atelier repaint: the bell widened (^1.5 → ^2.6) and both lengthwise fades
+ * lengthened — at ^1.5 the blade still carried ~15% of its peak two texels
+ * from the side edge, and against the milky end-of-wing water that residue
+ * read as a hard quad boundary. A god shaft's whole job is to have no edge
+ * anyone can point at.
+ */
 let shaftSpriteTexture: DataTexture | undefined;
 function shaftSprite(): DataTexture {
   shaftSpriteTexture ??= buildColorTexture(64, (u, v) => {
-    const bell = Math.pow(Math.max(0, Math.cos((u - 0.5) * Math.PI)), 1.5);
-    const along = Math.pow(v, 1.15) * Math.min(1, (1 - v) * 5);
+    const bell = Math.pow(Math.max(0, Math.cos((u - 0.5) * Math.PI)), 2.6);
+    const along = Math.pow(v, 1.35) * Math.min(1, (1 - v) * 2.6);
     const value = bell * along;
     return [value * 0.78, value, value * 0.62];
   });

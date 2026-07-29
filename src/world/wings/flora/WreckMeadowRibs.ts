@@ -105,10 +105,14 @@ export function ribArcGeometry(options: RibArcOptions): BufferGeometry {
       positions.push(cx + nx * across, cy + ny * across, along);
 
       // Dark at the buried feet, warm where the light reaches: the crown of
-      // a hoop, the pale snapped end of a stub.
-      const bright = stub ? 0.35 + 0.65 * t : 0.4 + 0.6 * Math.sin(Math.PI * t);
+      // a hoop, the pale snapped end of a stub. The outward face of the arc
+      // (up, at the crown) carries the light; the under-arch stays wet and
+      // dark — without the face term the whole visible crown clamped to one
+      // value and the timber read flat.
+      const bright = stub ? 0.32 + 0.6 * t : 0.36 + 0.56 * Math.sin(Math.PI * t);
       const grain = fbm(u, t, { seed: options.seed ^ 0x4d21, period: 3, octaves: 1 });
-      const value = bright * (0.82 + grain * 0.3);
+      const face = 0.78 + 0.28 * Math.cos(angle);
+      const value = bright * face * (0.82 + grain * 0.3);
       tint.copy(RUST_DARK).lerp(RUST_LIGHT, Math.min(1, value));
       colors.push(tint.r, tint.g, tint.b);
     }

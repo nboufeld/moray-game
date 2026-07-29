@@ -29,9 +29,15 @@ export const SARGASSUM_SKY: WingDef = {
   wedge: { floorHalf: 0.075, gateHalf: 0.115, endHalf: 0.165 },
   mood: {
     // Golden gloom: the weed roof takes a third of the sun and a fifth of
-    // the sky, the water itself goes amber (red lifted, blue cut hardest),
-    // and the ambient rises a touch so the shade under the canopy glows.
-    fog: { colorScale: [1.05, 0.93, 0.55], densityGain: 0.012, backdropFade: 0.45 },
+    // the sky, the water itself goes amber (red lifted, blue cut), and the
+    // ambient rises a touch so the shade under the canopy glows.
+    //
+    // Atelier repaint: blue 0.55 → 0.74. At 0.55 the fog-saturated distance
+    // — which is exactly what the sea surface becomes at the wing's look-up
+    // pose — rendered as one flat poster-green band across the horizon. At
+    // 0.74 the far water stays a warm sea-glass gold-green that still sits
+    // a step off the bowl's turquoise, and the horizon keeps its depth.
+    fog: { colorScale: [1.08, 0.93, 0.7], densityGain: 0.01, backdropFade: 0.45 },
     light: { sun: 0.35, hemisphere: 0.2, ambient: -0.05 },
   },
   moodSurface: 12,
