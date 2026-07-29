@@ -60,15 +60,17 @@ const BONE_COOL = new Color(0xe8e8e2);
 
 /**
  * The returning colours: soft pinks, golds and greens, never saturated.
- * Atelier repaint: each taken a step toward the milk — under the wing's
- * aqua fog and the sand's pale lift the first set (especially 0xabd9a4)
- * rendered as saturated green beside the den, which read as "someone
- * forgot to bleach these" instead of "colour is returning".
+ * Atelier repaint: the green taken well toward the milk — under the wing's
+ * aqua fog and the sand's pale lift the original 0xabd9a4 rendered as
+ * saturated green beside the den, reading as "someone forgot to bleach
+ * these" instead of "colour is returning". The pink and gold keep their
+ * chroma: the far end must be unmistakably coloured or the bone→colour
+ * story has no second act (the recovery test holds the ratio).
  */
-const RECOVERY = [new Color(0xf0cbd3), new Color(0xeed6b2), new Color(0xc4dcbf)] as const;
+const RECOVERY = [new Color(0xf4bfcc), new Color(0xefc890), new Color(0xb6d8ac)] as const;
 
 /** How far toward full colour the far end gets — recovery, not a carnival. */
-const RECOVERY_DEPTH = 0.7;
+const RECOVERY_DEPTH = 0.85;
 
 /** The kinds that stand here, and their share of a site's pieces. */
 const KIND_WEIGHTS: readonly (readonly [CoralKind, number])[] = [
