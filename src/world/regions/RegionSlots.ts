@@ -48,17 +48,34 @@ const DEPTH_R: readonly [number, number, number] = [445, 940, 1460];
 const SLOT_RADIUS = 220;
 
 /** slot id `<province>-<depth>`; regions may carry their own display ids. */
-export const REGION_SLOTS: readonly RegionSlot[] = SPOKES.flatMap((spoke) =>
-  ([1, 2, 3] as const).map((depth) => ({
-    id: `${spoke.province}-${depth}`,
-    province: spoke.province,
-    depth,
-    gatewayWingId: spoke.wing,
-    azimuth: spoke.azimuth,
-    centerR: DEPTH_R[depth - 1]!,
+export const REGION_SLOTS: readonly RegionSlot[] = [
+  ...SPOKES.flatMap((spoke) =>
+    ([1, 2, 3] as const).map((depth) => ({
+      id: `${spoke.province}-${depth}`,
+      province: spoke.province,
+      depth: depth as 1 | 2 | 3,
+      gatewayWingId: spoke.wing,
+      azimuth: spoke.azimuth,
+      centerR: DEPTH_R[depth - 1]!,
+      radius: SLOT_RADIUS,
+    })),
+  ),
+  // The sixteenth slot — the owner's capability-test region, outside the
+  // five provinces: the devastated country past the Ruins Terrace, on the
+  // 4.59 azimuth between the Pale Passage and Great Blue spokes, pushed to
+  // centre 700 so its disc clears all four flanking slots (nearest gap
+  // ~29 m; the world-map separation test holds it). Its long approach is
+  // part of its brief: a 490 m march through what the catastrophe left.
+  {
+    id: "sunken-calamity-1",
+    province: "sunken-calamity",
+    depth: 1,
+    gatewayWingId: "ruins-terrace",
+    azimuth: 4.59,
+    centerR: 700,
     radius: SLOT_RADIUS,
-  })),
-);
+  },
+];
 
 const BY_ID = new Map(REGION_SLOTS.map((slot) => [slot.id, slot]));
 

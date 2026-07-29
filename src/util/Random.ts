@@ -223,4 +223,6 @@ export const SEEDS = {
   regionGolden3: 0x5a4d_0c0f,
   /** The texture atelier's repaint passes (R2+ quality uplift). */
   atelier: 0x5a4d_0c10,
+  /** The sixteenth slot: the capability-test devastation region. */
+  regionCalamity: 0x5a4d_0c11,
 } as const;
