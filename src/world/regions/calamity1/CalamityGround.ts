@@ -107,7 +107,7 @@ function shockRing(x: number, z: number): number {
   if (reach <= 0) {
     return 0;
   }
-  const ring = Math.sin(d * 0.42 + 1.2);
+  const ring = Math.sin(d * 0.34 + 1.2);
   return ring * reach;
 }
 
@@ -139,11 +139,12 @@ function bakeCalamityPaint(geometry: PlaneGeometry, contacts: readonly ContactPa
     // is a smooth beige dune with the hue swapped).
     const silt =
       fbm(x * 0.045, z * 0.045, { seed: SEED ^ 0x5117, period: 11, octaves: 3 }) - 0.5;
-    // Round 2 cut the red a second time: the sand wash under these
-    // multipliers is strongly warm, and at 0.74 the "dead" sand still
-    // read as beach. Grey means red is *cut*, not blue raised.
-    let r = 0.62 + silt * 0.1;
-    let g = 0.75 + silt * 0.12;
+    // Round 3 cut the red a third time: the sand wash under these
+    // multipliers is strongly warm, and at 0.62 the near field still
+    // read as beach. Grey means red is *cut*, not blue raised — the
+    // pilot paid three rounds for the same lesson.
+    let r = 0.52 + silt * 0.1;
+    let g = 0.7 + silt * 0.12;
     let b = 0.84 + silt * 0.08;
 
     // The march: grey deepening down the blast road, the shock rings
@@ -151,7 +152,7 @@ function bakeCalamityPaint(geometry: PlaneGeometry, contacts: readonly ContactPa
     // channel — the water went bad here and the ground remembers.
     if (u < MARCH_TO) {
       const ring = shockRing(x, z);
-      value += ring * 0.14;
+      value += ring * 0.18;
       const deep = smoothstep01((-marchFloor(u) - 6.4) / 2.2);
       const inChannel = 1 - smoothstep01((Math.abs(v - marchChannelCenter(u)) - marchChannelHalf(u)) / 8);
       const pool = deep * inChannel * smoothstep01((u - 280) / 60) * (1 - smoothstep01((u - 420) / 60));

@@ -231,11 +231,13 @@ export function buildCalamityForest(): CalamityForestBuild {
       colliders.push({ center: new Vector3(x, foot + height * 0.5, z), radius: 0.6 });
     }
 
-    // The tattered remains of the crown: a handful of stub straps,
-    // drooped hard, ragged at the margins. No sway — the dead stand still.
-    const strapCount = kind === "giant" ? Math.round(leafRandom.range(3, 6)) : 0;
+    // The dead tree's skeleton: strap remains down the whole upper half,
+    // plus a ring of longer crown-skeleton straps at the top — round 2's
+    // sparse stubs read as poles; a dead kelp keeps its canopy's bones.
+    // No sway — the dead stand still.
+    const strapCount = kind === "giant" ? Math.round(leafRandom.range(5, 9)) : 0;
     for (let i = 0; i < strapCount; i++) {
-      const t = leafRandom.range(0.72, 0.96);
+      const t = leafRandom.range(0.5, 0.98);
       const around = phase + i * 2.6 + leafRandom.signed(0.4);
       const length = leafRandom.range(0.9, 1.9);
       const width = length * leafRandom.range(0.3, 0.44);
@@ -248,28 +250,52 @@ export function buildCalamityForest(): CalamityForestBuild {
       strap.translate(x, 0, z);
       chunk.leaves.push(strap);
     }
+    if (kind === "giant") {
+      const crownCount = Math.round(leafRandom.range(4, 6));
+      for (let i = 0; i < crownCount; i++) {
+        const t = leafRandom.range(0.9, 1.0);
+        const around = phase + (i / crownCount) * Math.PI * 2 + leafRandom.signed(0.4);
+        const length = leafRandom.range(1.8, 2.8);
+        const width = length * leafRandom.range(0.26, 0.4);
+        const droop = leafRandom.range(1.4, 1.9);
+        const strap = deadStrap(length, width, droop, leafRandom);
+        const local = new Matrix4()
+          .makeTranslation(curve(t), foot + t * height, 0)
+          .multiply(new Matrix4().makeRotationY(around));
+        strap.applyMatrix4(local);
+        strap.translate(x, 0, z);
+        chunk.leaves.push(strap);
+      }
+    }
   }
 
   // ─── The Last Grove ──────────────────────────────────────────────────────
-  // Eight living plants and their young, in the hollow the ridge defended.
+  // Two clumps of living plants and their young, in the hollow the ridge
+  // defended — a grove is not a scatter: two held clusters with the
+  // clearing of the shrine's approach between them.
   const groveAt = (du: number, dv: number, height: number): void => {
     const u = LAST_GROVE.u + du;
     const v = LAST_GROVE.v + dv;
     growLiving(chunks.grove!, u, v, height);
   };
-  groveAt(-6, -4, 11.5);
-  groveAt(4, -8, 12.5);
-  groveAt(9, 2, 10);
-  groveAt(-2, 7, 9);
-  groveAt(-11, 3, 8.5);
-  groveAt(14, -5, 9.5);
-  groveAt(6, 11, 7.5);
-  groveAt(-8, 12, 6.5);
+  // The survivor: one tall hero at the grove's heart — the plant the
+  // ridge saved, grown into the old forest's memory of itself.
+  groveAt(-1, -2, 17);
+  // The west clump.
+  groveAt(-8, -5, 13.5);
+  groveAt(-12, 1, 12);
+  groveAt(-6, 4, 11);
+  groveAt(-13, -7, 10);
+  // The east clump, around the shrine's far shoulder.
+  groveAt(9, -9, 14);
+  groveAt(13, -3, 12.5);
+  groveAt(8, 6, 11);
+  groveAt(15, 3, 10.5);
   // The young ring around them.
   for (let i = 0; i < 7; i++) {
     const angle = random.range(0, Math.PI * 2);
-    const r = random.range(14, 22);
-    groveAt(Math.cos(angle) * r, Math.sin(angle) * r, random.range(3, 5.2));
+    const r = random.range(16, 24);
+    groveAt(Math.cos(angle) * r, Math.sin(angle) * r, random.range(4, 6.2));
   }
 
   function growLiving(chunk: Chunk, u: number, v: number, height: number): void {
@@ -294,11 +320,11 @@ export function buildCalamityForest(): CalamityForestBuild {
 
     // Full living crowns, greener than the pilot's — the region's one
     // pocket of the old world's colour, so it is *poured on*.
-    const count = Math.round(leafRandom.range(15, 20));
+    const count = Math.round(leafRandom.range(16, 21));
     for (let i = 0; i < count; i++) {
       const t = 0.24 + Math.pow((i + leafRandom.range(0.1, 0.9)) / count, 0.62) * 0.72;
       const around = yaw + i * 2.4 + leafRandom.signed(0.5);
-      const length = leafRandom.range(1.5, 2.7) * (0.62 + t * 0.5);
+      const length = leafRandom.range(1.6, 2.9) * (0.62 + t * 0.5);
       const width = length * leafRandom.range(0.32, 0.46);
       const droop = leafRandom.range(0.25, 0.75) * (1.15 - t * 0.5) * (t > 0.75 ? 1.7 : 1);
       const strap = livingStrap(length, width, droop, leafRandom.range(0.2, 0.7), leafRandom, t > 0.72);
@@ -560,7 +586,7 @@ function livingStrap(
   const cupBack = detail.range(0.12, 0.18);
 
   const tone = GROVE_TONES[Math.floor(random.next() * GROVE_TONES.length)]!;
-  const tint = new Color(tone).multiplyScalar(random.range(0.9, 1.14));
+  const tint = new Color(tone).multiplyScalar(random.range(1.0, 1.3));
   const rootShade = new Color(tone).multiplyScalar(0.62);
   rootShade.r = Math.min(1, rootShade.r * 1.18);
   rootShade.b = Math.min(1, rootShade.b * 1.3);
@@ -697,8 +723,8 @@ function groveLeafMaterial(
     // A whisper of emissive so the grove's green survives its own
     // backlight — the Last Grove is the region's promise, it may not
     // read as black scrub against the ash.
-    emissive: 0x1d2a1a,
-    emissiveIntensity: 0.5,
+    emissive: 0x24361e,
+    emissiveIntensity: 0.65,
   });
   material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
     injectCalamitySway(shader, sway);

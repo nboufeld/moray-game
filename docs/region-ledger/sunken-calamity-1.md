@@ -152,9 +152,51 @@ bowl was inverted (deepest point read −18.5, not −30), the gate banks
 could crest through the pinch ceiling, and the seal test's spine window
 ignored the channel's wander.
 
-### Round 1 (`calamity-r1`) — first full draft
+### Round 1 (`calamity-r1`) — bones right, subjects buried
 
-(pending)
+Silhouette: the geography composes everywhere — the march reads as a
+road, the Card House jumbles, the crater's terraces descend, the grove
+is *there*. But the Ghost Forest's blast rake (0.16–0.34 rad) reads as
+ordinary straight poles — the clock-hand signature was authored too
+politely — and the reveal pose stood behind the crest instead of on it,
+so the region's one big breath opened onto a bank. Value: the frame's
+verdict was unanimous — the water is near-white milk (densityGain 0.006
++ colorScale 0.72/0.79/0.84) and *every* authored subject reads near-black
+against it: teeth, stones, dead giants, worms, the shrine, the Curator
+itself. The canyon's ghost-kelp note in AGENTS.md had already written
+this failure down: an unlit toon surface under a strong mood renders the
+pale palette as near-black quills; the cure is a faint emissive floor.
+Colour: the "dead sand" still read as beach (the sand wash is strongly
+warm; 0.74 red is a tint, not a cut — the pilot's round-2 lesson); the
+grove's green ends in a hard circle; no arterial red survives at the
+gardens. Detail: the bubble plume is nearly invisible (a few dots); the
+gyre unread; the chimney a pale nub from the rim; shock rings faint
+(0.09 amplitude); the First Dead One a dark post, not a pale ghost.
+
+Round 2's surgery: fog to grey-teal (0.66/0.75/0.82, gain 0.0035) so
+pale subjects ghost *against* the water; emissive floors on the dead
+forest, stones (via tint lift), worms, crabs, chimney, gleams and the
+Curator; the rake committed (0.34–0.58 rad, 70 thicker taller giants);
+reveal/cold-candle/seep-gardens/shrine poses moved onto their subjects;
+plume ×1.6 and brighter; ground red cut to 0.62; shock rings 0.14.
+
+### Round 2 (`calamity-r2`) — the ghosts arrive, the floor stays warm
+
+Silhouette: the reveal now *reveals* — crest, causeway slabs, ghost
+ranks at the fog's edge. The dead read as a forest (pale, many, leaning)
+but as *poles*: 3–6 sparse stub straps carry no canopy skeleton, and a
+dead kelp keeps its canopy's bones. Card House slabs lean properly now;
+the chimney reads from the rim. Value: the emissive floors landed — the
+First Dead One ghosts, the suffocated mile's violet pool reads, the
+wound's terraces descend in violet. Two holdouts: the shrine's mound
+stone and the garden floor's small life still cut out dark. Colour: the
+near-field sand still reads beach-warm everywhere (the wash is stronger
+than 0.62 red — the pilot paid three rounds for this lesson before me);
+the grove's plants read as dark-green scrub, not a lit grove; the
+gardens still spend no red (worms too small, crowns too small, mats
+invisible). Detail: plume improved but still dots, not a column; gleams
+sparse on a dark stone; amphora at 1.35 scale read bird-like; the Quiet
+Rim's broken skyline rings work, the cards faint.
 
 ## The no-assets build
 

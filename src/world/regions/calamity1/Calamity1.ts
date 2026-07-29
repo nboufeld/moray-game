@@ -162,13 +162,13 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // The Ghost Forest: among the clock-hand dead.
   { name: "ghost-forest", u: 596, v: 8, lift: 2.8, atU: 650, atV: -12, pitch: 0.05, settle: 5 },
   // The Wound's rim: the terraced bowls falling away to the Cold Candle,
-  // with the leaning watchers holding the frame's edge.
-  { name: "the-wound", u: 650, v: -20, lift: 3, atU: 698, atV: 2, pitch: -0.13, settle: 4 },
+  // with the leaning watcher holding the frame's near edge.
+  { name: "the-wound", u: 646, v: -26, lift: 2.6, atU: 696, atV: 0, pitch: -0.12, settle: 4 },
   // The Cold Candle: the plume, the gyre, the cold fire — close enough
   // for the chimney to fill the eye.
   { name: "cold-candle", u: 686, v: 6, lift: 5, atU: WOUND.u, atV: WOUND.v, pitch: 0.08, settle: 6 },
-  // The Seep Gardens: life that came back wrong, close on the first mound.
-  { name: "seep-gardens", u: 736, v: 42, lift: 2.2, atU: 750, atV: 56, pitch: -0.06, settle: 4 },
+  // The Seep Gardens: life that came back wrong, down in the field.
+  { name: "seep-gardens", u: 741, v: 47, lift: 2.2, atU: 760, atV: 60, pitch: -0.05, settle: 4 },
   // The Last Grove: green in the grey, behind the ridge.
   { name: "last-grove", u: 748, v: -60, lift: 2.8, atU: LAST_GROVE.u, atV: LAST_GROVE.v, pitch: 0.03, settle: 5 },
   // The shrine: the Curator at the memorial, close enough to watch her

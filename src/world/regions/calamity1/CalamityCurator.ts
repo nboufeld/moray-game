@@ -77,7 +77,13 @@ export function buildCurator(): CuratorBuild {
   const moundStone = boulderGeometry({ seed: SEED ^ 0xc1a8, radius: 1.35, height: 0.55 });
   moundStone.translate(x, groundY - 0.1, z);
   const stoneParts: BufferGeometry[] = [moundStone];
-  const moundMesh = mergedMesh(stoneParts, createToonMaterial({ color: 0x8a8578 }), "calamity-shrine-stone");
+  // The stone takes the same ghost-glow floor — round 2 it read as one
+  // black mass with the Curator lost on it.
+  const moundMesh = mergedMesh(
+    stoneParts,
+    createToonMaterial({ color: 0x9a9488, emissive: 0x2e2b24, emissiveIntensity: 0.6 }),
+    "calamity-shrine-stone",
+  );
   meshes.push(moundMesh);
   colliders.push({ center: new Vector3(x, groundY + 0.25, z), radius: 1.3 });
   contacts.push({ x, z, radius: 2.2, strength: 0.45 });
@@ -87,16 +93,17 @@ export function buildCurator(): CuratorBuild {
 
   // ─── The animal ──────────────────────────────────────────────────────────
   // She sits on the pile's crest, arms draped over her collection, mantle
-  // tipped toward the grove she keeps.
-  const head = new Vector3(x, groundY + 0.62, z);
+  // tipped toward the grove she keeps. Lifted in round 4: at 0.62 she
+  // half-buried in her own treasure.
+  const head = new Vector3(x, groundY + 0.78, z);
   const body = buildBody();
   // The lantern floor: the pilot's rule for a findable resident — the
   // brightest thing in its quarter. Round 1's unlit lilac read as one
   // more grey stone on a grey stone.
   const material = createToonMaterial({
     vertexColors: true,
-    emissive: 0x2b2530,
-    emissiveIntensity: 0.55,
+    emissive: 0x352e3a,
+    emissiveIntensity: 0.7,
   });
   const mesh = new Mesh(body.geometry, material);
   mesh.name = "calamity-curator";
@@ -250,7 +257,7 @@ function buildGleams(random: Random, x: number, y: number, z: number): Mesh {
   }
   const palette = [0xd8bd8e, 0xc9a6a0, 0xd8d2c0, 0xbfa86e, 0xa8b8b0];
 
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < 70; i++) {
     const kind = i % 5;
     let part: BufferGeometry;
     if (kind < 2) {
@@ -263,14 +270,14 @@ function buildGleams(random: Random, x: number, y: number, z: number): Mesh {
       part = new TetrahedronGeometry(0.07);
     }
     const angle = random.range(0, Math.PI * 2);
-    const r = random.range(0.15, 0.95);
+    const r = random.range(0.1, 0.85);
     dummy.position.set(
       x + Math.cos(angle) * r * 1.15,
-      y + 0.32 + Math.max(0, 0.3 - r * 0.28) + random.range(0, 0.12),
+      y + 0.32 + Math.max(0, 0.34 - r * 0.34) + random.range(0, 0.14),
       z + Math.sin(angle) * r,
     );
     dummy.rotation.set(random.range(0, Math.PI * 2), random.range(0, Math.PI * 2), 0);
-    dummy.scale.setScalar(random.range(0.8, 1.6));
+    dummy.scale.setScalar(random.range(0.7, 1.3));
     dummy.updateMatrix();
     part.applyMatrix4(dummy.matrix);
     // The gleam paint: warm at the crown of each little thing, shaded at
@@ -297,7 +304,7 @@ function buildGleams(random: Random, x: number, y: number, z: number): Mesh {
   // unlit gleams lay on the stone like more stone.
   return mergedMesh(
     parts,
-    createToonMaterial({ vertexColors: true, emissive: 0x33291c, emissiveIntensity: 0.6 }),
+    createToonMaterial({ vertexColors: true, emissive: 0x453820, emissiveIntensity: 0.85 }),
     "calamity-shrine-gleams",
   );
 }

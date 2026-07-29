@@ -223,7 +223,7 @@ function buildBubbles(
 ): { points: Points; update: (time: number, calm: number) => void } {
   const random = new Random(SEED ^ 0xb0b1);
   const vents = [
-    { x: plume.x, z: plume.z, base: plume.base, top: plume.top, count: 210, spread: 0.9 },
+    { x: plume.x, z: plume.z, base: plume.base, top: plume.top, count: 300, spread: 1.1 },
     ...seeps.map((spot) => {
       const { x, z } = worldOf(spot.u, spot.v);
       return {
@@ -231,7 +231,7 @@ function buildBubbles(
         z,
         base: seabedHeight(x, z) + 1.2 * spot.scale,
         top: seabedHeight(x, z) + 7 * spot.scale,
-        count: 16,
+        count: 24,
         spread: 0.5 * spot.scale,
       };
     }),
@@ -310,11 +310,13 @@ function wormGeometry(): BufferGeometry {
   const tubePoints: Vector2[] = [new Vector2(0, -0.1)];
   for (let i = 0; i <= 6; i++) {
     const t = i / 6;
-    tubePoints.push(new Vector2(0.06 * (1 - t * 0.3) + 0.02 * Math.sin(t * 5), t * 0.9));
+    tubePoints.push(new Vector2(0.09 * (1 - t * 0.3) + 0.02 * Math.sin(t * 5), t * 0.9));
   }
   const tube = new LatheGeometry(tubePoints, 5);
-  const crown = new ConeGeometry(0.16, 0.22, 7, 1, true);
-  crown.translate(0, 1.0, 0);
+  // The crown is a fountain, not a tip: round 3's little cone spent the
+  // gardens' one red where nobody could see it.
+  const crown = new ConeGeometry(0.3, 0.36, 7, 1, true);
+  crown.translate(0, 1.05, 0);
   const merged = mergeGeometries([tube, crown], false);
   tube.dispose();
   crown.dispose();
@@ -330,9 +332,14 @@ function wormGeometry(): BufferGeometry {
   for (let i = 0; i < position.count; i++) {
     const y = position.getY(i);
     if (y > 0.92) {
-      // The crown: arterial red, pale-gilled at its very lip.
+      // The crown: arterial red pushed past 1 so it survives the grey
+      // water's shading — the region's one hot note, spent loud.
       const lip = smoothstep01((y - 1.05) / 0.06);
       shade.copy(ARTERY_RED).lerp(new Color(0xd98a8e), lip * 0.4);
+      colors[i * 3] = shade.r * 1.35;
+      colors[i * 3 + 1] = shade.g;
+      colors[i * 3 + 2] = shade.b;
+      continue;
     } else {
       shade.copy(tubeShade).lerp(tubeBone, smoothstep01(y / 0.6));
     }
@@ -354,10 +361,10 @@ function buildWorms(
   // arterial red shining out of the ash.
   const material = createToonMaterial({
     vertexColors: true,
-    emissive: 0x2c2824,
-    emissiveIntensity: 0.6,
+    emissive: 0x322a26,
+    emissiveIntensity: 0.75,
   });
-  const capacity = 150;
+  const capacity = 200;
   const mesh = new InstancedMesh(geometry, material, capacity);
   mesh.name = "calamity-tube-worms";
   mesh.castShadow = false;
@@ -374,7 +381,7 @@ function buildWorms(
     const { x, z } = worldOf(u, v);
     dummy.position.set(x, seabedHeight(x, z) - 0.04, z);
     dummy.rotation.set(random.signed(0.3), random.range(0, Math.PI * 2), random.signed(0.3));
-    dummy.scale.setScalar(random.range(0.7, 2.1));
+    dummy.scale.setScalar(random.range(1.2, 2.8));
     dummy.updateMatrix();
     mesh.setMatrixAt(placed, dummy.matrix);
     tint.setHex(0xffffff).multiplyScalar(random.range(0.8, 1.05));
@@ -384,7 +391,7 @@ function buildWorms(
 
   // Rings of worms around every seep, densest at the mineral shoulder.
   for (const spot of seeps) {
-    const count = Math.round(14 * spot.scale);
+    const count = Math.round(21 * spot.scale);
     for (let i = 0; i < count; i++) {
       const angle = random.range(0, Math.PI * 2);
       const r = random.range(1.2, 4.2) * spot.scale;
@@ -393,7 +400,7 @@ function buildWorms(
     contacts.push({ x: worldOf(spot.u, spot.v).x, z: worldOf(spot.u, spot.v).z, radius: 3.4 * spot.scale, strength: 0.3 });
   }
   // And a garden on the crater's second terrace, in the Candle's own light.
-  for (let i = 0; i < 26; i++) {
+  for (let i = 0; i < 34; i++) {
     const angle = random.range(0, Math.PI * 2);
     const r = random.range(7, 14);
     plant(WOUND.u + Math.cos(angle) * r, WOUND.v + Math.sin(angle) * r);
@@ -429,7 +436,11 @@ function buildMats(random: Random, seeps: readonly { u: number; v: number; scale
   position.needsUpdate = true;
   geometry.computeVertexNormals();
 
-  const material = createToonMaterial({ color: MAT_PALE });
+  const material = createToonMaterial({
+    color: MAT_PALE,
+    emissive: 0x2a2822,
+    emissiveIntensity: 0.5,
+  });
   const mesh = new InstancedMesh(geometry, material, 26);
   mesh.name = "calamity-mats";
   mesh.castShadow = false;
@@ -443,7 +454,7 @@ function buildMats(random: Random, seeps: readonly { u: number; v: number; scale
     const { x, z } = worldOf(spot.u + Math.cos(angle) * r, spot.v + Math.sin(angle) * r);
     dummy.position.set(x, seabedHeight(x, z) + 0.03, z);
     dummy.rotation.set(0, random.range(0, Math.PI * 2), 0);
-    dummy.scale.set(random.range(1.2, 3.4), 1, random.range(1.2, 3.4));
+    dummy.scale.set(random.range(2.2, 5), 1, random.range(2.2, 5));
     dummy.updateMatrix();
     mesh.setMatrixAt(i, dummy.matrix);
     tint.copy(MAT_PALE).multiplyScalar(random.range(0.85, 1.05));

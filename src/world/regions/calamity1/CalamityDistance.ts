@@ -55,7 +55,7 @@ const SEGMENTS = 220;
 const FOOT = -12;
 
 /** Grey-violet ink: the fog colour taken down with red above green's cut. */
-const INK = new Color(0.68, 0.64, 0.78);
+const INK = new Color(0.6, 0.56, 0.72);
 
 /** Half-angle of the gap the rings leave over the march's approach. */
 const GAP_HALF = 0.42;

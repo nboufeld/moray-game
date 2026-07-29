@@ -245,7 +245,7 @@ export function buildCalamityRubble(): CalamityRubbleBuild {
     const y = seabedHeight(x, z);
     dummy.position.set(x, y + 0.12, z);
     dummy.rotation.set(random.signed(0.5), random.range(0, Math.PI * 2), random.signed(0.5));
-    dummy.scale.setScalar(random.range(0.8, 1.35));
+    dummy.scale.setScalar(random.range(0.6, 0.95));
     dummy.updateMatrix();
     amphoraMesh.setMatrixAt(i, dummy.matrix);
     tint.setHex(i % 4 === 0 ? 0xa88a68 : 0x8f7d70).multiplyScalar(random.range(0.85, 1.1));
