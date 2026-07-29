@@ -45,6 +45,7 @@ from creature_common import (  # noqa: E402
     render_views,
     reset_scene,
     shade_smooth,
+    smoothstep,
     stats,
     write_uvs,
 )
@@ -70,13 +71,22 @@ PROFILE = [
 ]
 
 RINGS = 22
-COLS = 26
+#: 32, not the 26 first built: at 26 the eye discs were painted by two
+#: columns each and tore into squares. The only geometry change of the
+#: atelier repaint; 1408 tris against the 2000 budget.
+COLS = 32
 
-#: sRGB gouache. Deep blue-violet, one value step up at the crown; the eye
-#: discs are the only warm note on the being.
-BODY_LOW = (0.145, 0.125, 0.300)
-BODY_HIGH = (0.205, 0.175, 0.385)
+#: sRGB gouache. Deep blue-violet, NEVER black, and never grey either — the
+#: shadow is a warm violet. Atelier repaint: the first pass was one value
+#: with eyes; now the hull carries three — deep shoulders, mid chest, a
+#: crown a full step lifted — plus a lighter face plane toward the water it
+#: regards and a neck shadow that seats the head on the shoulders.
+BODY_LOW = (0.170, 0.130, 0.315)
+BODY_HIGH = (0.290, 0.250, 0.480)
+FACE_LIGHT = (0.250, 0.215, 0.445)
+NECK_SHADE = (0.125, 0.095, 0.265)
 EYE_PALE = (0.955, 0.875, 0.660)
+EYE_HALO = (0.430, 0.340, 0.570)
 
 #: The eye discs, on the face at the brow: centres (x, z), radii (rx, rz).
 EYE_X, EYE_Z = 0.92, 6.90
@@ -118,7 +128,7 @@ def build():
         lambda z: 1.0
         + 1.4 * gauss(z, 4.8, 1.6)
         + 1.8 * gauss(z, 9.2, 0.7)
-        + 2.2 * gauss(z, EYE_Z, 0.55),
+        + 3.0 * gauss(z, EYE_Z, 0.5),
         low=PROFILE[0][0],
         high=PROFILE[-1][0],
     )
@@ -131,11 +141,26 @@ def build():
             y = y0 - half_d * math.cos(angle)
             verts.append((x, y, z))
             uvs.append((j / COLS, z / PROFILE[-1][0]))
-            body = mix3(BODY_LOW, BODY_HIGH, (z / PROFILE[-1][0]) ** 1.4)
+            body = mix3(BODY_LOW, BODY_HIGH, (z / PROFILE[-1][0]) ** 1.2)
+            # The neck's shadow: the head reads as a head because something
+            # deep sits under it.
+            body = mix3(body, NECK_SHADE, gauss(z, 4.3, 1.1) * 0.6)
+            # The face plane leans toward the light it rises to regard — a
+            # painted value, not a lamp — and the back of the skull falls a
+            # step away from it, so the quarter view turns.
+            face = smoothstep(0.05, 0.6, (y0 - y) / max(1e-6, half_d))
+            body = mix3(body, FACE_LIGHT, face * 0.5 * smoothstep(3.4, 6.4, z))
+            back = smoothstep(0.05, 0.6, (y - y0) / max(1e-6, half_d))
+            body = mix3(body, (0.140, 0.105, 0.285), back * 0.4 * smoothstep(4.5, 7.0, z))
             eye = eye_blend(x, z)
             # Only the face side can hold an eye: the discs do not wrap.
-            if y < y0 - 0.35 * half_d and eye > 0.0:
-                colours.append(mix3(body, EYE_PALE, min(1.0, eye * 1.6)))
+            if y < y0 - 0.35 * half_d and eye > -0.6:
+                # A soft disc with a violet halo where the rim fades — the
+                # linear cone tore into squares at this vertex density.
+                disc = smoothstep(-0.08, 0.58, eye)
+                halo = gauss(eye, -0.2, 0.24)
+                body = mix3(body, EYE_HALO, halo * 0.5)
+                colours.append(mix3(body, EYE_PALE, disc))
             else:
                 colours.append(body)
 

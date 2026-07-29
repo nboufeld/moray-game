@@ -160,7 +160,10 @@ def skin_of(x, y, height):
     tine, and the tip lands exactly at the 1.0 the exporter's normalised
     accessor clips at.
     """
-    value = perceived(0.74 + height * height * 0.26)
+    # Atelier repaint: the root taken down a step (0.74 → 0.66) so the frond
+    # carries three readable values — buried crotch, mid stem, lit tips —
+    # instead of a shallow two. Tips still land exactly on the 1.0 clip.
+    value = perceived(0.66 + height * height * 0.34)
     return (value, value * 0.97, value * 0.9)
 
 

@@ -91,13 +91,19 @@ EYE_Y = -0.208
 EYE_Z = 0.175
 EYE_R = 0.050
 
-#: sRGB gouache — the PALE set; see the header.
-MANTLE_LOW = (0.93, 0.78, 0.74)
-MANTLE_HIGH = (0.88, 0.66, 0.62)
-ARM_LOW = (0.92, 0.76, 0.71)
-ARM_HIGH = (0.95, 0.84, 0.79)
-SUCKER = (0.96, 0.89, 0.83)
-EYE_DARK = (0.12, 0.08, 0.10)
+#: sRGB gouache — the PALE set; see the header. Atelier repaint: the set
+#: stays pale (the runtime's calm-rose multiply and the blanch depend on
+#: it), but it carries value structure now — a dusty crown melting into a
+#: near-white skirt rim, arm roots a step under their tips, cream sucker
+#: lines — because a multiply preserves whatever structure is authored.
+MANTLE_LOW = (0.945, 0.815, 0.775)
+MANTLE_HIGH = (0.775, 0.495, 0.470)
+SKIRT_RIM = (0.975, 0.905, 0.865)
+ARM_LOW = (0.875, 0.675, 0.630)
+ARM_HIGH = (0.960, 0.865, 0.815)
+SUCKER = (0.985, 0.930, 0.860)
+EYE_DARK = (0.170, 0.105, 0.120)
+EYE_RING = (0.980, 0.920, 0.850)
 
 
 def mantle(z):
@@ -130,17 +136,31 @@ def build():
             y = -half_d * math.cos(angle)
             verts.append((x, y, z))
             uvs.append((j / MANTLE_COLS, z / MANTLE_PROFILE[-1][0]))
-            body = mix3(MANTLE_LOW, MANTLE_HIGH, (z / MANTLE_PROFILE[-1][0]) ** 1.3)
-            # A breath of mottling at the crown: the chromatophores' rest.
-            mottle = 1.0 + 0.05 * math.sin(3.1 * x / half_w + 5.0 * z)
-            colours.append(tuple(clamp(c * mottle) for c in body))
+            zt = z / MANTLE_PROFILE[-1][0]
+            body = mix3(MANTLE_LOW, MANTLE_HIGH, zt ** 1.3)
+            # The skirt's rim lifts to near-white — the palest band on the
+            # animal, so the mantle reads bottom-lit the way a shy thing
+            # peeking over its own arms does.
+            body = mix3(body, SKIRT_RIM, 1.0 - smoothstep(0.0, 0.14, zt))
+            # Freckled mottling over the crown: two crossed waves, not one
+            # machine sine — chromatophores at rest, upper mantle only.
+            freckle = math.sin(3.1 * x / half_w + 5.0 * z) * math.sin(7.3 * y / half_d + 11.0 * z)
+            mottle = 1.0 + 0.09 * freckle * smoothstep(0.3, 0.7, zt)
+            body = tuple(clamp(c * mottle) for c in body)
+            # A pale spectacle ring where each eye bead sits proud.
+            for side in (-1.0, 1.0):
+                d = math.hypot((x - side * EYE_X) / (EYE_R * 1.9), (z - EYE_Z) / (EYE_R * 1.9))
+                if y < 0.0:
+                    ring = gauss(d, 1.0, 0.35)
+                    body = mix3(body, EYE_RING, ring * 0.6)
+            colours.append(body)
 
     faces += grid_faces(len(ring_zs), MANTLE_COLS)
 
     rim = len(verts)
     verts.append((0.0, 0.0, MANTLE_PROFILE[0][0] - 0.012))
     uvs.append((0.5, 0.0))
-    colours.append(MANTLE_LOW)
+    colours.append(SKIRT_RIM)
     faces += fan_faces(list(reversed(range(0, MANTLE_COLS))), rim)
 
     crown_ring = (len(ring_zs) - 1) * MANTLE_COLS

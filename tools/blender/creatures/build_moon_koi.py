@@ -84,13 +84,19 @@ DORSAL_FROM, DORSAL_TO, DORSAL_HEIGHT = -0.30, 0.50, 0.055
 PECTORAL_Y = -0.62
 
 #: sRGB gouache.
-SILVER_DORSAL = (0.90, 0.92, 0.95)
-SILVER_BELLY = (0.97, 0.97, 0.985)
-ROSE_BLUSH = (0.95, 0.70, 0.70)
-EYE_BLUE = (0.10, 0.14, 0.38)
-FIN_PALE = (0.93, 0.85, 0.88)
-RIBBON_SILVER = (0.90, 0.92, 0.965)
-RIBBON_ROSE = (0.95, 0.75, 0.78)
+#: Atelier repaint: the first pass's dorsal (0.90, 0.92, 0.95) stood two
+#: hundredths under the belly and the whole fish rendered blown white — the
+#: blush and the eye were homeopathic. The moon koi stays a silver spirit,
+#: but silver is a value structure: violet-silver back (red held above
+#: green, per the value key), pearl belly, rose marks that read as marks.
+SILVER_DORSAL = (0.705, 0.690, 0.840)
+SILVER_BELLY = (0.970, 0.965, 0.985)
+ROSE_BLUSH = (0.910, 0.505, 0.520)
+EYE_BLUE = (0.115, 0.150, 0.390)
+FIN_BASE = (0.790, 0.760, 0.860)
+FIN_PALE = (0.955, 0.905, 0.930)
+RIBBON_SILVER = (0.885, 0.900, 0.960)
+RIBBON_ROSE = (0.930, 0.640, 0.680)
 
 
 def body(y):
@@ -100,27 +106,27 @@ def body(y):
 def blush(x, y, z, dorsal):
     """Rose blotches on the back: crown, saddle and tail base — off-centre
     and fading down the flanks, because a koi's hi is a map, not a band."""
-    if dorsal < 0.45:
+    if dorsal < 0.32:
         return 0.0
-    flank = clamp(1.25 - abs(x) * 6.0)
+    flank = clamp(1.25 - abs(x) * 4.5)
     patch = (
         gauss(y, -0.55, 0.13) * gauss(x, 0.045, 0.055)
         + 0.85 * gauss(y, -0.08, 0.16) * gauss(x, -0.035, 0.060)
         + 0.7 * gauss(y, 0.48, 0.10) * gauss(x, 0.025, 0.045)
     )
-    return clamp(patch * (dorsal - 0.45) * 1.6 * (0.35 + 0.65 * flank))
+    return clamp(patch * (dorsal - 0.32) * 2.2 * (0.35 + 0.65 * flank))
 
 
 def eye_patch(x, y, z):
     best = 0.0
     for side in (-1.0, 1.0):
         d = (
-            gauss(y, -0.78, 0.05)
-            * gauss(x, side * 0.082, 0.05)
-            * gauss(z, 0.015, 0.05)
+            gauss(y, -0.78, 0.055)
+            * gauss(x, side * 0.082, 0.055)
+            * gauss(z, 0.015, 0.055)
         )
         best = max(best, d)
-    return clamp(best * 2.2)
+    return clamp(best * 3.0)
 
 
 def spine_weights(y, out):
@@ -197,7 +203,7 @@ def build():
         # A thin diamond cross-section: base, crest pair, base.
         verts.append((0.0, y, half_h - 0.004))
         uvs.append((0.05, t))
-        colours.append(FIN_PALE)
+        colours.append(FIN_BASE)
         verts.append((0.006, y, half_h + height))
         uvs.append((0.08, t))
         colours.append(FIN_PALE)
@@ -206,7 +212,7 @@ def build():
         colours.append(FIN_PALE)
         verts.append((0.0, y, half_h + 0.002))
         uvs.append((0.05, t))
-        colours.append(FIN_PALE)
+        colours.append(FIN_BASE)
     for k in range(fin_rings - 1):
         a = fin_base + k * 4
         b = fin_base + (k + 1) * 4
@@ -226,18 +232,19 @@ def build():
             cx = side * (half_w + 0.005 + 0.10 * t)
             cy = PECTORAL_Y - 0.16 * t
             cz = -0.02 - 0.05 * t
+            fin_shade = mix3(FIN_BASE, FIN_PALE, t)
             verts.append((cx, cy + width, cz))
             uvs.append((0.12, t))
-            colours.append(FIN_PALE)
+            colours.append(fin_shade)
             verts.append((cx, cy, cz + 0.008))
             uvs.append((0.14, t))
-            colours.append(FIN_PALE)
+            colours.append(fin_shade)
             verts.append((cx, cy - width, cz))
             uvs.append((0.12, t))
-            colours.append(FIN_PALE)
+            colours.append(fin_shade)
             verts.append((cx, cy, cz - 0.008))
             uvs.append((0.14, t))
-            colours.append(FIN_PALE)
+            colours.append(fin_shade)
         for k in range(rings - 1):
             a = base + k * 4
             b = base + (k + 1) * 4

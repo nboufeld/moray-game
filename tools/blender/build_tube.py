@@ -102,14 +102,20 @@ def add_vertex(x, y, z, color):
     return len(verts) - 1
 
 
-def exterior_paint(height01):
+def exterior_paint(height01, theta=0.0, flute=0.0, phase=0.0):
     """Calm ramp, foot to top — and deliberately no bright lip.
 
     The stand-in's ceiling (perceived 0.9 at the rim) is kept: a pale hoop on
     a dark vessel is a barrel's defining mark, and this piece exists because
     the garden wanted sponges, not cooperage.
+
+    Atelier repaint: the flute's bays sink a step where the wall pinches in
+    (same phase the geometry uses), so the lip's scallop is drawn in value
+    as well as silhouette — a ramp alone left the frill invisible from two
+    metres. Still a multiplier, still nothing above the stand-in's ceiling.
     """
-    value = perceived(0.72 + height01 * 0.2)
+    bay = 1.15 * flute * (1.0 - math.sin(theta * 7 + phase))
+    value = perceived(max(0.35, 0.72 + height01 * 0.2 - bay))
     return (value, value * 0.97, value * 0.92)
 
 
@@ -157,7 +163,7 @@ for height, radius, out, lean in TUBES:
                 px + math.cos(theta) * r,
                 py + math.sin(theta) * r,
                 pz,
-                exterior_paint(fraction),
+                exterior_paint(fraction, theta, flute, phase),
             )
 
     # Exterior bands.

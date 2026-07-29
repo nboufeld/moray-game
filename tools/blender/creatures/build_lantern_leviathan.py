@@ -38,6 +38,7 @@ from creature_common import (  # noqa: E402
     clamp,
     export_glb,
     fan_faces,
+    gauss,
     grid_faces,
     mesh_from,
     mix,
@@ -140,13 +141,18 @@ FLUKE_RINGS = 9
 FLUKE_COLS = 6
 
 #: sRGB gouache. Deep slate, but a *colour* in the shade band, never black.
-SLATE_DEEP = (0.235, 0.330, 0.455)  # spine and dorsal field
-SLATE_MID = (0.305, 0.415, 0.545)  # flanks
-VENTRAL = (0.815, 0.850, 0.825)  # pale blue-cream pleats and throat
-PLEAT_DARK = (0.560, 0.620, 0.620)  # groove shadow paint
+#: Atelier repaint: the deep slate leant violet-warm (the value key's shadow
+#: rule — cold grey-blue reads photographic), a pale rorqual blaze added
+#: along the flank divide (edge light on the silhouette line), and the eye
+#: warmed off near-black.
+SLATE_DEEP = (0.260, 0.310, 0.470)  # spine and dorsal field
+SLATE_MID = (0.320, 0.415, 0.555)  # flanks
+VENTRAL = (0.830, 0.855, 0.820)  # pale blue-cream pleats and throat
+PLEAT_DARK = (0.545, 0.600, 0.615)  # groove shadow paint
 EDGE_PALE = (0.700, 0.760, 0.760)  # fin/fluke trailing edges
-EYE = (0.120, 0.110, 0.100)
-MOUTH = (0.195, 0.255, 0.335)
+BLAZE = (0.640, 0.720, 0.730)  # the flank's lit line
+EYE = (0.170, 0.130, 0.110)
+MOUTH = (0.225, 0.245, 0.340)
 
 #: The lanterns: deep warm gold studs with a hot heart. Authored bright
 #: enough to sit in the ramp's lit band from most angles — lights, not paint.
@@ -224,6 +230,12 @@ def body_colour(s, phi_m):
     if pleat > 0.0:
         wave = 0.5 + 0.5 * math.cos(phi_m / PLEAT_PHI * math.pi * PLEAT_COUNT)
         base = mix3(base, PLEAT_DARK, pleat * (0.25 + 0.75 * wave) * PLEAT_SHADE)
+    # The rorqual blaze: a soft lifted line where flank turns into belly,
+    # sweeping from behind the pleats toward the peduncle — the painted
+    # edge light that lets a fourteen-metre silhouette read at distance.
+    blaze = gauss(phi_m, 0.615 * math.pi, 0.05 * math.pi)
+    blaze *= smoothstep(0.30, 0.48, s) * (1.0 - smoothstep(0.78, 0.94, s))
+    base = mix3(base, BLAZE, blaze * 0.6)
     # The mouth seam.
     if MOUTH_S_FROM <= s <= MOUTH_S_TO:
         seam = 1.0 - clamp(abs(phi_m - MOUTH_PHI_CENTRE) / MOUTH_PHI_WIDTH)

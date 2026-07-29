@@ -33,12 +33,14 @@ from creature_common import (  # noqa: E402
     gauss,
     grid_faces,
     mesh_from,
+    mix3,
     paint,
     parse_args,
     recalc_normals,
     render_views,
     reset_scene,
     shade_smooth,
+    smoothstep,
     stats,
     write_uvs,
 )
@@ -73,9 +75,18 @@ PROFILE = [
 
 #: sRGB. The orange is loud on purpose — the one saturated accent the garden
 #: owns, and a duller fish sank into the rose coral behind it (W-L5's note).
+#: Atelier repaint: the orange counter-shades (ember back, golden belly),
+#: the white bands shade cool toward the belly, the fins carry dark edges
+#: and the eye is a round dot instead of a quantised bar. Nothing is black:
+#: the darkest marks hold red above green.
 ORANGE = (0.93, 0.42, 0.12)
+ORANGE_BACK = (0.775, 0.295, 0.075)
+ORANGE_BELLY = (0.975, 0.545, 0.210)
 WHITE = (0.96, 0.94, 0.87)
-BLACK = (0.075, 0.065, 0.08)
+WHITE_SHADE = (0.835, 0.855, 0.895)
+BLACK = (0.095, 0.075, 0.090)
+EYE_DARK = (0.135, 0.095, 0.105)
+FIN_EDGE = (0.310, 0.135, 0.075)
 
 #: The three bands, (centre t, half-width of the white plateau). Head band
 #: through the eye, mid band under the dorsal blade's peak, peduncle band just
@@ -84,10 +95,19 @@ BLACK = (0.075, 0.065, 0.08)
 BANDS = ((0.17, 0.052), (0.47, 0.062), (0.80, 0.042))
 BLACK_RIM = 0.016
 
-#: The eye sits inside the head band, on the cheek — a dark dot per side.
-EYE_T = 0.17
-EYE_T_HALF = 0.024
-EYE_ANGLE_HALF = 0.62
+#: The eye sits inside the head band, on the upper cheek — a dark dot per
+#: side. The angular half-window is under one column spacing on purpose: on
+#: a body twice as tall as wide, three dark columns read as a bar, not an
+#: eye (the r0 turntables show exactly that).
+#: Centred exactly on the cheek column (angle π/2): a dot carried by one
+#: column reads round; spread across two it smears into a bar on a body
+#: twice as tall as wide.
+EYE_T = 0.16
+EYE_T_HALF = 0.026
+EYE_ANGLE_HALF = 0.45
+#: One full column spacing (2π/12): the dot lands exactly on the upper-cheek
+#: column, inside the head band and clear of the pectoral paddle.
+EYE_UP = math.tau / 12.0
 
 
 def section(t):
@@ -118,17 +138,32 @@ def ring_ts():
 
 def body_colour(t, angle):
     """Orange, the three black-edged white bands, and the eye's dark dot."""
-    # The eye first: it sits inside the head band and must stay dark.
-    side = min(abs(angle - math.pi / 2), abs(angle - 3 * math.pi / 2))
-    if abs(t - EYE_T) < EYE_T_HALF and side < EYE_ANGLE_HALF:
-        return BLACK
+    dorsal = 0.5 - 0.5 * math.cos(angle)  # 0 belly, 1 back
+    # The eye first: a round dot on the cheek inside the head band — the
+    # box test quantised to the ring grid and read as a vertical bar.
+    side = min(
+        abs(angle - (math.pi / 2 + EYE_UP)),
+        abs(angle - (3 * math.pi / 2 - EYE_UP)),
+    )
+    d = math.hypot((t - EYE_T) / EYE_T_HALF, side / EYE_ANGLE_HALF)
+    if d < 1.6:
+        # Blended, not stamped: one hard vertex on a 12-column body smears
+        # into a vertical bar; a graded ellipse on one column reads as a
+        # round dot, high on the cheek inside the head band.
+        band = mix3(WHITE, WHITE_SHADE, (1.0 - dorsal) * 0.35)
+        blend = 1.0 - smoothstep(0.3, 1.1, d)
+        return mix3(band, EYE_DARK, blend)
     for centre, half in BANDS:
         edge = abs(t - centre) - half
         if edge < 0.0:
-            return WHITE
+            # White shades cool toward the belly, so the band turns.
+            return mix3(WHITE, WHITE_SHADE, (1.0 - dorsal) * 0.35)
         if edge < BLACK_RIM:
             return BLACK
-    return ORANGE
+    if t > 0.975:
+        # The fan's trailing rim: a dark edge that draws the silhouette.
+        return FIN_EDGE
+    return mix3(ORANGE_BELLY, ORANGE_BACK, dorsal)
 
 
 def build():
@@ -162,7 +197,7 @@ def build():
     tail_index = len(verts)
     verts.append((0.0, TAIL_Y + 0.0008, section(1.0)[2]))
     uvs.append((0.0, 1.0))
-    colours.append(ORANGE)
+    colours.append(FIN_EDGE)
     faces += fan_faces(list(range((RINGS - 1) * COLS, RINGS * COLS)), tail_index)
 
     # The dorsal blade: a thin double-sided ribbon standing on the spine from
@@ -188,8 +223,8 @@ def build():
                 verts.append((sx, y, top_z + height))
                 uvs.append((0.5, t))
                 uvs.append((0.5, t))
-                colours.append(ORANGE)
-                colours.append(ORANGE)
+                colours.append(ORANGE_BACK)
+                colours.append(mix3(ORANGE, FIN_EDGE, 0.7))
         for k in range(len(stations) - 1):
             a = base + k * 4
             b = a + 4
@@ -215,8 +250,8 @@ def build():
             verts.append((sx, y, belly_z - height))
             uvs.append((0.5, t))
             uvs.append((0.5, t))
-            colours.append(ORANGE)
-            colours.append(ORANGE)
+            colours.append(ORANGE_BELLY)
+            colours.append(mix3(ORANGE, FIN_EDGE, 0.6))
     for k in range(len(anal) - 1):
         a = base + k * 4
         b = a + 4
@@ -233,7 +268,7 @@ def build():
         centre_index = len(verts)
         verts.append(root)
         uvs.append((0.5, 0.24))
-        colours.append(ORANGE)
+        colours.append(ORANGE_BACK)
         ring = []
         for k in range(6):
             a = math.tau * k / 6
@@ -246,7 +281,7 @@ def build():
                 )
             )
             uvs.append((0.5, 0.24))
-            colours.append(ORANGE)
+            colours.append(ORANGE_BELLY)
             ring.append(len(verts) - 1)
         faces += fan_faces(ring, centre_index)
 

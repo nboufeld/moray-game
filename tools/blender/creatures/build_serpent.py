@@ -30,6 +30,7 @@ from creature_common import (  # noqa: E402
     catmull,
     export_glb,
     fan_faces,
+    gauss,
     grid_faces,
     mesh_from,
     mix3,
@@ -99,14 +100,22 @@ FIN_SCALLOP_HZ = 9
 #: sRGB gouache. The brief's palette, value-structured: the belly is the
 #: light plane, the flank the local colour, the spine a step deeper, the
 #: fin a deep violet with a lifted edge so the crest reads against water.
-BELLY = (0.905, 0.870, 0.700)
-FLANK = (0.385, 0.615, 0.510)
-SPINE = (0.235, 0.440, 0.400)
-BAND = (0.205, 0.380, 0.350)
-FIN_BASE = (0.360, 0.265, 0.520)
-FIN_EDGE = (0.520, 0.400, 0.660)
-MOUTH = (0.195, 0.350, 0.320)
-EYE = (0.115, 0.105, 0.095)
+#: (Atelier repaint: the first pass's belly mask peaked at the FLANK
+#: midlines — `0.5 − 0.5·cos(2a)` is 1 at a = π/2, not at a = 0 — so the
+#: whole side read as one washed-out cream band. The masks below are stated
+#: on the folded angle so both flanks paint alike and the belly is a belly.)
+BELLY = (0.925, 0.885, 0.720)
+FLANK = (0.335, 0.575, 0.465)
+SPINE = (0.185, 0.380, 0.365)
+BAND = (0.130, 0.270, 0.295)
+RIM = (0.815, 0.870, 0.660)
+FIN_DEEP = (0.250, 0.170, 0.400)
+FIN_BASE = (0.355, 0.255, 0.520)
+FIN_EDGE = (0.640, 0.520, 0.780)
+MOUTH = (0.265, 0.205, 0.230)
+EYE = (0.200, 0.135, 0.165)
+BROW = (0.905, 0.900, 0.760)
+SNOUT = (0.505, 0.680, 0.520)
 
 
 def body_radius(s):
@@ -167,21 +176,34 @@ def build():
             a = math.tau * j / COLS
             verts.append(body_point(s, a))
             uvs.append(body_uv(s, a))
-            belly = 0.5 - 0.5 * math.cos(a * 2.0)  # 1 belly, 0 spine
-            dorsal = smoothstep(0.55 * math.pi, 0.95 * math.pi, a)
-            base = mix3(mix3(FLANK, SPINE, dorsal), BELLY, belly * belly)
-            # Painted saddles: soft deeper marks along the back, fading on
-            # the flanks and gone from the belly — value, not pattern noise.
+            # Folded angle: 0 at the belly, 1 at the dorsal spine, mirrored —
+            # every mask below paints both flanks identically.
+            f = (a if a <= math.pi else math.tau - a) / math.pi
+            belly = 1.0 - smoothstep(0.16, 0.52, f)
+            dorsal = smoothstep(0.50, 0.88, f)
+            base = mix3(mix3(FLANK, SPINE, dorsal), BELLY, belly)
+            # Painted saddles: deeper marks draped over the back and partway
+            # down the flank — value, not pattern noise. They reach further
+            # down than the spine band so the side view carries them too.
             saddle = 0.5 + 0.5 * math.sin(s * 7.0 * math.tau + 0.9)
-            saddle = smoothstep(0.58, 0.90, saddle) * dorsal * (1.0 - belly)
-            colours.append(mix3(base, BAND, saddle * 0.75))
+            saddle = smoothstep(0.52, 0.88, saddle) * smoothstep(0.34, 0.62, f)
+            base = mix3(base, BAND, saddle * 0.72)
+            # Edge light on the silhouette line: a thin lifted stripe where
+            # flank turns into belly, the painter's rim that separates the
+            # light plane from the local colour at a glance.
+            rim = gauss(f, 0.24, 0.055) * (1.0 - smoothstep(0.86, 0.97, s))
+            base = mix3(base, RIM, rim * 0.55)
+            # The head runs a touch warmer and lighter than the trunk — a
+            # face is where the eye lands first.
+            base = mix3(base, SNOUT, (1.0 - smoothstep(0.02, 0.15, s)) * (1.0 - belly) * 0.6)
+            colours.append(base)
             add_weights(len(verts) - 1, s)
     faces += grid_faces(RINGS, COLS)
 
     snout = len(verts)
     verts.append((0.0, -Y_HEAD - 0.012, 0.004))
     uvs.append((0.25, 0.0))
-    colours.append(FLANK)
+    colours.append(mix3(FLANK, SNOUT, 0.6))
     add_weights(snout, 0.0)
     faces += fan_faces(list(range(0, COLS)), snout)
 
@@ -196,17 +218,28 @@ def build():
     # Face: a soft dark eye oval per cheek (the turtle's vertex trick, an
     # oval of rings so at x9 scale the eye is a kind oval rather than a
     # dot), set just above the flank midline, mirrored across the spine.
-    # A faint mouth seam runs the lower flank of the head.
+    # Painted as a blended oval rather than a stamped box — the stamped box
+    # quantised to the ring grid and read as a black zigzag. A pale brow arc
+    # sits above each eye so the face has a lit plane against the dark.
     EYE_AZ = (0.62 * math.pi, 1.38 * math.pi)
+    EYE_S = 0.085
     for i in range(RINGS):
         s = i / (RINGS - 1)
         for j in range(COLS):
             a = math.tau * j / COLS
             index = i * COLS + j
             for centre in EYE_AZ:
-                da = abs(a - centre)
-                if da < 0.11 * math.pi and 0.058 < s < 0.112:
-                    colours[index] = EYE
+                da = (a - centre) / (0.085 * math.pi)
+                ds = (s - EYE_S) / 0.026
+                d = math.hypot(da, ds)
+                if d < 1.6:
+                    t = 1.0 - smoothstep(0.75, 1.35, d)
+                    colours[index] = mix3(colours[index], EYE, t)
+                # The brow: a lifted crescent hugging the eye's upper rim.
+                db = math.hypot((a - centre) / (0.11 * math.pi), (s - EYE_S) / 0.036)
+                above = 1.0 if (centre < math.pi and a > centre) or (centre > math.pi and a < centre) else 0.0
+                brow = gauss(db, 1.45, 0.28) * above
+                colours[index] = mix3(colours[index], BROW, brow * 0.7)
             side = abs(math.sin(a))
             if side > 0.94 and 0.030 < s < 0.075:
                 if 0.42 * math.pi < a < 0.58 * math.pi or 1.42 * math.pi < a < 1.58 * math.pi:
@@ -225,16 +258,20 @@ def build():
         # The scallop grows in over the fin's first fifth — a cold sine at
         # the leading edge put a kink in the crest where it left the neck.
         grow = smoothstep(FIN_PROFILE[0][0], FIN_PROFILE[0][0] + 0.09, s)
-        scallop = 1.0 + 0.16 * grow * math.sin(s * FIN_SCALLOP_HZ * math.tau)
+        crest = 0.5 + 0.5 * math.sin(s * FIN_SCALLOP_HZ * math.tau)
+        scallop = 1.0 + 0.16 * grow * (crest * 2.0 - 1.0)
         y = -Y_HEAD + LENGTH * s
         base_i = len(verts)
         verts.append((0.0, y, base_z))
         uvs.append((0.5, s))
-        colours.append(FIN_BASE)
+        # The membrane roots into shadow where it leaves the back; the bays
+        # between scallop crests sink a step deeper than the crests, so the
+        # fin carries three values instead of one flat violet.
+        colours.append(mix3(FIN_DEEP, FIN_BASE, 0.22 + 0.28 * crest))
         tip_i = len(verts)
         verts.append((0.0, y, base_z + height * scallop))
         uvs.append((0.52, s))
-        colours.append(mix3(FIN_BASE, FIN_EDGE, 0.85))
+        colours.append(mix3(mix3(FIN_BASE, FIN_DEEP, 0.6 * (1.0 - crest)), FIN_EDGE, 0.32 + 0.62 * crest))
         add_weights(base_i, s)
         add_weights(tip_i, s)
         fin.append((base_i, tip_i))
@@ -259,11 +296,11 @@ def build():
             lead = len(verts)
             verts.append((x, y + chord, z))
             uvs.append((0.5, 0.2 + 0.6 * t))
-            colours.append(FIN_BASE)
+            colours.append(mix3(FIN_DEEP, FIN_BASE, 0.35 + 0.5 * t))
             trail = len(verts)
             verts.append((x, y - chord * 0.7, z))
             uvs.append((0.52, 0.2 + 0.6 * t))
-            colours.append(mix3(FIN_BASE, FIN_EDGE, 0.5 + 0.4 * t))
+            colours.append(mix3(FIN_BASE, FIN_EDGE, 0.35 + 0.55 * t))
             add_weights(lead, 0.205)
             add_weights(trail, 0.205)
             stations.append((lead, trail))
