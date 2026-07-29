@@ -151,8 +151,9 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // The Glass Reach: pale fins and the Fused Arch.
   { name: "glass-reach", u: 378, v: -56, lift: 2.6, atU: GLASS.u + 4, atV: GLASS.v - 2, pitch: 0.03 },
   // The Hourglass from its lip: composing DOWN into the chasm — the
-  // ring of sandfalls, the terraces, the violet deep.
-  { name: "hourglass-lip", u: 410, v: 4, lift: 2.4, atU: HOURGLASS.u, atV: HOURGLASS.v, pitch: -0.42, settle: 5 },
+  // ring of sandfalls, the terraces, the violet deep. The stand point
+  // sits BETWEEN two falls (round 1 stood inside fall 7's own veil).
+  { name: "hourglass-lip", u: 405, v: 17, lift: 3.0, atU: HOURGLASS.u, atV: HOURGLASS.v, pitch: -0.5, settle: 5 },
   // From a terrace inside: composing UP out of it — falls overhead,
   // the lip's ring of light.
   { name: "hourglass-deep", u: 437, v: 22, lift: 2.4, atU: 478, atV: 46, pitch: 0.65, settle: 6 },
@@ -199,11 +200,13 @@ export const GOLDEN_1: RegionDef = {
   mood: {
     // Honey-gold water: the hook multiplies in LINEAR space, where the
     // base water is (0.086, 0.443, 0.494) — the Smoulder's measured
-    // lesson. Red 3.3 buys (0.284, …); green is held just under it and
-    // blue cut hard, so the product (0.284, 0.266, 0.148) is the warm
-    // gold the whole palette keys to. Density is kept low: a desert's
-    // first property is that you can see a long way across it.
-    fog: { colorScale: [3.3, 0.6, 0.3], densityGain: 0.0045, backdropFade: 0.42 },
+    // lesson. Red 3.6 buys (0.31, …); green is held just under it and
+    // blue cut hard, so the product (0.31, 0.257, 0.128) is the warm
+    // gold the whole palette keys to. Round 1 ran density 0.0045 for
+    // "vast" and learned the Smoulder's warm sky is mostly *fog*: at
+    // low density the cyan backdrop dominates every frame above eye
+    // level. 0.007 keeps ~70 m of vista and owns the sky.
+    fog: { colorScale: [3.6, 0.58, 0.26], densityGain: 0.007, backdropFade: 0.5 },
     light: { sun: 0.26, hemisphere: 0.26, ambient: 0.13 },
   },
   moodSurface: 20,

@@ -177,7 +177,7 @@ function saddleHeight(x: number, z: number, u: number, v: number): number {
   // dune ocean, small enough for the sheets to carry.
   const duneling =
     Math.max(0, Math.sin(u * 0.21 + Math.sin(v * 0.18) * 1.3)) *
-    0.55 *
+    0.9 *
     smoothstep01((u - 110) / 60);
   const detail =
     (fbm(x * 0.02, z * 0.02, { seed: SEED ^ 0xd0e1, period: 8, octaves: 2 }) - 0.5) * 0.6;
@@ -200,8 +200,12 @@ export const FLATS = { u: 528, v: 84, radius: 74 } as const;
 export const DUNE_FLOOR = -3.2;
 /** The Hourglass's authored floor — the region's deepest breath. */
 export const HOURGLASS_FLOOR = -27.5;
-/** The terrace step the chasm's ledges are benched to. */
-export const TERRACE_STEP = 3.0;
+/**
+ * The terrace step the chasm's ledges are benched to. Round 1 ran 3.0
+ * and the ~3.5 m treads dissolved on the 2.2 m ground grid; 4.2 keeps
+ * six ledges and lets each one survive sampling.
+ */
+export const TERRACE_STEP = 4.2;
 /** Dune rank wavelength along the spoke. */
 export const RANK_WAVELENGTH = 46;
 
@@ -260,9 +264,10 @@ export function duneRank(u: number, v: number): { rise: number; slip: number } {
   const bow = 16 * Math.sin(v * 0.017 + 0.9) + 7 * Math.sin(v * 0.041 + 2.2);
   const phase = (u + bow) / RANK_WAVELENGTH;
   const s = phase - Math.floor(phase);
-  // Long windward rise to a crest at 0.72; the slip-face falls in 0.28.
+  // Long windward rise to a crest at 0.72; the slip-face falls in 0.2 —
+  // steepened in round 2, where the ranks read as gentle swells.
   const rise = smoothstep01(s / 0.72);
-  const fall = 1 - smoothstep01((s - 0.72) / 0.26);
+  const fall = 1 - smoothstep01((s - 0.72) / 0.2);
   const crescent =
     0.3 +
     0.7 *
@@ -302,7 +307,7 @@ function discHeight(x: number, z: number, u: number, v: number): number {
   const shore = shoreWeight(u);
   const calm = Math.max(hg, glass * 0.9, oasis, flats * 0.85, shore);
   const rank = duneRank(u, v);
-  h += rank.rise * 5.2 * (1 - calm);
+  h += rank.rise * 7.0 * (1 - calm);
 
   // The Glass Reach: fused trench grooves, smooth and pale.
   if (glass > 0) {
@@ -350,7 +355,7 @@ function discHeight(x: number, z: number, u: number, v: number): number {
     const bowl =
       hourglassProfile(d) +
       (fbm(x * 0.03, z * 0.03, { seed: SEED ^ 0x40a1, period: 9, octaves: 2 }) - 0.5) *
-        0.5 *
+        0.35 *
         smoothstep01((46 - d) / 8);
     if (d < 46) {
       h += hg * (DUNE_FLOOR * (1 - smoothstep01((46 - d) / 10)) + bowl - h);

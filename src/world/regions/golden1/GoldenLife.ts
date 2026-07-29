@@ -307,7 +307,8 @@ function buildSlipFaceShoal(): {
   const offsets: { lateral: number; phase: number; scale: number }[] = [];
   for (let i = 0; i < count; i++) {
     offsets.push({
-      lateral: random.signed(0.6),
+      // Tightened in round 2: at ±0.6 the ribbon read as scattered dots.
+      lateral: random.signed(0.35),
       phase: random.range(0, Math.PI * 2),
       scale: random.range(0.8, 1.2),
     });
@@ -318,7 +319,7 @@ function buildSlipFaceShoal(): {
     mesh.instanceColor.needsUpdate = true;
   }
 
-  const bodySpan = 0.42;
+  const bodySpan = 0.5;
   const dummy = new Object3D();
   const at = new Vector3();
   const ahead = new Vector3();
@@ -326,13 +327,13 @@ function buildSlipFaceShoal(): {
   const up = new Vector3(0, 1, 0);
 
   const update = (_dt: number, time: number, calm: number): void => {
-    const head = (time * calm * 0.02) % 1;
+    const head = (time * calm * 0.014) % 1;
     for (const [i, o] of offsets.entries()) {
       const s = (((head - (i / count) * bodySpan) % 1) + 1) % 1;
       path.getPointAt(s, at);
       path.getPointAt((s + 0.004) % 1, ahead);
       side.subVectors(ahead, at).cross(up).normalize();
-      const swing = Math.sin(time * calm * 1.6 + i * 0.35 + o.phase * 0.2) * 0.3;
+      const swing = Math.sin(time * calm * 1.6 + i * 0.35 + o.phase * 0.2) * 0.18;
       at.addScaledVector(side, o.lateral + swing);
       at.y += Math.sin(time * calm * 1.2 + i * 0.24) * 0.2;
       dummy.position.copy(at);
@@ -360,14 +361,16 @@ function eelGeometry(): BufferGeometry {
   for (let i = 0; i < position.count; i++) {
     const y = position.getY(i);
     const bow = smoothstep01((y - 0.62) / 0.38);
-    position.setX(i, position.getX(i) + bow * bow * 0.16);
-    position.setY(i, y - bow * bow * 0.05);
+    position.setX(i, position.getX(i) + bow * bow * 0.12);
+    position.setY(i, y - bow * bow * 0.04);
   }
   position.needsUpdate = true;
 
   const colors = new Float32Array(position.count * 3);
-  const body = new Color(0xe8d6a8);
-  const band = new Color(0x8a7460);
+  // Held above the sand's value: round 1's eels read as black cutouts
+  // under the quarter-strength sun.
+  const body = new Color(0xf6e6ba);
+  const band = new Color(0xb59c78);
   const shade = new Color();
   for (let i = 0; i < position.count; i++) {
     const y = position.getY(i);
@@ -422,14 +425,19 @@ function buildGardenEels(): {
         y: seabedHeight(x, z) - 0.02,
         z,
         yaw: random.range(0, Math.PI * 2),
-        height: random.range(0.55, 0.95),
+        height: random.range(0.7, 1.15),
         phase: random.range(0, Math.PI * 2),
         shy: 1,
       });
     }
   }
 
-  const material = createToonMaterial({ vertexColors: true, side: DoubleSide });
+  const material = createToonMaterial({
+    vertexColors: true,
+    side: DoubleSide,
+    emissive: 0x8a6a40,
+    emissiveIntensity: 0.35,
+  });
   const mesh = new InstancedMesh(eelGeometry(), material, eels.length);
   mesh.name = "hourglass-garden-eels";
   mesh.castShadow = false;
@@ -573,7 +581,7 @@ function buildRayCaravan(): {
   const tint = new Color();
   const scales: number[] = [];
   for (let i = 0; i < count; i++) {
-    scales.push(random.range(2.6, 3.4));
+    scales.push(random.range(3.2, 4.2));
     tint.setScalar(random.range(0.9, 1.08));
     mesh.setColorAt(i, tint);
   }
@@ -589,10 +597,10 @@ function buildRayCaravan(): {
 
   const update = (_dt: number, time: number, calm: number): void => {
     sway.value = time * calm;
-    // The 0.02 head start puts the file on the framed leg of the loop
-    // during a capture's settle window; the loop is long enough that a
-    // wandering player still meets them somewhere new.
-    const head = (0.02 + time * calm * 0.0045) % 1;
+    // Slowed to a stately ~1 m/s in round 2 (the round-1 caravan crossed
+    // its framed leg before any capture could settle); the head start
+    // puts the file on that leg through the whole settle window.
+    const head = (0.05 + time * calm * 0.002) % 1;
     for (let i = 0; i < count; i++) {
       const s = (((head - (i / count) * fileSpan) % 1) + 1) % 1;
       path.getPointAt(s, at);

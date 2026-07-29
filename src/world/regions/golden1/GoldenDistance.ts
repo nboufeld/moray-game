@@ -42,11 +42,12 @@ interface DuneLayer {
 }
 
 const LAYERS: readonly DuneLayer[] = [
-  // Gold near…
-  { radius: 246, ridgeBase: 5, ridgeVary: 2.6, fade: 0.42, ink: new Color(0.88, 0.74, 0.5) },
-  { radius: 264, ridgeBase: 8, ridgeVary: 3.4, fade: 0.6, ink: new Color(0.76, 0.62, 0.6) },
+  // Gold near… Grown and darkened in round 2: the round-1 lines were
+  // low pale strips that vanished against the shelf.
+  { radius: 246, ridgeBase: 8, ridgeVary: 3.4, fade: 0.34, ink: new Color(0.86, 0.7, 0.46) },
+  { radius: 264, ridgeBase: 12, ridgeVary: 4.6, fade: 0.52, ink: new Color(0.74, 0.58, 0.58) },
   // …violet far.
-  { radius: 286, ridgeBase: 12, ridgeVary: 4.4, fade: 0.74, ink: new Color(0.66, 0.52, 0.68) },
+  { radius: 286, ridgeBase: 17, ridgeVary: 5.8, fade: 0.66, ink: new Color(0.62, 0.48, 0.68) },
 ];
 
 const SEGMENTS = 220;
@@ -105,9 +106,12 @@ export function buildGoldenDistance(): { meshes: (Mesh | InstancedMesh)[] } {
   // bands, crossed blades so they read from every azimuth. Standing
   // stones are the one shape whose honest silhouette IS a bare vertical
   // taper — the pilots' card lessons applied from the start.
+  // Shrunk in round 2: the round-1 giants (up to 30 m) poked over the
+  // Hourglass's rim from the lip pose — chimneys on a roof. At these
+  // heights the cards stay within the dune lines' own band.
   for (const [band, spec] of [
-    { rFrom: 242, rTo: 256, count: 9, fade: 0.5, hMin: 14, hMax: 24, ink: new Color(0.7, 0.56, 0.64) },
-    { rFrom: 262, rTo: 282, count: 7, fade: 0.68, hMin: 18, hMax: 30, ink: new Color(0.64, 0.5, 0.68) },
+    { rFrom: 244, rTo: 256, count: 5, fade: 0.44, hMin: 10, hMax: 15, ink: new Color(0.7, 0.56, 0.64) },
+    { rFrom: 262, rTo: 282, count: 4, fade: 0.62, hMin: 13, hMax: 19, ink: new Color(0.64, 0.5, 0.68) },
   ].entries()) {
     const material = new MeshBasicMaterial({
       color: new Color(0x74605c),
@@ -208,7 +212,9 @@ function duneRing(layer: DuneLayer, noiseSeed: number): BufferGeometry {
       column = 0;
       continue;
     }
-    const end = smoothstep01((off - GAP_HALF) / 0.55);
+    // A long taper: shorter ramps stood at the gap's edge as flat-topped
+    // blocks that read as buildings (round 1, oasis and flats horizons).
+    const end = smoothstep01((off - GAP_HALF) / 0.85);
     const x = CENTER_X + Math.cos(theta) * layer.radius;
     const z = CENTER_Z + Math.sin(theta) * layer.radius;
 

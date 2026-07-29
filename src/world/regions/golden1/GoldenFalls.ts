@@ -20,7 +20,6 @@ import {
   RANK_WAVELENGTH,
   saddleChannelCenter,
   saddleChannelHalf,
-  saddleFloor,
   worldOf,
 } from "./GoldenTerrain";
 
@@ -95,9 +94,9 @@ function drawFalls(random: Random): Fall[] {
       yaw: Math.atan2(-Math.cos(phi), -Math.sin(phi)),
       topY,
       height: random.range(13, 16.5),
-      width: random.range(5.5, 8),
-      streaks: 8,
-      alpha: 0.5,
+      width: random.range(6.5, 9.5),
+      streaks: 10,
+      alpha: 0.72,
     });
   }
 
@@ -124,27 +123,31 @@ function drawFalls(random: Random): Fall[] {
       height: random.range(3.2, 4.4),
       width: random.range(7, 10),
       streaks: 3,
-      alpha: 0.38,
+      alpha: 0.5,
     });
   }
 
   // The vale falls: three, alternating walls, the wing's own scale.
+  // Hung from the *local* ground, not the channel floor — round 1 hung
+  // them from channel height and they floated mid-air off the slope.
   for (let i = 0; i < 3; i++) {
     const u = 118 + i * 56 + random.signed(6);
     const side = i % 2 === 0 ? -1 : 1;
-    const v = saddleChannelCenter(u) + side * (saddleChannelHalf(u) + 5);
+    const v = saddleChannelCenter(u) + side * (saddleChannelHalf(u) + 8);
     const { x, z } = worldOf(u, v);
-    const topY = saddleFloor(u) + random.range(2.6, 3.6);
+    const wallY = seabedHeight(x, z);
+    const foot = worldOf(u, saddleChannelCenter(u) + side * (saddleChannelHalf(u) + 1));
+    const footY = seabedHeight(foot.x, foot.z);
     falls.push({
-      cx: x,
-      cz: z,
+      cx: (x + foot.x) / 2,
+      cz: (z + foot.z) / 2,
       yaw: Math.atan2(-Math.cos(GOLDEN_SLOT.azimuth), -Math.sin(GOLDEN_SLOT.azimuth)) +
         random.signed(0.2),
-      topY,
-      height: topY - seabedHeight(x, z) + 0.4,
-      width: random.range(2.2, 3.2),
+      topY: wallY + 0.6,
+      height: Math.max(2.2, wallY + 0.6 - footY),
+      width: random.range(2.4, 3.4),
       streaks: 5,
-      alpha: 0.5,
+      alpha: 0.6,
     });
   }
 
@@ -189,7 +192,9 @@ function buildCurtains(falls: readonly Fall[]): Mesh {
         0.6 +
         0.7 * fbm(u * 2.5, index * 7.3, { seed: SEED ^ 0x5a1f, period: 3, octaves: 2 });
       const alpha = Math.min(fall.alpha, bell * envelope * streak * fall.alpha);
-      const lift = 0.8 + 0.32 * v;
+      // Brighter than the wing's: these veils must separate from sand
+      // walls of nearly their own colour at ten times the distance.
+      const lift = 0.95 + 0.4 * v;
       colors[i * 4] = FALL_CREAM.r * lift;
       colors[i * 4 + 1] = FALL_CREAM.g * lift;
       colors[i * 4 + 2] = FALL_CREAM.b * lift;

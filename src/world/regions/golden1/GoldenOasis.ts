@@ -155,21 +155,23 @@ function palmGeometry(): BufferGeometry {
   parts.push(trunk.toNonIndexed());
   trunk.dispose();
 
-  // The crown: seven straps drooping from the trunk's head.
+  // The crown: seven straps arching out and over from the trunk's head
+  // — round 1's steep hang read as a broken tripod; a palm's crown is
+  // an arc, rising before it falls.
   const crownX = 0.9;
   for (let s = 0; s < 7; s++) {
-    const strap = new PlaneGeometry(0.34, 2.6, 1, 6);
+    const strap = new PlaneGeometry(0.42, 2.8, 1, 6);
     const position = strap.attributes.position!;
     const strapColors = new Float32Array(position.count * 3);
     for (let i = 0; i < position.count; i++) {
-      const t = position.getY(i) / 2.6 + 0.5; // 0 at hang-tip, 1 at root
-      // Droop: the strap starts at the crown and bows outward and down.
-      const droop = (1 - t) * (1 - t);
+      const t = position.getY(i) / 2.8 + 0.5; // 0 at tip, 1 at root
+      const reach = 1 - t;
+      // The arc: out fast, up a little, then over and down at the tip.
       position.setXYZ(
         i,
-        position.getX(i) * (0.5 + t * 0.7),
-        (1 - t) * -1.9 + t * 0.4 - droop * 0.4,
-        0.9 * (1 - t) + droop * 0.5,
+        position.getX(i) * (0.45 + t * 0.75),
+        0.55 * Math.sin(reach * Math.PI * 0.82) - reach * reach * 1.15,
+        reach * 2.3,
       );
       shade.copy(STRAP_ROOT).lerp(STRAP_TIP, 1 - t);
       strapColors[i * 3] = shade.r;
@@ -398,8 +400,10 @@ function goldBladeTexture(): DataTexture {
   goldMap ??= buildColorTexture(32, (u, v) => {
     const fibre = 0.9 + fbm(u * 4, v, { seed: SEED ^ 0xb1ac, period: 12, octaves: 2 }) * 0.22;
     const across = 0.88 + Math.abs(u - 0.5) * 0.4;
-    const shade = (0.5 + v * 0.7) * fibre * across;
-    return [shade * OASIS_GREEN.r * 1.35, shade * OASIS_GREEN.g * 1.3, shade * OASIS_GREEN.b * 1.2];
+    // Lifted in round 2: the round-1 roots read as black cutouts under
+    // the quarter-strength sun — never black, not even by lighting.
+    const shade = (0.78 + v * 0.5) * fibre * across;
+    return [shade * OASIS_GREEN.r * 1.4, shade * OASIS_GREEN.g * 1.32, shade * OASIS_GREEN.b * 1.25];
   });
   return goldMap;
 }

@@ -42,7 +42,7 @@ export const KEEPER_SPECIES_ID = "hourglass-keeper";
 /** One circuit of the chasm, in seconds — an old, unhurried animal. */
 const LOOP_SECONDS = 72;
 /** The patrol's radius inside the chasm's 46 m bowl. */
-const PATROL_R = 26;
+const PATROL_R = 23;
 
 export interface KeeperBuild {
   readonly meshes: Mesh[];
@@ -61,7 +61,7 @@ export function buildKeeper(): KeeperBuild {
   const material = createToonMaterial({
     vertexColors: true,
     emissive: 0xf0c060,
-    emissiveIntensity: 0.5,
+    emissiveIntensity: 0.75,
   });
   applyVeinGlow(material, "hourglass-keeper");
   const mesh = new Mesh(geometry, material);
@@ -278,8 +278,9 @@ function buildKeeperBody(): BufferGeometry {
   }
   merged.computeVertexNormals();
   merged.computeBoundingSphere();
-  // Grown to a spirit: a discovery should not need a magnifying glass.
-  merged.scale(1.9, 1.9, 1.9);
+  // Grown to a spirit: a discovery should not need a magnifying glass
+  // (2.4 after round 1 lost it entirely in both deep frames).
+  merged.scale(2.4, 2.4, 2.4);
   merged.computeBoundingSphere();
   return merged;
 }

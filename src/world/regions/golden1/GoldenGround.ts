@@ -130,15 +130,18 @@ function bakeGoldenPaint(geometry: PlaneGeometry, contacts: readonly ContactPatc
 
     // The dune gold, drawn at two scales: pale wind-laid drift ribbons
     // over a darker grain. Blue is cut hard because the sand wash under
-    // it is already warm — the gold arrives by ratio, not by raising red.
+    // it is already warm — the gold arrives by ratio, not by raising
+    // red. Round 1's ±0.12 mottle did nothing; a drawing needs range.
     const ribbons = smoothstep01((drift(x, z) - 0.46) / 0.24);
     const grains = smoothstep01((grain(x, z) - 0.58) / 0.2);
-    let r = 1.0 + ribbons * 0.12 - grains * 0.14;
-    let g = 0.9 + ribbons * 0.12 - grains * 0.14;
-    let b = 0.52 + ribbons * 0.08 - grains * 0.04;
+    let r = 1.04 + ribbons * 0.16 - grains * 0.2;
+    let g = 0.92 + ribbons * 0.16 - grains * 0.2;
+    let b = 0.44 + ribbons * 0.1 - grains * 0.05;
+    value += ribbons * 0.06 - grains * 0.08;
 
     // The slip-faces: every dune's lee wears the violet shadow. This is
-    // the desert's whole value structure in one term.
+    // the desert's whole value structure in one term — at full strength
+    // (round 1 ran it at 0.8 and the ranks read as beige swells).
     const rank = duneRank(u, v);
     const calm = Math.max(
       hourglassWeight(u, v),
@@ -148,13 +151,13 @@ function bakeGoldenPaint(geometry: PlaneGeometry, contacts: readonly ContactPatc
       shoreWeight(u),
     );
     const slip = rank.slip * (1 - calm) * (u > 250 ? 1 : 0.4);
-    r += (0.6 - r) * slip * 0.8;
-    g += (0.48 - g) * slip * 0.8;
-    b += (0.84 - b) * slip * 0.8;
-    value -= slip * 0.14;
+    r += (0.52 - r) * slip;
+    g += (0.4 - g) * slip;
+    b += (0.9 - b) * slip;
+    value -= slip * 0.2;
     // And the windward crests catch the sun.
     const crest = rank.rise * (1 - rank.slip) * (1 - calm);
-    value += crest * 0.1;
+    value += crest * 0.14;
 
     if (u < SADDLE_TO) {
       // The Dune Saddle: honey walls banded by height, the channel floor
@@ -207,32 +210,36 @@ function bakeGoldenPaint(geometry: PlaneGeometry, contacts: readonly ContactPatc
       value -= oasis * moss * 0.06;
     }
 
-    // The Singing Flats: quiet pale gold — and each monolith's long
-    // violet shadow, thrown along the region's one painted low sun.
+    // The Singing Flats: quiet pale gold, striped with the same ripple
+    // the terrain carries (so the "ripple-plain" reads in paint as well
+    // as relief) — and each monolith's long violet shadow, thrown along
+    // the region's one painted low sun.
     const flats = flatsWeight(u, v);
     if (flats > 0) {
-      r += (1.02 - r) * flats * 0.55;
-      g += (0.94 - g) * flats * 0.55;
-      b += (0.6 - b) * flats * 0.55;
+      const stripe = Math.sin(u * 0.62 + Math.sin(v * 0.11) * 2.0);
+      r += (1.04 - r) * flats * 0.55;
+      g += (0.96 - g) * flats * 0.55;
+      b += (0.58 - b) * flats * 0.55;
+      value += flats * stripe * 0.05;
       let shadow = 0;
       for (const m of MONOLITHS) {
         const du = u - m.u;
         const dv = v - m.v;
         const along = du * SHADOW_DIR_U + dv * SHADOW_DIR_V;
-        if (along < -1.5 || along > m.shadow) {
+        if (along < -1.5 || along > m.shadow * 1.3) {
           continue;
         }
         const perp = Math.abs(du * SHADOW_DIR_V - dv * SHADOW_DIR_U);
-        const width = 1.6 + (along / m.shadow) * 2.4;
+        const width = 1.2 + (along / m.shadow) * 2.4;
         const across = 1 - smoothstep01((perp - width * 0.4) / (width * 0.6));
-        const fade = 1 - smoothstep01((along / m.shadow - 0.55) / 0.45);
+        const fade = 1 - smoothstep01((along / (m.shadow * 1.3) - 0.5) / 0.5);
         shadow = Math.max(shadow, across * fade);
       }
       shadow *= flats;
-      r += (0.58 - r) * shadow * 0.85;
-      g += (0.46 - g) * shadow * 0.85;
-      b += (0.82 - b) * shadow * 0.85;
-      value -= shadow * 0.16;
+      r += (0.5 - r) * shadow;
+      g += (0.4 - g) * shadow;
+      b += (0.88 - b) * shadow;
+      value -= shadow * 0.2;
     }
 
     // The Hourglass: terrace treads sunlit gold near the lip fading to
@@ -247,19 +254,23 @@ function bakeGoldenPaint(geometry: PlaneGeometry, contacts: readonly ContactPatc
         const frac = raw / TERRACE_STEP - Math.floor(raw / TERRACE_STEP);
         const rim = smoothstep01((frac - 0.68) / 0.14);
         const riser = smoothstep01((frac - 0.4) / 0.2) * (1 - rim);
-        const depthT = smoothstep01(-y / 24);
+        const depthT = smoothstep01(-y / 26);
         const theta = Math.atan2(v - HOURGLASS.v, u - HOURGLASS.u);
         const run = smoothstep01(
-          (fbm(theta * 2.4, d * 0.05, { seed: SEED ^ 0x40a3, period: 5, octaves: 2 }) - 0.6) / 0.14,
+          (fbm(theta * 2.4, d * 0.05, { seed: SEED ^ 0x40a3, period: 5, octaves: 2 }) - 0.58) / 0.14,
         );
         const nearFloor = 1 - smoothstep01((d - 6) / 18);
-        const tr = 0.98 - depthT * 0.4 + rim * 0.4 - riser * 0.3 + run * (0.3 + nearFloor * 0.3);
-        const tg = 0.86 - depthT * 0.42 + rim * 0.38 - riser * 0.32 + run * (0.2 + nearFloor * 0.18);
-        const tb = 0.56 + depthT * 0.34 + rim * 0.22 + riser * 0.06 - run * 0.1;
+        // Round 2: the bowl read as one smooth tone — the ledge rims are
+        // now the brightest painted value in the region, the risers and
+        // the deep go firmly violet, and the gold sand-runs stay lit all
+        // the way down to the drain.
+        const tr = 1.02 - depthT * 0.5 + rim * 0.5 - riser * 0.4 + run * (0.4 + nearFloor * 0.3);
+        const tg = 0.9 - depthT * 0.52 + rim * 0.46 - riser * 0.42 + run * (0.28 + nearFloor * 0.18);
+        const tb = 0.52 + depthT * 0.44 + rim * 0.24 + riser * 0.1 - run * 0.12;
         r += (tr - r) * inBowl;
         g += (tg - g) * inBowl;
         b += (tb - b) * inBowl;
-        value += inBowl * (rim * 0.2 + run * 0.12 - riser * 0.1 - depthT * 0.1);
+        value += inBowl * (rim * 0.26 + run * 0.14 - riser * 0.14 - depthT * 0.12);
       } else {
         // The sand-lip ring: the brightest resting gold — the desert
         // leaning over its own drain.
