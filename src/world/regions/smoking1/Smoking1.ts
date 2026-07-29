@@ -192,11 +192,12 @@ export const SMOKING_1: RegionDef = {
 
   mood: {
     // Warm charcoal-amber water: red held highest, blue taken hardest.
-    // Rounds 1–2 measured the polite versions as bowl-cyan and then
-    // olive: the base water's green (0.70) outvotes its red (0.33) at
-    // any red scale below one, so the scale *raises* red — the product
-    // (0.42, 0.35, 0.29) is the warm grey the whole palette keys to.
-    fog: { colorScale: [1.3, 0.5, 0.4], densityGain: 0.011, backdropFade: 0.5 },
+    // Three rounds of measurement bought this scale: the hook multiplies
+    // in LINEAR space, where the base water is (0.086, 0.443, 0.494) —
+    // red is an eighth of green, so a "warm" scale below one is a
+    // rounding error. 3.2 on red is what "red above green" costs here;
+    // the product (0.28, 0.23, 0.18) is the warm grey the palette keys to.
+    fog: { colorScale: [3.2, 0.52, 0.36], densityGain: 0.011, backdropFade: 0.5 },
     light: { sun: 0.22, hemisphere: 0.3, ambient: 0.16 },
   },
   moodSurface: 20,
