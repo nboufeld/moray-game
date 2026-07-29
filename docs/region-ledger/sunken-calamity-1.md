@@ -113,13 +113,15 @@ its head.
 
 ## Budgets (measured programmatically; tests/regionCalamity1.test.ts holds the caps)
 
-**77 draw calls, 188,869 triangles, 487 colliders** at first full draft.
-Ground: 4 disc tiles (231 m, 104 segs ≈ 2.2 m/vertex, trimmed to rc ≤ 240)
-+ 2 march sheets (≈ 2.5 m/vertex, trimmed to the tongue band, overlapping
-each other and the disc tiles and sunk 4 cm — the pilot's round-2 seam
-fix). Kelp is merged area chunks for frustum culling; everything repeated
-is instanced (teeth, amphorae, worms, mats, stars, urchins, crabs, fish,
-distance cards).
+**78 draw calls, 210,609 triangles, 514 colliders** at close (fallback
+build measured — the sculpted Gardener swaps 604 GLB triangles for the
+stand-in's ~700 when it arrives, a wash). Ground: 4 disc tiles (231 m,
+104 segs ≈ 2.2 m/vertex, trimmed to rc ≤ 240) + 2 march sheets
+(≈ 2.5 m/vertex, trimmed to the tongue band, overlapping each other and
+the disc tiles and sunk 4 cm — the pilot's round-2 seam fix). Kelp is
+merged area chunks for frustum culling; everything repeated is instanced
+(teeth, amphorae, worms, mats, stars, urchins, crabs, fish, distance
+cards).
 
 **Deviation flagged:** the mandate's ~1.2 m/vertex ground pitch would
 alone cost ~210k triangles over this disc; 2.2–2.5 m/vertex is the trade
@@ -236,20 +238,38 @@ thesis in one image — lilac keeper, gold pile, green behind, grey around.
 Detail: full-set review — all 15 poses compose; none reads empty, flat,
 or unpainted.
 
-### Round 5 (`calamity-r5`) — the Gardener arrives
+### Round 5 (`calamity-r5` → `calamity-final`) — the Gardener arrives
 
 Round 4's set predated the Drowned Gardener (the sculpted set-piece
 landed after the round started). Round 5 adds `the-gardener` pose and
-recaptures the set with the statue on the road.
+recaptures the set with the statue on the road: the pale robed figure
+lies across the blast road, hood toward the terrace, arm still raised,
+moss on its up-facing stone — the saddest, most storybook thing in the
+march, and the frame holds at both fidelities (the sculpted GLB and its
+procedural stand-in are the same figure in two strokes). Final full-set
+review: all 16 poses compose; none reads empty, flat, or unpainted.
 
 ## Capture sets
 
-`calamity-r0` (ground-only smoke), `calamity-r1` … (iteration rounds),
-final tag and fallback set pending. All under `visual-qa/` as
-`*_REGION-sunken-calamity-1-<pose>_<tag>.png`. Poses: sorrow-gate,
-first-dead, shock-rings, card-house, suffocated-mile, wound-gate,
-the-reveal, shatterfield, ghost-forest, the-wound, cold-candle,
-seep-gardens, last-grove, the-shrine, quiet-rim.
+`calamity-r0` (ground-only smoke), `calamity-r1` … `calamity-r5`
+(iteration rounds), `calamity-final` (canonical 16), and
+`calamity-final-noassets` (the fallback build — every mark in the region
+is procedural except the sculpted Gardener, whose own stand-in is the
+procedural figure in broader strokes; nothing breaks). All under
+`visual-qa/` as `*_REGION-sunken-calamity-1-<pose>_<tag>.png`; the
+Gardener's turntables live in `visual-qa/atelier/`. Poses: sorrow-gate,
+first-dead, shock-rings, the-gardener, card-house, suffocated-mile,
+wound-gate, the-reveal, shatterfield, ghost-forest, the-wound,
+cold-candle, seep-gardens, last-grove, the-shrine, quiet-rim.
+
+## The no-assets build
+
+Captured under `calamity-final-noassets`: every mark in the region is
+procedural (DataTextures, vertex colours, seeded geometry) except the
+sculpted Gardener — and it carries its own procedural stand-in authored
+in the GLB's local frame, so the statue lies on the road in full
+silhouette either way. The ghost forest, the Wound, the shrine and the
+grove all hold; nothing breaks.
 
 ## Flags
 
@@ -259,3 +279,11 @@ seep-gardens, last-grove, the-shrine, quiet-rim.
 - The rim ring / march rows are invisible collider walls; near the rim
   the ceiling closes to 3.4 m to keep one row sufficient. The painted
   distance rings 40 m further out are the visual excuse.
+- The gardens' worm crowns lean salmon at the far edge of readability
+  under the grey water — the fish community's documented complement
+  illusion; measured real red present in the crowns (pushed past 1.0)
+  before accepting it.
+- A pre-existing headless-SwiftShader toon program warning (`vec4 →
+  vec3`, unnamed material) fires at game startup on the capture harness
+  — reproduced with this region's registry entry reverted; not this
+  region's code, and invisible in every captured frame.
