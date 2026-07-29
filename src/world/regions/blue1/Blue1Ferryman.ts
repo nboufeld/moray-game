@@ -184,6 +184,13 @@ function molaGeometry(): BufferGeometry {
   if (!merged) {
     throw new Error("blue1 ferryman parts could not be merged");
   }
+  // The merge was fed position-only parts (the body's own normals had to be
+  // deleted for the attribute sets to match), so the merged geometry has NO
+  // normal attribute — and `smoothNormals` silently requires one. Drawing a
+  // lit material with the normal array unbound corrupted whole frames on
+  // this driver: every pose whose render list put the Ferryman early enough
+  // rendered as one flat violet field. Face normals first, then the weld.
+  merged.computeVertexNormals();
   smoothNormals(merged);
 
   // The paint: slate back, pale belly, mottle drifts, deep-toned fins.

@@ -179,6 +179,30 @@ describe("great-blue-1 build", () => {
     expect(triangles).toBeGreaterThan(120_000);
   });
 
+  it("gives every lit mesh a finite normal attribute", () => {
+    // The Ferryman shipped once with no normals at all (a position-only
+    // merge, and `smoothNormals` silently requires an existing attribute) —
+    // and a lit draw with the normal array unbound corrupted whole frames
+    // on the capture machine's driver. Never again, for any mesh here.
+    (build.group as Object3D).traverse((node) => {
+      if (!(node instanceof Mesh) || node instanceof Points) {
+        return;
+      }
+      const material = node.material as { type?: string };
+      if (material.type !== "MeshToonMaterial" && material.type !== "MeshStandardMaterial") {
+        return;
+      }
+      const normal = node.geometry.attributes.normal;
+      expect(normal, `mesh ${node.name} has no normal attribute`).toBeDefined();
+      const array = normal!.array as Float32Array;
+      for (let i = 0; i < array.length; i++) {
+        if (!Number.isFinite(array[i])) {
+          throw new Error(`mesh ${node.name} has a non-finite normal at ${i}`);
+        }
+      }
+    });
+  });
+
   it("keeps every collider inside the domain", () => {
     expect(build.colliders.length).toBeGreaterThan(120);
     for (const collider of build.colliders) {

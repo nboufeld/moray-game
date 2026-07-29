@@ -287,6 +287,11 @@ function rayGeometry(): BufferGeometry {
     colors[i * 3 + 2] = shade.b;
   }
   geometry.setAttribute("color", new BufferAttribute(colors, 3));
+  // Face normals first — the geometry is drawn from bare positions and
+  // `smoothNormals` only rewrites an attribute that already exists. A lit
+  // mesh with no normal array bound was the Ferryman's frame-corrupting
+  // driver bug; the same trap was waiting here.
+  geometry.computeVertexNormals();
   smoothNormals(geometry);
   geometry.computeBoundingSphere();
   return geometry;
