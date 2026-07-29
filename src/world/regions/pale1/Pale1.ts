@@ -144,8 +144,8 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "gardener", u: 483, v: 19, lift: 2.4, atU: 492, atV: 26, pitch: -0.03, settle: 6 },
   // The Blooming Shelf: young gardens at full colour, the shoal above.
   { name: "blooming-shelf", u: 504, v: -38, lift: 2.8, atU: 540, atV: -60, pitch: -0.02, settle: 5 },
-  // The Seed Grove from its rim: the mother over her nursery rows.
-  { name: "seed-grove", u: 530, v: 22, lift: 2.6, atU: 558, atV: 38, pitch: -0.1, settle: 5 },
+  // The Seed Grove from inside its rim: the mother over her nursery rows.
+  { name: "seed-grove", u: 536, v: 26, lift: 2.8, atU: 558, atV: 38, pitch: -0.06, settle: 5 },
   // Under the mother's crown, looking up through the petal river's birth.
   { name: "mother-crown", u: 553, v: 33, lift: 2.0, atU: 558, atV: 38, pitch: 0.85, settle: 4 },
   // Looking back the way we came: the petal current head-on, the white

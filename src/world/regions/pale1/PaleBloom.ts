@@ -240,7 +240,7 @@ export function buildPaleBloom(archCrown: { x: number; y: number; z: number }): 
         u,
         v,
         tint: recoveryTint(nurseryRandom, 1, 0.8),
-        scale: scaleMin * nurseryRandom.range(0.38, 0.52),
+        scale: scaleMin * nurseryRandom.range(0.5, 0.66),
         yaw: nurseryRandom.range(0, Math.PI * 2),
       });
     }
@@ -611,11 +611,11 @@ function buildMother(random: Random): {
     );
   }
 
-  // The emissive whisper holds the rose against thirty metres of milk —
-  // the mother is the one thing in the region allowed to glow a little.
+  // The emissive holds the rose against thirty metres of milk — the
+  // mother is the one thing in the region allowed to truly glow.
   const mesh = mergedMesh(
     parts,
-    createToonMaterial({ vertexColors: true, emissive: 0x3a1c22, emissiveIntensity: 0.6 }),
+    createToonMaterial({ vertexColors: true, emissive: 0x552b35, emissiveIntensity: 0.85 }),
     "pale-mother-coral",
   );
   mesh.geometry.translate(at.x, foot, at.z);

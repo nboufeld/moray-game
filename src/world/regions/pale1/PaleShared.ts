@@ -61,7 +61,9 @@ export function recoveryTint(random: Random, k: number, depth = 0.88): Color {
   // The value floor sits high on purpose: a colony whose tint dips under
   // the milk's own value reads as its complement (round 2's maroon
   // tubes) — in this region even the darkest living thing stays pale.
-  const value = random.range(0.98, 1.14);
+  // Measured up again in round 4: at 0.98–1.14 the built beds rendered
+  // ~35% below the milk band's value and still read heavy.
+  const value = random.range(1.16, 1.38);
   return bone.lerp(family, smoothstep01(k) * depth).multiplyScalar(value);
 }
 

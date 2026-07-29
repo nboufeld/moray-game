@@ -52,7 +52,7 @@ interface Shaft {
 
 const SHAFTS: readonly Shaft[] = [
   // The gallery's milk-column: wide, faint, and alone.
-  { u: QUIET_GALLERY.u + 4, v: QUIET_GALLERY.v + 2, top: 18, width: 10, opacity: 0.09, warm: false },
+  { u: QUIET_GALLERY.u + 4, v: QUIET_GALLERY.v + 2, top: 18, width: 7, opacity: 0.07, warm: false },
   // The lip's thin reveal-beam.
   { u: RAVINE_LIP_U + 6, v: 0, top: 10, width: 2.0, opacity: 0.1, warm: false, inRavine: true },
   // The Blush Arch's blade.

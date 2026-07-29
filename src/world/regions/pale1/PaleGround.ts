@@ -223,7 +223,7 @@ function bakePalePaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
     // to violet-rose at the heart — depth painted as colour, never black.
     const bloom = bloomWeight(u, v) * smoothstep01((k - 0.3) / 0.4);
     if (bloom > 0) {
-      col.lerp(BED_ROSE, bloom * 0.35);
+      col.lerp(BED_ROSE, bloom * 0.28);
     }
     const grove = groveWeight(u, v);
     if (grove > 0) {

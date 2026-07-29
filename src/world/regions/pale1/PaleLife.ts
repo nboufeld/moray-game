@@ -169,7 +169,7 @@ function buildBlushDarters(): {
   update: (dt: number, time: number, calm: number) => void;
 } {
   const random = new Random(SEED ^ 0x5a11);
-  const count = 54;
+  const count = 62;
   const geometry = createFishGeometry({
     width: 0.9,
     height: 1.0,
@@ -179,12 +179,13 @@ function buildBlushDarters(): {
     pectoral: 0.9,
     tail: { reach: 1.45, lobe: 0.62, notch: 1.05 },
   });
-  // Bright and warm-rose, held above the milk's value; the emissive keeps
-  // a shaded fish its own colour under the pale key.
+  // Warm rose-gold with a real emissive: round 4's paler silver sat at
+  // the milk's own value and the whole shoal dissolved — a fish the fog
+  // can erase is a fish that is not there.
   const material = createToonMaterial({
     vertexColors: true,
-    emissive: 0x5c4048,
-    emissiveIntensity: 0.55,
+    emissive: 0x6b4438,
+    emissiveIntensity: 0.6,
   });
   const mesh = new InstancedMesh(geometry, material, count);
   mesh.name = "pale-blush-darters";
@@ -193,7 +194,7 @@ function buildBlushDarters(): {
   mesh.frustumCulled = false;
   mesh.instanceMatrix.setUsage(DynamicDrawUsage);
 
-  const silver = new Color(0xf2dcd6);
+  const silver = new Color(0xefb992);
   const offsets: { a: number; r: number; h: number; phase: number; scale: number }[] = [];
   const tint = new Color();
   for (let i = 0; i < count; i++) {
@@ -202,7 +203,7 @@ function buildBlushDarters(): {
       r: random.range(0, 1),
       h: random.signed(1),
       phase: random.range(0, Math.PI * 2),
-      scale: random.range(1.0, 1.4),
+      scale: random.range(1.2, 1.6),
     });
     tint.copy(silver).multiplyScalar(random.range(0.88, 1.06));
     mesh.setColorAt(i, tint);

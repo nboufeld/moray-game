@@ -41,9 +41,12 @@ interface ReefLayer {
   readonly fade: number;
 }
 
+// The first ring stands INSIDE the ground sheets' rc-240 trim, so its
+// curtain hides the trim's sawtooth edge (round 4's "stair-step" lines
+// at every horizon) from every low camera in the region.
 const LAYERS: readonly ReefLayer[] = [
-  { radius: 246, crestBase: 5, crestVary: 2.4, fade: 0.4 },
-  { radius: 264, crestBase: 8, crestVary: 2.8, fade: 0.58 },
+  { radius: 236, crestBase: 5, crestVary: 2.4, fade: 0.4 },
+  { radius: 262, crestBase: 8, crestVary: 2.8, fade: 0.58 },
   { radius: 286, crestBase: 11, crestVary: 3.2, fade: 0.74 },
 ];
 
@@ -116,9 +119,9 @@ export function buildPaleDistance(): { meshes: (Mesh | InstancedMesh)[] } {
   // The card bands: bone snags on the white arc, blossom mounds on the
   // coloured one, two distances each.
   const bands = [
-    { kind: "snag" as const, rFrom: 240, rTo: 254, count: 22, fade: 0.42, hMin: 9, hMax: 15 },
+    { kind: "snag" as const, rFrom: 238, rTo: 252, count: 22, fade: 0.42, hMin: 9, hMax: 15 },
     { kind: "snag" as const, rFrom: 258, rTo: 276, count: 16, fade: 0.62, hMin: 11, hMax: 17 },
-    { kind: "mound" as const, rFrom: 240, rTo: 256, count: 14, fade: 0.44, hMin: 6, hMax: 10 },
+    { kind: "mound" as const, rFrom: 238, rTo: 254, count: 14, fade: 0.44, hMin: 6, hMax: 10 },
     { kind: "mound" as const, rFrom: 260, rTo: 280, count: 10, fade: 0.64, hMin: 7, hMax: 12 },
   ];
   for (const [bandIndex, band] of bands.entries()) {
