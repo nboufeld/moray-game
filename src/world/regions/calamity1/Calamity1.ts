@@ -148,6 +148,8 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "first-dead", u: 138, v: 2, lift: 2.4, atU: 168, atV: -2, pitch: 0.04 },
   // The blast road: the shock rings standing in the sand.
   { name: "shock-rings", u: 218, v: 0, lift: 2.6, atU: 262, atV: 4, pitch: -0.06 },
+  // The Drowned Gardener: the fallen guardian on the road it walked.
+  { name: "the-gardener", u: 245, v: 1, lift: 2.4, atU: 253, atV: 5.5, pitch: -0.08, settle: 4 },
   // The Card House: the pavement slabs jumbled over the road.
   { name: "card-house", u: 296, v: -2, lift: 2.6, atU: 330, atV: 6, pitch: -0.02 },
   // The Suffocated Mile: the violet pool, the ghost traps.

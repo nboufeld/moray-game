@@ -1,15 +1,23 @@
 import {
+  BoxGeometry,
   BufferAttribute,
+  CatmullRomCurve3,
   Color,
   InstancedMesh,
   LatheGeometry,
   Matrix4,
   Mesh,
   Object3D,
+  SphereGeometry,
+  TubeGeometry,
   Vector2,
   Vector3,
   type BufferGeometry,
 } from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { buildColorTexture, fbm } from "../../../rendering/ProceduralTexture";
+import { requestModel } from "../../../rendering/AssetLibrary";
+import { smoothNormals } from "../../../rendering/SmoothNormals";
 import { createToonMaterial } from "../../../rendering/ToonShading";
 import { Random, SEEDS } from "../../../util/Random";
 import type { SphereCollider } from "../../CollisionField";
@@ -204,6 +212,46 @@ export function buildCalamityRubble(): CalamityRubbleBuild {
       radius,
       height,
       i % 3 === 0 ? paleStone : woundStone,
+    );
+  }
+
+  // ─── The Drowned Gardener ────────────────────────────────────────────────
+  // The region's hero set-piece: a toppled monumental statue of a
+  // terrace-builder lying on the blast road — the one human-shaped thing
+  // in the whole ruin, and therefore the saddest. The sculpted GLB swaps
+  // onto the same transform when it arrives; the procedural stand-in is
+  // the same figure in broader strokes, so the place exists either way.
+  {
+    const u = 252;
+    const v = 5.5;
+    const { x, z } = worldOf(u, v);
+    const y = seabedHeight(x, z);
+    const mesh = new Mesh(gardenerFallbackGeometry(), gardenerMaterial());
+    mesh.name = "calamity-drowned-gardener";
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    // Fell walking home: head back toward the terrace, face to the sky.
+    const axis = worldOf(1, 0);
+    mesh.rotation.y = Math.atan2(axis.x, axis.z) + Math.PI + 0.22;
+    mesh.rotation.z = 0.05;
+    mesh.scale.setScalar(1.35);
+    mesh.position.set(x, y, z);
+    requestModel("models/calamity-drowned-gardener.glb", (geometry) => {
+      mesh.geometry.dispose();
+      mesh.geometry = geometry;
+    });
+    meshes.push(mesh);
+    contacts.push({ x, z, radius: 3.6, strength: 0.46 });
+    colliders.push(
+      { center: new Vector3(x, y + 0.7, z), radius: 1.6 },
+      {
+        center: new Vector3(x - Math.sin(mesh.rotation.y) * 2.2, y + 0.5, z - Math.cos(mesh.rotation.y) * 2.2),
+        radius: 1.3,
+      },
+      {
+        center: new Vector3(x + Math.sin(mesh.rotation.y) * 1.4, y + 1.0, z + Math.cos(mesh.rotation.y) * 1.4),
+        radius: 1.1,
+      },
     );
   }
 
@@ -443,6 +491,123 @@ export function buildCalamityRubble(): CalamityRubbleBuild {
   );
 
   return { meshes, colliders, contacts };
+}
+
+// ─── The Drowned Gardener's stand-in ─────────────────────────────────────────
+
+/**
+ * The procedural figure: the same statue in broader strokes — robed
+ * lathe, hooded sphere, raised arm, broken plinth — authored in the
+ * GLB's own local frame (figure lying along Z, head toward +Z, pivot at
+ * the plinth's underside) so the sculpted swap never jumps. In Node and
+ * in the no-assets build this IS the statue.
+ */
+function gardenerFallbackGeometry(): BufferGeometry {
+  const parts: BufferGeometry[] = [];
+
+  const plinth = new BoxGeometry(1.7, 0.42, 2.3, 1, 1, 1);
+  plinth.translate(0, 0.21, -0.35);
+  parts.push(plinth);
+
+  const profile: Vector2[] = [];
+  for (const [radius, h] of [
+    [0.8, 0],
+    [0.74, 0.3],
+    [0.64, 0.7],
+    [0.58, 1.1],
+    [0.66, 1.5],
+    [0.63, 1.75],
+    [0.34, 1.95],
+    [0.23, 2.06],
+  ] as const) {
+    profile.push(new Vector2(radius, h));
+  }
+  const robe = new LatheGeometry(profile, 14);
+  // Standing → lying along Z, hem toward −Z, shoulders toward +Z.
+  robe.applyMatrix4(new Matrix4().makeRotationX(Math.PI / 2 + 0.08));
+  robe.translate(0, 0.62, -0.42);
+  parts.push(robe);
+
+  const head = new SphereGeometry(0.36, 12, 9);
+  head.scale(0.95, 0.9, 1.1);
+  head.translate(0, 0.68, 0.92);
+  parts.push(head);
+
+  const arm = new TubeGeometry(
+    new CatmullRomCurve3([
+      new Vector3(0.34, 0.72, 0.28),
+      new Vector3(0.52, 0.9, 0.05),
+      new Vector3(0.48, 1.22, -0.12),
+      new Vector3(0.4, 1.52, -0.16),
+    ]),
+    8,
+    0.12,
+    6,
+    false,
+  );
+  parts.push(arm);
+  const hand = new SphereGeometry(0.13, 8, 6);
+  hand.scale(0.9, 1.15, 0.9);
+  hand.translate(0.4, 1.6, -0.16);
+  parts.push(hand);
+
+  // The stand-in's paint: pale sage, moss on up-facing verts, a violet
+  // hood shadow, value mapped over the same rules the sculpted piece is
+  // painted by.
+  const sage = new Color(0x99a08e);
+  const moss = new Color(0x7a945f);
+  const recess = new Color(0x756e8a);
+  for (const part of parts) {
+    part.computeVertexNormals();
+    const position = part.attributes.position!;
+    const normal = part.attributes.normal!;
+    const colors = new Float32Array(position.count * 3);
+    const shade = new Color();
+    for (let i = 0; i < position.count; i++) {
+      const up = smoothstep01((normal.getY(i) - 0.25) / 0.6);
+      shade.copy(sage).lerp(moss, up * 0.5);
+      if (Math.hypot(position.getX(i) / 0.26, (position.getZ(i) - 1.05) / 0.3) < 1.1) {
+        shade.lerp(recess, 0.6);
+      }
+      const down = smoothstep01((-normal.getY(i) - 0.3) / 0.6);
+      shade.multiplyScalar(1 - down * 0.22);
+      colors[i * 3] = shade.r;
+      colors[i * 3 + 1] = shade.g;
+      colors[i * 3 + 2] = shade.b;
+    }
+    part.setAttribute("color", new BufferAttribute(colors, 3));
+  }
+
+  const merged = mergeGeometries(parts, false);
+  for (const part of parts) {
+    part.dispose();
+  }
+  if (!merged) {
+    throw new Error("calamity gardener stand-in parts could not be merged");
+  }
+  smoothNormals(merged);
+  merged.computeBoundingSphere();
+  return merged;
+}
+
+let gardenerMat: ReturnType<typeof createToonMaterial> | undefined;
+function gardenerMaterial(): ReturnType<typeof createToonMaterial> {
+  gardenerMat ??= createToonMaterial({
+    vertexColors: true,
+    map: gardenerGrain(),
+    emissive: 0x232019,
+    emissiveIntensity: 0.5,
+  });
+  return gardenerMat;
+}
+
+let gardenerGrainMap: ReturnType<typeof buildColorTexture> | undefined;
+function gardenerGrain(): ReturnType<typeof buildColorTexture> {
+  gardenerGrainMap ??= buildColorTexture(32, (u, v) => {
+    const grain = 0.72 + fbm(u * 3, v * 5, { seed: SEED ^ 0x9a17, period: 8, octaves: 2 }) * 0.26;
+    return [grain * 0.96, grain * 0.97, grain * 0.92];
+  });
+  return gardenerGrainMap;
 }
 
 // ─── The amphora ─────────────────────────────────────────────────────────────

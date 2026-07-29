@@ -188,6 +188,49 @@ but as *poles*: 3–6 sparse stub straps carry no canopy skeleton, and a
 dead kelp keeps its canopy's bones. Card House slabs lean properly now;
 the chimney reads from the rim. Value: the emissive floors landed — the
 First Dead One ghosts, the suffocated mile's violet pool reads, the
+Wound's terraces descend in violet. Two holdouts: the shrine's mound
+stone and the gardens' small life still cut out dark. Colour: the
+near-field sand still reads beach-warm everywhere (the wash is stronger
+than 0.62 red — the pilot paid three rounds for this lesson before me);
+the grove's plants read as dark-green scrub, not a lit grove; the
+gardens still spend no red (worms too small, crowns too small, mats
+invisible). Detail: plume improved but still dots, not a column; gleams
+sparse on a dark stone; amphora at 1.35 scale read bird-like; the Quiet
+Rim's broken skyline rings work, the cards faint.
+
+Round 3's surgery: ground red to 0.52; canopy skeletons (5–9 straps down
+the upper half + crown-skeleton rings of 4–6 long straps); shrine stone,
+gleams (×70, tighter, brighter) and Curator take their own emissive
+floors; grove clumped (two clusters) with brighter straps and emissive
+0.65; worms 1.2–2.8 with denser rings; mats 2.2–5 m with emissive;
+plume to 300; distance ink deepened.
+
+### Round 3 (`calamity-r3`) — the look lands
+
+Silhouette: the Ghost Forest *is* a dead forest now — canopy skeletons
+down the whole upper half of every giant, crown-skeleton rings, the
+radial rake reading left and right of the aisle; the Wound Gate arch
+reads; the watcher repoussoir lands the crater frame. Value: the ground
+went cool (red 0.52 — ash, not beach) and the whole region's value key
+snapped into place: pale subjects ghosting on grey-teal water, violet
+pool in the mile, violet terraces in the Wound. Colour: the shrine is
+the frame the region was written for — the mound glows pale-warm, the
+gleams pile shines, the Curator's lilac sits on top of her treasure with
+the green grove behind. The gardens still spend no red: the worm crowns
+were too small to read. Detail: the plume finally reads as a *column*
+from the cold-candle pose; gleams heap properly; amphorae pot-sized;
+Quiet Rim's broken skyline reads at the horizon.
+
+Round 4 (surgical): worm crowns → bright fountains (0.3 r, pushed past
+1.0 red); a 17 m survivor at the grove's heart; the Curator lifted onto
+her pile (0.62 → 0.78); gardens pose down into the field.
+
+Silhouette: the reveal now *reveals* — crest, causeway slabs, ghost
+ranks at the fog's edge. The dead read as a forest (pale, many, leaning)
+but as *poles*: 3–6 sparse stub straps carry no canopy skeleton, and a
+dead kelp keeps its canopy's bones. Card House slabs lean properly now;
+the chimney reads from the rim. Value: the emissive floors landed — the
+First Dead One ghosts, the suffocated mile's violet pool reads, the
 wound's terraces descend in violet. Two holdouts: the shrine's mound
 stone and the garden floor's small life still cut out dark. Colour: the
 near-field sand still reads beach-warm everywhere (the wash is stronger
