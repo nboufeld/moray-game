@@ -285,3 +285,36 @@ size; vent shrimp halved, smaller, dimmer, floor-hugging; the shoal's
 glint thread dropped (the motes are this region's sparkle); smoke-bush
 tips off pumpkin onto smoulder; spring-mat bands lifted a value and
 radii tightened to one tread.
+
+## Rework round 2 (`sm-fill-r2`) — critique
+
+All 14 authored poses (kiln-keeper clean this round) and the 12-pose
+sweep captured and READ. The mark tune-downs landed: shrimp swarms sit
+low and dim, the shoal keeps its ember body without the cold glint,
+smoke-bushes read burnt, the spring mats hold their tread and their
+value. `chimney-forest`/`forest-road`/`spring-stair`/`kiln-keeper` are
+finished pictures.
+
+### Round-2 sweep — verdict ~6–7/12
+
+PASS 04, 06, 08, 09 (the forest and its eaves carry everywhere);
+borderline-pass 05, 10, 12 (basalt country: columns + litter, near
+layer thin); FAIL 01, 02, 03, 07, 11 — the same inter-zone disc bands
+as r1, none in a registered rest. The r2 base carpet did NOT read:
+
+- **The bone-pale paint converged with the fog-lit ash floor** — the
+  exact wording of verdant-1's round-3 lesson, suffered here despite
+  quoting it: 3,000 pale cards stood on a pale ground under a warm fog
+  and vanished. What DOES read at pose height, in every frame that has
+  it, is the ash grass's dark violet silhouette.
+- Litter at 0.07–0.24 m still reads as specks past ~8 m; the gorge's
+  near field (`first-breath`, `gorge-road`) is gravel-only and bare.
+
+**Round-3 orders** (the value pass, done properly): repaint the base
+carpet INTO the dark family the region already proves — charcoal-violet
+stubble a full value BELOW the ground paint — and double it (3,000 →
+6,000 cards, 0.4–0.75 m); give the gorge its own standing stubble
+(1,100 cards on the wall feet, centre tread kept lighter so the road
+stays a road); sulfur tufts 950 → 1,300 with the flank floor raised
+0.35 → 0.45; every litter family up a size step (gorge gravel 1,500 @
+0.1–0.28, ripple/scoria 0.1–0.3, forest gravel 800 @ 0.08–0.24).

@@ -57,6 +57,7 @@ export const FILL_SEEDS = {
   sulfurTufts: 0x5f31,
   smokeBushFlats: 0x5f32,
   smokeBushForest: 0x5f33,
+  gorgeStubble: 0x5f34,
   fillRocks: 0x5f41,
   fillBasalt: 0x5f42,
   fillChimneys: 0x5f43,

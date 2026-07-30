@@ -160,12 +160,11 @@ const calderaCobbleGate: GateFn = (x, z) => {
 };
 
 /**
- * The base ash-tuft carpet (round 2, from the sweep): sparse bone-pale
- * stubble over the WHOLE disc between the named zones, so the ground
- * between flats, steps and shore is never bare by default — verdant-1's
- * "base coverage floor" lesson replayed for this register. Painted a
- * step OFF the ash ground so the cards silhouette instead of converging
- * with their own floor (its round-7 lesson, pre-empted).
+ * The base stubble carpet (round 2, from the sweep): cover over the
+ * WHOLE disc between the named zones, so the ground between flats,
+ * steps and shore is never bare by default — verdant-1's "base coverage
+ * floor" lesson replayed for this register. (Round 3 repainted it dark;
+ * see the build note.)
  */
 const baseCarpetGate: GateFn = (x, z) => {
   const { u, v } = spokeOf(x, z);
@@ -181,6 +180,23 @@ const baseCarpetGate: GateFn = (x, z) => {
 };
 
 /**
+ * The gorge's standing stubble holds the wall feet and shoulders but
+ * leaves the channel's centre tread lighter (the road stays a road);
+ * sparse at the wing seam like the gravel.
+ */
+const gorgeStubbleGate: GateFn = (x, z) => {
+  const { u, v } = spokeOf(x, z);
+  if (u < 52 || u > GORGE_TO) {
+    return 0;
+  }
+  const thicken = 0.25 + 0.75 * smoothstep01((u - 56) / 26);
+  const offCenter = Math.abs(v - gorgeChannelCenter(u));
+  const inReach = 1 - smoothstep01((offCenter - gorgeChannelHalf(u) - 6) / 7);
+  const offTread = 0.3 + 0.7 * smoothstep01((offCenter - 2.5) / 2.5);
+  return thicken * inReach * offTread * restFree(x, z);
+};
+
+/**
  * Sulfur tufts: the flats' and the rim flanks' standing near-layer. The
  * outer annulus boost is the F-R3 flank band — a rim-facing sweep pose
  * must find something standing inside its first ~35 m. Round 2 leaned
@@ -193,7 +209,7 @@ const sulfurGate: GateFn = (x, z) => {
     return 0;
   }
   const rc = Math.hypot(u - 445, v);
-  const flank = 0.35 + 0.65 * smoothstep01((rc - 105) / 50);
+  const flank = 0.45 + 0.55 * smoothstep01((rc - 105) / 50);
   const open =
     (1 - basaltWeight(u, v) * 0.7) *
     (1 - springsWeight(u, v) * 0.85) *
@@ -245,9 +261,9 @@ export function buildSmokingCarpets(stands: readonly ChimneyStand[]): SmokingCar
       area: gorgeArea(50, 290, 16),
       gate: gorgeGravelGate,
       ground: seabedHeight,
-      count: 1300,
+      count: 1500,
       shapeSet: "gravel",
-      size: [0.07, 0.2],
+      size: [0.1, 0.28],
       twoTone: true,
     }),
   );
@@ -264,7 +280,7 @@ export function buildSmokingCarpets(stands: readonly ChimneyStand[]): SmokingCar
       ground: seabedHeight,
       count: 1000,
       shapeSet: "pebble",
-      size: [0.08, 0.24],
+      size: [0.1, 0.3],
       twoTone: true,
     }),
   );
@@ -277,9 +293,9 @@ export function buildSmokingCarpets(stands: readonly ChimneyStand[]): SmokingCar
       area: shoreArea(),
       gate: scoriaGate,
       ground: seabedHeight,
-      count: 560,
+      count: 700,
       shapeSet: "gravel",
-      size: [0.08, 0.24],
+      size: [0.1, 0.3],
       twoTone: true,
     }),
   );
@@ -321,9 +337,9 @@ export function buildSmokingCarpets(stands: readonly ChimneyStand[]): SmokingCar
       area: discAreaAt(CHIMNEYS.u, CHIMNEYS.v, 60),
       gate: forestGravelGate,
       ground: seabedHeight,
-      count: 640,
+      count: 800,
       shapeSet: "gravel",
-      size: [0.06, 0.18],
+      size: [0.08, 0.24],
       twoTone: true,
     }),
   );
@@ -522,26 +538,49 @@ export function buildSmokingCarpets(stands: readonly ChimneyStand[]): SmokingCar
   );
 
   // ─── The standing near-layer ─────────────────────────────────────────────
-  // The base ash-tuft carpet: the round-2 sweep answer — bone-pale cards
-  // over the whole owned disc so no pose lands on bare ash by accident.
+  // The base cinder-stubble carpet. Round 3: the round-2 bone-pale paint
+  // CONVERGED with the fog-lit ash floor (verdant-1's round-3 lesson,
+  // suffered here in r2's sweep 01/02/03/07/11) — under this region's
+  // light the one family that reads at pose height is the ash grass's
+  // DARK violet silhouette. So the base carpet joins that family: a
+  // charcoal-violet stubble a full value below the ground paint, grown
+  // taller and doubled so the near layer holds anywhere a pose lands.
   keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.baseAshCarpet,
-      palette: { base: 0xa89aa2, tip: 0xd2c6bc, shade: 0x6e6278 },
+      palette: { base: 0x7b6c78, tip: 0x94818a, shade: 0x554a64 },
       area: discAreaAt(445, 0, 215),
       gate: baseCarpetGate,
       ground: seabedHeight,
-      count: 3000,
-      size: [0.3, 0.55],
+      count: 6000,
+      size: [0.4, 0.75],
       swayAmp: 0.035,
+    }),
+  );
+
+  // The gorge's own stubble: the channel's wall feet and shoulders wear
+  // the same dark family (the r2 first-breath/gorge-road near field was
+  // bare sand — gravel alone reads as specks from pose height). The
+  // road's centre line keeps a lighter tread so the way stays legible.
+  keep(
+    buildCarpetField({
+      seed: SEED ^ FILL_SEEDS.gorgeStubble,
+      palette: { base: 0x75656f, tip: 0x8f7a7e, shade: 0x51465e },
+      area: gorgeArea(50, 290, 26),
+      gate: gorgeStubbleGate,
+      ground: seabedHeight,
+      count: 1100,
+      size: [0.35, 0.7],
+      swayAmp: 0.03,
     }),
   );
 
   // Sulfur tufts: bone-sulfur crossed tufts over the flats, the shore and
   // the outer flank band — knee-high so a pose finds a silhouette, not
   // just paint (values a step off the ash so they never converge).
-  // Round 2: 620 → 950 and grown a hand taller — the sweep's bare bands
-  // (01/02/03/11) all stood on ground this family alone can serve.
+  // Round 2: 620 → 950 and grown a hand taller; round 3: → 1300 with a
+  // higher flank floor — the sweep's bare bands (01/02/03/11) all stood
+  // on ground this family alone can serve.
   keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.sulfurTufts,
@@ -549,7 +588,7 @@ export function buildSmokingCarpets(stands: readonly ChimneyStand[]): SmokingCar
       area: discAreaAt(445, 0, 215),
       gate: sulfurGate,
       ground: seabedHeight,
-      count: 950,
+      count: 1300,
       profile: "tuft",
       size: [0.5, 0.9],
       swayAmp: 0.045,
