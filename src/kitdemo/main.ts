@@ -1,5 +1,6 @@
 import {
   BoxGeometry,
+  BufferAttribute,
   Mesh,
   PerspectiveCamera,
   Scene,
@@ -67,17 +68,36 @@ if (demo.dark) {
   scene.backgroundIntensity = 0.25;
 }
 
-// The standard stage: sand patch, wall panel, boulder.
-const ground = new Mesh(createSeabedGeometryAt(0, 0, 40, 44), createSandMaterial());
+// The standard stage: sand patch, wall panel, boulder. The stage bakes a
+// neutral vertex-colour attribute onto anything missing one — the sand and
+// rock materials multiply vertex colours, and a geometry without them
+// renders black (Package A's flag KIT-A-F1).
+function ensureVertexColors(mesh: Mesh): Mesh {
+  const geometry = mesh.geometry;
+  if (!geometry.getAttribute("color")) {
+    const count = geometry.getAttribute("position").count;
+    const colors = new Float32Array(count * 3).fill(1);
+    geometry.setAttribute("color", new BufferAttribute(colors, 3));
+  }
+  return mesh;
+}
+
+const ground = ensureVertexColors(
+  new Mesh(createSeabedGeometryAt(0, 0, 40, 44), createSandMaterial()),
+);
 scene.add(ground);
 
-const wall = new Mesh(new BoxGeometry(14, 6, 1.2, 8, 4, 2), createRockMaterial(0x8b9184));
+const wall = ensureVertexColors(
+  new Mesh(new BoxGeometry(14, 6, 1.2, 8, 4, 2), createRockMaterial(0x8b9184)),
+);
 wall.position.set(0, 3, -10);
 scene.add(wall);
 
-const boulder = new Mesh(
-  boulderGeometry({ seed: 0x1234, radius: 1.6, height: 2.1, amount: 0.15 }),
-  createRockMaterial(0x93a089),
+const boulder = ensureVertexColors(
+  new Mesh(
+    boulderGeometry({ seed: 0x1234, radius: 1.6, height: 2.1, amount: 0.15 }),
+    createRockMaterial(0x93a089),
+  ),
 );
 boulder.position.set(-6, 0, -4);
 scene.add(boulder);
