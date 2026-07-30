@@ -137,6 +137,13 @@ const SHELL_DEEP = new Color(0x5e4c66);
 const SHELL_MID = new Color(0x8a7468);
 const RUNNEL_GOLD = new Color(0xf2cf7e);
 const BELLY_CREAM = new Color(0xe4d2ac);
+/** The shell's underside — a dusk violet, not cream. Round 7: the
+ * vein-glow multiplies the fog-free emissive by the vertex colour, so a
+ * cream belly seen from below (the hourglass-deep stand looks UP at the
+ * patrol) rendered the whole spirit as one flat neon-orange blob. Dusk
+ * below, gold spiral above: a lantern reads from the lip and a violet
+ * silhouette with warm edges reads from the floor. */
+const BELLY_DUSK = new Color(0x84688a);
 const FIN_VIOLET = new Color(0x6e5a72);
 
 function buildKeeperBody(): BufferGeometry {
@@ -176,9 +183,9 @@ function buildKeeperBody(): BufferGeometry {
       const scute =
         (fbm(theta * 1.2, r * 2.2, { seed: SEED ^ 0x5cae, period: 5, octaves: 2 }) - 0.5) * 0.24;
       shade.multiplyScalar(1 + scute);
-      // The underside goes cream.
+      // The underside goes dusk-violet (see BELLY_DUSK).
       if (y < -0.12) {
-        shade.lerp(BELLY_CREAM, smoothstep01((-y - 0.12) / 0.1) * 0.8);
+        shade.lerp(BELLY_DUSK, smoothstep01((-y - 0.12) / 0.1) * 0.8);
       }
       colors[i * 3] = shade.r;
       colors[i * 3 + 1] = shade.g;

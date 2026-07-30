@@ -91,6 +91,39 @@ export function buildGoldenDistance(): { meshes: Mesh[] } {
       transparent: true,
       depthWrite: false,
     });
+    // Round 7, toggle-proven and then traced to the camera: the "blocks"
+    // that survived every skyline retune were the FAR-PLANE CLIP. The
+    // game's camera ends at 160 m and these rings stand 246–286 m from
+    // the disc's centre, so from any stand only the near arc renders
+    // and the clip slices it off in two hard vertical edges — round 1's
+    // "flat-topped blocks", seen truly for the first time. The region
+    // may not touch the camera, so the rings dissolve THEMSELVES: alpha
+    // runs to zero across 140–157 m of camera distance, safely inside
+    // the clip, and the arc now fades into the water the way a painted
+    // distance should. Every canonical ring view (gilded-shore's three
+    // lines at 103/121/143 m) stays inside the window — the first cut
+    // (132–154) took half of the shore's far violet line.
+    material.onBeforeCompile = (shader) => {
+      shader.vertexShader = shader.vertexShader
+        .replace(
+          "#include <common>",
+          "#include <common>\nvarying float vRingDist;",
+        )
+        .replace(
+          "#include <project_vertex>",
+          "#include <project_vertex>\nvRingDist = -mvPosition.z;",
+        );
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          "#include <common>",
+          "#include <common>\nvarying float vRingDist;",
+        )
+        .replace(
+          "#include <color_fragment>",
+          "#include <color_fragment>\ndiffuseColor.a *= 1.0 - smoothstep(140.0, 157.0, vRingDist);",
+        );
+    };
+    material.customProgramCacheKey = () => "hourglass-distance-dissolve";
     const geometry = duneRing(layer, SEEDS.regionGolden1 ^ (0xd400 + index * 131));
     const mesh = new Mesh(geometry, material);
     mesh.castShadow = false;
@@ -128,6 +161,48 @@ function duneRing(layer: DuneLayer, noiseSeed: number): BufferGeometry {
   let column = 0;
 
   const gapAt = GOLDEN_SLOT.azimuth + Math.PI;
+
+  // First pass: the drawn skyline, one ridge height per column.
+  const ridges = new Float32Array(SEGMENTS + 1);
+  for (let i = 0; i <= SEGMENTS; i++) {
+    const t = i / SEGMENTS;
+    // A dune skyline: rounded crescent swells over a slow drifting
+    // base. Round 4 sharpened the crests (`pow(|sin|, 1.5)`) for
+    // variance and got a fortress — spikes over a flat base read as a
+    // crenellated wall with turrets from across the disc (proven by
+    // mesh toggle in round 4's critique). Two integer-period sines
+    // seam nowhere.
+    const roll =
+      fbm(t * 11, layer.radius * 0.013, { seed: noiseSeed, period: 11, octaves: 3 }) - 0.5;
+    const swell =
+      Math.sin(t * Math.PI * 2 * 15 + roll * 5) * 0.55 +
+      Math.sin(t * Math.PI * 2 * 4 + (noiseSeed % 7)) * 0.35;
+    // The base itself undulates over long arcs: seen near-tangent a
+    // ring's crests compress into their own max, and a constant base
+    // rules a flat line across the frame (round 5's ray-crossing).
+    const base = layer.ridgeBase * (0.82 + 0.36 * Math.sin(t * Math.PI * 2 * 3 + (noiseSeed % 5)));
+    ridges[i] = base + (roll * 1.7 + swell) * layer.ridgeVary;
+  }
+
+  // Round 7: hold the skyline to a dune's repose BY CONSTRUCTION. The
+  // `roll * 5` phase term folds the 15-cycle swell into local sawtooth
+  // cliffs (measured: 9.2 m steps over an 8.2 m column on the far
+  // ring), and a >45° run at three hundred metres reads as the vertical
+  // edge of a building — round 6's ray-crossing blocks, toggle-proven
+  // to be these rings. A two-direction relaxation plane the cliffs off
+  // and leaves every crest that already respected the slope.
+  const arc = (Math.PI * 2 * layer.radius) / SEGMENTS;
+  const maxStep = arc * 0.42;
+  for (let i = 1; i <= SEGMENTS; i++) {
+    ridges[i] = Math.min(ridges[i]!, ridges[i - 1]! + maxStep);
+  }
+  for (let i = SEGMENTS - 1; i >= 0; i--) {
+    ridges[i] = Math.min(ridges[i]!, ridges[i + 1]! + maxStep);
+  }
+  // The ring seams at t = 0 ≡ 1 (the noise is periodic), so relax the
+  // join the same way the interior columns were.
+  ridges[0] = ridges[SEGMENTS] = Math.min(ridges[0]!, ridges[SEGMENTS]!);
+
   for (let i = 0; i <= SEGMENTS; i++) {
     const theta = (i / SEGMENTS) * Math.PI * 2;
     const off = angleBetween(theta, gapAt);
@@ -143,28 +218,10 @@ function duneRing(layer: DuneLayer, noiseSeed: number): BufferGeometry {
     const x = CENTER_X + Math.cos(theta) * layer.radius;
     const z = CENTER_Z + Math.sin(theta) * layer.radius;
 
-    const t = i / SEGMENTS;
-    // A dune skyline: rounded crescent swells over a slow drifting
-    // base. Round 4 sharpened the crests (`pow(|sin|, 1.5)`) for
-    // variance and got a fortress — spikes over a flat base read as a
-    // crenellated wall with turrets from across the disc (proven by
-    // mesh toggle in round 4's critique). Two integer-period sines
-    // seam nowhere and no side ever steepens past a dune's repose.
-    const roll =
-      fbm(t * 11, layer.radius * 0.013, { seed: noiseSeed, period: 11, octaves: 3 }) - 0.5;
-    const swell =
-      Math.sin(t * Math.PI * 2 * 15 + roll * 5) * 0.55 +
-      Math.sin(t * Math.PI * 2 * 4 + (noiseSeed % 7)) * 0.35;
-    // The base itself undulates over long arcs: seen near-tangent a
-    // ring's crests compress into their own max, and a constant base
-    // rules a flat line across the frame (round 5's ray-crossing).
-    const base = layer.ridgeBase * (0.82 + 0.36 * Math.sin(t * Math.PI * 2 * 3 + (noiseSeed % 5)));
-    const ridge = base + (roll * 1.7 + swell) * layer.ridgeVary;
-
     // Three rows: opaque foot, near-opaque shoulder, transparent crest
     // — the drawn skyline survives (the perceived edge rides the fade)
     // but no hard line ever meets the water.
-    const top = FOOT + Math.max(1.4, ridge - FOOT) * end + 0.2;
+    const top = FOOT + Math.max(1.4, ridges[i]! - FOOT) * end + 0.2;
     const mid = FOOT + (top - FOOT) * 0.72;
     positions.push(x, FOOT, z, x, mid, z, x, top, z);
     colors.push(1, 1, 1, 0.95, 1, 1, 1, 0.85, 1, 1, 1, 0);

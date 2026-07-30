@@ -90,6 +90,10 @@ deep. Codex entry in the def; DiscoveryTarget at the drain's eye.
 Round-1 draft: **46 draw calls** of ≤ 120, **131,662 triangles** of
 ≤ 250k, **228 colliders** — all inside the domain by test.
 
+Final (round 8, as shipped): **47 draw calls** of ≤ 120, **136,326
+triangles** of ≤ 250k, **231 colliders** — all inside the domain by
+test.
+
 ## Seeds
 
 `SEEDS.regionGolden1` (0x5a4d_0c0d) with `^` substreams: terrain fbm
@@ -300,3 +304,82 @@ band; flats stand clear of both the circuit and the stones; stone
 warming doubled (pale 0xc2a066, monolith 0x9a7c6a — the red/blue
 ratio is the lever, not the value); grass pulled back to wheat; ring
 bases up a step to pay for the alpha-dissolved crests.
+
+### Round 6 (`hourglass-r6`) — the bowl breathes; the horizon keeps its buildings
+
+Silhouette: the round-5 fix list mostly paid off. The crest heave
+killed the ruler-straight rank in saddle-reveal (no crest line runs
+dead level any more, and the widened 0.42 shoulder swallowed the
+gate-notch); the flats' stand cleared the stones and the circuit; the
+trimmed 1.7–2.1 caravan at 0.65 emissive watched from 47 m finally
+reads as a file of wings instead of a sky-filling kite. Two failures
+stayed. FIRST: rectangular flat-topped blocks on the ray-crossing and
+oasis horizons — the round-1 read, back again after every skyline
+retune. SECOND: hourglass-deep at r ≈ 8 of the chasm centre still let
+the patrol's near arc close to 11 m, and an eight-metre spirit at
+eleven metres is a tarpaulin — worse, seen from BELOW the Keeper
+rendered as one flat neon-orange blob: the vein-glow multiplies the
+fog-free emissive by the vertex colour, and the belly was cream.
+Value/colour: stones hold their warmth this time (the red/blue lever
+worked), grass reads wheat-gold, the falls stay unfogged. Detail: eels,
+terraces and runnel-gold all carry at their poses.
+
+### Round 7 (`hourglass-r7`) — the blocks are named: the rings, then the camera
+
+Diagnosis round, run with two scratch harnesses (mesh-visibility
+toggles and a numeric skyline profiler; both deleted after). Toggling
+`hourglass-sand-veils` off left the blocks standing; toggling
+`hourglass-distance-*` off removed them — the blocks ARE the distance
+rings, not the veils and not ring gaps. The profiler then measured
+WHY: the `roll * 5` phase term folds the 15-cycle swell into local
+sawtooth cliffs — 9.2 m ridge steps over an 8.2 m column arc on the
+far ring, a >45° run that at three hundred metres reads as the
+vertical edge of a building. Fix one, in `duneRing`: a two-direction
+relaxation pass caps every column step at arc × 0.42 (~23°, a dune's
+repose) by construction, planing the cliffs and keeping every crest
+that already respected the slope; the seam column at t = 0 ≡ 1 is
+relaxed the same way. But the capture still showed two hard VERTICAL
+edges per arc — and those traced past the geometry to the camera: the
+game's far plane ends at 160 m while the rings stand 246–286 m from
+disc centre, so from any stand only the near arc renders and the clip
+slices it off square. The region may not touch the camera, so fix two
+makes the rings dissolve themselves: an `onBeforeCompile` varying
+carries camera distance and alpha runs to zero across 132–154 m,
+safely inside the clip. Fix three, for the Keeper: `BELLY_DUSK`
+(0x84688a) replaces the cream underside — dusk below, gold spiral
+above; a lantern reads from the lip and a violet silhouette with warm
+edges reads from the floor. Fix four: hourglass-deep re-authored AT
+the chasm centre — the one stand where every point of the 19.5–26.5 m
+patrol ring keeps ~20 m of standoff.
+
+### Round 8 (`hourglass-r8`) — the horizon dissolves; one fade cut too greedy
+
+Silhouette: the blocks are gone. Ray-crossing and oasis horizons run
+as low dune swells that thin into the water; the profiler's re-run
+confirms no column step exceeds the cap. Hourglass-deep now frames the
+whole patrol ring from the centre and the Keeper reads as a
+dusk-violet creature with runnel-gold edges — a resident, not a blob.
+One regression: the 132–154 m fade window ate half of gilded-shore's
+far violet line (its three ring lines stand at 103/121/143 m of
+camera distance, and the third sat deep in the fade). Fix: window
+slid out to 140–157 m — every canonical ring view stays under the
+fade's onset, and the dissolve still completes before the 160 m clip.
+
+### Final (`hourglass-final` + `hourglass-final-noassets`) — closed
+
+All 13 poses captured and read, assets and noassets both. Saddle
+descent frames the crescent gate with sandfalls burning at the lip;
+first-crescent, dune-ocean and slip-face hold their painted swells and
+the shoal ribbon; glass-reach's spire rows carry; hourglass-lip reads
+the whole ring of twelve falls with the Keeper as a lantern below;
+hourglass-deep and keeper-deep frame the patrol as a violet-and-gold
+silhouette over the terraces; the oasis bowls read green-gold with
+palms; singing-flats and ray-crossing hold monolith ranks against a
+clean dissolving horizon with the caravan's wings crossing; gilded
+shore keeps all three distance lines. Noassets spot-checks
+(saddle-descent, hourglass-lip, oasis, ray-crossing) confirm the
+procedural fallbacks paint the same region — terrain paint, veils,
+spires, palms, stones and caravan all present, nothing missing and no
+horizon artefacts. Budgets measured at close: 47 draws, 136,326
+triangles, 231 colliders. Gates: typecheck clean, eslint clean at
+--max-warnings 0, targeted suites and the full `npm test` green.

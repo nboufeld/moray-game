@@ -169,11 +169,13 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // pitch 0.65 framed two-thirds empty water; round 4's 0.42 at the
   // far wall framed haze; this frame was found by live candidate
   // search inside the bowl.
-  // …and it stands INSIDE r ≈ 10 of the chasm's centre on purpose: the
-  // Keeper's patrol breathes around r 19.5–26.5, and round 5's first
-  // deep stand sat right on that band — the settle parked a three-metre
-  // glowing turtle a wing's length from the lens.
-  { name: "hourglass-deep", u: 456, v: 38, lift: 7.0, atU: 425, atV: 61, pitch: 0.25, settle: 6 },
+  // …and it stands AT the chasm's centre on purpose: the Keeper's
+  // patrol breathes around r 19.5–26.5, so the centre is the one place
+  // in the bowl every point of the ring keeps ~20 m of standoff —
+  // round 6's stand at r ≈ 8 still let the near arc close to 11 m, and
+  // an eight-metre spirit at eleven metres is a tarpaulin, not a
+  // lantern (the r5 failure, reproduced from the other side).
+  { name: "hourglass-deep", u: 455, v: 30, lift: 2.5, atU: 425, atV: 52, pitch: 0.3, settle: 6 },
   // The Keeper's water. The capture settle is wall-clock offset, so a
   // 72 s patrol cannot be aimed at — this pose must hold the WHOLE
   // ring. Round 4's terrace stand lost the patrol's near arc below the
