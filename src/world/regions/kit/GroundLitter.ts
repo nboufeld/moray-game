@@ -25,15 +25,27 @@ import {
 } from "./KitGroundShared";
 
 /**
- * `groundLitter` — KIT-SPEC §2.2. Gravel, scree and shard runs, cinder and
- * scoria drifts, pebble aprons: small stones lying ON the caller's ground
- * with seeded tilt, the Reef `buildRubble` scatter idiom generalised.
+ * `groundLitter` — KIT-SPEC §2.2, sharpened under MASTER R12. Gravel,
+ * scree and shard runs, cinder and scoria drifts, pebble aprons: small
+ * stones lying ON the caller's ground with seeded tilt, the Reef
+ * `buildRubble` scatter idiom generalised.
+ *
+ * R12 additions (opt-in or same-cost, so old builds keep their counts):
+ * - `"split"` shape: a fracture-faced stone — one flat cleave plane
+ *   against a worn back, the split-stone silhouette shards can't carry;
+ * - shards now chip toward their +x END (geometry taper + a chip tint),
+ *   so a raked run reads as broken edges, not stretched octahedra;
+ * - `grade`: the size hierarchy — clump hearts anchor the larger,
+ *   better-formed stones and the loose share thins to fill, so any
+ *   foreground view cone catches a formed piece instead of confetti.
+ *   Derived from numbers the scatter already drew: `grade: 0` (the
+ *   default) is byte-identical to the old build.
  *
  * Budget note (asserted by tests/kitGround.test.ts): **1 draw per tone
  * family** (2 with `twoTone`); 8–20 triangles per built-in instance
- * (gravel/pebble 20, shard/grit 8), so 600 stones ≈ 12k tris worst case.
- * Caller shape sets (pale-1's ossuary fragments — MASTER R8) carry their
- * own triangle bill and bake as ONE merged draw per tone family.
+ * (gravel/pebble/split 20, shard/grit 8), so 600 stones ≈ 12k tris worst
+ * case. Caller shape sets (pale-1's ossuary fragments — MASTER R8) carry
+ * their own triangle bill and bake as ONE merged draw per tone family.
  *
  * The `rake` knob aligns instance yaw radially AWAY from a world point —
  * calamity's blast alignment; region tests sample yaws and assert the
@@ -42,7 +54,8 @@ import {
  *
  * Paint (law 3): top faces at the instance hue, undersides taken down to
  * the palette's `shade` — a colour, never black — keyed off the geometry's
- * own normals so a tumbled stone still shades toward the sand it sits on.
+ * own normals so a tumbled stone still shades toward the sand it sits on;
+ * broken faces (shard ends, the split's cleave) chip toward the shade.
  */
 
 export type LitterShapeSet =
@@ -50,6 +63,7 @@ export type LitterShapeSet =
   | "shard"
   | "pebble"
   | "grit"
+  | "split"
   | readonly BufferGeometry[];
 
 export interface GroundLitterOptions {
@@ -71,13 +85,24 @@ export interface GroundLitterOptions {
   };
   /** Splits the scatter into two instance-colour families (2 draws). */
   readonly twoTone?: boolean;
+  /**
+   * R12 size hierarchy in [0,1]: at 0 (default) every stone draws the
+   * same size envelope — byte-identical to the old build. Toward 1,
+   * clump-heart stones grow (up to ~×1.9) and the loose fill shrinks,
+   * so runs read as anchored piles instead of even confetti.
+   */
+  readonly grade?: number;
 }
 
-const DEFAULT_SIZES: Record<"gravel" | "shard" | "pebble" | "grit", readonly [number, number]> = {
+const DEFAULT_SIZES: Record<
+  "gravel" | "shard" | "pebble" | "grit" | "split",
+  readonly [number, number]
+> = {
   gravel: [0.05, 0.16],
   shard: [0.07, 0.22],
   pebble: [0.06, 0.18],
   grit: [0.02, 0.07],
+  split: [0.08, 0.24],
 };
 
 /** Fallback underside when the palette brings no shade: violet-grey dusk. */
@@ -121,12 +146,17 @@ export function buildGroundLitter(options: GroundLitterOptions): KitBuild {
     { placements: [], picks: [] },
   ];
   const variantCount = builtIn ? 1 : shapeSet.length;
+  const grade = Math.min(1, Math.max(0, options.grade ?? 0));
 
   for (const spot of spots) {
     const freeYaw = random.range(0, Math.PI * 2);
     const family = random.next() < 0.5 ? 0 : 1;
     const pick = Math.min(variantCount - 1, Math.floor(random.next() * variantCount));
-    const base = random.range(size[0], size[1]);
+    // The grade rides `heart`, which the scatter derived from draws it
+    // already made — so `grade: 0` multiplies by exactly 1 and every
+    // pre-R12 build keeps its bytes.
+    const base =
+      random.range(size[0], size[1]) * (1 + grade * (spot.heart * 1.55 - 0.35));
     const stretchX = random.range(0.75, 1.3);
     const stretchZ = random.range(0.75, 1.3);
     const flatten = random.range(0.4, 0.7);
@@ -207,11 +237,12 @@ export function buildGroundLitter(options: GroundLitterOptions): KitBuild {
 
 /** One built-in stone at base radius 0.5, painted top-lift / under-shade. */
 function builtInStone(
-  kind: "gravel" | "shard" | "pebble" | "grit",
+  kind: "gravel" | "shard" | "pebble" | "grit" | "split",
   seed: number,
   underRatio: readonly [number, number, number],
 ): BufferGeometry {
   let geometry: BufferGeometry;
+  let chipFrom = Infinity;
   switch (kind) {
     case "gravel": {
       geometry = new IcosahedronGeometry(0.5, 0);
@@ -228,15 +259,37 @@ function builtInStone(
     }
     case "shard": {
       // Faceted on purpose: a shard's read IS its edges. Stretched along
-      // +x so a raked run shows its alignment.
+      // +x so a raked run shows its alignment, and CHIPPED at the +x end
+      // (R12): the leading point pinches to a broken tip instead of the
+      // octahedron's mirror-smooth apex.
       geometry = new OctahedronGeometry(0.5, 0);
       displace(geometry, seed, 0.18);
-      geometry.scale(1.5, 0.55, 0.8);
+      geometry.scale(1.4, 0.74, 0.8);
+      chipEnd(geometry, 0.38, 0.45);
+      chipFrom = 0.38;
       break;
     }
     case "grit": {
       geometry = new OctahedronGeometry(0.5, 0);
       geometry.scale(1.1, 0.7, 0.9);
+      break;
+    }
+    case "split": {
+      // The split stone (R12): a worn back cleaved by one flat fracture
+      // plane. Normals stay faceted — the cleave's read IS its edge.
+      geometry = new IcosahedronGeometry(0.5, 0);
+      displace(geometry, seed, 0.14);
+      const position = geometry.attributes.position as BufferAttribute;
+      for (let i = 0; i < position.count; i++) {
+        const x = position.getX(i);
+        if (x > 0.14) {
+          position.setX(i, 0.14 + (x - 0.14) * 0.06);
+        }
+      }
+      position.needsUpdate = true;
+      geometry.scale(1.2, 0.68, 0.95);
+      geometry.computeVertexNormals();
+      chipFrom = 0.15;
       break;
     }
     default: {
@@ -245,7 +298,51 @@ function builtInStone(
     }
   }
   paintTopUnder(geometry, underRatio);
+  if (chipFrom < Infinity) {
+    paintEndChips(geometry, underRatio, chipFrom);
+  }
   return geometry;
+}
+
+/** Pinches the +x extremity toward the spine: a broken tip, not an apex. */
+function chipEnd(geometry: BufferGeometry, from: number, keep: number): void {
+  const position = geometry.attributes.position as BufferAttribute;
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i);
+    if (x > from) {
+      const past = (x - from) / (0.75 - from);
+      const pinch = 1 - Math.min(1, past) * (1 - keep);
+      position.setY(i, position.getY(i) * pinch);
+      position.setZ(i, position.getZ(i) * pinch);
+      // The tip shears down a little — a chip falls, it doesn't point.
+      position.setY(i, position.getY(i) - past * 0.05);
+    }
+  }
+  position.needsUpdate = true;
+  geometry.computeVertexNormals();
+}
+
+/** Broken faces chip toward the shade — darker as a COLOUR, never black. */
+function paintEndChips(
+  geometry: BufferGeometry,
+  underRatio: readonly [number, number, number],
+  from: number,
+): void {
+  const position = geometry.attributes.position as BufferAttribute;
+  const colors = geometry.attributes.color as BufferAttribute;
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i);
+    if (x <= from) {
+      continue;
+    }
+    const chip = Math.min(1, ((x - from) / 0.25) * 0.8);
+    colors.setXYZ(
+      i,
+      colors.getX(i) * (1 + (underRatio[0] - 1) * chip),
+      colors.getY(i) * (1 + (underRatio[1] - 1) * chip),
+      colors.getZ(i) * (1 + (underRatio[2] - 1) * chip),
+    );
+  }
 }
 
 /** Radial fbm displacement, sampled by direction so shared vertices agree. */

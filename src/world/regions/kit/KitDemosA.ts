@@ -215,6 +215,71 @@ export const KIT_DEMOS_A: KitDemoRegistry = {
     },
   },
 
+  groundLitterClose: {
+    camera: { position: [0, 1.1, 2.4], lookAt: [0.2, 0, -1.6] },
+    build(): KitBuild {
+      const shared = { gate: OPEN_GATE, ground: demoGround };
+      return compose([
+        dressGround(),
+        // Graded two-tone gravel: hearts anchor the big stones (R12).
+        buildGroundLitter({
+          seed: 0xa11c_0121,
+          palette: PALE_STONE,
+          area: { center: [0, -1.2], radius: 3.2 },
+          count: 260,
+          shapeSet: "gravel",
+          size: [0.07, 0.2],
+          twoTone: true,
+          grade: 0.85,
+          ...shared,
+        }),
+        // The split stones threading through it.
+        buildGroundLitter({
+          seed: 0xa11c_0122,
+          palette: { base: 0x9b8b78, shade: 0x6a6278, accent: 0x7c7268 },
+          area: { center: [0.4, -1], radius: 2.8 },
+          count: 60,
+          shapeSet: "split",
+          size: [0.12, 0.3],
+          grade: 0.6,
+          ...shared,
+        }),
+        // Chipped shards, raked, in the near field.
+        buildGroundLitter({
+          seed: 0xa11c_0123,
+          palette: { base: 0x8f8274, shade: 0x655e74 },
+          area: { center: [-0.8, 0.2], radius: 1.6 },
+          count: 50,
+          shapeSet: "shard",
+          size: [0.1, 0.22],
+          rake: { from: [-0.8, 3], strength: 0.8, jitter: 0.15 },
+          ...shared,
+        }),
+      ]);
+    },
+  },
+
+  screeApronClose: {
+    camera: { position: [0.2, 1.3, -6.2], lookAt: [-0.5, 0.1, -9.6] },
+    build(): KitBuild {
+      return compose([
+        dressGround(),
+        dressWall(),
+        buildScreeApron({
+          seed: 0xa11c_0131,
+          palette: PALE_STONE,
+          ground: demoGround,
+          anchors: [
+            { pos: [-2.4, -9.35], facing: Math.PI / 2, spread: 2.2 },
+            { pos: [0.6, -9.35], facing: Math.PI / 2, spread: 2.8 },
+            { pos: [3.2, -9.35], facing: Math.PI / 2, spread: 1.9 },
+          ],
+          slabsPerAnchor: 24,
+        }),
+      ]);
+    },
+  },
+
   carpetField: {
     camera: { position: [0, 4.2, 8.6], lookAt: [0, 0.2, 0] },
     build(): KitBuild {
