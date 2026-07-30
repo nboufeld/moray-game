@@ -1,5 +1,6 @@
 import { BufferAttribute, BufferGeometry, Group, Mesh, type Material, type Object3D } from "three";
 import type { KitBuild, KitDemoRegistry, KitDemoStage } from "./KitTypes";
+import { buildBeamAndPool } from "./BeamAndPool";
 import { buildParticulateField } from "./ParticulateField";
 
 /**
@@ -102,6 +103,23 @@ function particulateDemo(_stage: KitDemoStage, timeSec: number): KitBuild {
 }
 
 export const KIT_DEMOS_B: KitDemoRegistry = {
+  beamAndPool: {
+    camera: { position: [0.5, 2.6, 8.5], lookAt: [0, 2.4, -3] },
+    build: (stage) =>
+      composite([
+        buildBeamAndPool({
+          seed: 0xb0_0010,
+          tint: 0xffe2ae,
+          ground: stage.ground,
+          beams: [
+            // A vertical beam and a slanted blade, pools defaulted under
+            // both (spec §3.5's demo brief).
+            { pos: [-2.6, -2.6], top: 11, width: 4.6, opacity: 0.1 },
+            { pos: [3.6, -0.6], top: 10, width: 3.4, opacity: 0.09, slant: [0.34, -0.1] },
+          ],
+        }),
+      ]),
+  },
   particulateField: {
     camera: { position: [0, 3.1, 6.8], lookAt: [0, 2.3, -2] },
     timeSec: 6,
