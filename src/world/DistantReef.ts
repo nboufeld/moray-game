@@ -11,6 +11,7 @@ import {
 } from "three";
 import { fbm } from "../rendering/ProceduralTexture";
 import { Random, SEEDS } from "../util/Random";
+import { REGION_SLOTS } from "./regions/RegionSlots";
 
 /**
  * The painted distance: receding silhouette layers beyond the rim (W-L9).
@@ -79,6 +80,52 @@ const FOOT = 3;
  * with red below green it stops being violet and goes electric.
  */
 const INK = new Color(0.66, 0.72, 0.9);
+
+// ─── The gateway partings (connective-1) ────────────────────────────────────
+//
+// Wave 8 opened six gateway doorways through the rim, and these rings stood
+// straight across all of them: through every opened end wall the "country
+// beyond" rendered as a flat fog-coloured plane at 52 m — the fill program's
+// "flat cyan cut-out", the worst seam in the game. So the skyline now PARTS
+// over each gateway's sight cone, the same gesture MASTER R4 legislates for
+// distance rings over passes: within the cone the curtain's whole column
+// eases down to its buried foot, and the doorway shows the water, the gate
+// veil, and eventually the region's own painted distance instead of a wall.
+// Between doorways nothing moves — the profile arithmetic is untouched and
+// the gap multiplier is exactly 1 there.
+
+/** The gateway azimuths — one per province spoke, from the world map. */
+const GATEWAY_AZIMUTHS: readonly number[] = [
+  ...new Set(REGION_SLOTS.map((slot) => slot.azimuth)),
+];
+
+/** Where a doorway stands, and how a sight line through it spreads. */
+const DOOR_R = 48.5;
+const DOOR_HALF_WIDTH = 8;
+/** Lateral growth per metre past the door, for an eye at the wing's heart. */
+const DOOR_SPREAD = 0.66;
+/** Radians of shoulder each parting eases over — no vertical hard edge. */
+const GAP_BLEND = 0.06;
+/** Cap so a far ring's parting can never swallow a neighbouring wing. */
+const GAP_HALF_MAX = 0.27;
+
+function smoothstep01(t: number): number {
+  const k = Math.min(1, Math.max(0, t));
+  return k * k * (3 - 2 * k);
+}
+
+/** 1 away from every doorway, easing to 0 inside a gateway's sight cone. */
+function gatewayKeep(theta: number, radius: number): number {
+  const spread = Math.min(
+    GAP_HALF_MAX,
+    Math.atan((DOOR_HALF_WIDTH + (radius - DOOR_R) * DOOR_SPREAD) / radius),
+  );
+  let keep = 1;
+  for (const azimuth of GATEWAY_AZIMUTHS) {
+    keep = Math.min(keep, smoothstep01((angleBetween(theta, azimuth) - spread) / GAP_BLEND));
+  }
+  return keep;
+}
 
 export class DistantReef {
   readonly group = new Group();
@@ -193,11 +240,14 @@ function skylineRing(layer: SkylineLayer, random: Random, noiseSeed: number): Bu
     const x = Math.cos(theta) * layer.radius;
     const z = Math.sin(theta) * layer.radius;
     const base = i * 6;
+    // The parting: inside a gateway's sight cone the column collapses onto
+    // its own buried foot, below every doorway sill.
+    const keep = gatewayKeep(theta, layer.radius);
     positions[base] = x;
     positions[base + 1] = -FOOT;
     positions[base + 2] = z;
     positions[base + 3] = x;
-    positions[base + 4] = Math.max(1.2, ridge + spike);
+    positions[base + 4] = -FOOT + keep * (Math.max(1.2, ridge + spike) + FOOT);
     positions[base + 5] = z;
 
     if (i < SEGMENTS) {

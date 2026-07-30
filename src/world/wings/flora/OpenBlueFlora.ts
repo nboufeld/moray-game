@@ -249,9 +249,13 @@ export function buildOpenBlueFlora(def: WingDef): WingFlora {
   dressing.add(snow.group);
   group.add(dressing);
 
+  // The sill the mount samples stands high here (the carve is climbing
+  // back up); the drop's promise begins below it, so the veil is let down
+  // toward the opening's own centre depth.
   const veil = mountGateVeil(def, {
     width: 8,
-    height: 6,
+    height: 7,
+    sillLift: -4,
     palette: [0x1e4038, 0x3a3656, 0x565078],
   });
   group.add(veil.group);
@@ -281,16 +285,20 @@ interface HoleFrame {
 }
 
 /** The aperture's visual centre: on the axis at the end wall, mid-water. */
-const HOLE_R = 48.3;
+const HOLE_R = 47.6;
+
+/**
+ * The opening's centre depth is AUTHORED, not sampled: at the end wall the
+ * carve is already climbing back toward the rim, so `seabedHeight` there
+ * answers with the sill — and round 1 hung the whole dressing up in the
+ * sky. The blob the audit named lives over the deep floor, centre ≈ −7.
+ */
+const HOLE_Y = -7;
 
 function holeFrame(def: WingDef): HoleFrame {
   const x = Math.cos(def.azimuth) * HOLE_R;
   const z = Math.sin(def.azimuth) * HOLE_R;
-  // The gradient hangs over the deep floor: its centre rides a body's
-  // height over the carved ground, which at the end wall is already on
-  // its way back up toward the rim.
-  const y = seabedHeight(x, z) + 2.2;
-  return { x, y, z, tanX: -Math.sin(def.azimuth), tanZ: Math.cos(def.azimuth) };
+  return { x, y: HOLE_Y, z, tanX: -Math.sin(def.azimuth), tanZ: Math.cos(def.azimuth) };
 }
 
 /** The gradient's inks, centre → shoulder: violet over green, never black. */

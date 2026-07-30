@@ -155,14 +155,20 @@ const CURTAIN_SEGMENTS = 48;
 const CURTAIN_ROWS = [0, 0.4, 0.65, 0.82, 0.92, 1] as const;
 
 /**
- * Radians either side of the axis a curtain spans — deliberately far wider
- * than the wedge. At the wedge's own width the panels' vertical end-edges
- * hung exposed in the middle of the doorway from the saddle, which is a
- * screen, not water; this wide, the ends stand behind the rim's full-height
- * flanks from every angle the diver can occupy, and the drooping, rippled
- * top is the only edge that ever shows.
+ * Radians either side of the axis a curtain spans — deliberately wider than
+ * the wedge. At the wedge's own width the panels' vertical end-edges hung
+ * exposed in the middle of the doorway from the saddle, which is a screen,
+ * not water; wider, the ends stand behind the rim's full-height flanks.
+ *
+ * Connective-1 pulled it in from 0.55: wave 8 opened gateway doorways at
+ * 1.35 (kelp-cathedral) and 6.39 ≡ 0.107 (sandfall-dunes) either side of
+ * the canyon's 0.79, and at ±0.55 both end panels hung INSIDE those
+ * doorways as hard-edged flat blue slabs — the worst of the "flat cyan
+ * cut-out" seam. At ±0.36 the ends stand behind the solid rim between the
+ * wedges (kelp's wall angle begins at 1.186, sandfall's ends at 0.271)
+ * while still clearing the canyon's own ±0.34 airspace.
  */
-const CURTAIN_HALF_SPAN = 0.55;
+const CURTAIN_HALF_SPAN = 0.36;
 
 /**
  * The water-column veil (W-N1): the hand-mixed vertical gradient the critic
