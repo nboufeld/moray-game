@@ -11,8 +11,10 @@ import {
   Vector3,
   type BufferGeometry,
   type Material,
+  type WebGLProgramParametersWithUniforms,
 } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { SUN_POSITION } from "../../../rendering/Lighting";
 import type { Random } from "../../../util/Random";
 import type { GateFn, KitArea, KitBuild } from "./KitTypes";
 
@@ -164,7 +166,19 @@ export interface ScatterOptions {
  * share, rejection against the caller's `gate` — with exactly five draws
  * consumed per attempt, accepted or not (see the module header for why).
  */
-export function scatterPoints(options: ScatterOptions): { x: number; z: number }[] {
+export interface ScatterPoint {
+  readonly x: number;
+  readonly z: number;
+  /**
+   * How deep in a clump heart the point landed: 1 at a heart's centre,
+   * falling to 0 at its rim; exactly 0 for the loose share. Derived from
+   * numbers the scatter already drew — reading it costs the stream
+   * nothing, so pieces that ignore it stay byte-identical.
+   */
+  readonly heart: number;
+}
+
+export function scatterPoints(options: ScatterOptions): ScatterPoint[] {
   const { random, gate, count } = options;
   const resolved = resolveArea(options.area);
   const looseShare = options.looseShare ?? 0.3;
@@ -180,7 +194,7 @@ export function scatterPoints(options: ScatterOptions): { x: number; z: number }
     clumps.push(resolved.sample(random.next(), random.next()));
   }
 
-  const points: { x: number; z: number }[] = [];
+  const points: ScatterPoint[] = [];
   const maxAttempts = count * 40;
   for (let attempt = 0; attempt < maxAttempts && points.length < count; attempt++) {
     const u1 = random.next();
@@ -191,10 +205,12 @@ export function scatterPoints(options: ScatterOptions): { x: number; z: number }
 
     let x: number;
     let z: number;
+    let heart: number;
     if (u1 < looseShare) {
       const spot = resolved.sample(u2, u3);
       x = spot.x;
       z = spot.z;
+      heart = 0;
       void u4; // drawn regardless — fixed draws per attempt is the contract
     } else {
       const clump = clumps[Math.min(clumps.length - 1, Math.floor(u2 * clumps.length))]!;
@@ -202,6 +218,7 @@ export function scatterPoints(options: ScatterOptions): { x: number; z: number }
       const theta = u4 * Math.PI * 2;
       x = clump.x + Math.cos(theta) * r;
       z = clump.z + Math.sin(theta) * r;
+      heart = 1 - Math.sqrt(u3);
     }
 
     if (!resolved.contains(x, z)) {
@@ -210,9 +227,70 @@ export function scatterPoints(options: ScatterOptions): { x: number; z: number }
     if (roll >= gate(x, z)) {
       continue;
     }
-    points.push({ x, z });
+    points.push({ x, z, heart });
   }
   return points;
+}
+
+// ─── The sun-through-leaf glow (the bowl meadow's light note) ────────────────
+
+/**
+ * PORTED from `SeaGrass` (`createSunViewUniform` / `trackSunView` /
+ * `injectLeafGlow`), the way `SpongeCluster` ports `paintTube`: the source
+ * is cited and the copy is verbatim in behaviour. A direct import is
+ * illegal here — `SeaGrass` pulls in the bowl's `Seabed` terrain module,
+ * and kit pieces never import terrain (kit law 1 / KitTypes' GroundFn
+ * contract). The glow is the R12 craft being licensed into the kit: a
+ * leaf between the camera and the sun lights up golden, weighted toward
+ * the tip because the root is the thick part.
+ */
+export interface KitSunViewUniform {
+  readonly value: Vector3;
+}
+
+export function createKitSunViewUniform(): KitSunViewUniform {
+  return { value: new Vector3(0, 1, 0) };
+}
+
+/** Hangs the per-frame sun-direction refresh on a mesh the kit owns. */
+export function trackKitSunView(mesh: Object3D, sun: KitSunViewUniform): void {
+  mesh.onBeforeRender = (_renderer, _scene, camera) => {
+    sun.value
+      .copy(SUN_POSITION)
+      .normalize()
+      .transformDirection(camera.matrixWorldInverse);
+  };
+}
+
+/**
+ * The two-note translucency (SeaGrass W-L9): a cool view-facing term (a
+ * blade's far side glows rather than shadowing) and a warm backlit term
+ * gated by `tipExpr`, the caller's "how far up the leaf" expression.
+ */
+export function injectKitLeafGlow(
+  shader: WebGLProgramParametersWithUniforms,
+  sun: KitSunViewUniform,
+  coolTint: string,
+  warmTint: string,
+  tipExpr: string,
+): void {
+  shader.uniforms.uKitSunView = sun;
+  shader.fragmentShader = shader.fragmentShader
+    .replace(
+      "#include <common>",
+      `#include <common>
+       uniform vec3 uKitSunView;`,
+    )
+    .replace(
+      "#include <dithering_fragment>",
+      `#include <dithering_fragment>
+       float kitFacing = 1.0 - abs(dot(normalize(vNormal), normalize(vViewPosition)));
+       float kitToward = max(dot(normalize(-vViewPosition), uKitSunView), 0.0);
+       float kitBacklit = pow(kitToward, 4.0);
+       float kitLeafTip = ${tipExpr};
+       gl_FragColor.rgb += diffuseColor.rgb * ${coolTint} * kitFacing;
+       gl_FragColor.rgb += diffuseColor.rgb * ${warmTint} * kitBacklit * (0.25 + 0.75 * kitLeafTip);`,
+    );
 }
 
 // ─── Paint arithmetic ────────────────────────────────────────────────────────

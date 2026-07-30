@@ -127,6 +127,60 @@ const RELIC_STONE = { base: 0xa79c88, shade: 0x6e6880 } as const;
 const RAKE_DEMO_YAW = 0.15;
 
 export const KIT_DEMOS_A: KitDemoRegistry = {
+  /**
+   * The R12 quality-pass demos (q-*): the same pieces at SWIMMING DISTANCE
+   * — camera 2–4 m off the subject, eye height ~1.2 m, the range the
+   * owner's "half-cut grass" verdict was judged at. The originals above
+   * stay untouched; these are additional registrations.
+   */
+  carpetFieldBladeClose: {
+    camera: { position: [0, 1.05, 2.6], lookAt: [0, 0.3, -0.6] },
+    build(): KitBuild {
+      const shared = { gate: OPEN_GATE, ground: demoGround };
+      return compose([
+        dressGround(),
+        buildCarpetField({
+          seed: 0xa11c_0101,
+          palette: SPRING,
+          area: { center: [0, -0.6], radius: 2.6 },
+          count: 240,
+          profile: "blade",
+          swayAmp: 0.05,
+          sunGlow: true,
+          ...shared,
+        }),
+        // A far card band behind, so the tier handoff is in the frame.
+        buildCarpetField({
+          seed: 0xa11c_0102,
+          palette: SPRING,
+          area: { center: [0, -9], radius: 5 },
+          count: 700,
+          ...shared,
+        }),
+      ]);
+    },
+  },
+
+  carpetFieldFrondClose: {
+    camera: { position: [0, 1.05, 2.6], lookAt: [0, 0.25, -0.6] },
+    build(): KitBuild {
+      const shared = { gate: OPEN_GATE, ground: demoGround };
+      return compose([
+        dressGround(),
+        buildCarpetField({
+          seed: 0xa11c_0103,
+          palette: OLIVE_GOLD,
+          area: { center: [0, -0.6], radius: 2.6 },
+          count: 180,
+          profile: "frond",
+          swayAmp: 0.04,
+          sunGlow: true,
+          ...shared,
+        }),
+      ]);
+    },
+  },
+
   carpetField: {
     camera: { position: [0, 4.2, 8.6], lookAt: [0, 0.2, 0] },
     build(): KitBuild {
