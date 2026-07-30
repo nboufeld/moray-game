@@ -181,6 +181,40 @@ export const KIT_DEMOS_A: KitDemoRegistry = {
     },
   },
 
+  bushBankClose: {
+    camera: { position: [0, 1.3, 3.4], lookAt: [0.2, 0.5, -0.8] },
+    build(): KitBuild {
+      const shared = { gate: OPEN_GATE, ground: demoGround };
+      return compose([
+        dressGround(),
+        // The R12 rich bush: overhang fronds + berry knots + the deepened
+        // crotch, at arm's length. Two palettes so the accent ink reads.
+        buildBushBank({
+          seed: 0xa11c_0111,
+          palette: { ...SPRING, accent: 0x7a4f62 },
+          area: { center: [-0.9, -0.9], radius: 2.4 },
+          count: 7,
+          scale: 0.7,
+          lobes: 7,
+          fronds: 14,
+          accents: 7,
+          ...shared,
+        }),
+        buildBushBank({
+          seed: 0xa11c_0112,
+          palette: { ...WINE, accent: 0xc9b45e },
+          area: { center: [2.6, 0.2], radius: 1.8 },
+          count: 4,
+          scale: 0.7,
+          lobes: 6,
+          fronds: 12,
+          accents: 5,
+          ...shared,
+        }),
+      ]);
+    },
+  },
+
   carpetField: {
     camera: { position: [0, 4.2, 8.6], lookAt: [0, 0.2, 0] },
     build(): KitBuild {
