@@ -464,6 +464,22 @@ export const KIT_DEMOS_A: KitDemoRegistry = {
     },
   },
 
+  spongeClusterClose: {
+    camera: { position: [-0.4, 1.3, 2.3], lookAt: [-1.1, 0.7, -0.4] },
+    build(): KitBuild {
+      return compose([
+        dressGround(),
+        buildSpongeCluster({
+          seed: 0xa11c_0151,
+          palette: OCHRE_SPONGE,
+          ground: demoGround,
+          anchors: [{ pos: [-1.5, -0.2] }, { pos: [-0.4, 0.6] }],
+          tubesPerAnchor: 4,
+        }),
+      ]);
+    },
+  },
+
   spongeCluster: {
     camera: { position: [0.2, 1.7, 4.6], lookAt: [0.2, 0.75, 0] },
     build(): KitBuild {

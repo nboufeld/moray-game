@@ -393,6 +393,36 @@ export const KIT_DEMOS_B: KitDemoRegistry = {
     timeSec: 22,
     build: (stage) => shoalDemo(stage, 22),
   },
+  percherColonyClose: {
+    // The R12 swimming-distance judge: seated stars and a whelk-class
+    // shrimp trio at ~2 m, where their bodies must read as painted fauna.
+    camera: { position: [-3.8, 2.0, -1.4], lookAt: [-5.2, 0.2, -3.2] },
+    timeSec: 3,
+    build: (): KitBuild =>
+      composite([
+        buildPercherColony({
+          seed: 0xb0_0052,
+          palette: { base: 0x2e8a5e, tip: 0xc9b45e, shade: 0x1e5a44 },
+          anchors: [
+            { pos: [-4.6, duneGround(-4.6, -2.6), -2.6] },
+            { pos: [-5.8, duneGround(-5.8, -3.8), -3.8] },
+            { pos: [-6.2, duneGround(-6.2, -2.4), -2.4] },
+          ],
+          perAnchor: 1,
+          body: "star",
+          motion: "seated",
+        }),
+        buildPercherColony({
+          seed: 0xb0_0053,
+          palette: { base: 0xc9a06a, tip: 0xe2cfa0 },
+          anchors: [{ pos: [-4.2, duneGround(-4.2, -1.6), -1.6] }],
+          perAnchor: 3,
+          body: "shrimp",
+          motion: "seated",
+        }),
+      ]),
+  },
+
   percherColony: {
     camera: { position: [-2.2, 2.1, 1.6], lookAt: [-4.6, 1.1, -3.2] },
     timeSec: 3,

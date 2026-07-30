@@ -84,33 +84,70 @@ function smoothstep01(t: number): number {
   return t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
 }
 
-/** The five-lobed cushion star, domed, tips lifted — the bowl's idiom. */
+/**
+ * The five-armed cushion star, AUTHORED as a polar dome (R12): the old
+ * displaced icosahedron had ~10 vertices per ring — five arm valleys
+ * cannot form on that lattice, and at 2 m the body rendered as a green
+ * pentagon blob (captures q-r1/r2). This mesh puts the arms in the
+ * topology itself: 20 spokes × 3 rings over a centre cap, radius
+ * modulated by the five-lobe profile, arm tips curling up off the perch.
+ * 100 triangles — inside the spec's 48–130 body band.
+ */
 function starGeometry(): BufferGeometry {
-  const geometry = new IcosahedronGeometry(0.16, 1);
-  const position = geometry.attributes.position!;
-  for (let i = 0; i < position.count; i++) {
-    const x = position.getX(i);
-    const z = position.getZ(i);
-    const angle = Math.atan2(z, x);
-    const lobe = 0.62 + 0.38 * Math.pow(Math.abs(Math.cos(angle * 2.5)), 0.7);
-    const r = Math.hypot(x, z);
-    position.setX(i, x * lobe * (1 + r));
-    position.setZ(i, z * lobe * (1 + r));
-    position.setY(i, Math.max(0.004, position.getY(i) * 0.32 * (1 - r * 0.6)));
-  }
-  position.needsUpdate = true;
-  smoothNormals(geometry);
+  const around = 20;
+  const rings = [0.34, 0.66, 1] as const;
+  const reach = 0.19;
 
-  // Tip light: lobe ends catch the water light, the disc holds the tone.
+  const lobeAt = (theta: number): number => Math.pow(Math.abs(Math.cos(theta * 2.5)), 0.5);
+  const positions: number[] = [0, 0.062, 0];
+  for (const t of rings) {
+    for (let s = 0; s < around; s++) {
+      const theta = (s / around) * Math.PI * 2;
+      const arm = lobeAt(theta);
+      const radius = reach * t * (0.42 + 0.58 * arm);
+      const dome = 0.062 * (1 - t * t);
+      const tipCurl = arm * t * t * t * 0.05;
+      positions.push(
+        Math.cos(theta) * radius,
+        Math.max(0.006, dome + tipCurl),
+        Math.sin(theta) * radius,
+      );
+    }
+  }
+
+  const index: number[] = [];
+  // The centre cap fan (ring 0 starts at vertex 1).
+  for (let s = 0; s < around; s++) {
+    index.push(0, 1 + ((s + 1) % around), 1 + s);
+  }
+  // Ring-to-ring quads.
+  for (let ring = 0; ring + 1 < rings.length; ring++) {
+    const a = 1 + ring * around;
+    const b = a + around;
+    for (let s = 0; s < around; s++) {
+      const s1 = (s + 1) % around;
+      index.push(a + s, b + s1, b + s);
+      index.push(a + s, a + s1, b + s1);
+    }
+  }
+
+  const geometry = new BufferGeometry();
+  geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
+  geometry.setIndex(index);
+  geometry.computeVertexNormals();
+
+  // Tip light: arm ends catch the water light, the disc holds the tone.
+  const position = geometry.attributes.position!;
   const colors = new Float32Array(position.count * 3);
   for (let i = 0; i < position.count; i++) {
-    const r = Math.hypot(position.getX(i), position.getZ(i)) / 0.36;
-    const value = 0.72 + smoothstep01((r - 0.35) / 0.55) * 0.4;
-    colors[i * 3] = value;
-    colors[i * 3 + 1] = value;
-    colors[i * 3 + 2] = value * 0.94;
+    const r = Math.hypot(position.getX(i), position.getZ(i)) / reach;
+    const value = 0.62 + smoothstep01((r - 0.25) / 0.6) * 0.52;
+    colors[i * 3] = Math.min(1, value);
+    colors[i * 3 + 1] = Math.min(1, value);
+    colors[i * 3 + 2] = Math.min(1, value * 0.92);
   }
   geometry.setAttribute("color", new BufferAttribute(colors, 3));
+  geometry.computeBoundingSphere();
   return geometry;
 }
 

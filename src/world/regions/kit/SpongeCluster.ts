@@ -6,6 +6,7 @@ import {
   Vector2,
   type BufferGeometry,
 } from "three";
+import { fbm } from "../../../rendering/ProceduralTexture";
 import { createToonMaterial } from "../../../rendering/ToonShading";
 import { Random } from "../../../util/Random";
 import type { GroundFn, KitBuild, KitPalette } from "./KitTypes";
@@ -121,9 +122,41 @@ function tubeGeometry(): BufferGeometry {
   /** Where the profile turns over the rim: everything past it is throat. */
   const lipIndex = 6;
   const geometry = new LatheGeometry(profile, 9);
+  undulateWall(geometry, profile.length, lipIndex);
   paintTube(geometry, profile.length, lipIndex);
   geometry.computeBoundingSphere();
   return geometry;
+}
+
+/**
+ * The living wall (R12): a sponge at arm's length is lumpy tissue, and the
+ * clean lathe read as terracotta pipe in the q-r1 close capture. Exterior
+ * vertices breathe in and out by a few percent on a seeded fbm keyed to
+ * angle-and-height, seam column included twice at the same angle so the
+ * wrap stays welded; the throat stays clean (it reads as depth, and lumps
+ * inside a dark mouth are noise). Same topology — 180 tris holds.
+ */
+function undulateWall(geometry: BufferGeometry, pointCount: number, lipIndex: number): void {
+  const position = geometry.attributes.position;
+  const uv = geometry.attributes.uv;
+  if (!position || !uv) {
+    return;
+  }
+  for (let i = 0; i < position.count; i++) {
+    const index = uv.getY(i) * (pointCount - 1);
+    if (index > lipIndex + 0.5) {
+      continue; // the throat stays a clean bore
+    }
+    const x = position.getX(i);
+    const z = position.getZ(i);
+    const y = position.getY(i);
+    const angle = Math.atan2(z, x) / (Math.PI * 2) + 0.5;
+    const swell = 1 + (fbm(angle, y * 1.6, { seed: 0x5b0a_9e, period: 5, octaves: 2 }) - 0.5) * 0.17;
+    position.setX(i, x * swell);
+    position.setZ(i, z * swell);
+  }
+  (position as BufferAttribute).needsUpdate = true;
+  geometry.computeVertexNormals();
 }
 
 /**
