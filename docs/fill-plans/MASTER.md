@@ -256,3 +256,23 @@ code (counts, palettes, loop constants) and needs no kit entry.
   guarantee an instance in an arbitrary view cone; a `looseShare` knob
   (fraction scattered loose between clumps) would make sweep-critical
   bands cheaper. Candidate for a small kit follow-up, not a blocker.
+
+## R12 (orchestrator, 2026-07-30) — budgets are measurements now
+
+The owner judged the first fills underwhelming ("half-cut grass"), and a
+real-hardware probe proved the caps were fear: 59.9 fps vsync-locked,
+p95 17.3 ms at render scale 1.00 INSIDE the filled Kelp Sea (450k tris)
+— indistinguishable from the empty bowl. Rulings:
+
+1. Region budgets become ≤260 draws / ≤1.35M tris, and the binding gate
+   is the headed frame measure at the region's densest pose (median
+   ≤16.9 ms at scale 1.00), shipped with every rework ledger.
+2. The added headroom is licensed for PER-INSTANCE QUALITY first: the
+   kit's T1/T2 pieces are being re-authored (kit/quality-pass) with the
+   bowl meadow's craft — S-bend blades, cupped cross-sections, tip
+   taper, sun-through-leaf glow, richer bush lobes, better shard
+   silhouettes — plus the F-R2 `looseShare` knob. Density second.
+3. Regions already filled under the old caps get a quality re-pass
+   (piece profile upgrades + headroom spend) after the kit pass merges;
+   in-flight fills finish on their current briefs and join the re-pass
+   queue.

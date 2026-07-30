@@ -37,6 +37,23 @@ await page.goto(`${BASE_URL}/?reset=1`, { waitUntil: "load" });
 await page.waitForFunction(() => "__reef" in window);
 await page.waitForTimeout(1000);
 
+// R-budget probes: `SHOT_REGION=<slot-id>` forces a region and
+// `SHOT_AT=x,y,z[,yaw]` holds a posed frame there (the capture door pins
+// render scale to 1, so `settled scale` reads 1.00 by construction —
+// frame times are the answer here).
+if (process.env.SHOT_REGION) {
+  await page.evaluate((slot) => window.__reef.forceRegion(slot), process.env.SHOT_REGION);
+  await page.waitForTimeout(500);
+}
+if (process.env.SHOT_AT) {
+  const [x, y, z, yaw = 0] = process.env.SHOT_AT.split(",").map(Number);
+  await page.evaluate(
+    (pose) => window.__reef.capture(pose),
+    { position: [x, y, z], yaw, pitch: -0.08, settle: 2 },
+  );
+  await page.waitForTimeout(500);
+}
+
 const stats = await page.evaluate(async (sampleMs) => {
   const deltas = [];
   let previous = performance.now();

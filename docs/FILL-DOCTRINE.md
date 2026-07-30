@@ -53,11 +53,25 @@ Both are corrected here.
 
 ## Budgets (Phase 3, per region, measured honestly)
 
-- ≤ **160 draw calls**, ≤ **450k triangles** attached (up from 120/250k).
-  Density comes from INSTANCES (near-free per draw), merged batches, and
-  shader-driven motion — never from one-mesh-per-thing.
-- Frame sanity gate per region: a probe sweep (existing measure-frames
-  idiom) at three interior points; flag anything pathological.
+REVISED after the owner's verdict on the first fills ("half-cut grass —
+no added value") and a real-hardware measurement (2026-07-30: 59.9 fps
+vsync-locked, p95 17.3 ms, render scale 1.00 INSIDE the filled Kelp Sea
+at 450k tris — identical to the empty bowl; the old caps were software-
+renderer fear, not physics):
+
+- ≤ **260 draw calls**, ≤ **1.35M triangles** attached per region.
+- **The real gate is the measurement, not the cap**: every region rework
+  ships a headed frame measure at its densest interior pose
+  (`SHOT_HEADED=1 SHOT_REGION=<slot> SHOT_AT=x,y,z node
+  scripts/measure-frames.mjs`) and must hold median ≤ 16.9 ms at scale
+  1.00. A region under the caps that misses the gate fails; a region
+  over a cap that holds the gate may ship with the overage recorded.
+- **Quality before quantity**: the raised budget is licensed FIRST for
+  richer per-instance geometry and paint (authored blade profiles, real
+  silhouettes, the sun-through-leaf glow), SECOND for density. Three
+  times more 4-triangle wedges is a regression, not a fill.
+- Density still comes from INSTANCES, merged batches, and shader motion
+  — never one-mesh-per-thing.
 
 ## Coherence rules (Phase 1's whole point)
 
