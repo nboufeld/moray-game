@@ -159,6 +159,7 @@ export function buildVerdant2Distance(): { meshes: (Mesh | InstancedMesh)[] } {
     mesh.castShadow = false;
     mesh.receiveShadow = false;
     const dummy = new Object3D();
+    const ink = new Color();
     const gapAt = VERDANT2_SLOT.azimuth + Math.PI;
     let placed = 0;
     let guard = 0;
@@ -166,6 +167,7 @@ export function buildVerdant2Distance(): { meshes: (Mesh | InstancedMesh)[] } {
       const theta = spec.sector
         ? spec.sector.at + random.signed(spec.sector.half)
         : random.range(0, Math.PI * 2);
+      const inkJitter = random.range(0.86, 1.14);
       if (angleBetween(theta, gapAt) < GAP_HALF + 0.1) {
         continue;
       }
@@ -183,10 +185,18 @@ export function buildVerdant2Distance(): { meshes: (Mesh | InstancedMesh)[] } {
       );
       dummy.updateMatrix();
       mesh.setMatrixAt(placed, dummy.matrix);
+      // Card v2: per-card ink variance — a value step either way, never a
+      // hue shift, so the promise reads as many stones under one water
+      // instead of one razor silhouette stamped nine times.
+      ink.setRGB(inkJitter, inkJitter, inkJitter);
+      mesh.setColorAt(placed, ink);
       placed++;
     }
     mesh.count = placed;
     mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) {
+      mesh.instanceColor.needsUpdate = true;
+    }
     mesh.computeBoundingSphere();
     meshes.push(mesh);
   }
@@ -198,9 +208,17 @@ export function buildVerdant2Distance(): { meshes: (Mesh | InstancedMesh)[] } {
 const PILLAR_CARD_HEIGHT = 36;
 
 /**
- * One distant garden pillar: two crossed silhouette blades — a squared
- * terrace head on a narrower stem, with three ribbon straps falling from
- * the lip. The drawing is the whole mark.
+ * One distant garden pillar, card v2 (fill plan §6b.3): two crossed
+ * silhouette blades. What changed from v1, and why:
+ *
+ * - **Stepped-terrace tops** — the head is now three offset mesa treads
+ *   with a shoulder step, quoting the region's own terrace grammar (and
+ *   whatever depth-3's concept becomes, this is its promise);
+ * - **A broad foot skirt** — the stem flares into a grounded base that
+ *   drops the card's mass below the rampart sightline from every
+ *   authored angle, killing the floating-chimney read (`mistfall-above`
+ *   / `far-balcony` r4 flag);
+ * - **Ink variance** rides per-instance colour at the placement site.
  */
 let pillarCard: BufferGeometry | undefined;
 function pillarCardGeometry(): BufferGeometry {
@@ -210,19 +228,27 @@ function pillarCardGeometry(): BufferGeometry {
   const blade = (spin: number): BufferGeometry => {
     const h = PILLAR_CARD_HEIGHT;
     const positions = new Float32Array([
-      // The stem: a leaning column.
-      -1.6, 0, 0, 1.6, 0, 0, 2.0, h * 0.62, 0,
-      -1.6, 0, 0, 2.0, h * 0.62, 0, -1.1, h * 0.63, 0,
-      // The terrace head: a wide flat cap.
-      -3.6, h * 0.6, 0, 4.0, h * 0.62, 0, 3.6, h * 0.78, 0,
-      -3.6, h * 0.6, 0, 3.6, h * 0.78, 0, -3.2, h * 0.76, 0,
-      // A second, smaller cap on top — stacked country.
-      -2.0, h * 0.76, 0, 2.4, h * 0.77, 0, 2.0, h * 0.9, 0,
-      -2.0, h * 0.76, 0, 2.0, h * 0.9, 0, -1.7, h * 0.89, 0,
-      // Three ribbon straps falling from the head's lip.
-      -3.2, h * 0.62, 0, -2.4, h * 0.62, 0, -3.0, h * 0.3, 0,
-      0.4, h * 0.6, 0, 1.2, h * 0.6, 0, 0.9, h * 0.26, 0,
-      2.8, h * 0.63, 0, 3.6, h * 0.63, 0, 3.4, h * 0.36, 0,
+      // The foot skirt: a wide grounded flare — the card visibly STANDS.
+      -4.4, 0, 0, 4.8, 0, 0, 2.2, h * 0.18, 0,
+      -4.4, 0, 0, 2.2, h * 0.18, 0, -2.0, h * 0.17, 0,
+      // The stem: a leaning column out of the skirt.
+      -2.0, h * 0.14, 0, 2.2, h * 0.15, 0, 2.0, h * 0.6, 0,
+      -2.0, h * 0.14, 0, 2.0, h * 0.6, 0, -1.2, h * 0.61, 0,
+      // The first terrace tread: the widest, with an offset overhang.
+      -3.8, h * 0.58, 0, 4.0, h * 0.6, 0, 3.2, h * 0.7, 0,
+      -3.8, h * 0.58, 0, 3.2, h * 0.7, 0, -3.0, h * 0.69, 0,
+      // The second tread, stepped back toward the left.
+      -3.2, h * 0.68, 0, 2.2, h * 0.69, 0, 1.7, h * 0.8, 0,
+      -3.2, h * 0.68, 0, 1.7, h * 0.8, 0, -2.4, h * 0.79, 0,
+      // The crown tread, narrow and offset right — a climbing skyline.
+      -1.0, h * 0.78, 0, 2.0, h * 0.79, 0, 1.5, h * 0.9, 0,
+      -1.0, h * 0.78, 0, 1.5, h * 0.9, 0, -0.5, h * 0.89, 0,
+      // A shoulder step off the first tread — the mesa breaks unevenly.
+      2.6, h * 0.6, 0, 3.9, h * 0.61, 0, 3.3, h * 0.74, 0,
+      // Three ribbon straps falling from the tread lips.
+      -3.4, h * 0.6, 0, -2.6, h * 0.6, 0, -3.2, h * 0.3, 0,
+      0.4, h * 0.58, 0, 1.2, h * 0.58, 0, 0.9, h * 0.26, 0,
+      2.8, h * 0.61, 0, 3.6, h * 0.61, 0, 3.4, h * 0.34, 0,
     ]);
     const geometry = new BufferGeometry();
     geometry.setAttribute("position", new BufferAttribute(positions, 3));
@@ -265,12 +291,18 @@ function cliffRing(layer: CliffLayer, noiseSeed: number): BufferGeometry {
     const slow = fbm(t * 6, layer.radius * 0.013, { seed: noiseSeed, period: 6, octaves: 2 });
     // Quantise into treads: the fractional part is pushed to the nearest
     // tread with a narrow ramp, so the skyline holds level then steps.
+    // Round 3 (fill): the ramp widened 0.16 → 0.3 and the wobble nearly
+    // doubled — a 5 m step easing over a 0.16 window fell as a razor
+    // vertical edge, and from inside the country a lone step poking over
+    // the fog band read as a hard floating RECTANGLE (`stair-descent` r2,
+    // proven by node-toggle on `verdant2-distance-0`). The mesa runs stay
+    // level; only their edges slope and their crests breathe.
     const raw = slow * 3.2;
     const tread = Math.floor(raw);
-    const ramp = smoothstep01((raw - tread - 0.42) / 0.16);
+    const ramp = smoothstep01((raw - tread - 0.35) / 0.3);
     const stepped = (tread + ramp - 1.6) * layer.stepDepth;
     const wobble =
-      (fbm(t * 40, layer.radius, { seed: noiseSeed ^ 0x99, period: 40, octaves: 1 }) - 0.5) * 0.8;
+      (fbm(t * 40, layer.radius, { seed: noiseSeed ^ 0x99, period: 40, octaves: 1 }) - 0.5) * 1.5;
     const top = layer.meanTop + stepped + wobble;
 
     positions.push(x, FOOT, z, x, FOOT + Math.max(1.4, top - FOOT) * end + 0.2, z);

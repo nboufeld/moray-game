@@ -64,6 +64,10 @@ export function buildVerdant2Life(): Verdant2LifeBuild {
   meshes.push(motes.points);
   updaters.push(motes.update);
 
+  const drifters = buildDriftPlankton();
+  meshes.push(drifters.points);
+  updaters.push(drifters.update);
+
   const spill = buildSpillShoal();
   meshes.push(spill.mesh);
   updaters.push(spill.update);
@@ -106,12 +110,24 @@ function buildSporeMotes(): {
   update: (dt: number, time: number, calm: number) => void;
 } {
   const random = new Random(SEED ^ 0x40e7);
-  const count = 520;
+  // Fill round 2: 520 → 900. The first 520 draw exactly as before; the
+  // growth (a fresh substream) widens the drift to the threshold road
+  // and the rim slopes — the sweep's midwater frames need the water
+  // itself to carry light everywhere, not only over the gardens.
+  // Fill round 3: 900 → 1500, still on the growth stream (appended
+  // draws only), and the sprite grown 0.09 → 0.15 m — the r2 sweep's
+  // midwater frames had NO foreground layer because a 9 cm additive
+  // spark at 0.5 opacity is invisible past arm's length.
+  // Fill round 6: 1500 → 1900 on a SECOND fresh substream held to the
+  // midwater band (y +2 to +12) — the r5 sweep's high frames (07) still
+  // hung in water no mote reached; ground frames get their foreground
+  // from the carpets, midwater frames only from the water itself.
+  const count = 1900;
   const base = new Float32Array(count * 3);
   const live = new Float32Array(count * 3);
   const phases = new Float32Array(count);
 
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < 520; i++) {
     // Through the pass and the whole garden country.
     const u = random.range(680, 1050);
     const v = u < 800 ? random.signed(20) : random.signed(120);
@@ -122,6 +138,28 @@ function buildSporeMotes(): {
     base[i * 3 + 2] = z;
     phases[i] = random.range(0, Math.PI * 2);
   }
+  const growth = new Random(SEED ^ 0xf530);
+  for (let i = 520; i < 1500; i++) {
+    const u = growth.range(640, 1105);
+    const v = u < 780 ? growth.signed(24) : growth.signed(165);
+    const { x, z } = worldOf(u, v);
+    const floor = seabedHeight(x, z);
+    base[i * 3] = x;
+    base[i * 3 + 1] = floor + growth.range(0.6, 12);
+    base[i * 3 + 2] = z;
+    phases[i] = growth.range(0, Math.PI * 2);
+  }
+  const column = new Random(SEED ^ 0xf531);
+  for (let i = 1500; i < count; i++) {
+    const u = column.range(780, 1105);
+    const v = column.signed(165);
+    const { x, z } = worldOf(u, v);
+    const floor = seabedHeight(x, z);
+    base[i * 3] = x;
+    base[i * 3 + 1] = floor + column.range(2, 12);
+    base[i * 3 + 2] = z;
+    phases[i] = column.range(0, Math.PI * 2);
+  }
   live.set(base);
 
   const geometry = new BufferGeometry();
@@ -131,7 +169,7 @@ function buildSporeMotes(): {
   geometry.computeBoundingSphere();
 
   const material = new PointsMaterial({
-    size: 0.09,
+    size: 0.15,
     map: moteTexture(),
     transparent: true,
     opacity: 0.5,
@@ -152,6 +190,85 @@ function buildSporeMotes(): {
         live[i * 3] = base[i * 3]! + Math.sin(t * 0.1 + p) * 1.7 + t * 0.05 * Math.sin(p);
         live[i * 3 + 1] = base[i * 3 + 1]! + Math.sin(t * 0.06 + p * 1.7) * 1.1;
         live[i * 3 + 2] = base[i * 3 + 2]! + Math.cos(t * 0.085 + p) * 1.7;
+      }
+      attribute.needsUpdate = true;
+    },
+  };
+}
+
+// ─── The drift plankton ──────────────────────────────────────────────────────
+
+/**
+ * Fill round 7: the sweep's HIGH midwater frames (01 over the road, 07
+ * over the southwest ridge) kept a thin foreground through r6 because a
+ * 0.15 m additive spark is subpixel past ~25 m — raising the mote COUNT
+ * (r6) put more of them in the water without making any of them
+ * readable. This is the other lever: a sparse layer of much larger,
+ * softer drifters (0.42 m at lower opacity) that stay visible sparks at
+ * sweep-camera range. Points carry no triangles; the layer costs one
+ * draw. Fresh substream `^ 0xf532`, appended after every existing draw.
+ *
+ * Round 8: 320 → 900 (sequential draws on the same stream — the first
+ * 320 stay byte-identical). At 320 the layer was one drifter per
+ * ~5,000 m³: a random midwater camera usually had NONE within the 15 m
+ * where a 0.42 m spark is more than a couple of pixels. Roughly tripling
+ * the density makes a near spark the expectation instead of the lottery.
+ *
+ * Round 10: 900 → 1600 (same rule, first 900 byte-identical). Frame 07's
+ * foreground was still one or two sparks — at 900 the 15 m readable
+ * bubble holds ~1.5 drifters on average, and a Poisson draw leaves it
+ * empty a third of the time. Points: zero triangles, the same one draw.
+ */
+function buildDriftPlankton(): {
+  points: Points;
+  update: (dt: number, time: number, calm: number) => void;
+} {
+  const random = new Random(SEED ^ 0xf532);
+  const count = 1600;
+  const base = new Float32Array(count * 3);
+  const live = new Float32Array(count * 3);
+  const phases = new Float32Array(count);
+
+  for (let i = 0; i < count; i++) {
+    const u = random.range(640, 1105);
+    const v = u < 780 ? random.signed(24) : random.signed(165);
+    const { x, z } = worldOf(u, v);
+    const floor = seabedHeight(x, z);
+    base[i * 3] = x;
+    base[i * 3 + 1] = floor + random.range(3, 14);
+    base[i * 3 + 2] = z;
+    phases[i] = random.range(0, Math.PI * 2);
+  }
+  live.set(base);
+
+  const geometry = new BufferGeometry();
+  const attribute = new BufferAttribute(live, 3);
+  attribute.setUsage(DynamicDrawUsage);
+  geometry.setAttribute("position", attribute);
+  geometry.computeBoundingSphere();
+
+  const material = new PointsMaterial({
+    size: 0.42,
+    map: moteTexture(),
+    transparent: true,
+    opacity: 0.34,
+    blending: AdditiveBlending,
+    depthWrite: false,
+    sizeAttenuation: true,
+  });
+  const points = new Points(geometry, material);
+  points.name = "verdant2-drift-plankton";
+  points.frustumCulled = false;
+
+  return {
+    points,
+    update(_dt: number, time: number, calm: number): void {
+      const t = time * calm;
+      for (let i = 0; i < count; i++) {
+        const p = phases[i]!;
+        live[i * 3] = base[i * 3]! + Math.sin(t * 0.07 + p) * 2.2 + t * 0.04 * Math.sin(p);
+        live[i * 3 + 1] = base[i * 3 + 1]! + Math.sin(t * 0.05 + p * 1.7) * 1.4;
+        live[i * 3 + 2] = base[i * 3 + 2]! + Math.cos(t * 0.06 + p) * 2.2;
       }
       attribute.needsUpdate = true;
     },
@@ -556,7 +673,11 @@ function buildCushionStars(): InstancedMesh {
   geometry.setAttribute("color", new BufferAttribute(colors, 3));
 
   const material = createToonMaterial({ vertexColors: true });
-  const count = 24;
+  // Fill round: 24 → 40. The first 24 draw exactly as before (the reroll
+  // fence); the growth spreads down the gardens and along the threshold
+  // road from a fresh substream. Six of the sixteen new stars mark the
+  // threshold — small fauna for the road in (plan §3, threshold T4).
+  const count = 40;
   const mesh = new InstancedMesh(geometry, material, count);
   mesh.name = "verdant2-cushion-stars";
   mesh.castShadow = false;
@@ -565,7 +686,7 @@ function buildCushionStars(): InstancedMesh {
   const palette = [0x9e5f8a, 0x2e8a6a, 0xc07a5a];
   const dummy = new Object3D();
   const tint = new Color();
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < 24; i++) {
     const nearCistern = random.next() < 0.4;
     const u = nearCistern ? CISTERN.u + random.signed(30) : 840 + random.next() * 120;
     const v = nearCistern ? CISTERN.v + random.signed(30) : -60 + random.next() * 100;
@@ -576,6 +697,20 @@ function buildCushionStars(): InstancedMesh {
     dummy.updateMatrix();
     mesh.setMatrixAt(i, dummy.matrix);
     tint.setHex(palette[i % palette.length]!).multiplyScalar(random.range(0.85, 1.15));
+    mesh.setColorAt(i, tint);
+  }
+  const growth = new Random(SEED ^ 0xf520);
+  for (let i = 24; i < count; i++) {
+    const onThreshold = i < 30;
+    const u = onThreshold ? 650 + growth.next() * 95 : 840 + growth.next() * 130;
+    const v = onThreshold ? growth.signed(9) : -65 + growth.next() * 110;
+    const { x, z } = worldOf(u, v);
+    dummy.position.set(x, seabedHeight(x, z) + 0.02, z);
+    dummy.rotation.set(0, growth.range(0, Math.PI * 2), 0);
+    dummy.scale.setScalar(growth.range(0.7, 1.4));
+    dummy.updateMatrix();
+    mesh.setMatrixAt(i, dummy.matrix);
+    tint.setHex(palette[i % palette.length]!).multiplyScalar(growth.range(0.85, 1.15));
     mesh.setColorAt(i, tint);
   }
   mesh.instanceMatrix.needsUpdate = true;

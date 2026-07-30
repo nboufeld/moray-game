@@ -344,6 +344,303 @@ renders every pose (gate, stair, gardens, bridge, turtles, grotto,
 cistern, vault, both mistfalls, balcony, threshold) with nothing empty
 and nothing flat.
 
+## THE FILL REWORK (Phase 3, Batch 1 — `rework/verdant-line-2`)
+
+Executed against `docs/fill-plans/verdant-line-2.md` under FILL-DOCTRINE
+and MASTER (R1 caps 160/450k; R4 verified from this side; §1.2 rests
+held). Item 1 first: caps raised and reroll-fence pins added — the Rim
+Sentinel, gate jamb, mistfall horn, a Cistern ring stone and the
+Warden's beat pinned byte-exact, and every fill substream is
+`SEEDS.regionVerdant2 ^ 0xf1xx–0xf9xx`, appended after all pre-fill
+draws. New fill contracts in `tests/regionVerdant2.test.ts`: pass
+channel swimmable u 636–810 (three swim heights, every collider),
+threshold-runner route inside the corridor and >1 m clear of every
+seal, milk-sheet additive discipline (fog:false, depthWrite off,
+opacity ≤ 0.2, range fade), mesa-card feet ≤ −44, registered rests
+empty of every instanced kit scatter, riser-strip byte-determinism.
+
+### Fill round 1 (`v2-fill-r1`) — the roads exist; two drifters caught red-handed
+Silhouette: **pass-threshold transforms** — turf islands, waymark pairs,
+worn stacks, shell pebbles and the milky→celadon carpet carry the eye to
+the sentinel; three layers stand where the audit's "three objects on
+100 m" was. **emerald-gate**: jambs finally DRESSED (9 full drapes each),
+glow moss at their feet, worked shards and turf between. **slab-bridge /
+turtle-terraces**: liaison fry cross the walk, crabs sit the slab lips,
+garden bushes and fringe turf draw the treads. **mistfall-above ships
+its milk** — the kit fallStreak sheets read as soft streaked columns
+pouring between the horns (the hard-topped strips are gone), and the
+mesa-city v2 cards carry stepped tops and varied ink. **fern-vault**:
+moth-fry circle the lanterns, low fronds and carpet fill the floor,
+the mouth gradient reads. **cistern**: pool grown, rim lawn thicker,
+stillness kept. Fails: **gardens-vista washed white** — an additive
+sheet mid-frame; **mistfall-below** — a huge translucent panel floats
+over the basin. Probe verdict (node-toggle idiom): both are the same
+class of bug — the billows (pre-fill code) and my new glow fan breathe
+via `mesh.scale` over WORLD-BAKED geometry, which scales about the
+origin a kilometre away: every breath slides the mark tens of metres
+across the province, wall-clock-phased, so frames catch it mid-drift.
+Fixed properly: geometry made local, position on the mesh. Value:
+the round-1 litter read as pale lavender confetti (threshold shells) and
+dark chips (gate shards) — both re-valued toward their grounds and
+shrunk. Detail: riser strips too fine to read from the stair pose —
+blades +30% length, drape strands 4 → 5 × 2.0 m.
+Sweep (3/12 frames before a page-load timeout; full sweeps from r2):
+**the verifier bit** — midwater frames over the open slopes found bare
+ground between the zone gates. Round 2 adds the doctrine-rule-3 answer:
+a region-wide base moss carpet + litter drift over every owned square
+metre (2 draws, ~16k tris), and spore motes 520 → 900 widened to the
+threshold road and rim slopes so the water carries light everywhere.
+
+### Fill round 2 (`v2-fill-r2`) — the poses hold; the sweep indicts the open country
+Authored poses (all twelve looked at): **pass-threshold, emerald-gate,
+slab-bridge, turtle-terraces, curtain-grotto, cistern, fern-vault,
+mistfall-above, far-balcony all hold** — the r1 fixes landed (turf reads,
+litter re-valued, the drifting marks pinned, mesa-city v2 composes, the
+Warden discovered itself mid-settle in the grotto frame). Two authored
+fails: **mistfall-below** — a billow reads as a giant tinted GLASS PANE
+over the basin (r1's drift is fixed but the material was always the
+second half of that bug: normal-blended `MeshBasicMaterial` with a
+colour-only halo texture and NO alpha — a uniform-opacity quad whose
+map goes black at the corners is a hard-edged pane, tilted across the
+whole frame from the basin pose); **stair-descent** — the mid-channel
+treads still read bare-ish, and a hard-edged mint RECTANGLE floats at
+top-right. Probe (node-toggle idiom, `verdant2-distance-0` off/on):
+the rectangle is **our own nearest cliff ring's terraced skyline** — a
+level mesa run whose 5 m step falls as a razor vertical edge over the
+flat fog band; from inside the country a lone step reads as a floating
+card (r5's accepted "teal band" was the ring seen dead-on; this is the
+ring's STEP seen dead-on, and it is not accepted).
+Sweep (12/12 captured this time): **~4 of 12 pass — the verifier's
+verdict is the round's real work order.** Frame 06 lands inside the
+Cistern bowl (registered rest — licensed miss). The rest fail one way:
+**the open country reads bare from a few metres up.** The base moss
+carpet's 0.14–0.3 m cards at ~1 per 8 m² are sub-pixel from any
+midwater pose (01, 02, 04, 10, 11 — rolling olive with nothing on it);
+the spore motes at 0.09 m are invisible sparks, so midwater frames have
+NO foreground layer at all; and the basin's pillar-cluster sector
+(03, 05, 12) is undressed — the silt carpets stop at u ≈ 1098 while the
+mesa cards' feet stand to u ≈ 1112, so a diver who swims out to the
+promise finds flat cards on naked violet ground.
+Round 3 orders: base cover count 2200 → 5200 and cards up to
+0.22–0.5 m, litter 500 → 1100; garden tread carpet 1600 → 2600 at
+0.2–0.44; stair tread carpet 1600 → 2000 at 0.2–0.42; basin silt
+carpet 1400 → 2200 at 0.2–0.42 and a NEW pillar-sector bed
+(carpet + litter + wine bushes + glow colonies at the card feet, fresh
+`^ 0xf10b/0xf209/0xf305/0xf603` substreams); vault carpet gate eased to
+the mouth and 900 → 1100; spore motes 900 → 1500 (growth stream only)
+at size 0.09 → 0.15; billows take their own halo as `alphaMap` (the
+pane dissolves into cloud); ring skylines take a wider step ramp
+(0.16 → 0.3) and wobble 0.8 → 1.5 so no step is a razor rectangle.
+
+### Fill round 3 (`v2-fill-r3`) — two poses cured; the sweep says clump, not count
+Authored: **mistfall-below transforms** — with the halo as `alphaMap` the
+glass pane dissolves and the frame is the fall again (milk between the
+horns, foot glow, sleeper + buds below); **stair-descent** gains carpet,
+the spill shoal and motes mid-frame, and the ring step's razor edge is
+sloped — a small sliver still crops the top-right corner (watch it, not
+worth another distance retune yet). All other authored poses hold r2.
+Sweep: **≈4 pass / 3 marginal / 4 fail / 1 licensed (Cistern rest)** —
+better, not the bar. What the marginals proved: the count-and-size lever
+works at ground level (frames 08/09/11 read) and CANNOT work alone from
+midwater — 5,000 uniform ankle cards read as noise from 6 m up, however
+many they are. The motes now exist in every water column (right lever,
+keep). Frame 04's razor-edged wall probed by node-toggle:
+**verdant-1's far-side distance ring** (its trunk silhouettes on the
+crest gave it away; hiding `region-verdant-line-1` removes it) — the
+documented cross-region flag, R4's cut, verdant-1's rework owns it; the
+frame's bare foreground is still ours. Round 4 orders: a seeded fbm
+DRIFT field (~13 m cells) multiplies every broad-field gate — same
+counts gathered 3–4× locally into drifts with composed gaps (uniform
+scatter is noise; drifts are cover) — plus a region-wide knee-high tuft
+layer (950 × 0.28–0.55 m) and a sparse bush scatter (40) riding the
+same field, the mid-scale silhouettes the open slopes never had. Budget
+trimmed back under the cap (base litter 1100 → 900, cards 5200 → 5000):
+measured 448,888 ≤ 450k at the same 25/25 green.
+
+### Fill round 4 (`v2-fill-r4`/`r4b`) — the drift reads; the probe finds the true bare ground
+Authored (r4, all twelve looked at): the drift-gathered cover and the
+knee-high tuft layer land — **pass-threshold, emerald-gate, slab-bridge,
+turtle-terraces, curtain-grotto, cistern, fern-vault, mistfall-above,
+mistfall-below, far-balcony, stair-descent all hold** (the pane stays
+cured, the pillar-sector floor is a place, the stair's razor edge stays
+sloped with only the watched top-right sliver). `gardens-vista` r4 came
+back a blank violet frame — a capture failure, not a scene bug (r4b's
+recapture of the same pose renders fine).
+Sweep r4: **7 pass / 1 licensed (06, Cistern) / 4 down** — 02 and 10
+bare flanks, 04 sparse slope plus the cross-region wall (flagged, not
+ours), 07 thin foreground from high midwater. r4b (the fall-face gate
+narrowed to the pour's ±18 m) changed NOTHING in any sweep frame — the
+narrowing was aimed at the wrong band. The pose probe (drawing the
+sweep's own seeded stream and mapping each camera to spoke coordinates)
+finally located the failures: **frames 02 and 10 look at the basin's
+SOUTH side** (camera/look v ≈ −39 to −101, u 1051–1071) where the silt
+carpet (disc centre v 8) and the sector bed (v 42) never reach — only
+drift-gapped base cover lands there; frame 10 additionally straddles
+the south-pocket rest's rim, but its bare field runs far past the
+pocket's 14 m. **Frame 04/07 stand on the southwest slope** (u 814–822,
+v −68 to −128), south of the gardens gate's v ≥ −85 cut. Round 5
+orders: a basin south-flank bed (silt key, drift floor 0.45, fresh
+`^ 0xf10d/0xf10e/0xf20a`) at disc(1060, −80, 55) and a southwest
+approach meadow (turf key, fresh `^ 0xf10f/0xf110`) at
+disc(820, −100, 55), both through the shared stillness gate; paid for
+by thinning the broad fields ~15% (base cards 5000 → 4000, litter
+900 → 800, tufts 950 → 870, silt 2200 → 1900, gardens 2600 → 2400,
+stair 2000 → 1900, vault 1100 → 1000). Measured after: **103 draws /
+449,568 tris** (caps 160/450k), 25/25 green (rests, fence, channel all
+hold).
+
+### Fill round 5 (`v2-fill-r5`) — the south beds land; midwater is the last thin place
+Authored (all twelve looked at): the ~15% broad-field thinning cost
+nothing visible — **all twelve poses hold r4** (drift gathers what
+remains, the treads stay dressed, the pane stays cured, gardens-vista
+renders normally again).
+Sweep r5: **8 pass / 1 licensed (06, Cistern) / 3 marginal** — the two
+r4 failures are cured: **frame 02** (basin south side) now carries the
+silt-key bed edge to edge, **frame 04** (southwest slope) reads with the
+approach meadow's tufts (its right-edge wall is the flagged cross-region
+ring). What remains: **frame 07** hangs high over the ridge with only
+fall streaks in the foreground — no mote reaches its water; **frame 10**
+looks down the same south flank from higher up, its tufts and pebbles
+read but the mid-field wants one mid-scale silhouette; **frame 01**
+(high midwater over the road) is the same thin-foreground class as 07.
+All three are the midwater-foreground problem, not bare ground. Round 6
+orders: spore motes 1500 → 1900 on a SECOND fresh substream
+(`^ 0xf531`) held to the y +2..+12 water column across the open country
+(u 780–1105) — ground poses get foreground from carpets, midwater poses
+can only get it from the water itself; a south-flank bush bank
+(12 × wine-key, `^ 0xf307`) through the same gate for frame 10's
+mid-scale; paid for by base litter 800 → 700. Measured after:
+**104 draws / 449,728 tris** (caps 160/450k).
+
+### Fill round 6 (`v2-fill-r6`) — the count lever exhausts itself; two frames want SIZE
+Authored (all twelve looked at): **all twelve hold** — threshold
+waymarks + blades + runner, gate jambs + drapes, dressed treads with the
+spill shoal (top-right sliver unchanged, still watched), gardens with
+turtles, slab crabs, grotto moth-fry, Cistern mirror bright and its bowl
+empty, vault ferns + spore fall, both Mistfall poses (pane cured, milk
+additive), balcony fry + ferns.
+Sweep r6: **8 pass / 1 licensed (06, Cistern) / 3 marginal** — 02 and
+04 confirmed cured a second round. But 01/07/10 did not move: the 400
+new column motes are IN frame 07's water and invisible — a 0.15 m
+additive spark is subpixel past ~25 m, so raising the count put more
+unreadable things in the water (the r3 lesson again, one level up); and
+frame 10's dozen wine bushes vanished against the violet silt — hue and
+value both sit ON the ground key (proof: the same bushes at the same
+counts read fine as silhouettes where they break the skyline). Round 7
+orders, all levers SIZE and VALUE, not count: (1) a drift-plankton layer
+(`^ 0xf532`, 320 × 0.42 m at opacity 0.34, y +3..+14, u 640–1105
+covering the road band frame 01 hangs over) — points cost no triangles,
+one draw; (2) the flank bushes re-keyed a full value step off the silt
+(base 0xa8697a, tip 0xd08e9a) and scale 0.9 → 1.2; (3) the flank tufts
+0.28–0.55 → 0.36–0.72 (thigh-high reads from 7 m up). Zero triangle
+cost total. Measured after: **105 draws / 449,728 tris** (caps
+160/450k), 25/25 green.
+
+### Fill round 7 (`v2-fill-r7`) — right levers, wrong densities; the probe finds the bushes
+Authored (all twelve looked at): **all twelve hold** — no visible cost
+anywhere from r7's retunes.
+Sweep r7: **8 pass / 1 licensed / 3 marginal, unchanged** — 01/07/10
+barely moved. Two diagnoses, both instructive. (1) The 320-drifter
+plankton layer is one spark per ~5,000 m³; a 0.42 m additive sprite is
+readable inside ~15 m, and a random midwater camera usually has NO
+drifter that close — the size lever was right, the density was a
+lottery ticket. (2) The bush POSITION probe (dumping every
+kit-bush-bank instance to spoke coordinates) found the real reason the
+flank bushes never appear in frame 10: `scatterPoints` gathers 12
+bushes into ~2 clumps (perClump 7), and both of `^ 0xf307`'s clump
+hearts landed at u ≈ 1086 — EAST of the frame's camera wedge
+(u 1051–1071 looking south). The r7 re-key fixed the value of bushes
+the frame cannot see. Round 8 orders: plankton 320 → 900 (sequential
+draws, first 320 byte-identical; near-camera sparks become expectation,
+not luck); a second flank bank (`^ 0xf308`, 12 × 4-lobe at scale 1.1,
+same rose key) on disc(1058, −72, 28) held INSIDE the camera wedge —
+the probe confirms its hearts at (1076, −52)/(1059, −71)/(1049, −98);
+paid for by south cards 750 → 500 (the flank's own least-visible
+element), vault cards 1000 → 900, gardens cards 2400 → 2300. Measured
+after: **106 draws / 449,656 tris** (caps 160/450k), 25/25 green.
+
+### Fill round 8 (`v2-fill-r8`) — density and the wedge both pay off; one frame left
+Authored (all twelve looked at): **all twelve hold** — the second flank
+bank sits below the turtle-terraces pose without crowding it; nothing
+else moved.
+Sweep r8: **10 pass / 1 licensed (06, Cistern) / 1 marginal** —
+**frame 10 CURED** (the `^ 0xf308` bank's rose mounds break the flank's
+mid-field exactly where the probe promised) and **frame 01 CURED** (at
+900 drifters the road band finally keeps sparks near a random camera).
+Only **frame 07** remains: high over the southwest slope, foreground
+faint, mid-field still the naked ridge line. Round 9 orders: the pose
+probe pins frame 07 at (814, −68), 7.9 m up, looking at (826, −60) —
+give it the frame-10 treatment: an olive approach cluster (`^ 0xf309`,
+10 × 4-lobe, scale 1.0) on disc(832, −56, 12) centred 25 m DOWN the
+look ray (the first attempt at disc(826, −60, 22) let `scatterPoints`
+carry the clump heart 66° off-axis; the tight disc cannot); paid for by
+approach cards 500 → 400, stair cards 1900 → 1800, region tufts
+870 → 840. Measured after: **107 draws / 449,936 tris** (caps 160/450k),
+25/25 green.
+
+### Fill round 9 (`v2-fill-r9`) — in the wedge and still unread: position was never the whole lesson
+Authored (all twelve looked at): **all twelve hold**.
+Sweep r9: **10 pass / 1 licensed (06, Cistern) / 1 marginal**. Frame 09
+came back white — recaptured alone it reads as it always has (same
+transient capture class as r4's blank gardens-vista; graded on the
+recapture). Frame 07: the bush probe confirms `^ 0xf309`'s hearts at
+(832, −65) — 18 m from the camera, 24° off the look ray, IN the frame —
+and the capture shows them only as bumps on the ridge. Position-right,
+read-wrong: at scale 1.0, keyed in the shelf's own olive, ten bushes at
+18 m are sub-silhouette. Round 10 orders are the r7 flank lesson
+verbatim (SIZE and VALUE, not place): scale 1.0 → 1.35 and the key a
+warm value step off the teal shelf (base 0x93c161, tip 0xc8dd85); and
+plankton 900 → 1600 (first 900 byte-identical) — at 900 the 15 m
+readable bubble around a midwater camera averages ~1.5 drifters and is
+empty a third of the time; frame 07's foreground was that empty third.
+Zero triangle cost on both levers.
+
+### Fill round 10 (`v2-fill-r10`) — THE STANDARD HOLDS
+Authored (all twelve looked at): **all twelve hold** — the brightened
+approach bushes sit naturally under the stair-descent and gardens-vista
+poses; the Cistern's mirror bright, its bowl empty; both Mistfall poses
+additive and quiet; threshold, gate, grotto, terraces, slab, vault,
+balcony all carry their compositions.
+Sweep r10 (frames 11–12 recaptured after a harness timeout killed the
+run at frame 10; graded on the recaptures): **11 pass / 1 licensed
+(06, Cistern rest)**. **Frame 07 CURED** — and the cure was proven, not
+assumed: an NDC projection probe (camera rebuilt from the pose stream
+with the rig's own YXZ convention) puts the `^ 0xf309` bushes at
+ndc (−0.4, −0.76), 20–27 m out, bottom-left of frame — the golden
+mounds now visible on the hill there are them. r9's "bumps on the
+ridge" were never the bushes at all (a 2 m bush at 18 m spans ~70 px,
+the bumps were ~10 px — distant objects); the bank was in frame all
+along and unreadable at scale 1.0 in the shelf's own olive. Frames
+01/02/10 hold their cures; 09 clean this round (r9's white frame was
+transient). The three-layer law holds from eleven random positions;
+the only miss rests where stillness is registered.
+Measured: **107 draws / 449,936 tris** (caps 160/450k) — unchanged
+from r9; both r10 levers (bush scale/key, plankton count) are
+triangle-free and draw-free.
+
+### Rework finals (`v2-filled`, `v2-filled-noassets`)
+Gates green: typecheck clean; eslint (regions + region test, zero
+warnings); the five required suites 131/131; ONE full `npm test`
+659/659. All three final sets captured against the verified port-5193
+server and *looked at*, every frame:
+- **Authored (12/12 hold)** — gardens-vista recaptured once (the same
+  transient white-out the harness showed in r4 and r9; the recapture
+  is clean: turtles fore, terrace slabs mid, standing stones and mesa
+  cards far). The Cistern's bowl stays empty around its bright mirror;
+  both Mistfall poses stay additive and quiet; threshold, gate,
+  grotto, terraces, slab, vault, balcony, stair all carry their
+  compositions.
+- **Sweep (11 pass / 1 licensed)** — the standard holds on the final
+  set as it did in r10; the one miss is frame 06 inside the Cistern's
+  registered rest, licensed by MASTER §1.2.
+- **No-assets fallback (12/12 render)** — far-balcony recaptured (the
+  harness run died on a nav timeout at its last pose), curtain-grotto
+  recaptured (a moray codex flash overexposed the first take); every
+  pose renders the procedural fallback with the fill intact, nothing
+  empty, nothing flat.
+Budgets, before the rework → after: **40 draws / 189,862 tris →
+107 draws / 449,936 tris** (caps 160/450k).
+
 ## Flags
 
 - **Verdant-1's far-rim seal ring crosses the pass corridor.** The

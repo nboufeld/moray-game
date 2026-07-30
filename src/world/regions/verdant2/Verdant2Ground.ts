@@ -8,6 +8,7 @@ import {
   CENTER_X,
   CENTER_Z,
   CISTERN,
+  FERN_VAULT,
   MISTFALL,
   balconyWeight,
   cisternWeight,
@@ -122,12 +123,15 @@ function bakeTerracePaint(geometry: PlaneGeometry, contacts: readonly ContactPat
     let b = 0.56 - sward * 0.08;
 
     // The threshold: milky-bright, agreeing with the kelp sea's Falling
-    // Edge across the overlap. Eases out down the stair.
-    const milk = 1 - smoothstep01((u - 700) / 90);
+    // Edge across the overlap — the fill plan's §8 handover made exact:
+    // verdant-1's own Falling Edge multipliers (0.98/1.02/0.92) carry the
+    // ground at u < 700, and the 40 m lerp hands over to this region's
+    // celadon by u 740 (the doctrine's 20+ m transition rule).
+    const milk = 1 - smoothstep01((u - 700) / 40);
     if (milk > 0) {
-      r += (0.97 - r) * milk;
-      g += (1.01 - g) * milk;
-      b += (0.9 - b) * milk;
+      r += (0.98 - r) * milk;
+      g += (1.02 - g) * milk;
+      b += (0.92 - b) * milk;
       value += milk * 0.06;
     }
 
@@ -145,15 +149,17 @@ function bakeTerracePaint(geometry: PlaneGeometry, contacts: readonly ContactPat
       const hang = smoothstep01(
         (fbm(v * 0.31, u * 0.05, { seed: SEED ^ 0x517c, period: 9, octaves: 2 }) - 0.46) / 0.2,
       );
-      r += (0.42 + hang * 0.06 - r) * riser * 0.85;
-      g += (0.52 + hang * 0.26 - g) * riser * 0.85;
-      b += (0.62 - hang * 0.12 - b) * riser * 0.85;
-      value -= riser * (0.26 - hang * 0.1);
+      // Fill round: the split deepened one more step — the treads still
+      // read olive against their own faces in `turtle-terraces`.
+      r += (0.4 + hang * 0.06 - r) * riser * 0.9;
+      g += (0.5 + hang * 0.28 - g) * riser * 0.9;
+      b += (0.62 - hang * 0.12 - b) * riser * 0.9;
+      value -= riser * (0.32 - hang * 0.1);
     }
     // Each garden tread sits a step deeper in value than the one above
     // (round 5): from the overlook the country was reading as one plane,
     // and stacked value bands are what say "terraces" from uphill.
-    value += terraces.drop * 0.02;
+    value += terraces.drop * 0.03;
 
     // Depth key: the lower the country, the cooler and more violet the
     // ground — the light is further away. Red stays above green's cut.
@@ -201,10 +207,17 @@ function bakeTerracePaint(geometry: PlaneGeometry, contacts: readonly ContactPat
       const litter = smoothstep01(
         (fbm(x * 0.045, z * 0.045, { seed: SEED ^ 0x517b, period: 11, octaves: 2 }) - 0.52) / 0.24,
       );
+      // Fill round: the half-light gets its GRADIENT (plan §4) — a value
+      // ramp from the bright mouth (toward the mouth blade at +16, +14)
+      // into the deep interior, so the vault reads as light arriving,
+      // not one flat dim value under the slab.
+      const mouth = smoothstep01(
+        (((u - FERN_VAULT.u) * 16 + (v - FERN_VAULT.v) * 14) / 21.3 + 14) / 30,
+      );
       r += (0.5 + litter * 0.3 - r) * vault;
       g += (0.48 + litter * 0.26 - g) * vault;
       b += (0.66 - litter * 0.1 - b) * vault;
-      value -= vault * (0.12 - litter * 0.12);
+      value -= vault * (0.2 - litter * 0.12 - mouth * 0.16);
     }
 
     // The Mistfall's fan and basin: milky silt pouring into the deepest
@@ -238,12 +251,21 @@ function bakeTerracePaint(geometry: PlaneGeometry, contacts: readonly ContactPat
     }
 
     // The Far Balcony: pale worked stone, a landing of light on the rim.
+    // Fill round: the deck's JOINTS are drawn in the cover (plan §3) — a
+    // worked-stone grid of narrow shaded seams in spoke space, so the
+    // terrace reads as flagstones rather than one poured sheet.
     const balcony = balconyWeight(u, v);
     if (balcony > 0) {
+      const seamU = Math.abs(((u * 0.36) % 1) - 0.5);
+      const seamV = Math.abs(((v * 0.31 + 0.4) % 1) - 0.5);
+      const joint = Math.max(
+        1 - smoothstep01((seamU - 0.04) / 0.05),
+        1 - smoothstep01((seamV - 0.04) / 0.05),
+      );
       r += (0.86 - r) * balcony;
       g += (0.94 - g) * balcony;
       b += (0.82 - b) * balcony;
-      value += balcony * 0.12;
+      value += balcony * (0.12 - joint * 0.16);
     }
 
     // Contact shade under everything that stands on the ground.
