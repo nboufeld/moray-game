@@ -280,6 +280,37 @@ export const KIT_DEMOS_A: KitDemoRegistry = {
     },
   },
 
+  farGrassCardsNear: {
+    // The near-boundary proof: the camera stands INSIDE the card field.
+    // With nearFade, the 8 m around the lens carry no cards — the blade
+    // profile owns the foreground and the cards take over where their
+    // 4-tri nature can no longer be seen.
+    camera: { position: [0, 1.4, 6], lookAt: [0, 0.7, 30] },
+    build(): KitBuild {
+      const shared = { gate: OPEN_GATE, ground: demoGround };
+      return compose([
+        dressGround(15, 80),
+        buildCarpetField({
+          seed: 0xa11c_0141,
+          palette: SPRING,
+          area: { center: [0, 4], radius: 6 },
+          count: 260,
+          profile: "blade",
+          sunGlow: true,
+          ...shared,
+        }),
+        buildFarGrassCards({
+          seed: 0xa11c_0142,
+          palette: SPRING,
+          area: { center: [0, 14], radius: 26 },
+          count: 9000,
+          nearFade: 8,
+          ...shared,
+        }),
+      ]);
+    },
+  },
+
   carpetField: {
     camera: { position: [0, 4.2, 8.6], lookAt: [0, 0.2, 0] },
     build(): KitBuild {

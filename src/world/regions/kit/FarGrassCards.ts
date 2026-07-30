@@ -5,6 +5,7 @@ import {
   Group,
   PlaneGeometry,
   type BufferGeometry,
+  type WebGLProgramParametersWithUniforms,
 } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { createToonMaterial } from "../../../rendering/ToonShading";
@@ -31,6 +32,14 @@ import {
  * toward milk (brighter and less saturated, never darker), with a shallow
  * root shade so a distant drift still has grain without contrast that would
  * read as noise through fog.
+ *
+ * `nearFade` (MASTER R12): this is a FAR-FIELD piece — at swimming
+ * distance its 4-tri nature shows, which is the owner's "half-cut grass"
+ * verdict in one option. With `nearFade` set, cards within that many
+ * metres of the camera shrink to nothing in the vertex shader (no
+ * transparency, no sort cost, buffers untouched), fully grown again by
+ * 1.4× the distance — so the piece can NEVER sit in the foreground, and
+ * a near profile (carpetField "blade"/"frond") owns that range instead.
  */
 
 export interface FarGrassCardsOptions {
@@ -43,6 +52,10 @@ export interface FarGrassCardsOptions {
   readonly count: number;
   /** Card height envelope in metres, [min, max). */
   readonly size?: readonly [number, number];
+  /** Metres from the camera inside which a card has fully vanished;
+   *  cards regrow to full size by 1.4× this. Unset ⇒ no fade (the
+   *  pre-R12 behaviour, byte-identical). */
+  readonly nearFade?: number;
 }
 
 const DEFAULT_SIZE: readonly [number, number] = [0.24, 0.58];
@@ -59,6 +72,20 @@ export function buildFarGrassCards(options: FarGrassCardsOptions): KitBuild {
 
   const geometry = crossedCardGeometry();
   const material = createToonMaterial({ side: DoubleSide, vertexColors: true });
+  const nearFade = options.nearFade ?? 0;
+  if (nearFade > 0) {
+    material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
+      shader.vertexShader = shader.vertexShader.replace(
+        "#include <begin_vertex>",
+        `#include <begin_vertex>
+         // R12 near guard: a card near the lens shrinks into the sand
+         // (scaling about its own root — no transparency, no popping).
+         vec4 kitCardOrigin = modelViewMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
+         float kitCardGrow = smoothstep(${nearFade.toFixed(2)}, ${(nearFade * 1.4).toFixed(2)}, length(kitCardOrigin.xyz));
+         transformed *= kitCardGrow;`,
+      );
+    };
+  }
 
   const spots = scatterPoints({
     random,
