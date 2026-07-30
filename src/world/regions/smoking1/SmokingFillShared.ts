@@ -40,6 +40,7 @@ import { CALDERA, GORGE_LIP_U, SPRINGS, gorgeChannelCenter, spokeOf } from "./Sm
 // ─── Fill seed substreams (all fresh — see the fence note above) ────────────
 
 export const FILL_SEEDS = {
+  baseAshCarpet: 0x5f00,
   gorgeGravel: 0x5f01,
   flatsRipple: 0x5f02,
   shoreScoria: 0x5f03,

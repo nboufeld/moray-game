@@ -160,17 +160,40 @@ const calderaCobbleGate: GateFn = (x, z) => {
 };
 
 /**
+ * The base ash-tuft carpet (round 2, from the sweep): sparse bone-pale
+ * stubble over the WHOLE disc between the named zones, so the ground
+ * between flats, steps and shore is never bare by default — verdant-1's
+ * "base coverage floor" lesson replayed for this register. Painted a
+ * step OFF the ash ground so the cards silhouette instead of converging
+ * with their own floor (its round-7 lesson, pre-empted).
+ */
+const baseCarpetGate: GateFn = (x, z) => {
+  const { u, v } = spokeOf(x, z);
+  if (u < 268) {
+    return 0;
+  }
+  const open =
+    (1 - basaltWeight(u, v) * 0.6) *
+    (1 - springsWeight(u, v) * 0.8) *
+    (1 - chimneysWeight(u, v) * 0.5) *
+    (1 - calderaWeight(u, v));
+  return open * restFree(x, z) * smokingWeight(x, z);
+};
+
+/**
  * Sulfur tufts: the flats' and the rim flanks' standing near-layer. The
  * outer annulus boost is the F-R3 flank band — a rim-facing sweep pose
- * must find something standing inside its first ~35 m.
+ * must find something standing inside its first ~35 m. Round 2 leaned
+ * the band harder (0.35 floor) and reached it back to the lip's flanks
+ * (u 262), where `gorge-lip` opened onto bare shelf.
  */
 const sulfurGate: GateFn = (x, z) => {
   const { u, v } = spokeOf(x, z);
-  if (u < 280) {
+  if (u < 262) {
     return 0;
   }
   const rc = Math.hypot(u - 445, v);
-  const flank = 0.5 + 0.5 * smoothstep01((rc - 120) / 45);
+  const flank = 0.35 + 0.65 * smoothstep01((rc - 105) / 50);
   const open =
     (1 - basaltWeight(u, v) * 0.7) *
     (1 - springsWeight(u, v) * 0.85) *
@@ -230,6 +253,8 @@ export function buildSmokingCarpets(stands: readonly ChimneyStand[]): SmokingCar
   );
 
   // The flats' ash-ripple drifts: pale grey-violet pebbles, wind-laid.
+  // Round 2: grown a size — the default pebble read as specks from pose
+  // height (verdant's litter lesson, replayed).
   keep(
     buildGroundLitter({
       seed: SEED ^ FILL_SEEDS.flatsRipple,
@@ -237,8 +262,9 @@ export function buildSmokingCarpets(stands: readonly ChimneyStand[]): SmokingCar
       area: discAreaAt(370, 0, 150),
       gate: flatsRippleGate,
       ground: seabedHeight,
-      count: 850,
+      count: 1000,
       shapeSet: "pebble",
+      size: [0.08, 0.24],
       twoTone: true,
     }),
   );
@@ -272,7 +298,8 @@ export function buildSmokingCarpets(stands: readonly ChimneyStand[]): SmokingCar
     }),
   );
 
-  // Joint litter on the basalt treads: the columns' own chips.
+  // Joint litter on the basalt treads: the columns' own chips. Round 2:
+  // bigger and more — the colonnade floor still read as untouched sand.
   keep(
     buildGroundLitter({
       seed: SEED ^ FILL_SEEDS.basaltJointLitter,
@@ -280,9 +307,9 @@ export function buildSmokingCarpets(stands: readonly ChimneyStand[]): SmokingCar
       area: discAreaAt(BASALT.u, BASALT.v, 78),
       gate: basaltLitterGate,
       ground: seabedHeight,
-      count: 520,
+      count: 650,
       shapeSet: "shard",
-      size: [0.07, 0.2],
+      size: [0.1, 0.28],
     }),
   );
 
@@ -354,16 +381,19 @@ export function buildSmokingCarpets(stands: readonly ChimneyStand[]): SmokingCar
     if (springAnchors.some((a) => Math.hypot(a.pos[0] - x, a.pos[1] - z) < 4.5)) {
       continue;
     }
-    springAnchors.push({ pos: [x, z], radius: anchorRandom.range(1.7, 3.1) });
+    springAnchors.push({ pos: [x, z], radius: anchorRandom.range(1.4, 2.4) });
   }
+  // Round 2: the rust/skirt rings were reading maroon-black under this
+  // light (the r1 spring-stair foreground) — every band lifted a value,
+  // and the radii tightened so a mat sits on ONE tread.
   keep(
     buildMatRings({
       seed: SEED ^ FILL_SEEDS.matsSprings,
       bands: [
         { color: 0xecdfc0, width: 1.1 },
-        { color: 0xdd9a4c, width: 1.0 },
-        { color: 0xa85c34, width: 0.9 },
-        { color: 0x7a5a54, width: 0.7 },
+        { color: 0xe0a458, width: 1.0 },
+        { color: 0xbe6c3e, width: 0.9 },
+        { color: 0x8d7266, width: 0.7 },
       ],
       ground: seabedHeight,
       anchors: springAnchors,
@@ -492,29 +522,49 @@ export function buildSmokingCarpets(stands: readonly ChimneyStand[]): SmokingCar
   );
 
   // ─── The standing near-layer ─────────────────────────────────────────────
+  // The base ash-tuft carpet: the round-2 sweep answer — bone-pale cards
+  // over the whole owned disc so no pose lands on bare ash by accident.
+  keep(
+    buildCarpetField({
+      seed: SEED ^ FILL_SEEDS.baseAshCarpet,
+      palette: { base: 0xa89aa2, tip: 0xd2c6bc, shade: 0x6e6278 },
+      area: discAreaAt(445, 0, 215),
+      gate: baseCarpetGate,
+      ground: seabedHeight,
+      count: 3000,
+      size: [0.3, 0.55],
+      swayAmp: 0.035,
+    }),
+  );
+
   // Sulfur tufts: bone-sulfur crossed tufts over the flats, the shore and
   // the outer flank band — knee-high so a pose finds a silhouette, not
   // just paint (values a step off the ash so they never converge).
+  // Round 2: 620 → 950 and grown a hand taller — the sweep's bare bands
+  // (01/02/03/11) all stood on ground this family alone can serve.
   keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.sulfurTufts,
       palette: { base: 0xbfae76, tip: 0xe4d494, shade: 0x877a62 },
-      area: discAreaAt(445, 0, 212),
+      area: discAreaAt(445, 0, 215),
       gate: sulfurGate,
       ground: seabedHeight,
-      count: 620,
+      count: 950,
       profile: "tuft",
-      size: [0.4, 0.78],
+      size: [0.5, 0.9],
       swayAmp: 0.045,
     }),
   );
 
   // ─── The smoke-bushes (exclusive) ────────────────────────────────────────
-  // Charcoal lobes, ember-tipped: the flats' and forest's understory.
+  // Charcoal lobes, ember-tipped. Round 2: the r1 tips were a full
+  // pumpkin orange and the bushes read as bread buns (sweep 06) — the
+  // tip drops to a smoulder that only RIMS the charcoal, and the body
+  // holds the violet-grey so the bush reads burnt, not ripe.
   keep(
     buildBushBank({
       seed: SEED ^ FILL_SEEDS.smokeBushFlats,
-      palette: { base: 0x6e5666, tip: 0xa5684a, shade: 0x4e4458 },
+      palette: { base: 0x6a5864, tip: 0x8a5a44, shade: 0x4e4458 },
       area: discAreaAt(352, 8, 95),
       gate: smokeBushFlatsGate,
       ground: seabedHeight,
@@ -524,7 +574,7 @@ export function buildSmokingCarpets(stands: readonly ChimneyStand[]): SmokingCar
   keep(
     buildBushBank({
       seed: SEED ^ FILL_SEEDS.smokeBushForest,
-      palette: { base: 0x66505e, tip: 0xa8603e, shade: 0x483e52 },
+      palette: { base: 0x62505e, tip: 0x8a5540, shade: 0x483e52 },
       area: discAreaAt(548, -24, 120),
       gate: smokeBushForestGate,
       ground: seabedHeight,

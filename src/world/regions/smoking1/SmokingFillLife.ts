@@ -113,7 +113,9 @@ export function buildSmokingFillLife(
       // ~1.5 m/s over a ~1.2 km loop.
       phaseSpeed: 0.0012,
       braid: { lateral: 0.34, vertical: 0.22 },
-      glint: { count: 26, size: 0.12 },
+      // Round 2: no glint thread — the kit's cold-white sparkles read as
+      // fairy lights in this warm register (r1: first-breath, gorge-road);
+      // the ember motes are this region's sparkle.
     }),
   );
 
@@ -121,19 +123,22 @@ export function buildSmokingFillLife(
   // Sparkle swarms anchored where the water leaves the ground hot: the
   // spring terraces' rims (off the crown pool's five-metre rest) and the
   // forest's vent mouths.
+  // Round 2: the r1 swarms sprayed fairy lights across the sky at pose
+  // height (chimney-forest, twin-kings, forest-road) — fewer, smaller,
+  // dimmer, and hugging the floor band the vents actually own.
   const springsAt = worldOf(SPRINGS.u + 10, SPRINGS.v + 6);
   keep(
     buildParticulateField({
       seed: SEED ^ FILL_SEEDS.ventShrimpSprings,
       tint: 0xffc27e,
-      count: 90,
+      count: 40,
       mode: "swarm",
       volume: {
-        center: [springsAt.x, seabedHeight(springsAt.x, springsAt.z) + 1.6, springsAt.z],
-        size: [30, 3.5, 30],
+        center: [springsAt.x, seabedHeight(springsAt.x, springsAt.z) + 1.0, springsAt.z],
+        size: [26, 2.0, 26],
       },
-      size: 0.06,
-      opacity: 0.5,
+      size: 0.045,
+      opacity: 0.32,
     }),
   );
   const forestAt = worldOf(CHIMNEYS.u, CHIMNEYS.v + 2);
@@ -141,14 +146,14 @@ export function buildSmokingFillLife(
     buildParticulateField({
       seed: SEED ^ FILL_SEEDS.ventShrimpForest,
       tint: 0xffb877,
-      count: 110,
+      count: 55,
       mode: "swarm",
       volume: {
-        center: [forestAt.x, seabedHeight(forestAt.x, forestAt.z) + 1.8, forestAt.z],
-        size: [44, 4, 44],
+        center: [forestAt.x, seabedHeight(forestAt.x, forestAt.z) + 1.1, forestAt.z],
+        size: [38, 2.2, 38],
       },
-      size: 0.06,
-      opacity: 0.5,
+      size: 0.045,
+      opacity: 0.32,
     }),
   );
 
