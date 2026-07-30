@@ -194,3 +194,357 @@ weaver-grotto, falling-edge.
   accepted as backlight after the round-7 measurement.
 - Region HUD total rises 17 → 18 when the region first builds (the
   streamer's designed behaviour).
+
+---
+
+# PHASE 3 REWORK — the fill (`rework/verdant-line-1`, plan `docs/fill-plans/verdant-line-1.md`)
+
+Executed under FILL-DOCTRINE + MASTER (R1 caps, R4 first item, §1.2
+registry inviolable). Every fill stream is `SEEDS.regionVerdant1 ^` a
+fresh `FILL_SEEDS.*` constant appended after all pilot draws — the reroll
+fence, proven by test pins on the first/last giants and the weaver's
+haunt (exact pre-fill coordinates held to 9 decimal places).
+
+## What landed (by checklist item)
+
+1. **Budgets** — test caps raised to the doctrine's 160 draws / 450k
+   tris; floors raised to 90 / 300k. Measured at round 1:
+   **108 draws / 439,018 triangles** (pilot was 65 / 248,711).
+2. **MASTER R4, first item** — `VerdantDistance` rings and trunk cards
+   now part over the depth-2 pass (second gap at
+   `VERDANT_SLOT.azimuth`, `PASS_GAP_HALF = 0.2`, card margin +0.1;
+   asserted by test). `falling-edge` r1 shows the corridor open,
+   milky-bright, the eased ring ends reading as soft hills.
+3. **Ground paint** — the channel-centreline moss track (the road
+   itself is green now) and the lip-garden sward band over u 248–330
+   (the `vale-reveal` beige is gone).
+4. **Kelp** — ledge clusters 11 → 22, meadow stands 9 → 15, +6 eave
+   mids at u 356–404, canopy pads 6–8 → 9–12 per giant, plus the
+   above-canopy pad cards (169 instanced, unlit, vertex-painted).
+5. **Rocks** — root hubs 11 → 20 (scenery only), the wreck debris
+   field (24 kit planks), 4 dead spars, 12 rim-crest stones at
+   rc 196–204 with both pass corridors kept clear.
+6. **Meadow** — patches 42 → 66 (the plan drew 70; the measured
+   triangle budget trimmed four — see deviations), Sunwell ×1.3,
+   Falling Edge ×1.5 with the shelf-pocket rest excluded.
+7. **Life** — vale runner (45 + glint, kit `shoalRunner`, loop u
+   64–184), brooding shoal (30, maze), far shoal (20, leaning pair),
+   8 drifter jellies, meadow crab colony (4×3, kit `percherColony`
+   dart on region crab geometry), bark-percher fry (10×5 hover),
+   glow-polyp colonies 14×8 + wreck/grotto accents + gate-jamb moss
+   (kit `glowColony`), stars 26 → 44 (the maze's rose-violet family),
+   urchins 18 → 34 + eight vale colonies of four. Shimmer re-centred
+   (350, 16, rU 56) so its ellipse crosses the aisle twice.
+8. **Light** — kit `beamAndPool`: 8 gold-green beams (vale 110/165/186,
+   erratic 330, aisle 385/456, the Elder god-ray pair) + 6 pools
+   (vale ×2, erratic, aisle ×3 — one under the standing 442 shaft),
+   1 dusk beam through Green Gate 1, 1 pale beam at the Falling Edge.
+   Sunwell peak: great shaft 0.15 → 0.22, pool 9 → 11 m.
+9. **T1/T2 kit cover** — seven carpet families (moss 2,600 / sward
+   3,400 / litter 2×1,150 / silt 1,800 / shell 900 / ring-rim 600),
+   pebble runs (vale 520 two-tone, meadow 140, erratic skirt 12, maze
+   shards 500), six bush banks (vale 40 / meadow 60 / forest 70 /
+   wine 40 / pale 20 / Sunwell-outside 8), vale sponges (8×3), and
+   the region exclusives: holdfast skirts on all 39 giants, 26 fallen
+   limbs (3 variants through kit `groundLitter`), dead spars, canopy
+   pad cards.
+
+## Deviations, cited
+
+- **The narrows vs the vale runner** (plan §5 said "full channel u
+  60–280"): MASTER §1.2 holds u 190–250 at *motes only*, and R10 says
+  stillness beats cadence — the runner's loop ends at u 184. Life
+  leads the diver in, goes quiet through the shadow, and the shimmer
+  picks the thread up past the lip. Asserted by test.
+- **The third vale beam** (plan §4 drew it at u 230, inside the
+  registry's beam-free narrows): moved to u 186, just before the
+  shadow starts, which reads as the pinch's last light.
+- **Beam count**: the plan's §3 zone table lists 12 new beams, its §6c
+  says +8 — irreconcilable as written. Landed 10 (the §4 narrative's
+  set minus the two Sunwell satellites, whose job the 0.22 peak boost
+  does better without crowding the markless-within-40 m rule).
+- **Meadow patches 70 → 66, litter 2,800 → 2,300, vale pebbles 700 →
+  520, maze rubble as 8-tri shards, bushes at 4 lobes, sponges 3/anchor,
+  urchin spikes 16 → 12, ground pitch 104/84 → 98/80 segments**: the
+  plan's §3 roll-up under-counted (its own estimate was 415k; the
+  faithful build measured 480k), and R1's 450k cap binds. These trims
+  took the measured build to 439,018 with the composition intact.
+
+## Rework round 1 (`fill-r1`) — critique, silhouette → value → colour → detail
+
+All 13 authored poses captured and READ against the pilot-final befores:
+
+- `vale-descent` / `vale-narrows`: the road works now — moss track,
+  ledge gardens both sides, beams with landings, runner overhead.
+  **FAILS on value**: the moss/pebble T1 reads as near-black violet
+  thorns under the region's dim sun (the kit demo's brighter stage
+  hid it); the sponge cluster reads as a traffic-cone RED column; the
+  runner's fish read as dull brown blobs when backlit (the fish
+  community's complement illusion, again — value must come UP).
+- `vale-reveal`: the doorstep is green; saddle bareness is the crest
+  rest, composed. Passes.
+- `meadow-hills`: transformed — sward, pebbles, young stands, erratic
+  skirt, beams. The jellies read SALMON-pink fish (cool them violet).
+- `forest-eaves`: eave mids close the treeline gaps; aisle beams
+  land. Foreground litter still reads as dark specks — value + size.
+- `forest-aisle`: wayside grass + skirts read; the bush bank at left
+  reads near-black (lift the olive family's whole ramp).
+- `elder-serpent`: serpent + motes + skirts compose; the Elder
+  god-ray pair is nearly invisible (edge-on fade kills near-vertical
+  blades seen from below — the pair needs real slant).
+- `canopy-up`: crowns denser (9–12 pads) but the ceiling still shows
+  too much open sky; the pad cards barely read from below. More and
+  bigger pads.
+- `canopy-breach`: pool + shaft + grazers + near pads — better, but
+  the "sea of crowns" is still thin along the sightline.
+- `sunwell`: the light peak lands — lush bowl, ring-rim carpet band,
+  brighter shaft. Passes.
+- `root-maze`: dead spar + arch + hubs + debris compose, glow
+  colonies carry their own light. **But**: spar stubs read as a
+  signpost "T" (droop them), wine bushes read magenta (deepen), glow
+  tint reads lime-slime in the mid-value water (pale it).
+- `weaver-grotto`: weaver at the mouth ✓; the right-edge spar reads
+  as a telegraph pole (taper + curve); grotto lanterns too faint;
+  silt cards read as specks (lift the violet family's value).
+- `falling-edge`: turf + shells + bushes + pale beam + THE OPEN PASS
+  (R4). Passes.
+
+**Round-2 orders**: one value pass over every fill palette (the fill
+was painted for the kit demo's light, not the region's); sponge
+ochre → olive-tan/wine; jellies violet; runner fish value up; spar
+taper + drooped stubs; wine bushes deepened; glow tint paled; god-ray
+pair slanted harder; litter bigger; pads more/bigger.
+
+### Round-1 sweep (`fill-r1`, 10/12 captured — 11/12 timed out on the
+### loaded machine; the seeded poses recur, so the verdict is honest)
+
+- **01 PASS** (marginal) — kelp stem + boulder foreground, grass mid,
+  ring distance.
+- **02 PASS** (marginal) — grass tufts near, kelp forest middle, ring
+  far; bottom-left quarter bare.
+- **03 FAIL** — bare olive swells, no foreground <8 m, middle only the
+  far ring. Outer meadow flank.
+- **04 FAIL** — bare tan slope, distance only. Inter-zone disc.
+- **05 FAIL** — bare mustard ground to the horizon-line, kelp
+  silhouettes far. Outer flank.
+- **06 PASS** — trunk + skirt + limbs foreground, boulder mid, kelp
+  middle, arch far.
+- **07 PASS** (marginal) — sward + litter chips + a jelly; the ring
+  end reads as a headland (eased in r1, acceptable).
+- **08 FAIL** — the barest frame: empty tan plain, wreck silhouette
+  far left. Rim-side disc.
+- **09 PASS** — boulder trio + dead spar + kelp crest.
+- **10 FAIL** — forest-eave ground bare for two-thirds of the frame;
+  the T1 specks vanish at pose height.
+
+**Verdict 5/10** — far off the ≥11/12 standard, and no miss lands in a
+registered rest (the rests are the Sunwell bowl, the narrows, the lip
+crest, the shelf pocket — none of these frames). Root cause, beyond
+the value pass already ordered: the carpet families are gated to the
+named zones and their cards are too small/dark to read at pose
+height, so the broad disc between zones stays bare. **Sweep orders
+for round 2**: bigger T1 cards across every family; a base coverage
+floor so the disc between zones is never bare by default (doctrine:
+"no square metre bare by accident"); litter/pebble value up so
+foreground interest reads.
+
+## Rework round 2 (`fill-r2`) — critique
+
+All 13 authored poses (the 1032 set) READ against fill-r1:
+
+- `vale-descent` / `vale-narrows`: the sponge's traffic-cone red is
+  gone (olive-tan reads as growth), the runner leads in overhead, moss
+  track + beams land. **Still fails on the T1 read**: the moss/turf
+  cards read as near-black violet stubble on tan ground — the value
+  pass moved them a step and the region's dim sun plus the toon shade
+  band eats the step. Roots are still violet-dark; the ground between
+  the moss track and the walls is still bare warm sand.
+- `vale-reveal`: composes; the bare right dune is the lip crest rest.
+  The sward band reads only faintly — the doorstep is tan-olive, not
+  green. Marginal.
+- `meadow-hills`: transformed — grass, sward patches, violet jellies ✓,
+  stands, erratic, far ring. But between swards the ground is mustard
+  and the T1 chips read as sparse dark specks.
+- `forest-eaves` / `forest-aisle`: treeline + beams + skirts + wayside
+  grass ✓; the foreground floor band is still broad olive-brown with
+  speck litter — bigger litter landed but its value is still low.
+- `elder-serpent`: skirts + orange litter chips + motes compose; the
+  serpent reads as a sparse dotted line at this settle (accepted —
+  the pilot's own backlight note).
+- `canopy-up`: passes — pads + crowns + grazers close most of the sky.
+- `canopy-breach`: pads + shaft + pool read; the far "sea of crowns"
+  is still a flat teal band along the sightline. Watch item.
+- `sunwell`: passes — lush bowl, rim band, bright shaft.
+- `root-maze`: passes — spars drooped ✓, wine bushes deep ✓, glow
+  paled off lime ✓, arch/hubs/wreck/debris compose in violet.
+- `weaver-grotto`: passes (marginal) — weaver at the mouth, tapered
+  spar ✓, lanterns lifted ✓; silt shards still read dark.
+- `falling-edge`: passes — turf, stones, bushes, pale beam, open pass.
+
+### Round-2 sweep (`fill-r2`, 12/12 captured)
+
+- **01 PASS** (marginal) — kelp stalk left, sparse grass mid, ring +
+  headland far; most of the floor bare tan.
+- **02 PASS** — bright grass tufts near (the value pass reads here),
+  kelp forest middle, ring far; left half bare.
+- **03 FAIL** — bare olive-mustard swells to the horizon, turf specks
+  read as dirt. Outer meadow flank.
+- **04 FAIL** — broad tan slope, headland + cards far, nothing < 8 m.
+- **05 FAIL** — mustard floor, eave silhouettes + beams middle-far,
+  foreground bare.
+- **06 PASS** — trunk + limbs + gold litter chips foreground (the
+  litter fix reads), boulder mid, arch far.
+- **07 PASS** — swarded green swell with chips + a jelly + spar
+  silhouettes; where the sward paints, the world is green.
+- **08 FAIL** — the bare tan plain again, wreck silhouette far.
+- **09 PASS** — boulder trio + spar + kelp crest.
+- **10 PASS** (weak) — grass + orange/violet chips + trunks; floor
+  still 3/4 broad olive-brown.
+- **11 FAIL** — shelf lateral: boulder mid + crest far, bare tan
+  foreground.
+- **12 FAIL** — one green-mottled tan dune fills the frame; no
+  foreground interest, distance a sliver.
+
+**Verdict 6/12** — up one from round 1, still far off ≥11/12; no miss
+in a registered rest. The pattern is now exact: every PASS stands on
+sward-painted or authored ground, every FAIL on the base disc where
+`bakeVerdantPaint`'s off-sward multiplier is (0.95, 0.99, 0.62) —
+bare warm sand — and the turf cards (1 per ~69 m²) are dark specks
+that read as dirt. With the budget at 444,992/450k, instances cannot
+carry the inter-zone floor. **Round-3 orders (a paint round, ~free)**:
+(1) green the base itself — cut red off-sward so no square metre of
+owned disc reads mustard, deepen sward patches to match, keep the
+maze/Sunwell/edge overrides; (2) lift every carpet family's root
+shade off violet-black (the cards read at speck size by colour alone,
+so roots go olive, tips stay bright); (3) mid-violet the maze
+shard/silt values a step so foreground chips read as growth, not
+soot; (4) canopy-breach's far crown band: pad cards value/size nudge
+so the "sea of crowns" breaks the teal.
+
+## Rework round 3 (`fill-r3`) — the paint round
+
+All four round-2 orders landed: `VerdantGround`'s off-sward base went
+green (the mustard multiplier cut its red), the vale walls greened
+further and the lip deepening eased; every carpet root came off
+violet-black onto olive; the maze silt/rubble values stepped up to
+mid-violet; the canopy pads grew a size. Authored set READ: the disc
+reads as a green sea-meadow at last — `meadow-hills`, `vale-*`,
+`forest-*`, `sunwell`, `root-maze`, `weaver-grotto`, `falling-edge`,
+`canopy-up` all pass; `canopy-breach`'s crown band breaks the teal
+now (watch item closed).
+
+### Round-3 sweep — 6/12, same shape, new lesson
+
+Frames 03/04/05/08/11/12 still fail, but differently: the ground under
+them is GREEN now — the paint answered round 2 — and still nothing
+STANDS within the near ring. Colour was never the whole miss: a 0.5 m
+turf card vanishes past ~8 m, and the flanks (|v| ≈ 90–180), the edge
+shelf (u > 600) and the saddle mouth (u < 300) own no taller family at
+all. **Round-4/5/6 orders**: a knee-high tussock family (tufts, not
+cards) leaned toward exactly that ground; grow the turf again; carry
+the shell scatter as far out as the poses actually stand (08 stood at
+u 631 — past the edge area polyline's own END at 616, an area/gate
+argument the gate lost); pay for all of it with trims where the sweep
+already passes (moss, sward, silt, maze rubble).
+
+## Rework rounds 4–6 (`fill-r4`–`fill-r6`) — things that stand
+
+- **Flank tussocks** (new family, `SEED ^ 0xf119`, tuft profile,
+  0.55–1.05 m): 340 → 430 across the rounds, gate leaned toward the
+  outer flanks (|v| beyond ~70) and — round 6 — the saddle mouth
+  (u < ~300), the two bands whose near layer nobody else shares.
+  Test pin grew to 9 carpet families.
+- **Turf** 2,800 → 3,600; **shells** 800 → 960 and grown to
+  0.16–0.32 m (a speck at 1.2 m eye height was the 08 read), edge
+  area polyline extended 616 → 652, gate fade carried to u 634+.
+- **Paid by**: moss 2,300 → 1,850, sward 3,000 → 2,700, silt
+  1,500 → 1,300, litter 1,050 → 980 ×2, maze rubble 500 → 420.
+- Budget after r6: **110 draws / 449,792 tris** — 208 under the cap.
+
+Risk-pose retakes (05/08/11/12): 11 passes cleanly (tussocks + spars
+mid, kelp far), 05/08 marginal (standing growth arrived but the near
+band still reads thin), 12 still a bare green dune. 9–10/12 honest.
+
+## Rework round 7 (`fill-r7`) — the camouflage and the outward stare
+
+Two findings, both structural:
+
+1. **The turf had converged with its own floor.** The r3 paint pass
+   and the turf palette had arrived at the SAME greens — 3,600 cards
+   stood on the disc and vanished into it. Tips went a value brighter
+   (0xb4cc78 → 0xcfe084), roots a value darker (silhouette against
+   the paint), cards a hand taller (0.3–0.6 m). Free — the count
+   didn't move. This was 05/08/11's remaining thinness in one change.
+2. **Sweep 12 faces OUT of the region.** The pose stands at
+   (u 276, v −30) — restFree = 1.00, NOT the crest rest, whose window
+   hugs the channel centre at v ≈ +3 — and stares along a ray where
+   `verdantWeight` dies within ~45 m (0.98 at 5 m, 0.07 at 60 m).
+   Only ~35 m of what it sees is ours to fill, and a global scatter
+   of a few hundred tufts cannot promise a narrow cone anything
+   (counted: 14 tussocks within 30 m, ~0–3 in the cone). Answer: a
+   **saddle-mouth stand** — 130 tufts of the same tussock growth
+   concentrated on the mouth's off-channel flanks (disc at u 268,
+   v −42, r 55; gate verdant × channel-free × restFree; fresh
+   substream `SEED ^ 0xf11a`). Counted before capturing: 56 of 130
+   land in pose 12's view cone inside 45 m. Test pin: 10 families.
+   Paid by silt 1,300 → 1,100, sward 2,500 → 2,400, litter 950 ×2
+   (an over-cap measurement at 450,552 caught and walked back).
+
+Retakes: **05 PASS** (tussocks stand across the near/mid ring),
+**08 PASS** (shells near and mid on the decrescendo, wreck far),
+**11 PASS**, **12 PASS** (the stand lines the dune crest; headland
+and kelp carry the far). Budget: **111 draws / 449,912 tris**.
+
+## Rework close (`v1-filled`) — the final sets
+
+All three sets captured fresh on the final code and LOOKED AT:
+
+- **Authored (13 poses)** — all pass. The vale is a green moss road
+  with pink pebbles and standing tussocks; the narrows' cards read as
+  growth (roots silhouetted, tips lit); the meadows carry bright
+  grass, chips, jellies, the erratic and the far ring; the forest has
+  its litter seasons, wayside grass, fry and beams; the Sunwell bowl
+  is lush with its rim band and shaft; the maze composes in violet
+  with gold chips, glow, arch and wreck; the grotto keeps its weaver
+  (the capture even scored a find); the edge does its turf-and-stones
+  decrescendo under the pale beam. `canopy-breach`'s far crown band
+  breaks the teal (round-2 watch item closed). `vale-reveal`'s bare
+  right dune is the lip crest rest, composed as intended.
+- **Sweep (12 seeded poses) — verdict 12/12.** 01 and 08 are the
+  quiet passes (kelp-stalk flank; the edge decrescendo, quiet by
+  design) — both carry three layers. No miss anywhere, so the
+  "misses only in registered rests" clause goes unused. The seeded
+  poses recur round to round; the verdict is comparable with r1's
+  5/10, r2's 6/12 and r3's 6/12.
+- **No-assets (13 poses)** — the fallback build holds: same
+  composition, fill and layers with generated stand-ins, no black
+  materials, no missing draws.
+
+### Budgets, before → after the fill
+
+| | draws | triangles | caps |
+|---|---|---|---|
+| pilot close (before) | 65 | 248,711 | 80 / 260k |
+| fill r1 | 108 | 439,018 | 160 / 450k |
+| fill close (after) | **111** | **449,912** | 160 / 450k |
+
+Measured programmatically (the region test holds the caps; an
+over-cap state at 450,552 during round 7 was caught by measurement
+and walked back before any capture).
+
+### Flags carried out of the rework
+
+- **F-R1 (budget headroom)**: the region closes 88 triangles under
+  its cap. Any future fill must trade, not add — the carpet counts
+  in `VerdantCover` are the intended trading stock (the round 4–7
+  history shows the going rates).
+- **F-R2 (kit clump scatter)**: `carpetField` hardcodes
+  `perClump: 26` with a 0.3 loose share; a global family cannot
+  guarantee ANY random view cone an instance (round 7's sweep-12
+  lesson). Regions with sweep-critical bands should author
+  concentrated stands, as done here; a kit-level `looseShare` knob
+  would make this cheaper.
+- **F-R3 (outward-facing poses)**: sweep poses drawn near the rim
+  can face out of the region and see mostly unowned seabed; the
+  three-layer answer must live in the first ~35 m. Worth a MASTER
+  note for other regions' fills.

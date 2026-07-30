@@ -57,9 +57,12 @@ const DISC_GROUND_R = 240;
 
 /** Disc tile edge length; two tiles span the disc with margin. */
 const DISC_TILE = 231;
-/** ~2.2 m per vertex on the disc, ~1.75 in the vale — see the ledger note. */
-const DISC_SEGMENTS = 104;
-const VALE_SEGMENTS = 84;
+/** ~2.36 m per vertex on the disc, ~1.84 in the vale (eased a step from
+ *  the pilot's 104/84 to pay for the fill's T1 carpets — the authored
+ *  terrain wavelengths are ≥ 8 m, so the coarser grid still samples them
+ *  cleanly; see the ledger's rework note). */
+const DISC_SEGMENTS = 98;
+const VALE_SEGMENTS = 80;
 
 /** Where the bowl's own sheet ends and the vale sheet must begin. */
 const BOWL_SHEET_EDGE = 56;
@@ -133,25 +136,60 @@ function bakeVerdantPaint(geometry: PlaneGeometry, contacts: readonly ContactPat
     // look brutal on paper because the sand wash under them is strongly
     // warm — "a tile and a tint cannot both carry the colour", so green
     // ground means red is *cut*, not green raised. Round 2 measured the
-    // polite version as beige.
-    let r = 0.95 - sward * 0.4;
-    let g = 0.99 - sward * 0.08;
-    let b = 0.62 - sward * 0.14;
+    // polite version as beige; the round-2 SWEEP measured the off-sward
+    // base itself as bare mustard (frames 03/04/05/08/11/12 — every fail
+    // stood on it), so round 3 greens the base and lets the sward patches
+    // deepen from an already-green floor. No square metre of owned disc
+    // may read as bare sand by default.
+    let r = 0.74 - sward * 0.3;
+    let g = 0.99 - sward * 0.05;
+    let b = 0.56 - sward * 0.08;
 
     if (u < VALE_TO) {
       // The vale: mossy green walls banded by height, and a violet-leaning
       // shadow pooled in the deep narrows.
       const deep = smoothstep01((-valeFloor(u) - 5.0) / 2.4);
       const inChannel = 1 - smoothstep01((Math.abs(v - valeChannelCenter(u)) - valeChannelHalf(u)) / 8);
+      // Round 3: the descent's walls still read mustard-tan under the
+      // warm wash at round 2's figures — red comes down another step so
+      // the vale is a green corridor, not a tan trench with a green line.
       const moss = 0.4 + sward * 0.5;
-      const vr = 0.85 - moss * 0.36 - deep * inChannel * 0.1;
-      const vg = 0.98 - moss * 0.1 - deep * inChannel * 0.18;
-      const vb = 0.74 - moss * 0.2 + deep * inChannel * 0.2;
+      const vr = 0.68 - moss * 0.3 - deep * inChannel * 0.08;
+      const vg = 0.98 - moss * 0.08 - deep * inChannel * 0.16;
+      const vb = 0.68 - moss * 0.16 + deep * inChannel * 0.2;
       const s = 1 - smoothstep01((u - 250) / 42);
       r += (vr - r) * s;
       g += (vg - g) * s;
       b += (vb - b) * s;
       value -= deep * inChannel * 0.1 * s;
+
+      // The moss track (fill plan §7.3): the channel's own centreline is
+      // the road the diver actually swims, and for 200 m it read as bare
+      // olive floor. A deliberate green band runs the vale's length —
+      // strongest on the spine, feathered by 4.5 m, broken by the same
+      // sward fbm so it reads as grown moss and not painted tape. Green
+      // arrives the region's own way: red is CUT, not green raised.
+      const track =
+        (1 - smoothstep01((Math.abs(v - valeChannelCenter(u)) - 1.2) / 4.5)) *
+        (0.55 + sward * 0.45) *
+        s;
+      r -= track * 0.26;
+      g += track * 0.02;
+      b -= track * 0.1;
+    }
+
+    // The lip garden band (fill plan §7.3): `vale-reveal`'s lower half
+    // read as bare warm beige — the "green world" contradicting its own
+    // doorstep. Over the saddle and the meadows' first swells the sward
+    // contrast deepens, so the ground the reveal opens onto is already
+    // the meadows' green.
+    const lip = smoothstep01((u - 248) / 14) * (1 - smoothstep01((u - 330) / 26));
+    if (lip > 0) {
+      // Eased from 0.2 in round 3: the base is green now, and the old cut
+      // stacked on it ran the swarded doorstep into the clamp floor.
+      const deepen = lip * (0.35 + sward * 0.65);
+      r -= deepen * 0.14;
+      b -= deepen * 0.06;
     }
 
     // The forest floor: deep cool moss, drifted with warm leaf-litter.

@@ -34,9 +34,14 @@ import { CENTER_X, CENTER_Z, VERDANT_SLOT } from "./VerdantTerrain";
  * held above green's cut in the ink so the far forest reads violet-green,
  * never electric.
  *
- * The rings hold an open gap over the vale's azimuth: the vale's own walls
- * close that view, and a curtain crossing the approach would put a wall
- * where the diver swims in.
+ * The rings hold two open gaps. Over the vale's azimuth: the vale's own
+ * walls close that view, and a curtain crossing the approach would put a
+ * wall where the diver swims in. And over the far pole (MASTER R4, this
+ * package's first item): the outermost rings cross the depth-2 pass at
+ * u ≈ 691–733 as an opaque curtain — verdant-2's ledger flag, proven by
+ * probe — so the rings part over the pass corridor and the trunk cards
+ * stay out of that sector. The only two-region journey ends milky-bright
+ * and OPEN, the way the Falling Edge promises.
  */
 
 interface ForestLayer {
@@ -67,6 +72,14 @@ const INK = new Color(0.62, 0.72, 0.58);
 
 /** Half-angle of the gap the rings leave over the vale's approach. */
 const GAP_HALF = 0.42;
+
+/**
+ * Half-angle of the far-pole gap over the depth-2 pass (MASTER R4). The
+ * rim ring's collider gate is |v| < 14 at rc 206; 0.2 rad at the ring
+ * radii is ±49–57 m — the corridor's spine cleared with real margin, and
+ * narrow enough that the painted forest still wraps the rest of the rim.
+ */
+export const PASS_GAP_HALF = 0.2;
 
 export function buildVerdantDistance(): { meshes: (Mesh | InstancedMesh)[] } {
   const random = new Random(SEEDS.regionVerdant1 ^ 0xd157);
@@ -135,11 +148,16 @@ export function buildVerdantDistance(): { meshes: (Mesh | InstancedMesh)[] } {
     mesh.receiveShadow = false;
     const dummy = new Object3D();
     const gapAt = VERDANT_SLOT.azimuth + Math.PI;
+    const passAt = VERDANT_SLOT.azimuth;
     let placed = 0;
     let guard = 0;
     while (placed < spec.count && guard++ < 400) {
       const theta = random.range(0, Math.PI * 2);
       if (angleBetween(theta, gapAt) < GAP_HALF + 0.1) {
+        continue;
+      }
+      // MASTER R4: no card may curtain the depth-2 pass corridor either.
+      if (angleBetween(theta, passAt) < PASS_GAP_HALF + 0.1) {
         continue;
       }
       const r = random.range(spec.rFrom, spec.rTo);
@@ -235,19 +253,26 @@ function forestRing(layer: ForestLayer, random: Random, noiseSeed: number): Buff
   const indices: number[] = [];
   let column = 0;
 
-  // The gap faces back down the spoke toward the origin, where the vale
-  // comes in: from the disc's centre that is the slot azimuth plus π.
+  // The near gap faces back down the spoke toward the origin, where the
+  // vale comes in: from the disc's centre that is the slot azimuth plus π.
+  // The far gap (MASTER R4) faces straight down the spoke, where the
+  // depth-2 pass leaves the disc.
   const gapAt = VERDANT_SLOT.azimuth + Math.PI;
+  const passAt = VERDANT_SLOT.azimuth;
   for (let i = 0; i <= SEGMENTS; i++) {
     const theta = (i / SEGMENTS) * Math.PI * 2;
     const off = angleBetween(theta, gapAt);
-    if (off < GAP_HALF) {
+    const offPass = angleBetween(theta, passAt);
+    if (off < GAP_HALF || offPass < PASS_GAP_HALF) {
       column = 0;
       continue;
     }
-    // The arc's ends sink into the ground over a short run, so the gap's
+    // The arc's ends sink into the ground over a short run, so the gaps'
     // cut edges never stand as vertical green cliffs in a side view.
-    const end = smoothstep01((off - GAP_HALF) / 0.14);
+    const end = Math.min(
+      smoothstep01((off - GAP_HALF) / 0.14),
+      smoothstep01((offPass - PASS_GAP_HALF) / 0.14),
+    );
     const x = CENTER_X + Math.cos(theta) * layer.radius;
     const z = CENTER_Z + Math.sin(theta) * layer.radius;
 

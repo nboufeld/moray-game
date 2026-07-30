@@ -1,13 +1,16 @@
 import { Group, Vector3 } from "three";
 import type { SphereCollider } from "../../CollisionField";
 import type { RegionBuild, RegionCapturePose, RegionDef } from "../RegionTypes";
+import { buildVerdantCover } from "./VerdantCover";
 import { buildVerdantDistance } from "./VerdantDistance";
+import { buildVerdantFillLife } from "./VerdantFillLife";
 import { buildVerdantGround } from "./VerdantGround";
 import { buildVerdantKelp } from "./VerdantKelp";
 import { buildVerdantLife } from "./VerdantLife";
 import { buildVerdantLight } from "./VerdantLight";
 import { buildVerdantMeadow } from "./VerdantMeadow";
 import { buildVerdantRocks } from "./VerdantRocks";
+import { buildVerdantUnderstory } from "./VerdantUnderstory";
 import { WEAVER_SPECIES_ID, buildWeaver } from "./VerdantWeaver";
 import {
   CENTER_X,
@@ -230,6 +233,10 @@ export const VERDANT_1: RegionDef = {
     const weaver = buildWeaver(rocks.grotto);
     const light = buildVerdantLight();
     const distance = buildVerdantDistance();
+    // The Phase 3 fill tiers (fresh substreams — nothing above re-rolls).
+    const cover = buildVerdantCover();
+    const understory = buildVerdantUnderstory(kelp.giants);
+    const fillLife = buildVerdantFillLife(kelp.giants);
     const ground = buildVerdantGround([...kelp.contacts, ...rocks.contacts]);
 
     for (const mesh of [
@@ -241,6 +248,11 @@ export const VERDANT_1: RegionDef = {
       weaver.mesh,
       ...light.meshes,
       ...distance.meshes,
+      ...cover.groups,
+      ...understory.groups,
+      ...understory.meshes,
+      ...fillLife.groups,
+      ...fillLife.meshes,
     ]) {
       group.add(mesh);
     }
@@ -252,10 +264,14 @@ export const VERDANT_1: RegionDef = {
       colliders,
       targets: [weaver.target],
       update(dt, ctx): void {
+        const calm = ctx.reducedMotion ? 0.45 : 1;
         kelp.update(dt, ctx.reducedMotion);
         meadow.update(dt, ctx.reducedMotion);
         life.update(dt, ctx.time, ctx.reducedMotion);
         weaver.update(ctx.time, ctx.reducedMotion);
+        // The fill's motion is closed-form off simulated time (kit law 5).
+        cover.update(ctx.time * calm);
+        fillLife.update(ctx.time * calm);
       },
     };
   },

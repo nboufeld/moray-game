@@ -27,7 +27,7 @@ import { Random, SEEDS } from "../../../util/Random";
 import { seabedHeight } from "../../Seabed";
 import { smoothstep01 } from "./VerdantShared";
 import type { KelpFoot } from "./VerdantKelp";
-import { SUNWELL, worldOf } from "./VerdantTerrain";
+import { SUNWELL, valeChannelCenter, worldOf } from "./VerdantTerrain";
 
 /**
  * The Great Kelp Sea's ambient life: the leaf-drift, two shoal behaviours,
@@ -80,11 +80,15 @@ export function buildVerdantLife(giants: readonly KelpFoot[]): VerdantLifeBuild 
     color: new Color(0xaed2cd),
     profile: { width: 0.9, height: 0.9, length: 1.05, tailTaper: 0.5, dorsal: 0.5, pectoral: 0.9, tail: { reach: 1.5, lobe: 0.62, notch: 1.05 } },
     scale: 1.05,
+    // Re-centred in the fill rework (plan §5) so the ellipse crosses the
+    // aisle's swim line twice per lap — once at the eaves (u ≈ 392) and
+    // once at the meadows' mouth (u ≈ 300): the road's own life crossing.
+    // A parameter change spends no stream draws, so nothing re-rolls.
     behaviour: {
       kind: "travel",
-      centerU: 330,
-      centerV: 12,
-      radiusU: 52,
+      centerU: 350,
+      centerV: 16,
+      radiusU: 56,
       radiusV: 40,
       height: 3.4,
       rate: 0.055,
@@ -550,29 +554,44 @@ function buildStarfish(): InstancedMesh {
   geometry.setAttribute("color", new BufferAttribute(colors, 3));
 
   const material = createToonMaterial({ vertexColors: true });
-  const count = 26;
+  // 26 pilot stars + the fill's growth to 44 (plan §7.7): the new
+  // eighteen are the maze's own rose-violet family. Their draws append
+  // after every pilot draw on the same stream, so the pilot's stars
+  // keep their exact seats (the reroll fence).
+  const count = 44;
   const mesh = new InstancedMesh(geometry, material, count);
   mesh.name = "verdant-starfish";
   mesh.castShadow = false;
   mesh.receiveShadow = false;
 
   const palette = [0x2e8a5e, 0xc07a5a, 0x8a5f9e];
+  const mazePalette = [0xa06a92, 0x8a5f9e];
   const dummy = new Object3D();
   const tint = new Color();
   for (let i = 0; i < count; i++) {
-    // On the meadows and around the Sunwell's rim, where the light falls.
+    const maze = i >= 26;
+    // On the meadows and around the Sunwell's rim, where the light falls
+    // — or, for the growth stars, along the maze's gully shoulders.
     const nearSunwell = random.next() < 0.4;
-    const u = nearSunwell
-      ? SUNWELL.u + random.signed(26)
-      : 300 + random.next() * 100;
-    const v = nearSunwell ? SUNWELL.v + random.signed(26) : random.signed(75);
+    const u = maze
+      ? 468 + random.next() * 54
+      : nearSunwell
+        ? SUNWELL.u + random.signed(26)
+        : 300 + random.next() * 100;
+    const v = maze
+      ? -112 + random.next() * 58
+      : nearSunwell
+        ? SUNWELL.v + random.signed(26)
+        : random.signed(75);
     const { x, z } = worldOf(u, v);
     dummy.position.set(x, seabedHeight(x, z) + 0.02, z);
     dummy.rotation.set(0, random.range(0, Math.PI * 2), 0);
     dummy.scale.setScalar(random.range(0.7, 1.5));
     dummy.updateMatrix();
     mesh.setMatrixAt(i, dummy.matrix);
-    tint.setHex(palette[i % palette.length]!).multiplyScalar(random.range(0.85, 1.15));
+    tint
+      .setHex(maze ? mazePalette[i % mazePalette.length]! : palette[i % palette.length]!)
+      .multiplyScalar(random.range(0.85, 1.15));
     mesh.setColorAt(i, tint);
   }
   mesh.instanceMatrix.needsUpdate = true;
@@ -589,7 +608,10 @@ function urchinGeometry(): BufferGeometry {
   body.scale(1, 0.75, 1);
   const parts: BufferGeometry[] = [body];
   const spikeRandom = new Random(SEED ^ 0x0bc1);
-  for (let i = 0; i < 16; i++) {
+  // 16 → 12 spikes in the fill rework: at urchin scale twelve read the
+  // same whorl for three quarters of the triangle bill (budget trim; the
+  // first twelve keep their exact seeded tilts).
+  for (let i = 0; i < 12; i++) {
     // A spine is a needle: three sides read exactly as twenty would at
     // this size, and the whorl is most of the animal's triangle bill.
     // Non-indexed to match the icosahedron body, or the merge fails (the
@@ -616,7 +638,11 @@ function buildUrchins(): InstancedMesh {
   const random = new Random(SEED ^ 0x0bc2);
   const geometry = urchinGeometry();
   const material = createToonMaterial({ color: 0x5b4470 });
-  const count = 18;
+  // 18 pilot urchins grown to 34 in the maze (plan §7.7), plus the vale's
+  // eight ledge colonies of four — every growth draw appends after the
+  // pilot's on the same stream, so the original eighteen keep their seats.
+  const mazeCount = 34;
+  const count = mazeCount + 8 * 4;
   const mesh = new InstancedMesh(geometry, material, count);
   mesh.name = "verdant-urchins";
   mesh.castShadow = false;
@@ -624,9 +650,8 @@ function buildUrchins(): InstancedMesh {
 
   const dummy = new Object3D();
   const tint = new Color();
-  for (let i = 0; i < count; i++) {
-    // The maze's half-light, in clusters along the gully feet.
-    const { x, z } = worldOf(470 + random.next() * 55, -110 + random.next() * 55);
+  const seat = (i: number, u: number, v: number): void => {
+    const { x, z } = worldOf(u, v);
     dummy.position.set(x, seabedHeight(x, z) + 0.04, z);
     dummy.rotation.set(0, random.range(0, Math.PI * 2), 0);
     dummy.scale.setScalar(random.range(0.8, 1.6));
@@ -635,6 +660,24 @@ function buildUrchins(): InstancedMesh {
     // Plum into wine — the darkest animal on the floor is a colour.
     tint.setHex(i % 3 === 0 ? 0x6d4a63 : 0x584472).multiplyScalar(random.range(0.85, 1.1));
     mesh.setColorAt(i, tint);
+  };
+  for (let i = 0; i < mazeCount; i++) {
+    // The maze's half-light, in clusters along the gully feet.
+    seat(i, 470 + random.next() * 55, -110 + random.next() * 55);
+  }
+  // The vale's ledge-garden colonies: four urchins at each of eight wall
+  // feet, alternating sides down the approach — every colony BELOW the
+  // narrows shadow passage (u 190–250 is a fauna rest, MASTER §1.2).
+  for (const [colony, u] of [78, 94, 110, 126, 142, 158, 172, 184].entries()) {
+    const side = colony % 2 === 0 ? 1 : -1;
+    const heart = valeChannelCenter(u) + side * random.range(5, 7.5);
+    for (let k = 0; k < 4; k++) {
+      seat(
+        mazeCount + colony * 4 + k,
+        u + random.signed(2),
+        heart + random.signed(1.4),
+      );
+    }
   }
   mesh.instanceMatrix.needsUpdate = true;
   if (mesh.instanceColor) {

@@ -97,7 +97,10 @@ export function buildVerdantMeadow(): VerdantMeadowBuild {
   };
   material.customProgramCacheKey = () => "verdant-meadow";
 
-  const capacity = PATCHES * BLADES_PER_PATCH + 820;
+  // Headroom covers the pilot's plantings AND the fill growth below
+  // (patches 42 → 70, Sunwell ×1.3, Falling Edge ×1.5) — the capacity
+  // check in `plant` sits before any stream draw, so it must never trip.
+  const capacity = 70 * BLADES_PER_PATCH + 1900;
   const mesh = new InstancedMesh(bladeGeometry(), material, capacity);
   mesh.name = "verdant-meadow";
   mesh.castShadow = false;
@@ -108,22 +111,28 @@ export function buildVerdantMeadow(): VerdantMeadowBuild {
   const color = new Color();
   let placed = 0;
 
-  const plant = (u: number, v: number, family: readonly number[], heightScale = 1): void => {
+  const plant = (
+    u: number,
+    v: number,
+    family: readonly number[],
+    heightScale = 1,
+    stream: Random = random,
+  ): void => {
     if (placed >= capacity || mazeWeight(u, v) > 0.3) {
       return;
     }
     const { x, z } = worldOf(u, v);
     dummy.position.set(x, seabedHeight(x, z) - 0.05, z);
-    dummy.rotation.set(random.signed(0.12), random.range(0, Math.PI * 2), random.signed(0.12));
+    dummy.rotation.set(stream.signed(0.12), stream.range(0, Math.PI * 2), stream.signed(0.12));
     dummy.scale.set(
-      random.range(0.75, 1.25),
-      random.range(0.55, 1.15) * heightScale,
+      stream.range(0.75, 1.25),
+      stream.range(0.55, 1.15) * heightScale,
       1,
     );
     dummy.updateMatrix();
     mesh.setMatrixAt(placed, dummy.matrix);
-    color.setHex(family[Math.floor(random.next() * family.length)] ?? family[0]!);
-    color.multiplyScalar(random.range(0.88, 1.18));
+    color.setHex(family[Math.floor(stream.next() * family.length)] ?? family[0]!);
+    color.multiplyScalar(stream.range(0.88, 1.18));
     mesh.setColorAt(placed, color);
     placed++;
   };
@@ -175,6 +184,68 @@ export function buildVerdantMeadow(): VerdantMeadowBuild {
       continue;
     }
     plant(u, v, SUNWELL_FAMILY, 1.0);
+  }
+
+  // ─── The fill growth (plan §7.6) ─────────────────────────────────────────
+  // A fresh substream appended after every pilot draw (the reroll fence):
+  // the pilot's patches keep their exact blades while the meadows thicken.
+  const growth = new Random(SEED ^ 0xf171);
+
+  // Patches 42 → 66: twenty-four more drifts, crest-biased the same way.
+  // (The plan drew 70; the measured triangle budget trimmed the growth —
+  // logged in the ledger's rework section.)
+  for (let patch = 0; patch < 24; patch++) {
+    const patchU = growth.range(292, 470);
+    const patchV = growth.signed(88);
+    const family = FAMILIES[Math.floor(growth.next() * FAMILIES.length)] ?? FAMILIES[0]!;
+    const thin = smoothstep01((patchU - 380) / 80);
+    const count = Math.round(BLADES_PER_PATCH * (1 - thin * 0.5));
+    for (let blade = 0; blade < count; blade++) {
+      const spread = PATCH_RADIUS * Math.sqrt(growth.next());
+      const angle = growth.range(0, Math.PI * 2);
+      plant(
+        patchU + Math.cos(angle) * spread,
+        patchV + Math.sin(angle) * spread,
+        family,
+        1,
+        growth,
+      );
+    }
+  }
+
+  // The Sunwell's floor ×1.3: the light peak's bowl grows lusher still.
+  for (let i = 0; i < 160; i++) {
+    const angle = growth.range(0, Math.PI * 2);
+    const spread = Math.sqrt(growth.next()) * 27;
+    const u = SUNWELL.u + Math.cos(angle) * spread;
+    const v = SUNWELL.v + Math.sin(angle) * spread;
+    if (sunwellWeight(u, v) < 0.15) {
+      continue;
+    }
+    plant(u, v, SUNWELL_FAMILY, 1.0, growth);
+  }
+
+  // The Falling Edge's turf ×1.5: five more sparse patches thinning out.
+  // The mirror-calm shelf pocket at (585, −40) is a registered rest
+  // (MASTER §1.2) — new growth keeps out of it.
+  for (let patch = 0; patch < 5; patch++) {
+    const patchU = growth.range(552, 612);
+    const patchV = growth.signed(60);
+    if (Math.hypot(patchU - 585, patchV + 40) < 13) {
+      continue;
+    }
+    const family = FAMILIES[Math.floor(growth.next() * FAMILIES.length)] ?? FAMILIES[0]!;
+    for (let blade = 0; blade < 22; blade++) {
+      const spread = 4.4 * Math.sqrt(growth.next());
+      const angle = growth.range(0, Math.PI * 2);
+      plant(
+        patchU + Math.cos(angle) * spread,
+        patchV + Math.sin(angle) * spread,
+        family,
+        0.85,
+        growth,
+      );
+    }
   }
 
   // Park anything unplanted far below the world.
