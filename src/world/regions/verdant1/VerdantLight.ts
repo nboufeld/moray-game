@@ -161,19 +161,22 @@ export function buildVerdantLight(): { meshes: (Mesh | Group)[] } {
       tint: 0xdcecac,
       ground: seabedHeight,
       beams: [
-        // The vale's wall-notch beams, alternating sides down the road.
-        spokeBeam(110, 5, 5, 2.4, 0.14, true),
-        spokeBeam(165, -5, 5.5, 2.6, 0.13, true),
-        spokeBeam(186, 5, 6, 2.2, 0.13, true),
+        // The vale's wall-notch beams, alternating sides down the road,
+        // each with a light lean so no blade dies edge-on (round 2).
+        spokeBeam(110, 5, 5, 2.4, 0.16, true, [0.1, 0.06]),
+        spokeBeam(165, -5, 5.5, 2.6, 0.15, true, [-0.08, 0.1]),
+        spokeBeam(186, 5, 6, 2.2, 0.15, true, [0.09, -0.07]),
         // The meadows' one beam, by the erratic.
-        spokeBeam(330, 18, 12, 2.8, 0.12),
+        spokeBeam(330, 18, 12, 2.8, 0.14, false, [0.12, 0.08]),
         // The aisle's two new blades (with 398/442 that is one per ~40 m).
-        spokeBeam(385, 33, 13, 2.6, 0.12),
-        spokeBeam(456, 18, 14, 2.8, 0.12),
+        spokeBeam(385, 33, 13, 2.6, 0.14, false, [-0.1, 0.12]),
+        spokeBeam(456, 18, 14, 2.8, 0.14, false, [0.11, -0.09]),
         // The Elder's god-ray pair, slanted through its crown gap so the
-        // serpent's circling — and `canopy-up` — finally read lit.
-        spokeBeam(426, -16, 21, 2.4, 0.13, false, [0.08, 0.05]),
-        spokeBeam(434, -29, 19, 1.9, 0.11, false, [-0.06, 0.09]),
+        // serpent's circling — and `canopy-up` — finally read lit. Round 2
+        // slanted the pair HARD: near-vertical blades die to the edge-on
+        // fade when seen from below, which is `canopy-up`'s whole view.
+        spokeBeam(426, -16, 21, 2.8, 0.16, false, [0.3, 0.18]),
+        spokeBeam(434, -29, 19, 2.2, 0.14, false, [-0.24, 0.3]),
       ],
       pools: [
         spokePool(110, 5, 2.2, 0.18, true),

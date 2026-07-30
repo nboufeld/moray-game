@@ -324,8 +324,9 @@ describe("verdant-line-1 carpet determinism", () => {
     };
     const first = collect(firstBuild);
     const second = collect(secondBuild);
-    // The seven carpet families of the fill plan's §3 zone table.
-    expect(first.length).toBe(7);
+    // The fill plan's §3 seven carpet families plus the round-2 base turf
+    // floor (the sweep's "never bare by default" answer).
+    expect(first.length).toBe(8);
     expect(second.length).toBe(first.length);
     for (const [index, mesh] of first.entries()) {
       const twin = second[index]!;

@@ -110,7 +110,8 @@ export function buildVerdantFillLife(giants: readonly KelpFoot[]): VerdantFillLi
     seed: SEED ^ FILL_SEEDS.valeRunner,
     route: { stations: runnerStations, closed: true },
     count: 45,
-    fish: { scale: 0.78, color: 0xbfe3d2, emissive: 0x2e5548, profile: "fusilier" },
+    // Round 2: value UP — the r1 fish read as dull brown blobs backlit.
+    fish: { scale: 0.78, color: 0xdcf4e6, emissive: 0x4a7a68, profile: "fusilier" },
     phaseSpeed: 0.011,
     braid: { lateral: 0.3, vertical: 0.24 },
     glint: { count: 24, size: 0.13 },
@@ -250,10 +251,11 @@ export function buildVerdantFillLife(giants: readonly KelpFoot[]): VerdantFillLi
   keep(
     buildGlowColony({
       seed: SEED ^ FILL_SEEDS.glowMaze,
-      tint: 0xb8e57c,
+      // Round 2: paled off lime — the r1 tint read slime in mid-value water.
+      tint: 0xd2eaa6,
       anchors: glowAnchors,
       budsPerAnchor: 8,
-      glow: 0.34,
+      glow: 0.3,
     }),
   );
 
@@ -275,10 +277,11 @@ export function buildVerdantFillLife(giants: readonly KelpFoot[]): VerdantFillLi
   keep(
     buildGlowColony({
       seed: SEED ^ FILL_SEEDS.glowAccents,
-      tint: 0xd8cc7a,
+      tint: 0xe4d888,
       anchors: accentAnchors,
-      budsPerAnchor: 5,
-      glow: 0.3,
+      budsPerAnchor: 6,
+      // Round 2: the grotto lanterns were too faint to compose around.
+      glow: 0.42,
     }),
   );
 
@@ -351,8 +354,10 @@ function jellyGeometry(): BufferGeometry {
 
   const position = merged.attributes.position!;
   const colors = new Float32Array(position.count * 3);
-  const crown = new Color(0xdba8c8);
-  const skirt = new Color(0x8a5a80);
+  // Round 2: cooled from rose to violet — the r1 jellies read SALMON
+  // against the green meadow (the complement illusion again).
+  const crown = new Color(0xb9a2de);
+  const skirt = new Color(0x6c5694);
   const shade = new Color();
   for (let i = 0; i < position.count; i++) {
     const t = smoothstep01((position.getY(i) + 0.5) / 0.75);
@@ -374,7 +379,7 @@ function buildJellies(): {
   const geometry = jellyGeometry();
   const material = createToonMaterial({
     vertexColors: true,
-    emissive: 0x40284a,
+    emissive: 0x352a5e,
     emissiveIntensity: 0.4,
   });
   const mesh = new InstancedMesh(geometry, material, count);

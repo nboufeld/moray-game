@@ -314,3 +314,36 @@ was painted for the kit demo's light, not the region's); sponge
 ochre → olive-tan/wine; jellies violet; runner fish value up; spar
 taper + drooped stubs; wine bushes deepened; glow tint paled; god-ray
 pair slanted harder; litter bigger; pads more/bigger.
+
+### Round-1 sweep (`fill-r1`, 10/12 captured — 11/12 timed out on the
+### loaded machine; the seeded poses recur, so the verdict is honest)
+
+- **01 PASS** (marginal) — kelp stem + boulder foreground, grass mid,
+  ring distance.
+- **02 PASS** (marginal) — grass tufts near, kelp forest middle, ring
+  far; bottom-left quarter bare.
+- **03 FAIL** — bare olive swells, no foreground <8 m, middle only the
+  far ring. Outer meadow flank.
+- **04 FAIL** — bare tan slope, distance only. Inter-zone disc.
+- **05 FAIL** — bare mustard ground to the horizon-line, kelp
+  silhouettes far. Outer flank.
+- **06 PASS** — trunk + skirt + limbs foreground, boulder mid, kelp
+  middle, arch far.
+- **07 PASS** (marginal) — sward + litter chips + a jelly; the ring
+  end reads as a headland (eased in r1, acceptable).
+- **08 FAIL** — the barest frame: empty tan plain, wreck silhouette
+  far left. Rim-side disc.
+- **09 PASS** — boulder trio + dead spar + kelp crest.
+- **10 FAIL** — forest-eave ground bare for two-thirds of the frame;
+  the T1 specks vanish at pose height.
+
+**Verdict 5/10** — far off the ≥11/12 standard, and no miss lands in a
+registered rest (the rests are the Sunwell bowl, the narrows, the lip
+crest, the shelf pocket — none of these frames). Root cause, beyond
+the value pass already ordered: the carpet families are gated to the
+named zones and their cards are too small/dark to read at pose
+height, so the broad disc between zones stays bare. **Sweep orders
+for round 2**: bigger T1 cards across every family; a base coverage
+floor so the disc between zones is never bare by default (doctrine:
+"no square metre bare by accident"); litter/pebble value up so
+foreground interest reads.

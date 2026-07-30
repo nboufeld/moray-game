@@ -45,6 +45,7 @@ export const FILL_SEEDS = {
   carpetSilt: 0xf115,
   carpetShell: 0xf116,
   carpetRingRim: 0xf117,
+  carpetTurf: 0xf118,
   valePebbles: 0xf121,
   meadowPebbles: 0xf122,
   erraticSkirt: 0xf123,

@@ -207,7 +207,8 @@ export function buildVerdantUnderstory(giants: readonly KelpFoot[]): VerdantUnde
   keep(
     buildBushBank({
       seed: SEED ^ FILL_SEEDS.bushMaze,
-      palette: { base: 0x63424e, tip: 0x8a5a62, shade: 0x462e3e },
+      // Round 2: deepened toward true wine — the r1 ramp read magenta.
+      palette: { base: 0x54353f, tip: 0x704650, shade: 0x38232c },
       area: discAreaAt(ROOT_MAZE.u, ROOT_MAZE.v, 56),
       gate: mazeBushGate,
       ground: seabedHeight,
@@ -252,7 +253,9 @@ export function buildVerdantUnderstory(giants: readonly KelpFoot[]): VerdantUnde
   keep(
     buildSpongeCluster({
       seed: SEED ^ FILL_SEEDS.sponges,
-      palette: { base: 0xb07840, accent: 0x7a5a8a },
+      // Round 2: the r1 ochre read traffic-cone RED against the green
+      // water (complement contrast) — olive-tan barrels, wine accents.
+      palette: { base: 0x8a7a4e, accent: 0x6e3a4e },
       ground: seabedHeight,
       anchors: spongeAnchors,
       tubesPerAnchor: 3,
@@ -434,7 +437,7 @@ function limbVariants(): BufferGeometry[] {
 function buildDeadSpars(): Mesh {
   const random = new Random(SEED ^ FILL_SEEDS.deadSpars);
   const dark = new Color(0x453c30);
-  const light = new Color(0x6e6a4a);
+  const light = new Color(0x7a7452);
   const shade = new Color();
   const parts: BufferGeometry[] = [];
 
@@ -455,24 +458,46 @@ function buildDeadSpars(): Mesh {
       new Vector3(x + lean * height, foot + height, z + lean * height * 0.6),
     ]);
     const shaft = new TubeGeometry(spine, 6, random.range(0.14, 0.22), 5, false);
+    // Round 2: taper the shaft toward its tip — the constant-radius tube
+    // read as a telegraph pole. Each ring is pulled toward the spine by
+    // how high it stands.
+    {
+      const position = shaft.attributes.position!;
+      const center = new Vector3();
+      for (let i = 0; i < position.count; i++) {
+        const t = Math.min(1, Math.max(0, (position.getY(i) - foot) / height));
+        spine.getPoint(t, center);
+        const pinch = 1 - 0.6 * Math.pow(t, 1.3);
+        position.setX(i, center.x + (position.getX(i) - center.x) * pinch);
+        position.setZ(i, center.z + (position.getZ(i) - center.z) * pinch);
+      }
+      shaft.computeVertexNormals();
+    }
     parts.push(shaft);
-    // The stub crown: two or three broken strap starts at the tip.
+    // The stub crown: broken strap starts that DROOP — they rise off the
+    // tip, arc, and fall, so the crown reads as dead straps rather than
+    // a signpost "T" (round 2, after the r1 critique).
     const stubs = 2 + Math.floor(random.next() * 2);
     for (let s = 0; s < stubs; s++) {
       const heading = yaw + (s / stubs) * Math.PI * 2 + random.signed(0.4);
       const top = spine.getPoint(1);
-      const reach = random.range(0.5, 0.9);
+      const reach = random.range(0.6, 1.05);
       const stub = new TubeGeometry(
         new CatmullRomCurve3([
           top.clone(),
           new Vector3(
+            top.x + Math.cos(heading) * reach * 0.5,
+            top.y + random.range(0.06, 0.16),
+            top.z + Math.sin(heading) * reach * 0.5,
+          ),
+          new Vector3(
             top.x + Math.cos(heading) * reach,
-            top.y + random.range(0.1, 0.4),
+            top.y - random.range(0.2, 0.55),
             top.z + Math.sin(heading) * reach,
           ),
         ]),
-        2,
-        0.06,
+        3,
+        0.055,
         3,
         false,
       );
@@ -533,7 +558,9 @@ function buildCanopyPads(giants: readonly KelpFoot[]): Mesh {
     side: DoubleSide,
     toneMapped: true,
   });
-  const capacity = giants.length * 5;
+  // Round 2: 5–6 pads per giant, wider and bigger — `canopy-up` still
+  // showed too much open sky between the crowns at 4–5.
+  const capacity = giants.length * 6;
   const mesh = new InstancedMesh(geometry, material, capacity);
   mesh.name = "verdant-canopy-pads";
   mesh.castShadow = false;
@@ -545,17 +572,17 @@ function buildCanopyPads(giants: readonly KelpFoot[]): Mesh {
   for (const giant of giants) {
     const foot = seabedHeight(giant.x, giant.z);
     const crownY = foot + giant.height;
-    const pads = 4 + Math.floor(random.next() * 2);
+    const pads = 5 + Math.floor(random.next() * 2);
     for (let i = 0; i < pads && placed < capacity; i++) {
       const heading = (i / pads) * Math.PI * 2 + random.signed(0.5);
-      const out = random.range(0.7, 2.8);
+      const out = random.range(0.8, 3.4);
       dummy.position.set(
         giant.x + Math.cos(heading) * out,
         crownY + random.range(-0.5, 1.0),
         giant.z + Math.sin(heading) * out,
       );
       dummy.rotation.set(random.signed(0.16), random.range(0, Math.PI * 2), random.signed(0.16));
-      const size = random.range(1.0, 2.1);
+      const size = random.range(1.3, 2.6);
       dummy.scale.set(size, 1, size * random.range(0.8, 1.1));
       dummy.updateMatrix();
       mesh.setMatrixAt(placed, dummy.matrix);
