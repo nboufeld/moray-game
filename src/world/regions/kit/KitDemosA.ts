@@ -260,7 +260,7 @@ export const KIT_DEMOS_A: KitDemoRegistry = {
   },
 
   screeApronClose: {
-    camera: { position: [0.2, 1.3, -6.2], lookAt: [-0.5, 0.1, -9.6] },
+    camera: { position: [0.2, 1.6, -6.0], lookAt: [-0.5, 0.0, -9.6] },
     build(): KitBuild {
       return compose([
         dressGround(),
