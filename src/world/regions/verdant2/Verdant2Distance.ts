@@ -291,12 +291,18 @@ function cliffRing(layer: CliffLayer, noiseSeed: number): BufferGeometry {
     const slow = fbm(t * 6, layer.radius * 0.013, { seed: noiseSeed, period: 6, octaves: 2 });
     // Quantise into treads: the fractional part is pushed to the nearest
     // tread with a narrow ramp, so the skyline holds level then steps.
+    // Round 3 (fill): the ramp widened 0.16 → 0.3 and the wobble nearly
+    // doubled — a 5 m step easing over a 0.16 window fell as a razor
+    // vertical edge, and from inside the country a lone step poking over
+    // the fog band read as a hard floating RECTANGLE (`stair-descent` r2,
+    // proven by node-toggle on `verdant2-distance-0`). The mesa runs stay
+    // level; only their edges slope and their crests breathe.
     const raw = slow * 3.2;
     const tread = Math.floor(raw);
-    const ramp = smoothstep01((raw - tread - 0.42) / 0.16);
+    const ramp = smoothstep01((raw - tread - 0.35) / 0.3);
     const stepped = (tread + ramp - 1.6) * layer.stepDepth;
     const wobble =
-      (fbm(t * 40, layer.radius, { seed: noiseSeed ^ 0x99, period: 40, octaves: 1 }) - 0.5) * 0.8;
+      (fbm(t * 40, layer.radius, { seed: noiseSeed ^ 0x99, period: 40, octaves: 1 }) - 0.5) * 1.5;
     const top = layer.meanTop + stepped + wobble;
 
     positions.push(x, FOOT, z, x, FOOT + Math.max(1.4, top - FOOT) * end + 0.2, z);

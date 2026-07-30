@@ -171,8 +171,14 @@ export function buildMistfall(): MistfallBuild {
     const y = seabedHeight(at.x, at.z);
     geometry.rotateY(random.range(0, Math.PI));
     geometry.computeBoundingSphere();
+    // Round 3: the halo is the ALPHA as well as the colour. A colour-only
+    // map under NormalBlending is a uniform-opacity quad whose texels go
+    // black at the corners — from inside the basin one billow read as a
+    // giant tinted glass pane with straight edges (`mistfall-below` r2).
+    // With the same halo as alphaMap the pane dissolves into cloud.
     const material = new MeshBasicMaterial({
       map: billowTexture(),
+      alphaMap: billowTexture(),
       color: new Color(0xcfe4c8),
       transparent: true,
       opacity: 0.26 - i * 0.05,

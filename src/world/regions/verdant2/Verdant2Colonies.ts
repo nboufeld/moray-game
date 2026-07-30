@@ -241,6 +241,33 @@ export function buildVerdant2Colonies(): Verdant2ColoniesBuild {
     }),
   );
 
+  // The pillar-sector colonies (round 3): the mesa-city cluster stands
+  // on swimmable ground, and the r2 sweep found its floor naked — a few
+  // moon-green lamps among the card feet make the promise a place.
+  const sectorAnchors: (readonly [number, number, number])[] = [];
+  // All six stand past the balcony's own r ≈ 122 (they are the cluster's
+  // ground, not the deck's — the deck keeps its authored dressing).
+  for (const [u, v] of [
+    [1080, 30],
+    [1090, 55],
+    [1100, 40],
+    [1070, 70],
+    [1110, 20],
+    [1060, 90],
+  ] as const) {
+    const { x, z } = worldOf(u, v);
+    sectorAnchors.push([x, seabedHeight(x, z) + 0.05, z] as const);
+  }
+  builds.push(
+    buildGlowColony({
+      seed: SEED ^ 0xf603,
+      tint: 0xa8d8a0,
+      anchors: sectorAnchors,
+      budsPerAnchor: 7,
+      glow: 0.32,
+    }),
+  );
+
   // Jamb glow moss at the Emerald Gate's feet — the doorway keeps a lamp.
   const jambAnchors: (readonly [number, number, number])[] = [];
   for (const [i, side] of [-1, 1].entries()) {
