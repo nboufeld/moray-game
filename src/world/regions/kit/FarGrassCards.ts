@@ -49,8 +49,9 @@ const DEFAULT_SIZE: readonly [number, number] = [0.24, 0.58];
 
 /** The milk the distance palette leans toward — a pale warm haze, not white. */
 const MILK = 0xd8e2d6;
-/** How far toward milk the near palette is pulled: the "one value step". */
-const MILK_STEP = 0.32;
+/** How far toward milk the near palette is pulled: the "one value step".
+ *  0.32 read bleached-white beside the near band (capture a-r1). */
+const MILK_STEP = 0.22;
 
 export function buildFarGrassCards(options: FarGrassCardsOptions): KitBuild {
   const random = new Random(options.seed);

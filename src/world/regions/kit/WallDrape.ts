@@ -62,6 +62,8 @@ export interface WallDrapeBuild extends KitBuild {
 const STRAND_SEGMENTS = 5;
 /** Pads per anchor, filling the wall between holdfasts. */
 const PADS_PER_ANCHOR = 3;
+/** Pad radius envelope, metres — sized to read at wall-viewing range. */
+const PAD_RADIUS: readonly [number, number] = [0.18, 0.34];
 
 /** Fallback root/centre shade: a deep sea-violet, never black. */
 const DEFAULT_SHADE = 0x54506b;
@@ -85,7 +87,9 @@ export function buildWallDrapeBank(options: WallDrapeBankOptions): WallDrapeBuil
       strandParts.push(strandGeometry(random, anchor, frame, length, swayAmp, rootRatio));
     }
     for (let i = 0; i < PADS_PER_ANCHOR; i++) {
-      padParts.push(padGeometry(random, anchor, frame, padCentreRatio));
+      // The first pad sits AT the holdfast, so strands visibly grow from
+      // something; the rest encrust the wall around it.
+      padParts.push(padGeometry(random, anchor, frame, padCentreRatio, i === 0));
     }
   }
 
@@ -128,7 +132,14 @@ export function buildWallDrapeBank(options: WallDrapeBankOptions): WallDrapeBuil
         );
     };
   }
-  const padMaterial = createToonMaterial({ color: padHex, vertexColors: true });
+  // DoubleSide: a pad's winding depends on the anchor frame's handedness
+  // (a −x `side` axis winds the fan clockwise and single-sided culling
+  // ate every pad — capture a-r5), and pads must hug curved walls anyway.
+  const padMaterial = createToonMaterial({
+    color: padHex,
+    vertexColors: true,
+    side: DoubleSide,
+  });
 
   const strandMesh = new Mesh(strands, strandMaterial);
   strandMesh.name = "kit-wall-drape-strands";
@@ -181,8 +192,8 @@ function strandGeometry(
   swayAmp: number,
   rootRatio: readonly [number, number, number],
 ): BufferGeometry {
-  const length = lengthBase * random.range(0.7, 1.25);
-  const width = length * random.range(0.1, 0.15);
+  const length = lengthBase * random.range(0.65, 1.3);
+  const width = length * random.range(0.13, 0.19);
   const rise = random.range(0.3, 0.6);
   const droopTo = random.range(1.35, 1.75);
   const slip = random.signed(0.55);
@@ -266,10 +277,14 @@ function padGeometry(
   anchor: DrapeAnchor,
   frame: WallFrame,
   centreRatio: readonly [number, number, number],
+  atHoldfast: boolean,
 ): BufferGeometry {
-  const radius = random.range(0.09, 0.2);
-  const overSide = random.signed(0.42);
-  const overUp = random.signed(0.34);
+  const radius = random.range(PAD_RADIUS[0], PAD_RADIUS[1]);
+  // Drawn regardless of use — fixed draws keep the stream stable.
+  const slipSide = random.signed(0.42);
+  const slipUp = random.signed(0.34);
+  const overSide = atHoldfast ? 0 : slipSide;
+  const overUp = atHoldfast ? 0 : slipUp;
   const tone = random.range(0.85, 1.0);
   const spin = random.range(0, Math.PI * 2);
 

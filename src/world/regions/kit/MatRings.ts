@@ -21,9 +21,13 @@ import { finishBuild } from "./KitGroundShared";
  * never baked in.
  *
  * Budget note (asserted by tests/kitGround.test.ts): **1 draw** (all discs
- * merged); ~5 × segments triangles per disc — 40 tris at the base 8
- * segments with three bands, up to ~80 for a large ring. Tiers multiply
- * discs, not draws.
+ * merged); (4 × bands + 1) × segments triangles per disc — 156 tris for a
+ * three-band mat at the base 12 segments. A step over the spec's ~24–40
+ * sketch, flagged in the package ledger: two rings per band (flat painted
+ * interiors, short blends between bands) is the fewest that read as BANDS
+ * rather than one airbrushed blob (measured, captures a-r1/r2), and a
+ * region wears a handful of mats, not hundreds. Tiers multiply discs,
+ * not draws.
  *
  * Paint (law 3): bands live in vertex colour (they ARE the palette
  * parameter), blending painterly across each annulus, and the outermost
@@ -54,8 +58,13 @@ export interface MatRingsOptions {
   readonly tiers?: number;
 }
 
-/** Metres the mat floats over the ground sampler, against z-fighting. */
-const DRAPE_LIFT = 0.04;
+/**
+ * Metres the mat floats over the ground sampler. Sized against the seabed
+ * sheets' ~0.9 m grid: a coarse draped disc interpolates differently from
+ * the fine sand mesh, and at 0.04 the sand's bilinear crests cut hard
+ * edges through the mat (measured, capture a-r1).
+ */
+const DRAPE_LIFT = 0.1;
 
 /** Each tier shrinks to this share of the one below and steps up a little. */
 const TIER_SHRINK = 0.58;
@@ -119,16 +128,21 @@ function discGeometry(
   rise: number,
   wobbleSeed: number,
 ): BufferGeometry {
-  const segments = Math.max(10, Math.min(18, Math.round(8 + radius * 2.5)));
+  const segments = Math.max(12, Math.min(18, Math.round(8 + radius * 2.5)));
   const totalWidth = bands.reduce((sum, band) => sum + band.width, 0);
 
-  // Cumulative band edge radii, centre → rim, normalised onto the radius.
+  // TWO rings per band, at 18% and 82% of its width, so each band holds a
+  // flat painted interior and the blends live in the short spans between
+  // neighbouring bands — one ring per band read as one airbrushed blob
+  // (captures a-r1/r2). The extra rim ring is where the alpha dissolves.
   const edges: number[] = [];
   let acc = 0;
   for (const band of bands) {
+    edges.push(((acc + band.width * 0.18) / totalWidth) * radius);
+    edges.push(((acc + band.width * 0.82) / totalWidth) * radius);
     acc += band.width;
-    edges.push((acc / totalWidth) * radius);
   }
+  edges.push(radius);
 
   const rings = edges.length;
   const vertexCount = 1 + rings * segments;
@@ -150,7 +164,7 @@ function discGeometry(
   for (let ringIndex = 0; ringIndex < rings; ringIndex++) {
     const edge = edges[ringIndex]!;
     const isRim = ringIndex === rings - 1;
-    bandColor.setHex(bands[ringIndex]!.color);
+    bandColor.setHex(bands[Math.min(ringIndex >> 1, bands.length - 1)]!.color);
     for (let s = 0; s < segments; s++) {
       const theta = (s / segments) * Math.PI * 2;
       // The wander: band edges undulate together on one seeded field, so a
@@ -163,7 +177,7 @@ function discGeometry(
           octaves: 2,
         }) -
           0.5) *
-          0.3;
+          0.22;
       const r = edge * wobble;
       const x = cx + Math.cos(theta) * r;
       const z = cz + Math.sin(theta) * r;

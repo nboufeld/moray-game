@@ -138,9 +138,11 @@ export function buildCarpetField(options: CarpetFieldOptions): CarpetFieldBuild 
     let lean = 0;
     if (options.rake) {
       // The comb: the blade's bow points along local +z, so combing is a
-      // yaw pull toward the comb direction plus a little extra forward lean.
+      // yaw pull toward the comb direction plus a little extra forward
+      // lean — capped low, because a hard uniform lean puts every blade's
+      // face in the same toon band and the carpet reads flat (a-r2/r3).
       yaw = freeYaw + angleTo(freeYaw, options.rake.yaw) * options.rake.strength;
-      lean = 0.5 * options.rake.strength;
+      lean = 0.3 * options.rake.strength;
     }
 
     parts.push({

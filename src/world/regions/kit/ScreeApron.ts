@@ -44,8 +44,9 @@ export interface ScreeApronOptions {
   readonly slabsPerAnchor: number;
 }
 
-/** The three strata value steps a slab may draw. */
-const STRATA_TONES = [1.04, 0.95, 0.86] as const;
+/** The three strata value steps a slab may draw — wide enough to read as
+ *  layered rock at ankle scale (a-r1's spread was too polite to see). */
+const STRATA_TONES = [1.06, 0.94, 0.82] as const;
 
 /** Fallback chip shade when the palette brings none: cool violet-grey. */
 const DEFAULT_CHIP = 0x6f6880;
@@ -68,8 +69,10 @@ export function buildScreeApron(options: ScreeApronOptions): KitBuild {
   const parts: KitPlacement[] = [];
   for (const anchor of options.anchors) {
     for (let i = 0; i < options.slabsPerAnchor; i++) {
-      // Runout biased toward the foot: sqrt piles slabs where they fell.
-      const along = anchor.spread * (0.12 + 0.88 * Math.sqrt(random.next()));
+      // Runout biased toward the foot: u² piles slabs against the anchor
+      // and thins the fan toward the toe (a-r1/r2 read as loose scatter).
+      const roll = random.next();
+      const along = anchor.spread * (0.12 + 0.88 * roll * roll);
       const fan = anchor.facing + random.signed(FAN_HALF);
       const x = anchor.pos[0] + Math.cos(fan) * along;
       const z = anchor.pos[1] + Math.sin(fan) * along;
@@ -88,7 +91,7 @@ export function buildScreeApron(options: ScreeApronOptions): KitBuild {
 
       parts.push({
         x,
-        y: options.ground(x, z) + 0.09 * thickness * length - 0.03,
+        y: options.ground(x, z) + 0.09 * thickness * length - 0.05,
         z,
         rotation: [lie.pitch + random.signed(0.12), yaw, lie.roll + random.signed(0.12)],
         scale: [length, length * thickness, length * widthScale],
@@ -117,8 +120,10 @@ function slabGeometry(chipRatio: readonly [number, number, number]): BufferGeome
     // Top edge full value, underside a step down — contact shadow authored.
     const down = 0.5 - position.getY(i) / 0.2; // 0 at top, 1 at bottom
     const value = 1 - down * 0.18;
-    // The broken ends: chip tint strongest at the ±x faces.
-    const chip = Math.min(1, Math.abs(position.getX(i)) * 2) * 0.55;
+    // The broken ends: chip tint confined to the ±x end faces — at 0.8
+    // over the whole slab the apron read as one violet pour (a-r3).
+    const end = Math.min(1, Math.max(0, (Math.abs(position.getX(i)) - 0.38) / 0.12));
+    const chip = end * 0.75;
     colors[i * 3] = value * (1 + (chipRatio[0] - 1) * chip);
     colors[i * 3 + 1] = value * (1 + (chipRatio[1] - 1) * chip);
     colors[i * 3 + 2] = value * (1 + (chipRatio[2] - 1) * chip);

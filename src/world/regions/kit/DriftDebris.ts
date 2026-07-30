@@ -148,11 +148,17 @@ function builtInFamily(
   let variants: BufferGeometry[];
   switch (family) {
     case "wrack": {
+      // Gentle curls, squashed low: a-r2's 2.4–4.1 rad curls stood on the
+      // sand like croquet hoops — wrack LIES, with lifted ends.
       variants = [
-        wrackCurl(0.55, 2.4, random.next()),
-        wrackCurl(0.75, 3.3, random.next()),
-        wrackCurl(0.62, 4.1, random.next()),
+        wrackCurl(0.55, 1.1, random.next()),
+        wrackCurl(0.78, 1.7, random.next()),
+        wrackCurl(0.64, 2.2, random.next()),
       ];
+      for (const variant of variants) {
+        variant.scale(1, 0.55, 1);
+        variant.computeVertexNormals();
+      }
       break;
     }
     case "spars": {

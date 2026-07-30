@@ -6,6 +6,7 @@ import {
   type BufferGeometry,
 } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { fbm } from "../../../rendering/ProceduralTexture";
 import { smoothNormals } from "../../../rendering/SmoothNormals";
 import { createToonMaterial } from "../../../rendering/ToonShading";
 import { Random } from "../../../util/Random";
@@ -54,13 +55,16 @@ export interface BushBankOptions {
  * large, because a stand of one age is a plantation.
  */
 const AGE_BANDS: readonly (readonly [number, number, number])[] = [
-  [0.5, 0.55, 0.85],
-  [0.84, 0.9, 1.2],
-  [1.0, 1.3, 1.75],
+  [0.5, 0.5, 0.75],
+  [0.84, 0.78, 1.0],
+  [1.0, 1.1, 1.4],
 ];
 
-/** The lobed geometry's crown height, by construction; the paint keys off it. */
-const CROWN = 1.15;
+/** The lobed geometry's crown height, by construction (the core lobe's
+ *  radius-1 sphere lifted 0.35–0.6); the paint keys off it. 1.15 was an
+ *  under-measure that saturated the whole upper bush to the tip hue
+ *  (capture a-r2's flat boulders). */
+const CROWN = 1.5;
 
 /** Fallback crotch shade when the palette brings none: a warm violet dusk. */
 const DEFAULT_SHADE = 0x584e60;
@@ -135,8 +139,11 @@ function lobedBushGeometry(
   for (let i = 0; i < lobeCount; i++) {
     const lobe = new SphereGeometry(1, 6, 4);
     const angle = (i / lobeCount) * Math.PI * 2 + random.signed(0.4);
-    const out = i === 0 ? 0 : random.range(0.45, 0.75);
-    const size = i === 0 ? 1 : random.range(0.5, 0.75);
+    // Satellites smaller and further out than the bowl cushion's: welded
+    // enough to stay one mass, distinct enough that the silhouette lobes
+    // (the a-r1 boulder read came from too much overlap).
+    const out = i === 0 ? 0 : random.range(0.55, 0.9);
+    const size = i === 0 ? 1 : random.range(0.42, 0.66);
     lobe.scale(size, size * random.range(0.7, 0.9), size);
     lobe.translate(
       Math.cos(angle) * out,
@@ -153,20 +160,51 @@ function lobedBushGeometry(
   if (!merged) {
     throw new Error("bushBank: lobes could not be merged");
   }
+
+  // Knock the weld out of round: an fbm swell sampled by direction from
+  // the bush's heart, so seam vertices agree — five perfect spheres read
+  // as boulders however they are painted (captures a-r2/r3).
+  const position = merged.attributes.position as BufferAttribute;
+  const noiseSeed = Math.floor(random.next() * 0xffff_ffff);
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i);
+    const y = position.getY(i) - 0.5;
+    const z = position.getZ(i);
+    const length = Math.hypot(x, y, z) || 1;
+    const u = Math.atan2(z, x) / (Math.PI * 2) + 0.5;
+    const v = Math.asin(Math.max(-1, Math.min(1, y / length))) / Math.PI + 0.5;
+    const swell = 1 + (fbm(u, v, { seed: noiseSeed, period: 5, octaves: 3 }) - 0.5) * 0.3;
+    position.setXYZ(i, x * swell, (y * swell) + 0.5, z * swell);
+  }
+  position.needsUpdate = true;
+  merged.computeVertexNormals();
   smoothNormals(merged);
 
-  const position = merged.attributes.position as BufferAttribute;
+  // Per-lobe tone separation: each welded lobe holds its own value step,
+  // the painterly cue that a cushion is MANY plants grown together.
+  const vertsPerLobe = position.count / lobeCount;
+  // Capped at 1 so the vertex-colour ceiling holds (law 3).
+  const lobeTones: number[] = [];
+  for (let i = 0; i < lobeCount; i++) {
+    lobeTones.push(random.range(0.86, 1.0));
+  }
+
   const colors = new Float32Array(position.count * 3);
   for (let i = 0; i < position.count; i++) {
+    const lobeTone = lobeTones[Math.min(lobeCount - 1, Math.floor(i / vertsPerLobe))] ?? 1;
     const t = Math.min(1, Math.max(0, position.getY(i) / CROWN));
     // How deep into the weld a vertex sits: crotches are low AND inward.
     const inward = 1 - Math.min(1, Math.hypot(position.getX(i), position.getZ(i)) / 1.25);
-    const crotch = Math.min(1, (1 - t) * (0.55 + inward * 0.75));
+    const crotch = Math.min(1, (1 - t) * (0.55 + inward * 0.9));
+    // A hard-working ramp: the a-r1 capture read the cushions as smooth
+    // boulders, and most of that was a gradient too polite to see. The tip
+    // hue holds only the top quarter; the base carries the mass; the roots
+    // and crotches drop well below it (as a colour — the ratios hold hue).
     const ratio =
-      t > 0.55
-        ? mixRatio(midRatio, [1, 1, 1], (t - 0.55) / 0.45)
-        : mixRatio(rootRatio, midRatio, t / 0.55);
-    const deep = 1 - crotch * 0.22;
+      t > 0.72
+        ? mixRatio(midRatio, [1, 1, 1], (t - 0.72) / 0.28)
+        : mixRatio(rootRatio, midRatio, Math.pow(t / 0.72, 1.35));
+    const deep = (1 - crotch * 0.34) * lobeTone;
     colors[i * 3] = ratio[0] * deep;
     colors[i * 3 + 1] = ratio[1] * deep;
     colors[i * 3 + 2] = ratio[2] * deep;

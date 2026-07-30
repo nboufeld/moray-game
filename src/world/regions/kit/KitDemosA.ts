@@ -1,5 +1,8 @@
-import { BoxGeometry, Group, Mesh } from "three";
+import { BoxGeometry, BufferAttribute, Group, Mesh } from "three";
 import { createToonMaterial } from "../../../rendering/ToonShading";
+import { createRockMaterial } from "../../RockMaterial";
+import { createSandMaterial } from "../../SandMaterial";
+import { createSeabedGeometryAt, seabedHeight } from "../../Seabed";
 import { buildBushBank } from "./BushBank";
 import { buildCarpetField } from "./CarpetField";
 import { buildDriftDebris } from "./DriftDebris";
@@ -11,7 +14,7 @@ import { buildMatRings } from "./MatRings";
 import { buildScreeApron } from "./ScreeApron";
 import { buildSpongeCluster } from "./SpongeCluster";
 import { buildWallDrapeBank } from "./WallDrape";
-import type { KitBuild, KitDemoRegistry, KitDemoStage } from "./KitTypes";
+import type { GroundFn, KitBuild, KitDemoRegistry } from "./KitTypes";
 
 /**
  * Package A's demo registrations (spec §4): one entry per ground/flora
@@ -22,6 +25,16 @@ import type { KitBuild, KitDemoRegistry, KitDemoStage } from "./KitTypes";
  * Each demo composes the piece's spec-mandated variants (e.g. three
  * carpet palettes side by side) into one aggregate build, so the harness
  * prints ONE honest declared-draw number for the whole staging.
+ *
+ * **The dressed stage (ledger flag KIT-A-F1).** The harness's own sand
+ * patch and wall panel render BLACK: `createSandMaterial` and
+ * `createRockMaterial` both declare `vertexColors: true` and the stage
+ * geometries carry no colour attribute, so WebGL feeds the shader the
+ * zero default. The harness is not this package's file to fix, so every
+ * demo build includes its own dressed ground (and wall, where the piece
+ * needs one) — the same materials over the same terrain sampler, with the
+ * colour attribute filled. Demo builds are staging, not kit pieces: the
+ * terrain import lives HERE, never in a builder.
  */
 
 /** Aggregates several builds into one, summing the honest budget numbers. */
@@ -49,27 +62,77 @@ function compose(builds: readonly KitBuild[]): KitBuild {
   };
 }
 
+/** Metres the dressed sand floats over the harness's black patch. */
+const DRESS_LIFT = 0.06;
+
+/** The ground every demo piece actually stands on: the visible sand. */
+const demoGround: GroundFn = (x, z) => seabedHeight(x, z) + DRESS_LIFT;
+
+/** A lit copy of the stage's sand patch (see the module header). */
+function dressGround(centerZ = 0, size = 40): KitBuild {
+  const geometry = createSeabedGeometryAt(0, centerZ, size, Math.round(size * 1.1), DRESS_LIFT);
+  const position = geometry.attributes.position!;
+  geometry.setAttribute(
+    "color",
+    new BufferAttribute(new Float32Array(position.count * 3).fill(1), 3),
+  );
+  const material = createSandMaterial();
+  const mesh = new Mesh(geometry, material);
+  mesh.name = "kit-demo-dressed-sand";
+  const group = new Group();
+  group.name = "kit-demo-dressed-sand";
+  group.add(mesh);
+  return finishBuild(group, [geometry, material]);
+}
+
+/** A lit wall panel standing just proud of the stage's black one. */
+function dressWall(): KitBuild {
+  const geometry = new BoxGeometry(14, 6, 0.7, 8, 4, 1);
+  geometry.translate(0, 3, -9.7); // front face at z = −9.35
+  const position = geometry.attributes.position!;
+  geometry.setAttribute(
+    "color",
+    new BufferAttribute(new Float32Array(position.count * 3).fill(1), 3),
+  );
+  const material = createRockMaterial(0x8b9184);
+  const mesh = new Mesh(geometry, material);
+  mesh.name = "kit-demo-dressed-wall";
+  const group = new Group();
+  group.name = "kit-demo-dressed-wall";
+  group.add(mesh);
+  return finishBuild(group, [geometry, material]);
+}
+
 const OPEN_GATE = (): number => 1;
 
 /** The demo palettes — stand-ins for region tables, chosen to show value
  *  structure: tips lift, roots shade, violets in the shade. */
 const SPRING = { base: 0x69c184, tip: 0xa8d98a, shade: 0x3c6b60 } as const;
 const GOLDEN = { base: 0xc7a04f, tip: 0xe0cd8a, shade: 0x77583e } as const;
-const CELADON = { base: 0x9db98a, tip: 0xc5d3ac, shade: 0x5f7a72 } as const;
+const OLIVE_GOLD = { base: 0x8cad57, tip: 0xc9b45e, shade: 0x567348 } as const;
 const WINE = { base: 0x7a4f62, tip: 0xa06f7e, shade: 0x4c3a55 } as const;
 const PALE_STONE = { base: 0xa9a091, shade: 0x746d80, accent: 0x8f8a7c } as const;
 const OCHRE_SPONGE = { base: 0xc98d4e, accent: 0xd9a86a } as const;
 const VIOLET_SPONGE = { base: 0x8d76b8, accent: 0xa48fc6 } as const;
-const OLIVE_DRAPE = { base: 0x7d8a45, tip: 0xaabb66, shade: 0x4c5560, accent: 0x8a7f62 } as const;
+const OLIVE_DRAPE = { base: 0x7d8a45, tip: 0xaabb66, shade: 0x5d6858, accent: 0xb0766a } as const;
 const DRIFT_OLIVE = { base: 0x8a7a4f, shade: 0x5c5a72 } as const;
 const RELIC_STONE = { base: 0xa79c88, shade: 0x6e6880 } as const;
+
+/**
+ * The comb direction blades face in the raked demo: mostly toward the
+ * camera, a touch toward the sun's azimuth — a uniformly combed carpet
+ * turned away from both stood with every face in the shade band and read
+ * near-black (measured, captures a-r1/r2).
+ */
+const RAKE_DEMO_YAW = 0.15;
 
 export const KIT_DEMOS_A: KitDemoRegistry = {
   carpetField: {
     camera: { position: [0, 4.2, 8.6], lookAt: [0, 0.2, 0] },
-    build(stage: KitDemoStage): KitBuild {
-      const shared = { gate: OPEN_GATE, ground: stage.ground };
+    build(): KitBuild {
+      const shared = { gate: OPEN_GATE, ground: demoGround };
       return compose([
+        dressGround(),
         buildCarpetField({
           seed: 0xa11c_0001,
           palette: SPRING,
@@ -88,10 +151,10 @@ export const KIT_DEMOS_A: KitDemoRegistry = {
         }),
         buildCarpetField({
           seed: 0xa11c_0003,
-          palette: CELADON,
+          palette: OLIVE_GOLD,
           area: { center: [4.6, 0.5], radius: 2.2 },
           count: 950,
-          rake: { yaw: Math.PI * 0.25, strength: 0.85 },
+          rake: { yaw: RAKE_DEMO_YAW, strength: 0.6 },
           ...shared,
         }),
       ]);
@@ -99,17 +162,19 @@ export const KIT_DEMOS_A: KitDemoRegistry = {
   },
 
   groundLitter: {
-    camera: { position: [0, 5.2, 8.4], lookAt: [0, 0, -0.5] },
-    build(stage: KitDemoStage): KitBuild {
-      const shared = { gate: OPEN_GATE, ground: stage.ground };
+    camera: { position: [0, 3.4, 6.2], lookAt: [0, 0, -0.8] },
+    build(): KitBuild {
+      const shared = { gate: OPEN_GATE, ground: demoGround };
       return compose([
+        dressGround(),
         // The unraked disc field, two-tone gravel.
         buildGroundLitter({
           seed: 0xa11c_0011,
           palette: PALE_STONE,
-          area: { center: [0, -0.5], radius: 5.4 },
+          area: { center: [0, -0.5], radius: 5 },
           count: 420,
           shapeSet: "gravel",
+          size: [0.07, 0.2],
           twoTone: true,
           ...shared,
         }),
@@ -127,6 +192,7 @@ export const KIT_DEMOS_A: KitDemoRegistry = {
           },
           count: 300,
           shapeSet: "shard",
+          size: [0.09, 0.24],
           rake: { from: [0, 0.5], strength: 0.85, jitter: 0.12 },
           ...shared,
         }),
@@ -135,36 +201,41 @@ export const KIT_DEMOS_A: KitDemoRegistry = {
   },
 
   screeApron: {
-    camera: { position: [0.5, 3.1, -3.2], lookAt: [0, 0.5, -9.6] },
-    build(stage: KitDemoStage): KitBuild {
-      return buildScreeApron({
-        seed: 0xa11c_0021,
-        palette: PALE_STONE,
-        ground: stage.ground,
-        anchors: [
-          { pos: [-4.2, -9.2], facing: Math.PI / 2, spread: 2.6 },
-          { pos: [0.4, -9.1], facing: Math.PI / 2, spread: 3.2 },
-          { pos: [4.4, -9.3], facing: Math.PI / 2, spread: 2.2 },
-        ],
-        slabsPerAnchor: 10,
-      });
+    camera: { position: [0.5, 1.9, -4.4], lookAt: [-0.4, 0.2, -9.8] },
+    build(): KitBuild {
+      return compose([
+        dressGround(),
+        dressWall(),
+        buildScreeApron({
+          seed: 0xa11c_0021,
+          palette: PALE_STONE,
+          ground: demoGround,
+          anchors: [
+            { pos: [-4.2, -9.35], facing: Math.PI / 2, spread: 2.6 },
+            { pos: [0.4, -9.35], facing: Math.PI / 2, spread: 3.2 },
+            { pos: [4.4, -9.35], facing: Math.PI / 2, spread: 2.2 },
+          ],
+          slabsPerAnchor: 14,
+        }),
+      ]);
     },
   },
 
   matRings: {
     camera: { position: [0, 4.6, 5.4], lookAt: [0, 0, -0.2] },
-    build(stage: KitDemoStage): KitBuild {
+    build(): KitBuild {
       return compose([
+        dressGround(),
         // The 3-tier ring (a thermal terrace shape; the amber/rust/sinter
         // REGION palette stays smoking-1's exclusive — R8).
         buildMatRings({
           seed: 0xa11c_0031,
           bands: [
             { color: 0xe3c47c, width: 1 },
-            { color: 0xb0703f, width: 0.9 },
-            { color: 0xd9d2c0, width: 0.7 },
+            { color: 0xb0703f, width: 1.1 },
+            { color: 0xd9d2c0, width: 0.5 },
           ],
-          ground: stage.ground,
+          ground: demoGround,
           anchors: [{ pos: [-2.4, -0.4], radius: 2.3 }],
           tiers: 3,
         }),
@@ -173,10 +244,10 @@ export const KIT_DEMOS_A: KitDemoRegistry = {
           seed: 0xa11c_0032,
           bands: [
             { color: 0xe8e4da, width: 1 },
-            { color: 0xc4bfae, width: 0.55 },
+            { color: 0xb98a6a, width: 0.55 },
             { color: 0x9c8d80, width: 0.55 },
           ],
-          ground: stage.ground,
+          ground: demoGround,
           anchors: [{ pos: [2.6, 0.4], radius: 1.7 }],
         }),
       ]);
@@ -184,15 +255,17 @@ export const KIT_DEMOS_A: KitDemoRegistry = {
   },
 
   bushBank: {
-    camera: { position: [0, 2.5, 6.8], lookAt: [0, 0.5, 0] },
-    build(stage: KitDemoStage): KitBuild {
-      const shared = { gate: OPEN_GATE, ground: stage.ground };
+    camera: { position: [0, 1.5, 6.2], lookAt: [0, 0.4, 0] },
+    build(): KitBuild {
+      const shared = { gate: OPEN_GATE, ground: demoGround };
       return compose([
+        dressGround(),
         buildBushBank({
           seed: 0xa11c_0041,
           palette: SPRING,
           area: { center: [-2.4, 0], radius: 2.8 },
           count: 12,
+          scale: 0.7,
           ...shared,
         }),
         buildBushBank({
@@ -200,6 +273,7 @@ export const KIT_DEMOS_A: KitDemoRegistry = {
           palette: WINE,
           area: { center: [3, 0.4], radius: 2.4 },
           count: 9,
+          scale: 0.7,
           ...shared,
         }),
       ]);
@@ -208,19 +282,20 @@ export const KIT_DEMOS_A: KitDemoRegistry = {
 
   spongeCluster: {
     camera: { position: [0.2, 1.7, 4.6], lookAt: [0.2, 0.75, 0] },
-    build(stage: KitDemoStage): KitBuild {
+    build(): KitBuild {
       return compose([
+        dressGround(),
         buildSpongeCluster({
           seed: 0xa11c_0051,
           palette: OCHRE_SPONGE,
-          ground: stage.ground,
+          ground: demoGround,
           anchors: [{ pos: [-1.5, -0.2] }, { pos: [-0.6, 0.5] }],
           tubesPerAnchor: 4,
         }),
         buildSpongeCluster({
           seed: 0xa11c_0052,
           palette: VIOLET_SPONGE,
-          ground: stage.ground,
+          ground: demoGround,
           anchors: [{ pos: [1.3, 0.1] }, { pos: [2.2, -0.6] }],
           tubesPerAnchor: 4,
         }),
@@ -229,36 +304,40 @@ export const KIT_DEMOS_A: KitDemoRegistry = {
   },
 
   wallDrapeBank: {
-    camera: { position: [0, 3.4, -4.0], lookAt: [0, 3.1, -9.6] },
+    camera: { position: [-0.4, 3.5, -6.1], lookAt: [-0.6, 3.3, -9.6] },
     build(): KitBuild {
-      // The demo wall panel wears the bank: front face of the stage wall
-      // (a 14×6×1.2 box at (0, 3, −10) — its face is z = −9.4).
+      // The dressed wall panel wears the bank (front face z = −9.35).
       const anchors = [
-        { pos: [-5.2, 4.4, -9.38] as const, normal: [0, 0, 1] as const },
-        { pos: [-3.4, 3.0, -9.38] as const, normal: [0, 0, 1] as const },
-        { pos: [-1.8, 4.8, -9.38] as const, normal: [0, 0, 1] as const },
-        { pos: [-0.2, 3.6, -9.38] as const, normal: [0, 0, 1] as const },
-        { pos: [1.5, 4.5, -9.38] as const, normal: [0, 0, 1] as const },
-        { pos: [3.1, 2.8, -9.38] as const, normal: [0, 0, 1] as const },
-        { pos: [4.8, 4.2, -9.38] as const, normal: [0, 0, 1] as const },
-        { pos: [5.6, 3.2, -9.38] as const, normal: [0, 0, 1] as const },
+        { pos: [-5.2, 4.4, -9.33] as const, normal: [0, 0, 1] as const },
+        { pos: [-3.4, 3.0, -9.33] as const, normal: [0, 0, 1] as const },
+        { pos: [-1.8, 4.8, -9.33] as const, normal: [0, 0, 1] as const },
+        { pos: [-0.2, 3.6, -9.33] as const, normal: [0, 0, 1] as const },
+        { pos: [1.5, 4.5, -9.33] as const, normal: [0, 0, 1] as const },
+        { pos: [3.1, 2.8, -9.33] as const, normal: [0, 0, 1] as const },
+        { pos: [4.8, 4.2, -9.33] as const, normal: [0, 0, 1] as const },
+        { pos: [5.6, 3.2, -9.33] as const, normal: [0, 0, 1] as const },
       ];
-      return buildWallDrapeBank({
-        seed: 0xa11c_0061,
-        palette: OLIVE_DRAPE,
-        anchors,
-        strandsPerAnchor: 5,
-        length: 1.7,
-        swayAmp: 0.1,
-      });
+      return compose([
+        dressGround(),
+        dressWall(),
+        buildWallDrapeBank({
+          seed: 0xa11c_0061,
+          palette: OLIVE_DRAPE,
+          anchors,
+          strandsPerAnchor: 7,
+          length: 1.7,
+          swayAmp: 0.1,
+        }),
+      ]);
     },
   },
 
   driftDebris: {
-    camera: { position: [0, 3.6, 6.6], lookAt: [0, 0, -0.6] },
-    build(stage: KitDemoStage): KitBuild {
-      const shared = { gate: OPEN_GATE, ground: stage.ground };
+    camera: { position: [0, 2.8, 5.6], lookAt: [0, -0.2, -1.2] },
+    build(): KitBuild {
+      const shared = { gate: OPEN_GATE, ground: demoGround };
       return compose([
+        dressGround(),
         // A drift-line of wrack along a strand.
         buildDriftDebris({
           seed: 0xa11c_0071,
@@ -290,23 +369,25 @@ export const KIT_DEMOS_A: KitDemoRegistry = {
   },
 
   farGrassCards: {
-    // Photographed at grazing angle: near carpet band in frame, the far
-    // cards receding into the fog.
-    camera: { position: [0, 1.6, 11.5], lookAt: [0, 0.7, -30] },
-    build(stage: KitDemoStage): KitBuild {
-      const shared = { gate: OPEN_GATE, ground: stage.ground };
+    // Photographed at grazing angle looking AWAY from the stage wall (its
+    // unlit panel would otherwise block the vista): near carpet band in
+    // frame, the far cards receding into the fog over the long sheet.
+    camera: { position: [0, 1.7, -8], lookAt: [0, 0.9, 30] },
+    build(): KitBuild {
+      const shared = { gate: OPEN_GATE, ground: demoGround };
       return compose([
+        dressGround(15, 80),
         buildCarpetField({
           seed: 0xa11c_0081,
           palette: SPRING,
-          area: { center: [0, 6], radius: 4 },
+          area: { center: [0, -2.5], radius: 4 },
           count: 900,
           ...shared,
         }),
         buildFarGrassCards({
           seed: 0xa11c_0082,
           palette: SPRING,
-          area: { center: [0, -28], radius: 30 },
+          area: { center: [0, 20], radius: 26 },
           count: 9000,
           ...shared,
         }),
@@ -315,7 +396,7 @@ export const KIT_DEMOS_A: KitDemoRegistry = {
   },
 
   wallStrataPaint: {
-    camera: { position: [0, 3.0, 1.4], lookAt: [0, 2.6, -6] },
+    camera: { position: [0, 3.2, 2.6], lookAt: [0, 2.4, -6] },
     build(): KitBuild {
       // wallStrataPaint is a bake, not a mesh — the demo builds its own
       // wall panel, paints it (three violet-leaning bands, red above
@@ -323,23 +404,30 @@ export const KIT_DEMOS_A: KitDemoRegistry = {
       // is IN the capture.
       const geometry = new BoxGeometry(12, 6, 1, 48, 24, 2);
       geometry.translate(0, 3, -6);
+      const position = geometry.attributes.position!;
+      geometry.setAttribute(
+        "color",
+        new BufferAttribute(new Float32Array(position.count * 3).fill(1), 3),
+      );
       applyWallStrata(geometry, {
         seed: 0xa11c_0091,
         bands: [
-          { tint: [1, 1, 1], height: 4.3 },
-          { tint: [0.88, 0.8, 1.0], height: 2.9 },
-          { tint: [0.68, 0.6, 0.96], height: 1.5 },
-          { tint: [0.54, 0.48, 0.88], height: -Infinity },
+          { tint: [1.04, 1.0, 0.94], height: 4.5 },
+          { tint: [0.86, 0.78, 1.0], height: 3.1 },
+          { tint: [0.66, 0.58, 0.96], height: 1.7 },
+          { tint: [0.5, 0.43, 0.82], height: -Infinity },
         ],
+        blend: 0.9,
+        wander: 2.0,
         gate: (x) => Math.min(1, Math.max(0, (x + 3.4) / 1.4)),
       });
-      const material = createToonMaterial({ color: 0x9a9484, vertexColors: true });
+      const material = createToonMaterial({ color: 0xa8a29b, vertexColors: true });
       const mesh = new Mesh(geometry, material);
       mesh.name = "kit-strata-demo-wall";
       const group = new Group();
       group.name = "kit-strata-demo";
       group.add(mesh);
-      return finishBuild(group, [geometry, material]);
+      return compose([dressGround(), finishBuild(group, [geometry, material])]);
     },
   },
 };
