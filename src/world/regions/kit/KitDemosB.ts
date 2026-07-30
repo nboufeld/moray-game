@@ -16,6 +16,7 @@ import { seabedHeight } from "../../Seabed";
 import type { KitBuild, KitDemoRegistry, KitDemoStage } from "./KitTypes";
 import { buildBeamAndPool } from "./BeamAndPool";
 import { buildDappleSheet } from "./DappleSheet";
+import { buildFallSheets, buildFallStreakTexture } from "./FallStreak";
 import { buildGateVeil } from "./GateVeil";
 import { buildGlowColony } from "./GlowColony";
 import { buildParticulateField } from "./ParticulateField";
@@ -262,7 +263,42 @@ function percherDemo(_stage: KitDemoStage, timeSec: number): KitBuild {
   return composite([stars, fry]);
 }
 
+/** One fall against the demo wall (spec §3.8: the pair of captures a
+ *  second apart must visibly move — see fallStreakT1). */
+function fallStreakDemo(_stage: KitDemoStage, timeSec: number): KitBuild {
+  const texture = buildFallStreakTexture({ seed: 0xb0_0070, columns: 5, softness: 0.45 });
+  const fall = buildFallSheets({
+    seed: 0xb0_0071,
+    texture,
+    tint: 0xfff0d0,
+    sheets: [
+      { pos: [-1.6, duneGround(-1.6, -9.1) - 0.4, -9.1], width: 4.6, height: 6.6, phase: 0 },
+      { pos: [1.3, duneGround(1.3, -9.05) - 0.4, -9.05], width: 2.8, height: 5.8, phase: 0.41 },
+    ],
+    opacity: 0.2,
+  });
+  fall.update(timeSec);
+  const build = composite([fall]);
+  return {
+    ...build,
+    dispose(): void {
+      build.dispose();
+      texture.dispose();
+    },
+  };
+}
+
 export const KIT_DEMOS_B: KitDemoRegistry = {
+  fallStreak: {
+    camera: { position: [0, 2.4, 1.6], lookAt: [0, 3.2, -9.4] },
+    timeSec: 3,
+    build: (stage) => fallStreakDemo(stage, 3),
+  },
+  fallStreakT1: {
+    camera: { position: [0, 2.4, 1.6], lookAt: [0, 3.2, -9.4] },
+    timeSec: 4,
+    build: (stage) => fallStreakDemo(stage, 4),
+  },
   gateVeil: {
     camera: { position: [6.2, 2.3, 5.6], lookAt: [11, 3.2, -10] },
     timeSec: 5,
