@@ -1,17 +1,22 @@
 import {
+  AmbientLight,
   BufferAttribute,
   BufferGeometry,
   Color,
   DirectionalLight,
   Group,
+  HemisphereLight,
   Mesh,
+  type Light,
   type Material,
   type Object3D,
   type Scene,
 } from "three";
+import { seabedHeight } from "../../Seabed";
 import type { KitBuild, KitDemoRegistry, KitDemoStage } from "./KitTypes";
 import { buildBeamAndPool } from "./BeamAndPool";
 import { buildGateVeil } from "./GateVeil";
+import { buildGlowColony } from "./GlowColony";
 import { buildParticulateField } from "./ParticulateField";
 import { buildShoalRunner } from "./ShoalRunner";
 
@@ -87,29 +92,50 @@ function darkStageRepair(): Mesh {
     }
     chained = true;
     const scene = sceneLike as Scene;
-    let sun: DirectionalLight | null = null;
+    const dimmed: { light: Light; intensity: number }[] = [];
     scene.traverse((node) => {
-      if (node instanceof DirectionalLight && !sun) {
-        sun = node;
+      if (node instanceof DirectionalLight) {
+        dimmed.push({ light: node, intensity: node.intensity * 0.15 });
+      } else if (node instanceof HemisphereLight) {
+        dimmed.push({ light: node, intensity: node.intensity * 0.35 });
+      } else if (node instanceof AmbientLight) {
+        // The violet ambient keeps most of its floor — a dark register
+        // darkens into colour, never into black (the abyss discipline).
+        dimmed.push({ light: node, intensity: node.intensity * 0.55 });
       }
     });
-    const dimmed = sun === null ? 0 : (sun as DirectionalLight).intensity * 0.15;
-    if (scene.background instanceof Color) {
-      scene.background.multiplyScalar(0.25);
-    }
-    if (scene.fog) {
-      scene.fog.color.multiplyScalar(0.25);
-    }
+    const dimmedFog = scene.fog ? scene.fog.color.clone().multiplyScalar(0.25) : null;
+    const dimmedBackground =
+      scene.background instanceof Color ? scene.background.clone().multiplyScalar(0.25) : null;
     const previous = scene.onBeforeRender.bind(scene);
     scene.onBeforeRender = (...args: Parameters<Scene["onBeforeRender"]>) => {
       previous(...args);
-      if (sun) {
-        (sun as DirectionalLight).intensity = dimmed;
+      for (const entry of dimmed) {
+        entry.light.intensity = entry.intensity;
+      }
+      // UnderwaterFog's own chained hook rewrites backgroundIntensity per
+      // frame, so the dark mood has to be re-asserted after it — SET, not
+      // multiplied, so nothing compounds.
+      scene.backgroundIntensity = 0.25;
+      if (scene.fog && dimmedFog) {
+        scene.fog.color.copy(dimmedFog);
+      }
+      if (scene.background instanceof Color && dimmedBackground) {
+        scene.background.copy(dimmedBackground);
       }
     };
   };
   return probe;
 }
+
+/**
+ * The stage's REAL floor: the harness page's sand mesh is the bowl's own
+ * dunes (`createSeabedGeometryAt(0, 0, …)`), but `stage.ground` returns a
+ * flat 0 — a piece grounded through it sinks into the near dune. Demos
+ * sample the dunes directly so feet, pools and anchors sit on the sand
+ * the capture actually shows.
+ */
+const duneGround = (x: number, z: number): number => seabedHeight(x, z);
 
 /** Several kit builds staged as one, for side-by-side demos. */
 function composite(builds: readonly KitBuild[], dark = false): KitBuild {
@@ -221,12 +247,12 @@ export const KIT_DEMOS_B: KitDemoRegistry = {
   },
   beamAndPool: {
     camera: { position: [0.5, 2.6, 8.5], lookAt: [0, 2.4, -3] },
-    build: (stage) =>
+    build: () =>
       composite([
         buildBeamAndPool({
           seed: 0xb0_0010,
           tint: 0xffe2ae,
-          ground: stage.ground,
+          ground: duneGround,
           beams: [
             // A vertical beam and a slanted blade, pools defaulted under
             // both (spec §3.5's demo brief).
@@ -235,6 +261,32 @@ export const KIT_DEMOS_B: KitDemoRegistry = {
           ],
         }),
       ]),
+  },
+  glowColony: {
+    camera: { position: [0.9, 0.8, 2.0], lookAt: [1.8, 0.35, -1.6] },
+    dark: true,
+    build: () =>
+      composite(
+        [
+          buildGlowColony({
+            seed: 0xb0_0040,
+            tint: 0x9fe8e0,
+            anchors: (
+              [
+                [0.6, -0.6],
+                [1.8, -1.2],
+                [2.6, -2.4],
+                [1.1, -2.2],
+                [3.2, -1],
+                [0.2, -1.8],
+              ] as const
+            ).map(([x, z]) => [x, duneGround(x, z), z] as const),
+            budsPerAnchor: 7,
+            glow: 0.36,
+          }),
+        ],
+        true,
+      ),
   },
   shoalRunner: {
     camera: { position: [0, 3.4, 11], lookAt: [0, 2.5, 2] },
