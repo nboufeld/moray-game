@@ -42,10 +42,12 @@ const LAYERS: readonly DuneLayer[] = [
   // Gold near… Grown and darkened in round 2: the round-1 lines were
   // low pale strips that vanished against the shelf. Variance up again
   // in round 4 — the gilded-shore frame still read one flat line.
-  { radius: 246, ridgeBase: 8, ridgeVary: 4.6, fade: 0.34, ink: new Color(0.86, 0.7, 0.46) },
-  { radius: 264, ridgeBase: 12, ridgeVary: 6.2, fade: 0.52, ink: new Color(0.74, 0.58, 0.58) },
+  // Bases up a step in round 5: the alpha-dissolved crest reads lower
+  // than the drawn line, and the shore frame thinned to one band.
+  { radius: 246, ridgeBase: 9, ridgeVary: 4.6, fade: 0.34, ink: new Color(0.86, 0.7, 0.46) },
+  { radius: 264, ridgeBase: 14, ridgeVary: 6.2, fade: 0.52, ink: new Color(0.74, 0.58, 0.58) },
   // …violet far.
-  { radius: 286, ridgeBase: 20, ridgeVary: 7.8, fade: 0.66, ink: new Color(0.62, 0.48, 0.68) },
+  { radius: 286, ridgeBase: 22, ridgeVary: 7.8, fade: 0.66, ink: new Color(0.62, 0.48, 0.68) },
 ];
 
 const SEGMENTS = 220;

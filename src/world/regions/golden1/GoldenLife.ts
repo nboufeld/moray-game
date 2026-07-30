@@ -559,11 +559,11 @@ function buildRayCaravan(): {
   const material = createToonMaterial({
     vertexColors: true,
     side: DoubleSide,
-    // Lifted again in round 5: tan rays in front of the tan distance
-    // rings were camouflaged out of their own pose (round 4's find),
-    // and the far arc of even the shrunk loop needs the extra light.
+    // Lifted in round 5 for the camouflage (round 4's find), then
+    // pulled back within the round: at 0.85 a near ray rendered as a
+    // flat neon-orange kite. 0.65 keeps the file warm against the sky.
     emissive: 0x9a7c3a,
-    emissiveIntensity: 0.85,
+    emissiveIntensity: 0.65,
   });
   material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
     shader.uniforms.uSway = sway;
@@ -594,9 +594,9 @@ function buildRayCaravan(): {
   const scales: number[] = [];
   for (let i = 0; i < count; i++) {
     // Round 4: 3.2–4.2 made ~15 m wingspans that swallowed whole
-    // frames; round 5 trims again for the shrunk circuit (~8 m spans
-    // spaced ~10 m read as a file, not a pile).
-    scales.push(random.range(2.0, 2.5));
+    // frames; round 5 trimmed twice — even 2.0–2.5 filled half the sky
+    // when the near arc met the settle. ~7 m is still a great animal.
+    scales.push(random.range(1.7, 2.1));
     tint.setScalar(random.range(0.9, 1.08));
     mesh.setColorAt(i, tint);
   }

@@ -272,13 +272,20 @@ export function duneRank(u: number, v: number): { rise: number; slip: number } {
     0.3 +
     0.7 *
       smoothstep01(
-        (fbm(u * 0.006, v * 0.013, { seed: SEED ^ 0xdca1, period: 5, octaves: 2 }) - 0.36) / 0.3,
+        // Widened in round 5 (0.3 → 0.42): the old shoulder stepped a
+        // saturated crest down to the gap floor in a few metres, and
+        // the reveal's horizon read as a wall with gates cut in it.
+        (fbm(u * 0.006, v * 0.013, { seed: SEED ^ 0xdca1, period: 5, octaves: 2 }) - 0.36) / 0.42,
       );
+  // A slow heave so no crest line ever runs dead level — the crescent
+  // field SATURATES over whole patches, and a saturated crest is a
+  // ruler-straight ridge (round 5's diagnosis of the "notch" reads).
+  const heave = 0.86 + 0.28 * fbm(u * 0.011, v * 0.023, { seed: SEED ^ 0xdca2, period: 4, octaves: 2 });
   // The slip term reaches 1 quickly past the crest (round 2's gentler
   // ramp painted the lee a timid mauve), and only half-follows the
   // crescent gaps so even low saddles keep their shadow.
   const slip = smoothstep01((s - 0.68) / 0.24) * (0.5 + 0.5 * crescent);
-  return { rise: rise * fall * crescent, slip };
+  return { rise: rise * fall * crescent * heave, slip };
 }
 
 /**

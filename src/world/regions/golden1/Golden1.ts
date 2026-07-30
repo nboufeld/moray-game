@@ -169,26 +169,35 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // pitch 0.65 framed two-thirds empty water; round 4's 0.42 at the
   // far wall framed haze; this frame was found by live candidate
   // search inside the bowl.
-  { name: "hourglass-deep", u: 457, v: 46, lift: 7.0, atU: 425, atV: 61, pitch: 0.25, settle: 6 },
+  // …and it stands INSIDE r ≈ 10 of the chasm's centre on purpose: the
+  // Keeper's patrol breathes around r 19.5–26.5, and round 5's first
+  // deep stand sat right on that band — the settle parked a three-metre
+  // glowing turtle a wing's length from the lens.
+  { name: "hourglass-deep", u: 456, v: 38, lift: 7.0, atU: 425, atV: 61, pitch: 0.25, settle: 6 },
   // The Keeper's water. The capture settle is wall-clock offset, so a
   // 72 s patrol cannot be aimed at — this pose must hold the WHOLE
   // ring. Round 4's terrace stand lost the patrol's near arc below the
-  // frame's bottom edge (the ring breathes down to floor+6.5, a 0.94
-  // rad depression from that stand); from the lip top at 46 m out,
-  // pitch −0.66 covers depressions 0.28–1.04 and the ring cannot leave.
-  { name: "keeper-deep", u: 416, v: 6, lift: 6.0, atU: HOURGLASS.u, atV: HOURGLASS.v, pitch: -0.66, settle: 8 },
+  // frame's bottom edge; round 5's first fix framed the ring but from
+  // so close the frame was all interior haze. From 52 m out with the
+  // near lip crossing the lower third, every depression the patrol can
+  // reach (0.28–0.88) is inside the frame, and the Keeper itself is
+  // fog-free — a lantern reads through the bowl's own haze.
+  { name: "keeper-deep", u: 412, v: 2, lift: 8.0, atU: HOURGLASS.u, atV: HOURGLASS.v, pitch: -0.6, settle: 8 },
   // The Oasis Hollows: palms, gold grass, the tender counterpoint.
   { name: "oasis", u: 502, v: -50, lift: 2.4, atU: OASIS_A.u, atV: OASIS_A.v, pitch: 0.02, settle: 5 },
   // The Singing Flats: monoliths, long violet shadows, garden eels.
   // Round 5's first stand at (515, 70) was INSIDE the shrunk caravan
-  // circuit — a wing crossed the frame edge at arm's length — so the
-  // pose stands outside the loop's south-west arc instead.
-  { name: "singing-flats", u: 506, v: 62, lift: 2.6, atU: 531, atV: 88, pitch: 0.02, settle: 5 },
+  // circuit (a wing crossed the frame edge at arm's length); the
+  // second at (506, 62) stood four metres from the first monolith and
+  // wore it as a purple wall. Outside the loop, clear of the stones.
+  { name: "singing-flats", u: 510, v: 58, lift: 2.6, atU: 531, atV: 88, pitch: 0.02, settle: 5 },
   // The caravan's crossing, watched from outside the shrunk circuit:
   // the WHOLE loop fits the frame (round 3 stood three metres off one
   // station; round 4 watched a leg of a loop that was elsewhere, and
-  // what did cross was camouflaged against the old ring wall).
-  { name: "ray-crossing", u: 494, v: 98, lift: 3.4, atU: 528, atV: 84, pitch: 0.06, settle: 6 },
+  // what did cross was camouflaged against the old ring wall). 47 m
+  // out, not 36 — at 36 the near arc still kited two rays across the
+  // whole sky when the settle was unlucky.
+  { name: "ray-crossing", u: 486, v: 106, lift: 3.4, atU: 528, atV: 84, pitch: 0.07, settle: 6 },
   // The Gilded Shore: the shelf, the stacks, the painted distance.
   { name: "gilded-shore", u: 585, v: 30, lift: 3, atU: 645, atV: 20, pitch: 0.02 },
 ];

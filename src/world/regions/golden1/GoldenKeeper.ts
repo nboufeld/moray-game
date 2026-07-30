@@ -64,6 +64,11 @@ export function buildKeeper(): KeeperBuild {
     emissiveIntensity: 1.1,
   });
   applyVeinGlow(material, "hourglass-keeper");
+  // The lantern is fog-free (the falls' round-5 lesson): with fog on,
+  // the bowl's deep mood washed the glow to nothing past ~35 m and the
+  // "slow golden ring in the violet deep" was invisible from every
+  // pose that framed the whole patrol.
+  material.fog = false;
   const mesh = new Mesh(geometry, material);
   mesh.name = "hourglass-keeper";
   mesh.castShadow = false;

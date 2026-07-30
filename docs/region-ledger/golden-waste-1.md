@@ -254,3 +254,49 @@ pose brought to ~14 m of a colony; grass families and blade texture
 warmed from green to dry gold, emissive amber; both stone tints
 warmed against the plum (pale 0xb09a74, monolith 0x8a7468); backdrop
 fade 0.66; monolith shadows deepened a step.
+
+### Round 5 (`hourglass-r5` partial, `hourglass-r5b` full) — three wins, two new tarpaulins
+
+Captured under wave contention (1-min loads 13–27; two runs raced and
+both died starved — the r5 tag is a 12-pose partial, r5b the full set
+on a gated quiet minute). Silhouette: hourglass-deep is DONE — the
+live candidate search found a swimmer's frame of terrace benches
+stacking diagonally to the lip with one sandfall burning over the
+crest; the fortress reads are gone from ray-crossing/oasis/flats
+horizons (soft-top rings dissolve into the water), and slip-face
+finally holds its shoal — the ribbon arcs over the crest top in
+frame. But the reveal's notch persists: NOT the rings (toggle-proven)
+— the crescent field SATURATES, so a rank's crest line runs
+ruler-straight for tens of metres and steps down through the old
+narrow shoulder like a wall with a gate cut in it. And the flats'
+second stand put the first monolith four metres from the lens (a
+purple wall on the right third). Value: the falls' fog-off is the
+round's big win — the lip pose reads the WHOLE ring of twelve for the
+first time, the vale falls populate the descent, and the reveal
+gained an unfogged fall-beam beacon at the Hourglass's azimuth (200 m
+off, reads as a landmark, kept). The Keeper missed keeper-deep AGAIN
+(round 4's stand loses the patrol's deep near arc below the frame
+edge; the wider round-5 fix framed the ring but produced a frame of
+pure interior haze in which a fogged lantern carries nothing).
+Colour: stones warmer but the first warming did not survive the
+violet ambient (saddle boulder still eggplant at the base); "gold"
+grass overshot to rust-orange accent blades; the caravan's 0.85
+emissive reads NEON when close. Detail: the shrunk circuit works —
+the file is in every flats-side frame now — but 36 m of standoff is
+not enough: an unlucky settle parked the near arc overhead and two
+2.5-scale rays kited across the whole sky; and hourglass-deep's first
+stand sat ON the Keeper's patrol band (a glowing three-metre turtle a
+wing's length from the lens). The garden eels finally read as bent
+question-marks at the new distance.
+
+Fixes for round 6: duneRank heave (a slow ±14% multiplier so no crest
+line ever runs dead level) and the crescent shoulder widened 0.3 →
+0.42; rays trimmed to 1.7–2.1 scale at 0.65 emissive, watched from
+47 m; keeper-deep re-authored at 52 m with the near lip crossing the
+lower third AND the Keeper made fog-free (the falls' own lesson — a
+lantern must pay its way through the bowl's haze); hourglass-deep
+slid to r ≈ 10 of the chasm centre, inside the patrol's breathing
+band; flats stand clear of both the circuit and the stones; stone
+warming doubled (pale 0xc2a066, monolith 0x9a7c6a — the red/blue
+ratio is the lever, not the value); grass pulled back to wheat; ring
+bases up a step to pay for the alpha-dissolved crests.
