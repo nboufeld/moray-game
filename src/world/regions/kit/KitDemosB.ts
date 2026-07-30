@@ -15,6 +15,7 @@ import {
 import { seabedHeight } from "../../Seabed";
 import type { KitBuild, KitDemoRegistry, KitDemoStage } from "./KitTypes";
 import { buildBeamAndPool } from "./BeamAndPool";
+import { buildDappleSheet } from "./DappleSheet";
 import { buildGateVeil } from "./GateVeil";
 import { buildGlowColony } from "./GlowColony";
 import { buildParticulateField } from "./ParticulateField";
@@ -289,6 +290,36 @@ export const KIT_DEMOS_B: KitDemoRegistry = {
           ],
         }),
       ]),
+  },
+  dappleSheet: {
+    camera: { position: [0.5, 3.4, 9], lookAt: [1.5, 0, -3] },
+    timeSec: 5,
+    build: () => {
+      const sheet = buildDappleSheet({
+        seed: 0xb0_0060,
+        tint: 0xffd98c,
+        ground: duneGround,
+        area: { center: [1.5, -2.5], radius: 9 },
+        opacity: 0.24,
+      });
+      sheet.update(5);
+      return composite([sheet]);
+    },
+  },
+  dappleSheetT1: {
+    camera: { position: [0.5, 3.4, 9], lookAt: [1.5, 0, -3] },
+    timeSec: 15,
+    build: () => {
+      const sheet = buildDappleSheet({
+        seed: 0xb0_0060,
+        tint: 0xffd98c,
+        ground: duneGround,
+        area: { center: [1.5, -2.5], radius: 9 },
+        opacity: 0.24,
+      });
+      sheet.update(15);
+      return composite([sheet]);
+    },
   },
   glowColony: {
     camera: { position: [0.9, 0.8, 2.0], lookAt: [1.8, 0.35, -1.6] },
