@@ -354,3 +354,39 @@ Working frames: first-dead, mid-march, shock-rings, card-house,
 suffocated-mile (registry-still: pots + one bubble thread + eighth-
 density snow all present), the-reveal, cold-candle, seep-gardens,
 grove-lawn, quiet-rim (rest — bare by registry).
+
+### Round 2 (`ca-fill-r2`) — the ejecta blanket lands
+
+The rework: the ejecta blanket (crumbs + thrown slabs over all crater
+country, raked off the Wound, swim line and rests held), the flank
+bands (thrown straw, pale dead scrub, bone-coral pioneers past |v| 46),
+28 bank snags stood INTO the sweep poses' computed view lines (the
+pose stream recomputed offline; zero new draws — snags merge into the
+forest chunks), shard tones cooled off salmon, straw lifted to
+bleached bone, the Shatterfield grown 1050 → 1500, meadow blades grown
+to 0.3–0.62 m with brighter tips, the Gardener's stage cleared (the
+u ≈ 253 tooth stepped 34 m down-road), a grove plant moved off the
+shrine lens. Measured after: 116 draws / 391,696 tris. All 21 region
+tests green (fence pins, rake, Mile stillness, route clearances).
+
+**Sweep verdict: 8/12 clear** (01, 02, 03, 04, 08, 10, 11, 12), with
+04 and 12 unchanged-strong and every bank pose now carrying snags in
+its mid-ground. **Marginal: 05, 06, 07, 09** — the mid layer stands
+now but the NEAR layer is still thin: the blanket's 1500 crumbs over
+a 215 m disc is one stone per ~10 m of near-field, and the first ten
+metres under those poses still read as felt with specks. Not rests;
+must be fixed. Round-3 orders: densify the blanket (crumbs 1500 →
+3200, slabs 300 → 560 and a step larger), grow the flank scrub 120 →
+200, straw 300 → 460, knuckles 46 → 70.
+
+Authored set (all 18 read): the Gardener's stage is CLEAN — the statue
+lies alone again; sorrow-gate's carpet reads bone not salmon; the
+Shatterfield bench finally carries its story ("the pavement of a
+drowned city, thrown"); ghost-forest straw reads as pale shed straps;
+grove-lawn's meadow answers the shaft in yellow-green blades;
+suffocated-mile untouched-still by registry; quiet-rim stays the
+registered rest. One find: the-shrine's diagonal trunk is NOT fill —
+it stands in the `_verify` baseline identically (a pilot west-clump
+plant 1.5 m off the camera corridor, accepted in the pilot's round-5
+full-set review). The plant stays (pilot content is fenced); the POSE
+gets a two-metre camera slide off its shoulder instead.

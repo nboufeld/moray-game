@@ -189,7 +189,10 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // The shrine: the Curator at the memorial, close enough to watch her
   // work. The aim rides a step off the anchor so the settle does not
   // complete a discovery and drop the ceremony plate over the frame.
-  { name: "the-shrine", u: 767, v: -79, lift: 1.8, atU: 772, atV: -83, pitch: -0.1, settle: 6 },
+  // (Fill round 3: the camera slid two metres off the west clump's
+  // shoulder — a pilot plant 1.5 m off the old corridor lay a diagonal
+  // trunk across the whole lens; the plant is fenced, the pose is not.)
+  { name: "the-shrine", u: 765, v: -74.5, lift: 1.8, atU: 772, atV: -83, pitch: -0.1, settle: 6 },
   // The Quiet Rim: the far shelf, the leaning stacks, the painted distance.
   { name: "quiet-rim", u: 846, v: 10, lift: 3, atU: 905, atV: 0, pitch: 0.02 },
 ];
