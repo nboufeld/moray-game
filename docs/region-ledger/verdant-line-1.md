@@ -194,3 +194,123 @@ weaver-grotto, falling-edge.
   accepted as backlight after the round-7 measurement.
 - Region HUD total rises 17 → 18 when the region first builds (the
   streamer's designed behaviour).
+
+---
+
+# PHASE 3 REWORK — the fill (`rework/verdant-line-1`, plan `docs/fill-plans/verdant-line-1.md`)
+
+Executed under FILL-DOCTRINE + MASTER (R1 caps, R4 first item, §1.2
+registry inviolable). Every fill stream is `SEEDS.regionVerdant1 ^` a
+fresh `FILL_SEEDS.*` constant appended after all pilot draws — the reroll
+fence, proven by test pins on the first/last giants and the weaver's
+haunt (exact pre-fill coordinates held to 9 decimal places).
+
+## What landed (by checklist item)
+
+1. **Budgets** — test caps raised to the doctrine's 160 draws / 450k
+   tris; floors raised to 90 / 300k. Measured at round 1:
+   **108 draws / 439,018 triangles** (pilot was 65 / 248,711).
+2. **MASTER R4, first item** — `VerdantDistance` rings and trunk cards
+   now part over the depth-2 pass (second gap at
+   `VERDANT_SLOT.azimuth`, `PASS_GAP_HALF = 0.2`, card margin +0.1;
+   asserted by test). `falling-edge` r1 shows the corridor open,
+   milky-bright, the eased ring ends reading as soft hills.
+3. **Ground paint** — the channel-centreline moss track (the road
+   itself is green now) and the lip-garden sward band over u 248–330
+   (the `vale-reveal` beige is gone).
+4. **Kelp** — ledge clusters 11 → 22, meadow stands 9 → 15, +6 eave
+   mids at u 356–404, canopy pads 6–8 → 9–12 per giant, plus the
+   above-canopy pad cards (169 instanced, unlit, vertex-painted).
+5. **Rocks** — root hubs 11 → 20 (scenery only), the wreck debris
+   field (24 kit planks), 4 dead spars, 12 rim-crest stones at
+   rc 196–204 with both pass corridors kept clear.
+6. **Meadow** — patches 42 → 66 (the plan drew 70; the measured
+   triangle budget trimmed four — see deviations), Sunwell ×1.3,
+   Falling Edge ×1.5 with the shelf-pocket rest excluded.
+7. **Life** — vale runner (45 + glint, kit `shoalRunner`, loop u
+   64–184), brooding shoal (30, maze), far shoal (20, leaning pair),
+   8 drifter jellies, meadow crab colony (4×3, kit `percherColony`
+   dart on region crab geometry), bark-percher fry (10×5 hover),
+   glow-polyp colonies 14×8 + wreck/grotto accents + gate-jamb moss
+   (kit `glowColony`), stars 26 → 44 (the maze's rose-violet family),
+   urchins 18 → 34 + eight vale colonies of four. Shimmer re-centred
+   (350, 16, rU 56) so its ellipse crosses the aisle twice.
+8. **Light** — kit `beamAndPool`: 8 gold-green beams (vale 110/165/186,
+   erratic 330, aisle 385/456, the Elder god-ray pair) + 6 pools
+   (vale ×2, erratic, aisle ×3 — one under the standing 442 shaft),
+   1 dusk beam through Green Gate 1, 1 pale beam at the Falling Edge.
+   Sunwell peak: great shaft 0.15 → 0.22, pool 9 → 11 m.
+9. **T1/T2 kit cover** — seven carpet families (moss 2,600 / sward
+   3,400 / litter 2×1,150 / silt 1,800 / shell 900 / ring-rim 600),
+   pebble runs (vale 520 two-tone, meadow 140, erratic skirt 12, maze
+   shards 500), six bush banks (vale 40 / meadow 60 / forest 70 /
+   wine 40 / pale 20 / Sunwell-outside 8), vale sponges (8×3), and
+   the region exclusives: holdfast skirts on all 39 giants, 26 fallen
+   limbs (3 variants through kit `groundLitter`), dead spars, canopy
+   pad cards.
+
+## Deviations, cited
+
+- **The narrows vs the vale runner** (plan §5 said "full channel u
+  60–280"): MASTER §1.2 holds u 190–250 at *motes only*, and R10 says
+  stillness beats cadence — the runner's loop ends at u 184. Life
+  leads the diver in, goes quiet through the shadow, and the shimmer
+  picks the thread up past the lip. Asserted by test.
+- **The third vale beam** (plan §4 drew it at u 230, inside the
+  registry's beam-free narrows): moved to u 186, just before the
+  shadow starts, which reads as the pinch's last light.
+- **Beam count**: the plan's §3 zone table lists 12 new beams, its §6c
+  says +8 — irreconcilable as written. Landed 10 (the §4 narrative's
+  set minus the two Sunwell satellites, whose job the 0.22 peak boost
+  does better without crowding the markless-within-40 m rule).
+- **Meadow patches 70 → 66, litter 2,800 → 2,300, vale pebbles 700 →
+  520, maze rubble as 8-tri shards, bushes at 4 lobes, sponges 3/anchor,
+  urchin spikes 16 → 12, ground pitch 104/84 → 98/80 segments**: the
+  plan's §3 roll-up under-counted (its own estimate was 415k; the
+  faithful build measured 480k), and R1's 450k cap binds. These trims
+  took the measured build to 439,018 with the composition intact.
+
+## Rework round 1 (`fill-r1`) — critique, silhouette → value → colour → detail
+
+All 13 authored poses captured and READ against the pilot-final befores:
+
+- `vale-descent` / `vale-narrows`: the road works now — moss track,
+  ledge gardens both sides, beams with landings, runner overhead.
+  **FAILS on value**: the moss/pebble T1 reads as near-black violet
+  thorns under the region's dim sun (the kit demo's brighter stage
+  hid it); the sponge cluster reads as a traffic-cone RED column; the
+  runner's fish read as dull brown blobs when backlit (the fish
+  community's complement illusion, again — value must come UP).
+- `vale-reveal`: the doorstep is green; saddle bareness is the crest
+  rest, composed. Passes.
+- `meadow-hills`: transformed — sward, pebbles, young stands, erratic
+  skirt, beams. The jellies read SALMON-pink fish (cool them violet).
+- `forest-eaves`: eave mids close the treeline gaps; aisle beams
+  land. Foreground litter still reads as dark specks — value + size.
+- `forest-aisle`: wayside grass + skirts read; the bush bank at left
+  reads near-black (lift the olive family's whole ramp).
+- `elder-serpent`: serpent + motes + skirts compose; the Elder
+  god-ray pair is nearly invisible (edge-on fade kills near-vertical
+  blades seen from below — the pair needs real slant).
+- `canopy-up`: crowns denser (9–12 pads) but the ceiling still shows
+  too much open sky; the pad cards barely read from below. More and
+  bigger pads.
+- `canopy-breach`: pool + shaft + grazers + near pads — better, but
+  the "sea of crowns" is still thin along the sightline.
+- `sunwell`: the light peak lands — lush bowl, ring-rim carpet band,
+  brighter shaft. Passes.
+- `root-maze`: dead spar + arch + hubs + debris compose, glow
+  colonies carry their own light. **But**: spar stubs read as a
+  signpost "T" (droop them), wine bushes read magenta (deepen), glow
+  tint reads lime-slime in the mid-value water (pale it).
+- `weaver-grotto`: weaver at the mouth ✓; the right-edge spar reads
+  as a telegraph pole (taper + curve); grotto lanterns too faint;
+  silt cards read as specks (lift the violet family's value).
+- `falling-edge`: turf + shells + bushes + pale beam + THE OPEN PASS
+  (R4). Passes.
+
+**Round-2 orders**: one value pass over every fill palette (the fill
+was painted for the kit demo's light, not the region's); sponge
+ochre → olive-tan/wine; jellies violet; runner fish value up; spar
+taper + drooped stubs; wine bushes deepened; glow tint paled; god-ray
+pair slanted harder; litter bigger; pads more/bigger.
