@@ -156,10 +156,13 @@ export function buildSandfallDunesFlora(def: WingDef): WingFlora {
   // the door — a gold-dapple column and the first gold motes drifting in,
   // the life gradient starting before the door the way the golden plan
   // asks. Appended after every existing draw, on its own `^` substream.
+  // Round 3: a taller frame and a lighter far honey — at height 5 the
+  // silhouettes barely crested the end wall from the wing's heart, and
+  // the far ink sat too near the near one to read as country receding.
   const veil = mountGateVeil(def, {
     width: 7,
-    height: 5,
-    palette: [0x4a3a2e, 0x74583a, 0xa08252],
+    height: 6,
+    palette: [0x4a3a2e, 0x74583a, 0xb08e5c],
     column: { tint: 0xffe0a0, opacity: 0.1 },
     particulate: { tint: 0xffe0a0, count: 80 },
   });

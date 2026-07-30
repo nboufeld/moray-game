@@ -309,12 +309,15 @@ export function buildGhostReefFlora(def: WingDef): WingFlora {
   // that LIGHTEN toward the door (the one province whose distance is
   // whiter than its water), the far ink leaning rose-violet — the Bone
   // Meadows' blush read from the wing side — under a pearl column and a
-  // drift of pearl motes. Appended after every existing draw, on its own
-  // `^` substream: the recovery ramp above re-rolls nothing.
+  // drift of pearl motes. Round 3 lifted every ink a value step: at the
+  // first register the 0.2-cap planes could not raise the doorway above
+  // the backdrop, and a milk that fails to be brighter than the water is
+  // just haze. Appended after every existing draw, on its own `^`
+  // substream: the recovery ramp above re-rolls nothing.
   const veil = mountGateVeil(def, {
     width: 7,
     height: 5.5,
-    palette: [0x778b88, 0x9aa9a5, 0xb9a9b2],
+    palette: [0x8fa39f, 0xbcc9c4, 0xd8c9d1],
     column: { tint: 0xeef4ee, opacity: 0.09 },
     particulate: { tint: 0xf2f4ee, count: 80 },
   });

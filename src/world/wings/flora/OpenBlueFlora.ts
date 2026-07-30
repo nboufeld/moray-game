@@ -291,9 +291,10 @@ const HOLE_R = 47.6;
  * The opening's centre depth is AUTHORED, not sampled: at the end wall the
  * carve is already climbing back toward the rim, so `seabedHeight` there
  * answers with the sill — and round 1 hung the whole dressing up in the
- * sky. The blob the audit named lives over the deep floor, centre ≈ −7.
+ * sky. Round 2 sat it a step too deep (the wash landed on the wall below
+ * the opening); the aperture the camera actually frames centres ≈ −4.5.
  */
-const HOLE_Y = -7;
+const HOLE_Y = -4.5;
 
 function holeFrame(def: WingDef): HoleFrame {
   const x = Math.cos(def.azimuth) * HOLE_R;
@@ -304,8 +305,8 @@ function holeFrame(def: WingDef): HoleFrame {
 /** The gradient's inks, centre → shoulder: violet over green, never black. */
 const HOLE_INK_CENTRE = new Color(0x232040);
 const HOLE_INK_SHOULDER = new Color(0x3c3760);
-const HOLE_HALF_WIDTH = 7.2;
-const HOLE_HALF_HEIGHT = 6.4;
+const HOLE_HALF_WIDTH = 7.4;
+const HOLE_HALF_HEIGHT = 5.0;
 const HOLE_ALPHA = 0.52;
 
 /**
@@ -374,7 +375,7 @@ function buildHoleGradient(hole: HoleFrame, seed: number): Mesh {
 const RIM_TINT = new Color(0xbcd8ea);
 const RIM_INNER = 0.62;
 const RIM_PEAK = 0.8;
-const RIM_ALPHA = 0.14;
+const RIM_ALPHA = 0.18;
 
 function buildHoleRim(hole: HoleFrame, seed: number): Mesh {
   const spokes = 40;
