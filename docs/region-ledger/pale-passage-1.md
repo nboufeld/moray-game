@@ -97,8 +97,11 @@ close the world floor-to-ceiling (asserted channel-relative in tests).
 
 ## Budgets (measured programmatically; tests/regionPale1.test.ts holds the caps)
 
-- Draw calls: **59** (cap 120)
-- Triangles: **233,235** (cap 250,000)
+Pilot-final numbers; the Phase 3 rework section below carries the fill
+budgets (caps honestly raised to the doctrine's 160 / 450k there).
+
+- Draw calls: **59** (cap 120 at pilot close)
+- Triangles: **233,235** (cap 250,000 at pilot close)
 - Colliders: **321** (floor 100 asserted; all inside the domain)
 - Everything repeated is instanced: bone-tree archetypes, garden corals
   (one InstancedMesh per kind), buds, floor stars, silhouette cards,
@@ -203,3 +206,136 @@ under `bone-final-noassets` for the canonical contract.
   vec4 vColor) — an existing framework issue, not introduced here.
 - Triangle budget sits at 93% of cap; any future additions should come
   out of the distance cards, not the gardens.
+
+# PHASE 3 REWORK — the fill (`rework/pale-passage-1`, plan `docs/fill-plans/pale-passage-1.md`)
+
+Executed under FILL-DOCTRINE + MASTER (§1.2 registry inviolable: the
+Quiet Gallery pan, the Ravine Hush u 130–210, the Mother's Pool; R6
+false spring authored region-side; R8 exclusives through kit doors; the
+orchestrator field note F-R3 on rim-facing flank bands). Every fill
+stream is `SEEDS.regionPale1 ^` a fresh `FILL_SEEDS.*` constant
+(`PaleFillShared.ts`), appended after all pilot draws — the reroll
+fence, proven by test pins on the first/last instances of all three
+bone-tree archetypes, the first monument and the Gardener target (exact
+pre-fill coordinates, the target to 9 decimal places).
+
+## What landed (by checklist item)
+
+1. **Budgets** — test caps raised to the doctrine's 160 draws / 450k
+   tris; floors raised to 85 / 380k. Measured at round 3: **99 draws /
+   448,083 triangles** (pilot was 59 / 233,235).
+2. **`PaleCarpet.ts` (NEW — the T1/T2 kit consumer)** — the fill voice
+   is BONE GRAVEL, NOT CLUTTER: ravine channel gravel (1,400, two bone
+   tones, dead through the hush), stairs shard drifts (560, reveal
+   cadence ~26 m → ~13 m), the descent fan (320, raked from the lip),
+   the false-spring trace (170 blush-tinted, dying by u 68 — R6,
+   authored so the gradient reads before connective-2 lands), the
+   disc-wide bone grit floor (3,000), THE OSSUARY CARPET (2,950
+   vertebra knuckles + branch fragments — the signature exclusive,
+   custom 8-tri shapes through kit `groundLitter` per R8, dense at
+   every tree's foot and under the cathedral crown), bone stumps (640,
+   region-instanced standing layer, rim-leaned per F-R3), ravine
+   bank-top shards (760, round 3), blush gravel (2,100), petal-fall
+   (950, round 3), shelf turf (1,700) + grove rim turf (1,200, kit
+   `carpetField`), bed-foot rubble (240), and kit `screeApron` fans at
+   every stairs slab, jamb, ledge, arch leg and the cathedral.
+3. **`PaleBones.ts`** — monument furrows deepened (cut 0.14, ridge
+   paint 0.66–1.12); three strata-ledge stacks (u 96 / 200 / 232) as
+   wall architecture; the Quiet Gallery's sanctioned threshold-plate
+   path; garland cords on the arch and both blush skeletons; scree
+   anchors exported for the carpet's aprons.
+4. **`PaleBloom.ts`** — shelf sites 30 → 55 with ≥2 fans per authored
+   bed (asserted), the pioneer bed at u 508, the Gardener's sprig
+   trail, nursery 10 → 16 seats in paired double hedges + rim-gate
+   hedges, and the mother's plates rebuilt as LATHE geometry with a
+   ripple corrugation and radial growth rings that her emissive now
+   wears (vertex paint multiplied into `totalEmissiveRadiance`).
+5. **`PaleLife.ts`** — the hush-fry shoal (40, kit `shoalRunner`,
+   bone-pale and deliberately near-colourless, walking the road u ≥
+   212), porcelain brittle-stars (kit `percherColony`, two tints:
+   white on trunks, rose on beds), THE PETAL CURRENT MADE REAL (12
+   flecks → 300 petals + 420-point stream, arch and rim eddies, the
+   darter escort splitting to circle the Gardener), blush + nursery
+   midges, ravine + gallery dust columns, stars 26 → 50.
+6. **`PaleLight.ts`** — the stairs god-ray pair, the arch blade
+   widened, the blush skeletons' blades, the gallery pool, nursery
+   micro-pools. NO dappleSheet (MASTER upheld the paper-light).
+7. **`PaleGround.ts`** — near-field chalk keyed UP where recovery
+   < 0.15, freckles redrawn at two separated scales, gallery white
+   pulled to 0xfbf8f1, ravine walls leaning cool-white as they rise,
+   the false-spring paint trace under the gravel of the same name.
+8. **Poses** — 12 → 14 (`ravine-hush`, `ossuary-floor` added).
+
+## Deviations, cited
+
+- **The hush-fry vs the road** (plan §5 walked it "the length of the
+  road"): the registry holds the hush at motes only — the route's
+  stations start at u 212 and the test asserts it.
+- **Monument scree** (plan §3 aproned every monument): the Quiet
+  Gallery pan is registry stillness — the monuments keep bare feet;
+  the sanctioned threshold plates carry the approach instead.
+- **The u-200 ledge** stands inside the hush window: its apron fans
+  AWAY from the channel at reduced spread; the lane below stays bare
+  (asserted: nothing lies within `channelHalf + 0.5` through u
+  130–210).
+- **Budget trims** (the plan's roll-up under-counted): staghorn weight
+  0.10 → 0.03 and brain 0.08 → 0.04 across rounds (fans and branches
+  take the weight — bed density untouched), ossuary 3,200 → 2,950,
+  shelf turf 2,000 → 1,700, grit 3,300 → 3,000, ravine gravel 1,500 →
+  1,400, drifts 620 → 560, bed rubble 280 → 240.
+
+## Rework round 1 (`pa-fill-r1`) — 59/233k → 95/442,893
+
+Captured 11/14 authored (the shots script crashed at pose 12; the
+missing three were read in r2's full set) and 10/12 sweep frames (the
+sweep timed out on the last two). READ against the bone-final befores.
+What worked at once: the ravine's gravel voice, the shard drifts'
+cadence, the petal current visible from the white side, the shelf's
+lushness against the white half. What failed, silhouette → value:
+
+- **The camouflage failure (the round's lesson):** bone chips painted
+  bone-on-bone VANISH under the milk's flat light — the grit and
+  ossuary carpets were THERE (counts asserted) and invisible at pose
+  distance. Verdant's round-7 lesson arrived here a round late.
+- The strata ledges hovered off their banks ("flying saucers").
+- The mother's growth rings: keyed off displaced y — nothing
+  qualified; her emissive flattened the plates flat magenta.
+- Sweep 02/03 (rim-facing): NOTHING standing in the first 35 m.
+
+## Rework round 2 (`pa-fill-r2`) — the camouflage round; sweep 8/12
+
+Grit/ossuary second tone taken to genuine violet-bone (half the run
+now draws against the paper), chips grown a size, stumps 360 → 520
+and rim-leaned, ossuary root-boost up, ledges sunk 0.35 into the bank,
+ravine walls leaning cool-white, blush gravel 1,500 → 1,800, mother's
+rings keyed off vertex normals + emissive wearing paint. Full 14
+authored + 12 sweep captured and READ.
+
+- Authored: 12 of 14 read as composed places. `mother-crown` still
+  flat magenta from below (the cylinder cap holds vertices only at
+  centre and rim — the ring paint had nothing to live on: r3 rebuilds
+  the plate as a lathe). `chalk-stairs`: the u-96 stack's top plate
+  still breaks the bank silhouette against the milk band.
+- Sweep: **8/12** (05/06/07/08/10/11 clean; 01/12 soft passes on the
+  stump line and litter margins). The four misses, traced by pose
+  coordinates (`pale-sweep-where` helper): **02** u 250 v −19 — the
+  ravine's high bank, where every family hugged the channel and the
+  grit floor started at u 292; **03** u 357 v 174 — the white disc's
+  far flank, grit too thin at half domain weight; **04** u 497
+  v −159 — OUTSIDE the blush corridor's 170 m width, pink paint with
+  not one stone; **09** u 556 k 1.0 — past every band's fade. None
+  are registered rests. All four are GATE HOLES, not density tuning
+  — the round-3 thesis.
+
+## Rework round 3 (`pa-fill-r3`) — the sweep walks the banks
+
+The four holes closed at the gate level: ravine bank-top shards (760,
+u 62–292, only ever `channelHalf + 7` beyond the lane — the hush law
+holds by construction) with stumps allowed onto the banks (never the
+lane); the blush corridor widened 170 → 340 with a fifth station and
+the band fade pushed k 0.9 → ~0.96; petal-fall litter (950) for the
+deep-recovery flanks — the grove sheds. Paid by the staghorn/brain
+weight cut, ossuary and shelf-turf trims (bed density untouched,
+asserted). Ledge stacks sink 0.55 with shorter climb steps; the
+mother's plates go lathe + ripple corrugation. Measured **99 draws /
+448,083 tris**; 27/27 region tests green.
