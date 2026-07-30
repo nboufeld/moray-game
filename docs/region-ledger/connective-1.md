@@ -34,11 +34,28 @@ pre-veil sentinels (commit b53da4f values).
 ## The Open Blue hole repaint (its plan row: "depth as paint")
 
 Three custom marks inside `wing-gate-hole` (OpenBlueFlora, `^ 0x9a7f/0x9a80`):
-baked radial gradient (violet-over-green inks 0x232040 → 0x3c3760,
-normal blend, alpha ≤ 0.52, fbm-wobbled dissolve so no ellipse reads),
-a rim-light band peaking just inside the terrain edge and sun-heavy on
-its top arc (additive, ≤ 0.14), and a marine-snow fall column sinking
+baked radial gradient (violet-over-green inks 0x1e1c3c → 0x3c3760,
+normal blend, alpha ≤ 0.55 — the sandfall curtains' own normal-blend
+register — fbm-wobbled dissolve so no ellipse reads), a rim-light band
+peaking just inside the terrain edge and sun-heavy on its top arc
+(additive, ≤ 0.2, the kit's cap), and a marine-snow fall column sinking
 through the opening (kit particulateField, mode "fall", ×90).
+
+**What the poster blue actually was, proven in round 4**: raycasting the
+capture pose showed the "hole" the camera frames is not the streamed-region
+backdrop at all — it is `w4-openblue-curtain-0`, the wing's own wave-8
+fog-ink plane at r 48.4, and its old ink step (0.55, 0.62, 0.9 on the live
+fog) rendered it bright cobalt rgb(44, 112, 169) — blue over green over
+red, the one hue the palette row forbids — which no 0.55 wash in front
+could overcome. The fix is in the same flora module, zero draws: the
+curtain ink now mixes the twilight's way (green cut hardest, red held
+nearest — `CURTAIN_INK` (0.6, 0.34, 0.66), fades 0.42/0.58 → 0.28/0.45),
+so the opening's base water is the Under-Blue's violet register and the
+wash, rim and snow finally have a deep ground to read against. The rim
+ellipse was also re-measured against the aperture the camera actually
+frames: at half-height 5.0 its sun-heavy peak landed at y ≈ −0.5, on the
+tan wall *above* the opening's top edge (≈ −1.5), where an additive pale
+blue dies; 4.2 puts the peak just inside the lip, and the halo shows.
 
 ## Budgets, measured (`[conn1-budget]`, vitest prints them each run)
 
@@ -77,9 +94,61 @@ corridor law keeps reading every vertex it always read.
 
 ## Critique rounds
 
+Captures per round: `visual-qa/*_conn1-r{1..6}.png`, final set
+`*_conn1-final.png`, before set `*_conn1-before.png` (four wings; the
+open-blue and sandfall befores are the wave8 archive frames).
+
 ### r1 (first placement)
-- Captures: `visual-qa/*_conn1-r1.png` (before set: `*_conn1-before.png`).
-- (critique below, per round)
+- All six veils mounted, the open-blue hole dressed. The open-blue
+  dressing hung in the sky: `seabedHeight` at the end wall answers with
+  the climbing sill, so the hole centre was authored, not sampled, from
+  r2 on.
+
+### r2 ("part the painted distance")
+- The kelp-cathedral doorway still ended on a hard cyan rectangle: the
+  DistantReef silhouette rings stand *behind* every doorway and read
+  through it as a wall. `DistantReef` gained seeded partings over the six
+  gateway azimuths (DOOR_R/DOOR_SPREAD/GAP_BLEND — the seam lane's own
+  file, r2's commit). Open-blue's wash landed a step too deep (on the
+  wall below the opening).
+
+### r3 (re-centre, lift, warm)
+- Open Blue's opening re-centred at the authored y −4.5; ghost-reef's
+  milk lifted; sandfall's honey warmed. The ghost-reef r3 capture was a
+  void frame with a boot-template HUD (the documented broken-boot
+  hazard), so r3's ghost-reef change shipped *unverified* — re-verified
+  healthy in r4 and final.
+
+### r4 (the notch shoulders, the cobalt diagnosis)
+- `GAP_BLEND` 0.06 → 0.14, `GAP_HALF_MAX` 0.27 → 0.24: at 0.06 the
+  partings' shoulders stood near-vertical and read as rectangular notches
+  cut out of the painted sky from low poses; at 0.14 the skyline DIPS
+  through a doorway the way a ridge line dips through a pass (visible in
+  the ruins/kelp/open-blue frames).
+- The open-blue hole ink deepened (0x232040 → 0x1e1c3c) and the wash
+  lifted to 0.55 — and measured as nearly invisible (blue p90 −4): the
+  round-4 raycast probe then identified the poster blob as the wing's own
+  fog-ink curtain (the section above).
+
+### r5–r6 (the Under-Blue lands)
+- r5: curtain ink to the violet register — centre pixel rgb(48, 102, 159)
+  → rgb(55, 89, 153), green −13, red +7. The opening stops being cobalt.
+- r6: rim ellipse half-height 5.0 → 4.2 and `RIM_ALPHA` 0.18 → 0.2 (the
+  cap): the sun-heavy halo lands just inside the aperture's lip and
+  finally shows. Verdict: the hole reads as depth with light falling over
+  its edge — gradient, rim and snow all present where wave8's audit found
+  "no gradient, no rim light, no depth cue".
+
+## Final per-doorway verdicts (`*_conn1-final.png`, all six looked at)
+
+| Doorway | Before (wave8 audit) | After (final) |
+|---|---|---|
+| kelp-cathedral | "hard-edged flat cyan rectangle — the worst seam in the game" | receding green-lit distance, leaf-lit column, pollen motes; the parting's skyline dips softly. PROMISE |
+| vent-springs | walls flat mauve, doorway bare | a warm amber veil rising in the doorway's centre — light from below, framed by the wing's own chimneys and rings. PROMISE |
+| ghost-reef | bare mid-ground, early-green flag | bone → blush veil past the pearl arch; the one veil that lightens with depth. PROMISE (r3's broken capture re-verified) |
+| open-blue | "flat poster-blue blob with a hard scalloped edge" | deep violet-blue opening, wash deepening toward centre, pale rim halo on the lip, marine snow sinking through. PROMISE |
+| sandfall-dunes | falls read as bloom smears, doorway bare | honey veil column over the dune crest, gold motes before the door — the Hourglass Sea started early. PROMISE (the fall-mark repaint itself is Tier A wing uplift, not Batch 1) |
+| ruins-terrace | centre of frame a bare wall | cold grey-violet recession with the game's one cold light family; skyline dips through the parting. PROMISE |
 
 ## Flags
 

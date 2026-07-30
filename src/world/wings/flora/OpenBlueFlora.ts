@@ -62,8 +62,14 @@ import { mountGateVeil } from "./GateVeilMount";
 const LIP_TINT = 0xb7b098;
 /** The spire's deep blue-grey: a silhouette, but a colour, never black. */
 const SPIRE_TINT = 0x54687a;
-/** The curtains' ink: a deep blue step on the live fog, red kept near green. */
-const CURTAIN_INK = new Color(0.55, 0.62, 0.9);
+/**
+ * The curtains' ink: the Under-Blue's violet register, mixed the twilight's
+ * way — green cut hardest, red held nearest (W-M3's fog arithmetic). Round 4
+ * measured the old (0.55, 0.62, 0.9) step rendering the opening as bright
+ * cobalt rgb(44, 112, 169) — blue over green over red, the one hue the
+ * palette row forbids — and no 0.55 wash in front could overcome it.
+ */
+const CURTAIN_INK = new Color(0.6, 0.34, 0.66);
 
 /** The mote field's level and tint — sparse is the whole point. */
 const MOTE_COLOR = 0xd8e8ff;
@@ -91,8 +97,8 @@ const CURTAINS: readonly {
   readonly shadeFoot: number;
   readonly shadeTop: number;
 }[] = [
-  { radius: 48.4, halfSpan: 0.1, top: -1.4, droop: 1.3, ripple: 0.9, fade: 0.42, shadeFoot: 0.5, shadeTop: 1.0 },
-  { radius: 48.9, halfSpan: 0.14, top: -3.6, droop: 1.7, ripple: 1.1, fade: 0.58, shadeFoot: 0.45, shadeTop: 0.95 },
+  { radius: 48.4, halfSpan: 0.1, top: -1.4, droop: 1.3, ripple: 0.9, fade: 0.28, shadeFoot: 0.5, shadeTop: 1.0 },
+  { radius: 48.9, halfSpan: 0.14, top: -3.6, droop: 1.7, ripple: 1.1, fade: 0.45, shadeFoot: 0.45, shadeTop: 0.95 },
 ];
 const CURTAIN_FOOT = -13;
 
@@ -303,11 +309,18 @@ function holeFrame(def: WingDef): HoleFrame {
 }
 
 /** The gradient's inks, centre → shoulder: violet over green, never black. */
-const HOLE_INK_CENTRE = new Color(0x232040);
+const HOLE_INK_CENTRE = new Color(0x1e1c3c);
 const HOLE_INK_SHOULDER = new Color(0x3c3760);
 const HOLE_HALF_WIDTH = 7.4;
-const HOLE_HALF_HEIGHT = 5.0;
-const HOLE_ALPHA = 0.52;
+/**
+ * Round 5 measured the aperture the camera actually frames: its top edge
+ * sits near y −1.5, and at 5.0 the rim band's sun-heavy peak (0.8 of the
+ * half-height) landed at −0.5 — on the tan wall above the opening, where
+ * an additive pale blue dies. 4.2 puts the peak just inside the edge.
+ */
+const HOLE_HALF_HEIGHT = 4.2;
+/** Normal-blend wash cap — the sandfall curtains' own 0.55 register. */
+const HOLE_ALPHA = 0.55;
 
 /**
  * The baked radial gradient: one vertical grid standing in the opening,
@@ -375,7 +388,7 @@ function buildHoleGradient(hole: HoleFrame, seed: number): Mesh {
 const RIM_TINT = new Color(0xbcd8ea);
 const RIM_INNER = 0.62;
 const RIM_PEAK = 0.8;
-const RIM_ALPHA = 0.18;
+const RIM_ALPHA = 0.2;
 
 function buildHoleRim(hole: HoleFrame, seed: number): Mesh {
   const spokes = 40;

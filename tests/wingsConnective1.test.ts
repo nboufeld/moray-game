@@ -254,10 +254,11 @@ describe("connective-1: the additive discipline", () => {
     const rim = pieces.find((piece) => piece.name === "w4-openblue-hole-rim");
     expect(gradient).toBeDefined();
     expect(rim).toBeDefined();
-    // The gradient's alpha lives in the buffers; nothing exceeds 0.52.
+    // The gradient's alpha lives in the buffers; nothing exceeds the
+    // normal-blend wash register (0.55 — the sandfall curtains' own cap).
     const colors = gradient!.geometry.attributes.color!;
     for (let i = 0; i < colors.count; i++) {
-      expect(colors.getW(i)).toBeLessThanOrEqual(0.52 + 1e-6);
+      expect(colors.getW(i)).toBeLessThanOrEqual(0.55 + 1e-6);
     }
     const rimColors = rim!.geometry.attributes.color!;
     for (let i = 0; i < rimColors.count; i++) {

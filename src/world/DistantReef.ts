@@ -104,10 +104,13 @@ const DOOR_R = 48.5;
 const DOOR_HALF_WIDTH = 8;
 /** Lateral growth per metre past the door, for an eye at the wing's heart. */
 const DOOR_SPREAD = 0.66;
-/** Radians of shoulder each parting eases over — no vertical hard edge. */
-const GAP_BLEND = 0.06;
+/** Radians of shoulder each parting eases over. Round 3's finding: at
+ *  0.06 the shoulders stood near-vertical and read as rectangular notches
+ *  cut out of the painted sky from low poses; at 0.14 the skyline DIPS
+ *  through a doorway the way a ridge line dips through a pass. */
+const GAP_BLEND = 0.14;
 /** Cap so a far ring's parting can never swallow a neighbouring wing. */
-const GAP_HALF_MAX = 0.27;
+const GAP_HALF_MAX = 0.24;
 
 function smoothstep01(t: number): number {
   const k = Math.min(1, Math.max(0, t));
