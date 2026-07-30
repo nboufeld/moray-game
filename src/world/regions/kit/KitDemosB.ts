@@ -2,6 +2,7 @@ import { BufferAttribute, BufferGeometry, Group, Mesh, type Material, type Objec
 import type { KitBuild, KitDemoRegistry, KitDemoStage } from "./KitTypes";
 import { buildBeamAndPool } from "./BeamAndPool";
 import { buildParticulateField } from "./ParticulateField";
+import { buildShoalRunner } from "./ShoalRunner";
 
 /**
  * Package B's demo registrations (spec §4): one entry per life/light/
@@ -102,6 +103,31 @@ function particulateDemo(_stage: KitDemoStage, timeSec: number): KitBuild {
   return composite([column, fall]);
 }
 
+/** A 40-fish loop crossing the demo patch with glint (spec §3.1's demo). */
+function shoalDemo(_stage: KitDemoStage, timeSec: number): KitBuild {
+  const shoal = buildShoalRunner({
+    seed: 0xb0_0020,
+    route: {
+      stations: [
+        [-16, 2.6, 2],
+        [-5, 2.2, 5],
+        [5, 2.8, 4],
+        [15, 3.6, -2],
+        [6, 3.2, -13],
+        [-7, 2.8, -12],
+      ],
+      closed: true,
+    },
+    count: 40,
+    fish: { scale: 1.45, color: 0xcdeedd, emissive: 0x3a5f52 },
+    phaseSpeed: 1 / 64,
+    braid: { lateral: 0.32, vertical: 0.24 },
+    glint: { count: 26, size: 0.14 },
+  });
+  shoal.update(timeSec);
+  return composite([shoal]);
+}
+
 export const KIT_DEMOS_B: KitDemoRegistry = {
   beamAndPool: {
     camera: { position: [0.5, 2.6, 8.5], lookAt: [0, 2.4, -3] },
@@ -119,6 +145,16 @@ export const KIT_DEMOS_B: KitDemoRegistry = {
           ],
         }),
       ]),
+  },
+  shoalRunner: {
+    camera: { position: [0, 3.4, 11], lookAt: [0, 2.5, 2] },
+    timeSec: 21,
+    build: (stage) => shoalDemo(stage, 21),
+  },
+  shoalRunnerT1: {
+    camera: { position: [0, 3.4, 11], lookAt: [0, 2.5, 2] },
+    timeSec: 22,
+    build: (stage) => shoalDemo(stage, 22),
   },
   particulateField: {
     camera: { position: [0, 3.1, 6.8], lookAt: [0, 2.3, -2] },
