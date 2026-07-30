@@ -526,12 +526,14 @@ function growRiserStrip(chunk: Chunk, random: Random, u: number, v: number): voi
   const drop = Math.max(0.4, top - seabedHeight(below.x, below.z));
   const phase = random.range(0, Math.PI * 2);
 
+  // Round 2: blades a third longer — from the stair pose the strip rows
+  // were too fine to draw the faces they grow on.
   const blades = 2 + Math.floor(random.next() * 2);
   for (let i = 0; i < blades; i++) {
     const tones = random.next() < 0.5 ? VIRIDIAN_TONES : CURTAIN_TONES;
     const ribbon = shortRibbonGeometry(
-      Math.min(drop * random.range(0.35, 0.75), random.range(0.7, 1.6)),
-      random.range(0.13, 0.24),
+      Math.min(drop * random.range(0.45, 0.9), random.range(0.9, 2.1)),
+      random.range(0.16, 0.28),
       tones[Math.floor(random.next() * tones.length)]!,
       random,
     );

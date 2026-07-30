@@ -344,6 +344,53 @@ renders every pose (gate, stair, gardens, bridge, turtles, grotto,
 cistern, vault, both mistfalls, balcony, threshold) with nothing empty
 and nothing flat.
 
+## THE FILL REWORK (Phase 3, Batch 1 — `rework/verdant-line-2`)
+
+Executed against `docs/fill-plans/verdant-line-2.md` under FILL-DOCTRINE
+and MASTER (R1 caps 160/450k; R4 verified from this side; §1.2 rests
+held). Item 1 first: caps raised and reroll-fence pins added — the Rim
+Sentinel, gate jamb, mistfall horn, a Cistern ring stone and the
+Warden's beat pinned byte-exact, and every fill substream is
+`SEEDS.regionVerdant2 ^ 0xf1xx–0xf9xx`, appended after all pre-fill
+draws. New fill contracts in `tests/regionVerdant2.test.ts`: pass
+channel swimmable u 636–810 (three swim heights, every collider),
+threshold-runner route inside the corridor and >1 m clear of every
+seal, milk-sheet additive discipline (fog:false, depthWrite off,
+opacity ≤ 0.2, range fade), mesa-card feet ≤ −44, registered rests
+empty of every instanced kit scatter, riser-strip byte-determinism.
+
+### Fill round 1 (`v2-fill-r1`) — the roads exist; two drifters caught red-handed
+Silhouette: **pass-threshold transforms** — turf islands, waymark pairs,
+worn stacks, shell pebbles and the milky→celadon carpet carry the eye to
+the sentinel; three layers stand where the audit's "three objects on
+100 m" was. **emerald-gate**: jambs finally DRESSED (9 full drapes each),
+glow moss at their feet, worked shards and turf between. **slab-bridge /
+turtle-terraces**: liaison fry cross the walk, crabs sit the slab lips,
+garden bushes and fringe turf draw the treads. **mistfall-above ships
+its milk** — the kit fallStreak sheets read as soft streaked columns
+pouring between the horns (the hard-topped strips are gone), and the
+mesa-city v2 cards carry stepped tops and varied ink. **fern-vault**:
+moth-fry circle the lanterns, low fronds and carpet fill the floor,
+the mouth gradient reads. **cistern**: pool grown, rim lawn thicker,
+stillness kept. Fails: **gardens-vista washed white** — an additive
+sheet mid-frame; **mistfall-below** — a huge translucent panel floats
+over the basin. Probe verdict (node-toggle idiom): both are the same
+class of bug — the billows (pre-fill code) and my new glow fan breathe
+via `mesh.scale` over WORLD-BAKED geometry, which scales about the
+origin a kilometre away: every breath slides the mark tens of metres
+across the province, wall-clock-phased, so frames catch it mid-drift.
+Fixed properly: geometry made local, position on the mesh. Value:
+the round-1 litter read as pale lavender confetti (threshold shells) and
+dark chips (gate shards) — both re-valued toward their grounds and
+shrunk. Detail: riser strips too fine to read from the stair pose —
+blades +30% length, drape strands 4 → 5 × 2.0 m.
+Sweep (3/12 frames before a page-load timeout; full sweeps from r2):
+**the verifier bit** — midwater frames over the open slopes found bare
+ground between the zone gates. Round 2 adds the doctrine-rule-3 answer:
+a region-wide base moss carpet + litter drift over every owned square
+metre (2 draws, ~16k tris), and spore motes 520 → 900 widened to the
+threshold road and rim slopes so the water carries light everywhere.
+
 ## Flags
 
 - **Verdant-1's far-rim seal ring crosses the pass corridor.** The

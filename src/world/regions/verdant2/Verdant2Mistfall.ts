@@ -158,13 +158,18 @@ export function buildMistfall(): MistfallBuild {
   meshes.push(grains);
 
   // ─── The billows ─────────────────────────────────────────────────────────
+  // The geometry stays LOCAL and the mesh carries the position: the old
+  // build baked world coordinates into the plane and then breathed
+  // `mesh.scale`, which scales about the ORIGIN — a kilometre away — so
+  // every breath slid the billow tens of metres across the province
+  // (round 1's transient white wash over `gardens-vista` was a billow
+  // mid-drift, and the r5 "solid violet frame" suspect list missed it).
   const billows: Mesh[] = [];
   for (let i = 0; i < 3; i++) {
     const geometry = new PlaneGeometry(13 + i * 5, 6 + i * 1.8, 1, 1);
     const at = worldOf(LIP_BASE_U + 7 + i * 5, MISTFALL.v + random.signed(5));
     const y = seabedHeight(at.x, at.z);
     geometry.rotateY(random.range(0, Math.PI));
-    geometry.translate(at.x, y + 2.4 + i * 0.9, at.z);
     geometry.computeBoundingSphere();
     const material = new MeshBasicMaterial({
       map: billowTexture(),
@@ -175,6 +180,7 @@ export function buildMistfall(): MistfallBuild {
       side: DoubleSide,
     });
     const mesh = new Mesh(geometry, material);
+    mesh.position.set(at.x, y + 2.4 + i * 0.9, at.z);
     mesh.name = `verdant2-mistfall-billow-${i}`;
     mesh.renderOrder = 2;
     billows.push(mesh);
@@ -213,7 +219,10 @@ export function buildMistfall(): MistfallBuild {
   };
 }
 
-/** The exclusive foot-glow: a radial fan of ground-lit additive blades. */
+/** The exclusive foot-glow: a radial fan of ground-lit additive blades.
+ *  Geometry is LOCAL to the fall's foot and the mesh carries the
+ *  position, so the breathing scale breathes in place (see the billow
+ *  comment above — scaling world-baked geometry drifts it). */
 function buildBillowGlowFan(random: Random): Mesh {
   const parts: BufferGeometry[] = [];
   const footAt = worldOf(LIP_BASE_U + 6.5, MISTFALL.v);
@@ -237,7 +246,11 @@ function buildBillowGlowFan(random: Random): Mesh {
     blade.rotateY((i - 2) * 0.55 + random.signed(0.2));
     const dv = (i - 2) * 4.2 + random.signed(1.5);
     const at = worldOf(LIP_BASE_U + 6 + Math.abs(i - 2) * 1.2, MISTFALL.v + dv);
-    blade.translate(at.x, seabedHeight(at.x, at.z) + 1.6, at.z);
+    blade.translate(
+      at.x - footAt.x,
+      seabedHeight(at.x, at.z) + 1.6 - footY,
+      at.z - footAt.z,
+    );
     parts.push(blade);
   }
   const merged = mergeGeometries(parts, false);
@@ -261,6 +274,7 @@ function buildBillowGlowFan(random: Random): Mesh {
     fog: false,
   });
   const mesh = new Mesh(merged, material);
+  mesh.position.set(footAt.x, footY, footAt.z);
   mesh.name = "verdant2-mistfall-glow-fan";
   mesh.renderOrder = 3;
   const centre = new Vector3(footAt.x, footY + 2, footAt.z);

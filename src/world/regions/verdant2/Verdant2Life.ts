@@ -106,12 +106,16 @@ function buildSporeMotes(): {
   update: (dt: number, time: number, calm: number) => void;
 } {
   const random = new Random(SEED ^ 0x40e7);
-  const count = 520;
+  // Fill round 2: 520 → 900. The first 520 draw exactly as before; the
+  // growth (a fresh substream) widens the drift to the threshold road
+  // and the rim slopes — the sweep's midwater frames need the water
+  // itself to carry light everywhere, not only over the gardens.
+  const count = 900;
   const base = new Float32Array(count * 3);
   const live = new Float32Array(count * 3);
   const phases = new Float32Array(count);
 
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < 520; i++) {
     // Through the pass and the whole garden country.
     const u = random.range(680, 1050);
     const v = u < 800 ? random.signed(20) : random.signed(120);
@@ -121,6 +125,17 @@ function buildSporeMotes(): {
     base[i * 3 + 1] = floor + random.range(0.6, 11);
     base[i * 3 + 2] = z;
     phases[i] = random.range(0, Math.PI * 2);
+  }
+  const growth = new Random(SEED ^ 0xf530);
+  for (let i = 520; i < count; i++) {
+    const u = growth.range(640, 1105);
+    const v = u < 780 ? growth.signed(24) : growth.signed(165);
+    const { x, z } = worldOf(u, v);
+    const floor = seabedHeight(x, z);
+    base[i * 3] = x;
+    base[i * 3 + 1] = floor + growth.range(0.6, 12);
+    base[i * 3 + 2] = z;
+    phases[i] = growth.range(0, Math.PI * 2);
   }
   live.set(base);
 
