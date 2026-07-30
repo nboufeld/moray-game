@@ -18,6 +18,7 @@ import { buildBeamAndPool } from "./BeamAndPool";
 import { buildGateVeil } from "./GateVeil";
 import { buildGlowColony } from "./GlowColony";
 import { buildParticulateField } from "./ParticulateField";
+import { buildPercherColony } from "./PercherColony";
 import { buildShoalRunner } from "./ShoalRunner";
 
 /**
@@ -233,6 +234,33 @@ function gateVeilDemo(_stage: KitDemoStage, timeSec: number, dark: boolean): Kit
   return composite([veil], dark);
 }
 
+/** Seated stars on the demo boulder's flank + a hover cluster of fry. */
+function percherDemo(_stage: KitDemoStage, timeSec: number): KitBuild {
+  const stars = buildPercherColony({
+    seed: 0xb0_0050,
+    palette: { base: 0x2e8a5e, tip: 0xc9b45e, shade: 0x1e5a44 },
+    anchors: [
+      { pos: [-6, 2.04, -4], normal: [0, 1, 0] },
+      { pos: [-4.6, duneGround(-4.6, -2.6), -2.6] },
+      { pos: [-3.4, duneGround(-3.4, -4.2), -4.2] },
+      { pos: [-5.4, duneGround(-5.4, -1.8), -1.8] },
+    ],
+    perAnchor: 4,
+    body: "star",
+    motion: "seated",
+  });
+  const fry = buildPercherColony({
+    seed: 0xb0_0051,
+    palette: { base: 0x8fb85c, tip: 0xc9b45e },
+    anchors: [{ pos: [-1.6, duneGround(-1.6, -1.2) + 1.7, -1.2] }],
+    perAnchor: 9,
+    body: "fry",
+    motion: "hover",
+  });
+  fry.update?.(timeSec);
+  return composite([stars, fry]);
+}
+
 export const KIT_DEMOS_B: KitDemoRegistry = {
   gateVeil: {
     camera: { position: [6.2, 2.3, 5.6], lookAt: [11, 3.2, -10] },
@@ -297,6 +325,16 @@ export const KIT_DEMOS_B: KitDemoRegistry = {
     camera: { position: [0, 3.4, 11], lookAt: [0, 2.5, 2] },
     timeSec: 22,
     build: (stage) => shoalDemo(stage, 22),
+  },
+  percherColony: {
+    camera: { position: [-2.2, 2.1, 1.6], lookAt: [-4.6, 1.1, -3.2] },
+    timeSec: 3,
+    build: (stage) => percherDemo(stage, 3),
+  },
+  percherColonyT1: {
+    camera: { position: [-2.2, 2.1, 1.6], lookAt: [-4.6, 1.1, -3.2] },
+    timeSec: 4,
+    build: (stage) => percherDemo(stage, 4),
   },
   particulateField: {
     camera: { position: [0, 3.1, 6.8], lookAt: [0, 2.3, -2] },
