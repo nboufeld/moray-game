@@ -186,14 +186,16 @@ function bakeGoldenPaint(geometry: PlaneGeometry, contacts: readonly ContactPatc
         Math.max(0, -Math.cos(u * 0.21 + Math.sin(v * 0.18) * 1.3)) *
         smoothstep01((u - 110) / 60) *
         (1 - wallT);
-      const honeyR = 0.86 + stain * 0.24 + wallT * 0.16 - lee * 0.3;
-      const honeyG = 0.74 + stain * 0.14 + wallT * 0.15 - lee * 0.3;
-      const honeyB = 0.5 - stain * 0.1 + wallT * 0.1 + lee * 0.28;
+      // Contrast up in round 4: the descent frame still read one
+      // mid-tone — the stain and the wall band both push harder.
+      const honeyR = 0.84 + stain * 0.32 + wallT * 0.2 - lee * 0.34;
+      const honeyG = 0.72 + stain * 0.2 + wallT * 0.18 - lee * 0.34;
+      const honeyB = 0.5 - stain * 0.12 + wallT * 0.1 + lee * 0.3;
       const s = 1 - smoothstep01((u - 250) / 42);
       r += (honeyR - r) * s;
       g += (honeyG - g) * s;
       b += (honeyB - b) * s;
-      value += (stain * 0.08 + wallT * 0.05 - lee * 0.1) * s;
+      value += (stain * 0.1 + wallT * 0.07 - lee * 0.12) * s;
     }
 
     // The Glass Reach: sea-glass pale, grooves a step deeper and greener,
@@ -242,16 +244,20 @@ function bakeGoldenPaint(geometry: PlaneGeometry, contacts: readonly ContactPatc
           continue;
         }
         const perp = Math.abs(du * SHADOW_DIR_V - dv * SHADOW_DIR_U);
-        const width = 1.2 + (along / m.shadow) * 2.4;
+        // Widened and darkened in round 4: round 3's 1.2–3.6 m streaks
+        // read as faint scratches at capture distance.
+        const width = 2.2 + (along / m.shadow) * 5.0;
         const across = 1 - smoothstep01((perp - width * 0.4) / (width * 0.6));
         const fade = 1 - smoothstep01((along / (m.shadow * 1.3) - 0.5) / 0.5);
         shadow = Math.max(shadow, across * fade);
       }
       shadow *= flats;
-      r += (0.5 - r) * shadow;
-      g += (0.4 - g) * shadow;
-      b += (0.88 - b) * shadow;
-      value -= shadow * 0.2;
+      // Deepened once more in round 5 — at 25 m the round-4 streaks
+      // still read faint against the ripple paint.
+      r += (0.44 - r) * shadow;
+      g += (0.34 - g) * shadow;
+      b += (0.94 - b) * shadow;
+      value -= shadow * 0.34;
     }
 
     // The Hourglass: terrace treads sunlit gold near the lip fading to

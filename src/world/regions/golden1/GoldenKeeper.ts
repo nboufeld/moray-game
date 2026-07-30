@@ -61,7 +61,7 @@ export function buildKeeper(): KeeperBuild {
   const material = createToonMaterial({
     vertexColors: true,
     emissive: 0xf0c060,
-    emissiveIntensity: 0.75,
+    emissiveIntensity: 1.1,
   });
   applyVeinGlow(material, "hourglass-keeper");
   const mesh = new Mesh(geometry, material);
@@ -279,8 +279,9 @@ function buildKeeperBody(): BufferGeometry {
   merged.computeVertexNormals();
   merged.computeBoundingSphere();
   // Grown to a spirit: a discovery should not need a magnifying glass
-  // (2.4 after round 1 lost it entirely in both deep frames).
-  merged.scale(2.4, 2.4, 2.4);
+  // (2.4 after round 1 still vanished at the ring's far arc through
+  // the round-4 fog; 3.0 reads as a lantern at 55 m).
+  merged.scale(3.0, 3.0, 3.0);
   merged.computeBoundingSphere();
   return merged;
 }

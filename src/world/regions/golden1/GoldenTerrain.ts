@@ -296,6 +296,20 @@ export function hourglassProfile(d: number): number {
   return bench(raw, TERRACE_STEP, 0.2) + lip;
 }
 
+/**
+ * The grand crescents: an amplitude boost over the sector the saddle
+ * reveal actually sees (u 290–375, |v| ≤ ~45). Round 3's reveal opened
+ * onto a flat horizon — 7 m ranks sit below a +4 m eye at the lip, so
+ * the first ranks out of the gate are grown into real silhouettes.
+ */
+export function grandCrescent(u: number, v: number): number {
+  return (
+    smoothstep01((u - 288) / 16) *
+    (1 - smoothstep01((u - 356) / 28)) *
+    (1 - smoothstep01((Math.abs(v) - 34) / 24))
+  );
+}
+
 function discHeight(x: number, z: number, u: number, v: number): number {
   // The dune ocean: the disc's resting ground under its crescent ranks.
   const swell =
@@ -310,7 +324,7 @@ function discHeight(x: number, z: number, u: number, v: number): number {
   const shore = shoreWeight(u);
   const calm = Math.max(hg, glass * 0.9, oasis, flats * 0.85, shore);
   const rank = duneRank(u, v);
-  h += rank.rise * 7.0 * (1 - calm);
+  h += rank.rise * (7.0 + grandCrescent(u, v) * 3.2) * (1 - calm);
 
   // The Glass Reach: fused trench grooves, smooth and pale.
   if (glass > 0) {

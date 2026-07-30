@@ -48,7 +48,12 @@ export function buildGoldenRocks(): GoldenRocksBuild {
   const colliders: SphereCollider[] = [];
   const contacts: ContactPatch[] = [];
 
-  const paleStone = createRockMaterial(0x9a8a70);
+  // Warmed HARD in round 5 (with MONOLITH_STONE): both families
+  // rendered near-identical plum under the lavender wash + this
+  // region's quarter-sun in round 4, and the first correction
+  // (0xb09a74) did not survive the violet ambient — the red/blue
+  // ratio is the lever, not the value.
+  const paleStone = createRockMaterial(0xc2a066);
   const monolithStone = createRockMaterial(MONOLITH_STONE);
 
   const stand = (
@@ -109,11 +114,12 @@ export function buildGoldenRocks(): GoldenRocksBuild {
   );
 
   // ─── The saddle's wall boulders ──────────────────────────────────────────
-  // Six water-worn stones on alternating dune shoulders down the channel
-  // — with the crescent dunelings and the vale falls they are what
-  // breaches the fog every thirty metres of the approach.
-  for (let i = 0; i < 6; i++) {
-    const u = 88 + i * 30 + random.signed(6);
+  // Nine water-worn stones on alternating dune shoulders down the
+  // channel (six until round 4 — the descent frame read near-empty) —
+  // with the crescent dunelings and the vale falls they are what
+  // breaches the fog every twenty metres of the approach.
+  for (let i = 0; i < 9; i++) {
+    const u = 84 + i * 21 + random.signed(5);
     const side = i % 2 === 0 ? -1 : 1;
     const lateral = saddleChannelCenter(u) + side * random.range(4.8, 7.2);
     const radius = random.range(1.0, 2.0);

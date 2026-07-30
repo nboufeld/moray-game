@@ -100,10 +100,12 @@ function drawFalls(random: Random): Fall[] {
       // The veil's face looks across the chasm: normal along −radius.
       yaw: Math.atan2(-Math.cos(phi), -Math.sin(phi)),
       topY,
-      height: random.range(13, 16.5),
+      // Taller and denser in round 4, so the up-shot from a deep
+      // terrace reads the ring instead of losing it in the wall band.
+      height: random.range(15, 19),
       width: random.range(6.5, 9.5),
       streaks: 10,
-      alpha: 0.55,
+      alpha: 0.62,
     });
   }
 
@@ -134,11 +136,12 @@ function drawFalls(random: Random): Fall[] {
     });
   }
 
-  // The vale falls: three, alternating walls, the wing's own scale.
+  // The vale falls: five, alternating walls, the wing's own scale —
+  // grown from three in round 4; the 200 m descent read near-empty.
   // Hung from the *local* ground, not the channel floor — round 1 hung
   // them from channel height and they floated mid-air off the slope.
-  for (let i = 0; i < 3; i++) {
-    const u = 118 + i * 56 + random.signed(6);
+  for (let i = 0; i < 5; i++) {
+    const u = 108 + i * 34 + random.signed(6);
     const side = i % 2 === 0 ? -1 : 1;
     const v = saddleChannelCenter(u) + side * (saddleChannelHalf(u) + 8);
     const { x, z } = worldOf(u, v);
@@ -229,6 +232,11 @@ function buildCurtains(falls: readonly Fall[]): Mesh {
     transparent: true,
     depthWrite: false,
     side: DoubleSide,
+    // The DistantReef idiom, round 5: with fog on, the bowl's own deep
+    // mood converged every veil to the haze colour by 25 m and the
+    // up-shots lost the whole ring — a sandfall is a bright mark, and
+    // a bright mark pays its own way through the water.
+    fog: false,
   });
   const mesh = new Mesh(merged, material);
   mesh.name = "hourglass-sandfall-curtains";
@@ -292,6 +300,7 @@ function buildStreaks(
     opacity: 0.5,
     depthWrite: false,
     side: DoubleSide,
+    fog: false,
   });
   const mesh = new InstancedMesh(geometry, material, streaks.length);
   mesh.name = "hourglass-sandfall-streaks";

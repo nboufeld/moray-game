@@ -143,32 +143,52 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // continuing into open country.
   { name: "first-crescent", u: 146, v: 0, lift: 2.2, atU: 172, atV: 6, pitch: 0.02, settle: 4 },
   // The reveal: standing at the lip, the Dune Ocean opening below —
-  // the first ribboned crescent smoking thirty metres out.
-  { name: "saddle-reveal", u: 252, v: 0, lift: 2.6, atU: 300, atV: 10, pitch: -0.12 },
+  // the first ribboned crescent smoking thirty metres out. Lifted a
+  // step in round 4 so the grand crescents rank over each other.
+  { name: "saddle-reveal", u: 252, v: 0, lift: 3.4, atU: 300, atV: 10, pitch: -0.1 },
   // The Dune Ocean: ranked crescents layering gold into the fog.
   { name: "dune-ocean", u: 306, v: -8, lift: 2.8, atU: 352, atV: 18, pitch: 0.0, settle: 4 },
-  // The slip-face: the shoal surfing the dune's steep lee. The stand
-  // point is corrected at build time to the scanned crest (round 2's
-  // authored guess stood buried in the dune's own windward slope).
-  { name: "slip-face", u: 330, v: 30, lift: 3.0, atU: 344, atV: 12, pitch: 0.02, settle: 6 },
+  // The slip-face: the shoal surfing the dune's steep lee, from a 7 m
+  // overlook that frames crest, lee AND trough — round 4 stood at
+  // chest height behind the crest and the ribbon was always on the
+  // hidden side. The stand point is corrected at build time to the
+  // scanned crest (round 2's authored guess stood buried in the dune's
+  // own windward slope).
+  { name: "slip-face", u: 330, v: 30, lift: 8.0, atU: 344, atV: 12, pitch: -0.2, settle: 6 },
   // The Glass Reach: pale fins and the Fused Arch.
   { name: "glass-reach", u: 378, v: -56, lift: 2.6, atU: GLASS.u + 4, atV: GLASS.v - 2, pitch: 0.03 },
   // The Hourglass from its lip: composing DOWN into the chasm — the
   // ring of sandfalls, the terraces, the violet deep. The stand point
   // sits BETWEEN two falls (round 1 stood inside fall 7's own veil).
   { name: "hourglass-lip", u: 405, v: 17, lift: 3.0, atU: HOURGLASS.u, atV: HOURGLASS.v, pitch: -0.5, settle: 5 },
-  // From a terrace inside: composing UP out of it — falls overhead,
-  // the lip's ring of light.
-  { name: "hourglass-deep", u: 437, v: 22, lift: 2.4, atU: 478, atV: 46, pitch: 0.65, settle: 6 },
-  // The Keeper's water: the deep floor, the golden ring passing.
-  { name: "keeper-deep", u: 448, v: 16, lift: 2.2, atU: 468, atV: 42, pitch: 0.3, settle: 8 },
+  // From inside: composing UP out of it — a swimmer's vantage over the
+  // north floor, the terrace benches stacking diagonally to the lip,
+  // one sandfall burning over the crest (the veils are fog-free as of
+  // round 5 — with fog on, the bowl's own mood converged every fall to
+  // the haze colour by 25 m and NO up-shot could hold them). Round 3's
+  // pitch 0.65 framed two-thirds empty water; round 4's 0.42 at the
+  // far wall framed haze; this frame was found by live candidate
+  // search inside the bowl.
+  { name: "hourglass-deep", u: 457, v: 46, lift: 7.0, atU: 425, atV: 61, pitch: 0.25, settle: 6 },
+  // The Keeper's water. The capture settle is wall-clock offset, so a
+  // 72 s patrol cannot be aimed at — this pose must hold the WHOLE
+  // ring. Round 4's terrace stand lost the patrol's near arc below the
+  // frame's bottom edge (the ring breathes down to floor+6.5, a 0.94
+  // rad depression from that stand); from the lip top at 46 m out,
+  // pitch −0.66 covers depressions 0.28–1.04 and the ring cannot leave.
+  { name: "keeper-deep", u: 416, v: 6, lift: 6.0, atU: HOURGLASS.u, atV: HOURGLASS.v, pitch: -0.66, settle: 8 },
   // The Oasis Hollows: palms, gold grass, the tender counterpoint.
   { name: "oasis", u: 502, v: -50, lift: 2.4, atU: OASIS_A.u, atV: OASIS_A.v, pitch: 0.02, settle: 5 },
   // The Singing Flats: monoliths, long violet shadows, garden eels.
-  { name: "singing-flats", u: 512, v: 62, lift: 2.6, atU: 540, atV: 92, pitch: 0.02, settle: 5 },
-  // The caravan's crossing: the file circles the flats, so from here
-  // some of it is always inside the fog.
-  { name: "ray-crossing", u: 496, v: 60, lift: 3.4, atU: 528, atV: 84, pitch: 0.1, settle: 6 },
+  // Round 5's first stand at (515, 70) was INSIDE the shrunk caravan
+  // circuit — a wing crossed the frame edge at arm's length — so the
+  // pose stands outside the loop's south-west arc instead.
+  { name: "singing-flats", u: 506, v: 62, lift: 2.6, atU: 531, atV: 88, pitch: 0.02, settle: 5 },
+  // The caravan's crossing, watched from outside the shrunk circuit:
+  // the WHOLE loop fits the frame (round 3 stood three metres off one
+  // station; round 4 watched a leg of a loop that was elsewhere, and
+  // what did cross was camouflaged against the old ring wall).
+  { name: "ray-crossing", u: 494, v: 98, lift: 3.4, atU: 528, atV: 84, pitch: 0.06, settle: 6 },
   // The Gilded Shore: the shelf, the stacks, the painted distance.
   { name: "gilded-shore", u: 585, v: 30, lift: 3, atU: 645, atV: 20, pitch: 0.02 },
 ];
@@ -191,7 +211,10 @@ function buildPoses(): RegionCapturePose[] {
   return POSE_SPECS.map((spec) => {
     const resolved =
       spec.name === "slip-face"
-        ? { ...spec, u: crestU - 13, v: laneV + 16, atU: crestU + 5, atV: laneV - 2 }
+        ? // A 30 m overlook that fits the shoal's WHOLE circuit in
+          // frame (loop spans ~30 m; frame width at 30 m ≈ 42 m) — two
+          // rounds of standing beside the loop met an empty dune.
+          { ...spec, u: crestU - 20, v: laneV - 24, atU: crestU + 4, atV: laneV - 2 }
         : spec;
     const { x, z } = worldOf(resolved.u, resolved.v);
     const y = goldenTerrainTarget(x, z) + resolved.lift;
@@ -224,10 +247,13 @@ export const GOLDEN_1: RegionDef = {
     // lesson. Red 3.6 buys (0.31, …); green is held just under it and
     // blue cut hard, so the product (0.31, 0.257, 0.128) is the warm
     // gold the whole palette keys to. Round 1 ran density 0.0045 for
-    // "vast" and learned the Smoulder's warm sky is mostly *fog*: at
-    // low density the cyan backdrop dominates every frame above eye
-    // level. 0.007 keeps ~70 m of vista and owns the sky.
-    fog: { colorScale: [3.6, 0.58, 0.26], densityGain: 0.007, backdropFade: 0.5 },
+    // "vast" and learned the Smoulder's warm sky is mostly *fog*; round
+    // 3 learned 0.007 still leaves the upper sky raw cyan — the
+    // Smoulder paid 0.009 for warm. 0.0085 with the backdrop faded to
+    // 0.66 (0.62 in round 4 still left the zenith raw) owns the sky,
+    // and the painted distance rings (fog: false) keep the vista's far
+    // layers alive past the fog itself.
+    fog: { colorScale: [3.6, 0.58, 0.26], densityGain: 0.0085, backdropFade: 0.66 },
     light: { sun: 0.26, hemisphere: 0.26, ambient: 0.13 },
   },
   moodSurface: 20,

@@ -319,7 +319,11 @@ function buildSlipFaceShoal(): {
     mesh.instanceColor.needsUpdate = true;
   }
 
-  const bodySpan = 0.5;
+  // Round 4: at 0.5 the shoal spread over half its loop and read as
+  // scattered dots; at 0.28 the ribbon was a 25 m dash a chest-height
+  // pose never met. Round 5: 0.36 of the loop at a faster surf, judged
+  // from a 7 m overlook that frames most of the circuit.
+  const bodySpan = 0.36;
   const dummy = new Object3D();
   const at = new Vector3();
   const ahead = new Vector3();
@@ -327,7 +331,7 @@ function buildSlipFaceShoal(): {
   const up = new Vector3(0, 1, 0);
 
   const update = (_dt: number, time: number, calm: number): void => {
-    const head = (time * calm * 0.014) % 1;
+    const head = (time * calm * 0.02) % 1;
     for (const [i, o] of offsets.entries()) {
       const s = (((head - (i / count) * bodySpan) % 1) + 1) % 1;
       path.getPointAt(s, at);
@@ -354,7 +358,9 @@ function buildSlipFaceShoal(): {
 
 /** A slender question-mark of an eel, risen height 1 before scaling. */
 function eelGeometry(): BufferGeometry {
-  const geometry = new CylinderGeometry(0.028, 0.05, 1, 5, 6, true);
+  // Thickened ~70% in round 5: 5 cm at the poses' 22 m was two pixels
+  // of whisker — a delight nobody could see.
+  const geometry = new CylinderGeometry(0.048, 0.085, 1, 5, 6, true);
   geometry.translate(0, 0.5, 0);
   const position = geometry.attributes.position!;
   // Bow the top third forward — the grazing curve garden eels hold.
@@ -425,7 +431,7 @@ function buildGardenEels(): {
         y: seabedHeight(x, z) - 0.02,
         z,
         yaw: random.range(0, Math.PI * 2),
-        height: random.range(0.7, 1.15),
+        height: random.range(0.85, 1.35),
         phase: random.range(0, Math.PI * 2),
         shy: 1,
       });
@@ -435,8 +441,8 @@ function buildGardenEels(): {
   const material = createToonMaterial({
     vertexColors: true,
     side: DoubleSide,
-    emissive: 0xb99a5e,
-    emissiveIntensity: 0.6,
+    emissive: 0xcfb078,
+    emissiveIntensity: 0.85,
   });
   const mesh = new InstancedMesh(eelGeometry(), material, eels.length);
   mesh.name = "hourglass-garden-eels";
@@ -501,8 +507,10 @@ function rayGeometry(): BufferGeometry {
   geometry.setAttribute("position", new BufferAttribute(positions, 3));
 
   const colors = new Float32Array(positions.length);
-  const back = new Color(0x9a7e5c);
-  const edge = new Color(0xe6c887);
+  // "Great GOLDEN rays": round 3's backs read rust-dark against the
+  // warm sky — lifted toward gold, the wing edges brightest.
+  const back = new Color(0xb3946a);
+  const edge = new Color(0xf2dc9c);
   const shade = new Color();
   for (let i = 0; i < positions.length / 3; i++) {
     const x = Math.abs(positions[i * 3]!);
@@ -523,25 +531,26 @@ function buildRayCaravan(): {
 } {
   const random = new Random(SEED ^ 0x4a71);
 
-  // The line: one wobbled circuit of the Singing Flats, through the
-  // monolith row and past the eel colonies. Round 2's grand tour (out
-  // past the Hourglass and the dune ranks) was never in any frame — a
-  // caravan that is always somewhere else is not a centrepiece. This
-  // loop keeps the whole file within the flats, so both flats poses and
-  // any wanderer there will meet it.
+  // The line: one wobbled circuit of the Singing Flats' heart, around
+  // the (545, 74) monolith and past the eel colonies. Round 2's grand
+  // tour was never in any frame; round 3's flats-wide loop put the file
+  // wherever the pose was not (the settle is wall-clock offset, so a
+  // 250 s circuit cannot be aimed at). Round 5 shrinks the circuit to
+  // r ≈ 25 so the crossing pose frames the WHOLE loop — a caravan that
+  // cannot leave the frame needs no phase luck.
   const station = (u: number, v: number, lift: number): Vector3 => {
     const { x, z } = worldOf(u, v);
     return new Vector3(x, seabedHeight(x, z) + lift, z);
   };
   const points: Vector3[] = [
-    station(FLATS.u + 40, FLATS.v + 4, 4.5),
-    station(FLATS.u + 30, FLATS.v + 34, 5.5),
-    station(FLATS.u + 2, FLATS.v + 42, 4.5),
-    station(FLATS.u - 26, FLATS.v + 30, 5),
-    station(FLATS.u - 38, FLATS.v + 2, 6),
-    station(FLATS.u - 26, FLATS.v - 26, 5),
-    station(FLATS.u + 4, FLATS.v - 36, 4.5),
-    station(FLATS.u + 30, FLATS.v - 24, 5.5),
+    station(FLATS.u + 26, FLATS.v + 2, 5.5),
+    station(FLATS.u + 18, FLATS.v + 20, 6.5),
+    station(FLATS.u + 1, FLATS.v + 25, 5.5),
+    station(FLATS.u - 16, FLATS.v + 18, 6),
+    station(FLATS.u - 23, FLATS.v + 1, 7),
+    station(FLATS.u - 16, FLATS.v - 16, 6),
+    station(FLATS.u + 2, FLATS.v - 22, 5.5),
+    station(FLATS.u + 20, FLATS.v - 15, 6.5),
   ];
   const path = new CatmullRomCurve3(points, true, "centripetal", 0.5);
 
@@ -550,8 +559,11 @@ function buildRayCaravan(): {
   const material = createToonMaterial({
     vertexColors: true,
     side: DoubleSide,
-    emissive: 0x6a5426,
-    emissiveIntensity: 0.5,
+    // Lifted again in round 5: tan rays in front of the tan distance
+    // rings were camouflaged out of their own pose (round 4's find),
+    // and the far arc of even the shrunk loop needs the extra light.
+    emissive: 0x9a7c3a,
+    emissiveIntensity: 0.85,
   });
   material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
     shader.uniforms.uSway = sway;
@@ -581,7 +593,10 @@ function buildRayCaravan(): {
   const tint = new Color();
   const scales: number[] = [];
   for (let i = 0; i < count; i++) {
-    scales.push(random.range(3.2, 4.2));
+    // Round 4: 3.2–4.2 made ~15 m wingspans that swallowed whole
+    // frames; round 5 trims again for the shrunk circuit (~8 m spans
+    // spaced ~10 m read as a file, not a pile).
+    scales.push(random.range(2.0, 2.5));
     tint.setScalar(random.range(0.9, 1.08));
     mesh.setColorAt(i, tint);
   }
@@ -589,17 +604,17 @@ function buildRayCaravan(): {
     mesh.instanceColor.needsUpdate = true;
   }
 
-  // Single file: the procession spreads over a third of the loop, so
-  // from anywhere on the flats some of it is inside the fog.
-  const fileSpan = 0.32;
+  // Single file: on the shrunk ~155 m circuit the procession spreads
+  // wider (0.45) so seven rays ride nose-to-tail with daylight between.
+  const fileSpan = 0.45;
   const dummy = new Object3D();
   const at = new Vector3();
   const ahead = new Vector3();
 
   const update = (_dt: number, time: number, calm: number): void => {
     sway.value = time * calm;
-    // Stately ~1 m/s around the ~250 m circuit.
-    const head = (0.05 + time * calm * 0.004) % 1;
+    // Stately ~0.85 m/s around the ~155 m circuit.
+    const head = (0.05 + time * calm * 0.0055) % 1;
     for (let i = 0; i < count; i++) {
       const s = (((head - (i / count) * fileSpan) % 1) + 1) % 1;
       path.getPointAt(s, at);

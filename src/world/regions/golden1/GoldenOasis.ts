@@ -16,7 +16,6 @@ import { createToonMaterial } from "../../../rendering/ToonShading";
 import { Random, SEEDS } from "../../../util/Random";
 import type { SphereCollider } from "../../CollisionField";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
-import { OASIS_GREEN } from "./GoldenShared";
 import {
   OASIS_A,
   OASIS_B,
@@ -46,10 +45,16 @@ const SEED = SEEDS.regionGolden1;
 
 const BLADE_HEIGHT = 1.25;
 
+// Warmed from green toward dry gold in round 5: the round-4 families
+// read as plain green grass and broke the desert's palette (the region
+// promises GOLD seagrass; toggle-proven these blades were every green
+// mark in the flats frames).
+// …then pulled back toward wheat within the round: the first gold cut
+// (red-heavy 0xccb050 family) rendered as rust-orange accent blades.
 const GRASS_FAMILIES: readonly (readonly number[])[] = [
-  [0xa8b45e, 0xc2c46a, 0x8a9a50],
-  [0x9cb868, 0xb8c878, 0x7e9c54],
-  [0xb4ac58, 0xc8bc6a, 0x96924c],
+  [0xc8b866, 0xd8ca74, 0xb0a054],
+  [0xbcae62, 0xcabc6e, 0xa29650],
+  [0xc4b45c, 0xd2c46a, 0xa89e52],
 ] as const;
 
 const TRUNK_LOW = new Color(0x8a6a48);
@@ -249,7 +254,17 @@ function buildGoldSeagrass(sway: { value: number }, wind: { value: number }): In
   const random = new Random(SEED ^ 0xa5a1);
   const paletteRandom = new Random(SEED ^ 0xa5a2);
 
-  const material = createToonMaterial({ side: DoubleSide, map: goldBladeTexture() });
+  // Round 4: the round-2 "lift" brightened the texture but left the
+  // material unlit — under the quarter-strength sun the blades still
+  // read as cutouts. The emissive is what "never black" costs here.
+  // Round 5 swings it from olive to amber: an olive emissive was most
+  // of why "gold" seagrass rendered green.
+  const material = createToonMaterial({
+    side: DoubleSide,
+    map: goldBladeTexture(),
+    emissive: 0x7e6c2e,
+    emissiveIntensity: 0.4,
+  });
   material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
     injectSway(shader, sway, wind, "0.13");
   };
@@ -408,7 +423,10 @@ function bladeGeometry(): PlaneGeometry {
   return geometry;
 }
 
-/** Warm gold-green gradient with dry fibre — the oasis key. */
+/** Dry-gold gradient with fibre — the oasis key. Round 5 keys the map
+ * to its own gold rather than OASIS_GREEN (the palms keep the green;
+ * the *grass* is the desert's gold). */
+const BLADE_GOLD = new Color(0xb8a854);
 let goldMap: DataTexture | undefined;
 function goldBladeTexture(): DataTexture {
   goldMap ??= buildColorTexture(32, (u, v) => {
@@ -417,7 +435,7 @@ function goldBladeTexture(): DataTexture {
     // Lifted in round 2: the round-1 roots read as black cutouts under
     // the quarter-strength sun — never black, not even by lighting.
     const shade = (0.78 + v * 0.5) * fibre * across;
-    return [shade * OASIS_GREEN.r * 1.4, shade * OASIS_GREEN.g * 1.32, shade * OASIS_GREEN.b * 1.25];
+    return [shade * BLADE_GOLD.r * 1.4, shade * BLADE_GOLD.g * 1.32, shade * BLADE_GOLD.b * 1.25];
   });
   return goldMap;
 }

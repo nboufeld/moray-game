@@ -139,3 +139,118 @@ darker, longer end tapers; cards fewer and shorter; eels and grass
 lifted into the value range with a touch of emissive; palm crowns
 re-arched; shoal tightened; caravan slowed to a stately 1 m/s with a
 head start onto the framed leg; Keeper grown and brightened.
+
+### Round 2 (`hourglass-r2`) — the bowl paints itself; the rooftop returns
+
+Silhouette: the Hourglass finally composes from the lip — terraces
+bench, the falls' veils read as bright smoke inside the bowl — but the
+shortened distance cards STILL poke over the far rim as a picket of
+sticks against the cyan (the rooftop failure, second offence), and the
+crescent ranks, taller now, read as smooth swells rather than ranked
+dunes because their slip-faces carry only a timid mauve. Value: the
+saddle and flats grounds still run one mid-gold; the monolith shadows
+were thrown directly AWAY from the flats poses' sightlines, so each
+reads as a disconnected purple smear beside its stone instead of a
+shadow anchored to it. The falls' bottoms cut hard buried-plane shards
+where their planes meet terrace geometry. Colour: fog at 0.007 owns the
+first thirty degrees above the horizon but the upper sky is still raw
+cyan backdrop. Detail: the ray caravan missed its frame AGAIN (the
+grand tour loop was simply somewhere else); the eels read as dark
+strokes; the slip-face pose stood buried in the windward slope of the
+wrong dune.
+
+Fixes for round 3: distance cards removed outright (twice is enough —
+dune lines only, varied out of their mesa flats); slip violet to full
+pitch with painted duneling lees down the saddle; monolith shadows
+swung lateral to the poses; hourglass falls hung a step inside the lip
+with an earlier bottom fade; caravan re-drawn as a flats-only circuit
+spread over a third of its loop; eels brightened; the slip-face pose
+corrected to the scanned crest.
+
+### Round 3 (`hourglass-r3`) — the chasm lands; the flats and the file don't
+
+Silhouette: hourglass-lip is the region's first frame worth keeping —
+bowl, benches, veils and violet ledges compose, and with the cards gone
+the far rim carries only the true Singing Monoliths (still slightly
+chimney-ish at 150 m, but honest geography). The saddle reveal remains
+the big silhouette failure: the ranks beyond the lip sit below eye
+level and the Dune Ocean opens as one flat horizon line. hourglass-deep
+wastes two-thirds of its frame on empty water above the rim (pitch
+0.65 was authored for awe and framed nothing). Value: violet finally
+structures the bowl and the near slip-faces; the flats' painted
+ripples and swung shadows exist but read faint at capture distance;
+oasis seagrass and garden eels STILL sit near-black against the sand
+(the grass material carries no emissive at all — the round-2 "lift"
+touched only the eels). Colour: the water is honey to ~25° above the
+horizon; above that the cyan backdrop still owns every sky (0.007 is
+not what warm costs — the Smoulder paid 0.009). Detail: the
+ray-crossing pose is BROKEN — the loop's western station passes within
+three metres of the camera, so one rust-dark ray fills the top half of
+the frame like a tarpaulin; the Keeper appears in NEITHER deep frame
+(a 72 s loop against a wall-clock-nondeterministic settle means the
+pose must frame the whole patrol ring, not a lucky arc of it); the
+slip-face shoal spreads over half its loop and reads as scattered
+dots again; the gilded-shore stacks frame a single low flat dune line
+— "stacked gold-to-violet lines" is not yet true.
+
+Fixes for round 4: fog density to 0.0085 and backdrop fade 0.62 (buy
+the warm sky, fade the rooftop monoliths); grand-crescent amplitude
+boost in the reveal's sector so the lip opens onto ranked silhouettes;
+ray caravan shrunk from ~15 m to ~10 m span, lifted brighter gold, and
+its pose camera moved outside the loop to watch the file cross at
+25–40 m; keeper-deep re-authored as a high-terrace frame that holds
+the WHOLE patrol ring, Keeper grown to 3.0 and its lantern brightened;
+hourglass-deep pitch brought down to frame falls, terraces and rim
+ring; grass given emissive and the eels lifted again; monolith
+shadows widened and darkened; distance rings given real swell variance
+and a taller far layer; two more vale falls and three more saddle
+boulders for the approach's fog rhythm; shoal ribbon tightened.
+
+### Round 4 (`hourglass-r4`) — the bowl is won; the horizon grows turrets
+
+Silhouette: hourglass-lip now composes fully (terraces, veils, violet
+ledges, honest far-rim silhouettes); glass-reach, oasis and
+first-crescent hold; keeper-deep's re-authored high-terrace frame
+works — the whole ring in one look, and the Keeper IS in it at last.
+But the round's variance boost turned the distance rings into a
+FORTRESS: `pow(|sin|, 1.5)` crests over a slow flat base read as a
+crenellated wall with turrets from everywhere that faces them
+(ray-crossing's right half, the oasis and flats horizons, blocky
+notches on the reveal's crest line). Proven by mesh toggle in the live
+scene — hide `hourglass-distance-*` and every block vanishes. The
+saddle-reveal's boosted grand crescents rank now, but the ring blocks
+sit on top of them. Value: the descent paint's harder stain works;
+the flats' widened shadows still read faint at 25 m. Colour: the sky
+is honey to ~30°; raw cyan still owns the zenith (0.0085/0.62 was not
+quite enough); the saddle boulders and the Gilded Shore stacks read
+saturated PLUM — the lavender rock wash under this region's
+quarter-sun turns both stone families purple, and 0x9a8a70 vs
+0x7a6a70 render nearly the same eggplant. The "gold" seagrass reads
+plain GREEN (olive emissive + green families — toggle-proven: hiding
+`hourglass-gold-seagrass` removes every green blade in the flats
+frames). Detail: THE CARAVAN WAS IN FRAME ALL ALONG — with the rings
+hidden, ray-crossing shows six tan deltas crossing mid-water; tan
+rays in front of a tan fortress wall are invisible (camouflage, not
+absence). The slip-face pose frames a bare crest (the tightened
+ribbon is a 25 m dash somewhere on a 90 m loop — a chest-height
+camera behind the crest sees none of it); hourglass-deep still spends
+two thirds of its frame on empty water (pitch 0.42 aims at the far
+wall 33 m off, which the bowl's own haze eats); the garden eels are
+sub-pixel whiskers at the pose's 22 m and RETRACT when the capture
+teleports the diver closer (5 cm × 1 m at 22 m ≈ two pixels — the
+delight is invisible at every distance the shot set stands at).
+
+Fixes for round 5: distance skyline rebuilt as rounded integer-period
+swells (no side steeper than a dune's repose — the fortress was the
+crest sharpening, not the variance); caravan circuit shrunk to r ≈ 25
+around the flats' heart so the pose frames the WHOLE loop (a file
+that cannot leave the frame needs no phase luck) and the rays lifted
+brighter gold; ray-crossing re-posed outside the shrunk loop;
+slip-face pose raised to a 7 m overlook framing crest, lee and trough
+(most of the shoal's circuit); shoal span 0.36 at a faster surf;
+hourglass-deep re-authored INSIDE the bowl on a mid terrace, 30 m
+from the west falls, pitch 0.36; eels thickened ~70% and the flats
+pose brought to ~14 m of a colony; grass families and blade texture
+warmed from green to dry gold, emissive amber; both stone tints
+warmed against the plum (pale 0xb09a74, monolith 0x8a7468); backdrop
+fade 0.66; monolith shadows deepened a step.

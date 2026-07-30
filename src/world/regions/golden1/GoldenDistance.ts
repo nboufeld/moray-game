@@ -40,11 +40,12 @@ interface DuneLayer {
 
 const LAYERS: readonly DuneLayer[] = [
   // Gold near… Grown and darkened in round 2: the round-1 lines were
-  // low pale strips that vanished against the shelf.
-  { radius: 246, ridgeBase: 8, ridgeVary: 3.4, fade: 0.34, ink: new Color(0.86, 0.7, 0.46) },
-  { radius: 264, ridgeBase: 12, ridgeVary: 4.6, fade: 0.52, ink: new Color(0.74, 0.58, 0.58) },
+  // low pale strips that vanished against the shelf. Variance up again
+  // in round 4 — the gilded-shore frame still read one flat line.
+  { radius: 246, ridgeBase: 8, ridgeVary: 4.6, fade: 0.34, ink: new Color(0.86, 0.7, 0.46) },
+  { radius: 264, ridgeBase: 12, ridgeVary: 6.2, fade: 0.52, ink: new Color(0.74, 0.58, 0.58) },
   // …violet far.
-  { radius: 286, ridgeBase: 17, ridgeVary: 5.8, fade: 0.66, ink: new Color(0.62, 0.48, 0.68) },
+  { radius: 286, ridgeBase: 20, ridgeVary: 7.8, fade: 0.66, ink: new Color(0.62, 0.48, 0.68) },
 ];
 
 const SEGMENTS = 220;
@@ -81,12 +82,20 @@ export function buildGoldenDistance(): { meshes: Mesh[] } {
       fog: false,
       side: DoubleSide,
       toneMapped: true,
+      // Round 5: the skyline dissolves upward through an RGBA vertex
+      // fade — an opaque ring's hard top edge against the backdrop is
+      // what kept reading as masonry however the crests were shaped.
+      vertexColors: true,
+      transparent: true,
+      depthWrite: false,
     });
     const geometry = duneRing(layer, SEEDS.regionGolden1 ^ (0xd400 + index * 131));
     const mesh = new Mesh(geometry, material);
     mesh.castShadow = false;
     mesh.receiveShadow = false;
     mesh.name = `hourglass-distance-${index}`;
+    // Painter's order, far ring first, all before the falls' veils.
+    mesh.renderOrder = -(index + 1) - 2;
     if (index === 0) {
       mesh.onBeforeRender = (_renderer, scene) => followFog(scene);
     }
@@ -112,6 +121,7 @@ export function buildGoldenDistance(): { meshes: Mesh[] } {
  */
 function duneRing(layer: DuneLayer, noiseSeed: number): BufferGeometry {
   const positions: number[] = [];
+  const colors: number[] = [];
   const indices: number[] = [];
   let column = 0;
 
@@ -125,31 +135,48 @@ function duneRing(layer: DuneLayer, noiseSeed: number): BufferGeometry {
     }
     // A long taper: shorter ramps stood at the gap's edge as flat-topped
     // blocks that read as buildings (round 1, oasis and flats horizons).
-    const end = smoothstep01((off - GAP_HALF) / 0.85);
+    // Lengthened again in round 5 — seen near-tangent, a 0.85 rad ramp
+    // compresses into a vertical cliff edge.
+    const end = smoothstep01((off - GAP_HALF) / 1.3);
     const x = CENTER_X + Math.cos(theta) * layer.radius;
     const z = CENTER_Z + Math.sin(theta) * layer.radius;
 
     const t = i / SEGMENTS;
-    // A dune skyline: a rolling swell whose crests are gently sharpened
-    // over a long drifting base. The roll's weight went up in round 3 —
-    // flat stretches of ridge read as mesas against the backdrop.
-    const roll = fbm(t * 6, layer.radius * 0.013, { seed: noiseSeed, period: 6, octaves: 3 }) - 0.5;
-    const crest = Math.pow(
-      Math.abs(Math.sin(t * Math.PI * 14 + roll * 6)),
-      1.5,
-    );
-    const ridge = layer.ridgeBase + (roll * 1.9 + crest * 0.9) * layer.ridgeVary;
+    // A dune skyline: rounded crescent swells over a slow drifting
+    // base. Round 4 sharpened the crests (`pow(|sin|, 1.5)`) for
+    // variance and got a fortress — spikes over a flat base read as a
+    // crenellated wall with turrets from across the disc (proven by
+    // mesh toggle in round 4's critique). Two integer-period sines
+    // seam nowhere and no side ever steepens past a dune's repose.
+    const roll =
+      fbm(t * 11, layer.radius * 0.013, { seed: noiseSeed, period: 11, octaves: 3 }) - 0.5;
+    const swell =
+      Math.sin(t * Math.PI * 2 * 15 + roll * 5) * 0.55 +
+      Math.sin(t * Math.PI * 2 * 4 + (noiseSeed % 7)) * 0.35;
+    // The base itself undulates over long arcs: seen near-tangent a
+    // ring's crests compress into their own max, and a constant base
+    // rules a flat line across the frame (round 5's ray-crossing).
+    const base = layer.ridgeBase * (0.82 + 0.36 * Math.sin(t * Math.PI * 2 * 3 + (noiseSeed % 5)));
+    const ridge = base + (roll * 1.7 + swell) * layer.ridgeVary;
 
-    positions.push(x, FOOT, z, x, FOOT + Math.max(1.4, ridge - FOOT) * end + 0.2, z);
+    // Three rows: opaque foot, near-opaque shoulder, transparent crest
+    // — the drawn skyline survives (the perceived edge rides the fade)
+    // but no hard line ever meets the water.
+    const top = FOOT + Math.max(1.4, ridge - FOOT) * end + 0.2;
+    const mid = FOOT + (top - FOOT) * 0.72;
+    positions.push(x, FOOT, z, x, mid, z, x, top, z);
+    colors.push(1, 1, 1, 0.95, 1, 1, 1, 0.85, 1, 1, 1, 0);
     if (column > 0) {
-      const a = positions.length / 3 - 4;
-      indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+      const a = positions.length / 3 - 6;
+      indices.push(a, a + 1, a + 3, a + 1, a + 4, a + 3);
+      indices.push(a + 1, a + 2, a + 4, a + 2, a + 5, a + 4);
     }
     column++;
   }
 
   const geometry = new BufferGeometry();
   geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
+  geometry.setAttribute("color", new BufferAttribute(new Float32Array(colors), 4));
   geometry.setIndex(indices);
   geometry.computeBoundingSphere();
   return geometry;

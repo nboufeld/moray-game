@@ -34,12 +34,12 @@ export const SHADOW_VIOLET = new Color(0x6e5476);
 export const DEEP_VIOLET = new Color(0x584468);
 /** Fused glass: pale sea-green reading as translucency in toon values. */
 export const GLASS_PALE = new Color(0xcfe8d8);
-/** Oasis life: gold-green, the tender counterpoint. */
-export const OASIS_GREEN = new Color(0x9db85e);
 /** The sandfalls' cream — bright sand, not glow. */
 export const FALL_CREAM = new Color(0.95, 0.89, 0.72);
-/** The warm stone the monoliths are cut from. */
-export const MONOLITH_STONE = 0x7a6a70;
+/** The warm stone the monoliths are cut from. Warmed in round 5: the
+ * lavender rock wash under this region's quarter-sun turned 0x7a6a70
+ * into saturated plum — the violet has to stay a *warm* violet. */
+export const MONOLITH_STONE = 0x9a7c6a;
 
 /**
  * The emissive-by-vertex-colour patch (the canyon polyps' trick, the
