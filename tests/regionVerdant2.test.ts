@@ -1,4 +1,14 @@
-import { InstancedMesh, Mesh, Points, Scene, type Object3D } from "three";
+import {
+  AdditiveBlending,
+  InstancedMesh,
+  Matrix4,
+  Mesh,
+  Points,
+  Scene,
+  Vector3,
+  type MeshBasicMaterial,
+  type Object3D,
+} from "three";
 import { beforeAll, describe, expect, it } from "vitest";
 // Import order is load-bearing: `Seabed` pulls `RegionField` →
 // `RegionRegistry` → the defs, and that chain tolerates the cycle (every
@@ -20,6 +30,8 @@ import {
   worldOf,
 } from "../src/world/regions/verdant2/Verdant2Terrain";
 import { REGION_SLOTS, slotCenter } from "../src/world/regions/RegionSlots";
+import { THRESHOLD_RUNNER_STATIONS } from "../src/world/regions/verdant2/Verdant2Colonies";
+import { CISTERN, FERN_VAULT, stairChannelCenter } from "../src/world/regions/verdant2/Verdant2";
 import type { RegionBuild } from "../src/world/regions/RegionTypes";
 
 /**
@@ -242,6 +254,137 @@ describe("verdant-line-2 build", () => {
     expect(target.speciesId).toBe("terrace-warden");
     expect(verdant2Weight(target.position.x, target.position.z)).toBeGreaterThan(0.5);
     expect(VERDANT_2.codexEntries?.some((entry) => entry.id === target.speciesId)).toBe(true);
+  });
+
+  it("keeps the pass channel swimmable — no geometry blocks the road in", () => {
+    // The two-region journey's own contract (MASTER R4, verified from
+    // this side): along the corridor's swim line — including the band
+    // u 691–733 where verdant-1's distance ring crosses and ITS rework
+    // cuts the gap — no collider of ours (stone, bridge, seal) may
+    // intrude on the channel the diver swims.
+    const swim = new Vector3();
+    for (let u = 636; u <= 810; u += 2) {
+      const { x, z } = worldOf(u, stairChannelCenter(u));
+      const floor = verdant2TerrainTarget(x, z);
+      for (const lift of [0.9, 1.8, 2.7]) {
+        swim.set(x, floor + lift, z);
+        for (const collider of build.colliders) {
+          const clearance = swim.distanceTo(collider.center) - collider.radius;
+          expect(
+            clearance,
+            `blocked at u=${u} lift=${lift} by collider at ` +
+              `${collider.center.x.toFixed(1)},${collider.center.z.toFixed(1)}`,
+          ).toBeGreaterThan(0.55);
+        }
+      }
+    }
+  });
+
+  it("routes the threshold runner inside the corridor and clear of every seal", () => {
+    const seals = buildSeals();
+    const at = new Vector3();
+    for (const [u, v, lift] of THRESHOLD_RUNNER_STATIONS) {
+      // The route owns the pass road u 645–760 and never leaves it.
+      expect(u).toBeGreaterThanOrEqual(645);
+      expect(u).toBeLessThanOrEqual(760);
+      const { x, z } = worldOf(u, v);
+      expect(verdant2Weight(x, z), `station u=${u}`).toBeGreaterThan(0);
+      at.set(x, verdant2TerrainTarget(x, z) + lift, z);
+      for (const seal of seals) {
+        // Braid (0.5) + per-fish lateral (0.35) of swing around the line.
+        expect(
+          at.distanceTo(seal.center) - seal.radius,
+          `runner station u=${u} inside a seal`,
+        ).toBeGreaterThan(1.0);
+      }
+    }
+  });
+
+  it("holds the Mistfall milk to the additive light discipline", () => {
+    const milk = build.group.getObjectByName("kit-fall-sheets") as Mesh | null;
+    expect(milk, "the kit fall sheets exist").not.toBeNull();
+    const material = milk!.material as MeshBasicMaterial;
+    expect(material.fog).toBe(false);
+    expect(material.transparent).toBe(true);
+    expect(material.depthWrite).toBe(false);
+    expect(material.blending).toBe(AdditiveBlending);
+    expect(material.opacity).toBeLessThanOrEqual(0.2);
+    // The fourth part is the region's: the range fade that keeps an
+    // unfogged additive mark out of frames a region away (round 6's
+    // lesson, applied to the rebuilt milk).
+    expect(typeof milk!.onBeforeRender).toBe("function");
+  });
+
+  it("plants every mesa-city card's foot below the rampart line", () => {
+    // Card v2's contract (plan §6b.3): no floating chimneys from any
+    // authored angle — every instance's base sits below every floor the
+    // basin can show, so the rampart always cuts the card's foot.
+    const matrix = new Matrix4();
+    const position = new Vector3();
+    let cards = 0;
+    build.group.traverse((node) => {
+      if (node instanceof InstancedMesh && node.name.startsWith("verdant2-distance-pillars")) {
+        for (let i = 0; i < node.count; i++) {
+          node.getMatrixAt(i, matrix);
+          position.setFromMatrixPosition(matrix);
+          expect(position.y, `${node.name} instance ${i}`).toBeLessThanOrEqual(-44);
+          cards++;
+        }
+      }
+    });
+    expect(cards).toBeGreaterThan(30);
+  });
+
+  it("keeps the registered rests empty of kit fill", () => {
+    // MASTER §1.2: the Cistern bowl interior (the mirror IS the rest),
+    // the Fern Vault's inner shadow, the basin's south pocket. Every
+    // instanced kit scatter must respect all three.
+    const matrix = new Matrix4();
+    const position = new Vector3();
+    build.group.traverse((node) => {
+      if (!(node instanceof InstancedMesh)) {
+        return;
+      }
+      if (!node.name.startsWith("kit-")) {
+        return;
+      }
+      for (let i = 0; i < node.count; i++) {
+        node.getMatrixAt(i, matrix);
+        position.setFromMatrixPosition(matrix);
+        const { u, v } = spokeOf(position.x, position.z);
+        expect(
+          Math.hypot(u - CISTERN.u, v - CISTERN.v),
+          `${node.name} ${i} inside the Cistern bowl`,
+        ).toBeGreaterThan(18);
+        expect(
+          Math.hypot(u - FERN_VAULT.u, v - FERN_VAULT.v),
+          `${node.name} ${i} inside the vault's inner shadow`,
+        ).toBeGreaterThan(3.5);
+        expect(
+          Math.hypot(u - 1060, v - -30),
+          `${node.name} ${i} inside the basin's south pocket`,
+        ).toBeGreaterThan(7.5);
+      }
+    });
+  });
+
+  it("builds the riser-face garden strips deterministically", () => {
+    const again = VERDANT_2.build(new Scene());
+    for (const name of [
+      "verdant2-gardens-strip-pass",
+      "verdant2-gardens-strip-west",
+      "verdant2-gardens-strip-east",
+    ]) {
+      const first = build.group.getObjectByName(name) as Mesh | null;
+      const second = again.group.getObjectByName(name) as Mesh | null;
+      expect(first, name).not.toBeNull();
+      expect(second, name).not.toBeNull();
+      const a = first!.geometry.attributes.position!.array as Float32Array;
+      const b = second!.geometry.attributes.position!.array as Float32Array;
+      expect(a.length, name).toBeGreaterThan(0);
+      expect(a.length, name).toBe(b.length);
+      expect(Buffer.from(a.buffer).equals(Buffer.from(b.buffer)), `${name} bytes`).toBe(true);
+    }
   });
 
   it("survives a minute of updates without spending randomness", () => {
