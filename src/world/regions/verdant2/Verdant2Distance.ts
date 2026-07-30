@@ -50,10 +50,13 @@ interface CliffLayer {
 // country every outward view is rampart first, and the cliff-lines must
 // clear it to exist. Farther rings stand taller — a country of terraces
 // climbing away into the green.
+// Round 2: fades cut hard (the round-1 rings inked at fog×0.77 read as a
+// wall of fog) and the tops raised so the skyline clears the rampart's
+// sightline from the sunken country.
 const LAYERS: readonly CliffLayer[] = [
-  { radius: 246, meanTop: 7, stepDepth: 5, fade: 0.42 },
-  { radius: 266, meanTop: 13, stepDepth: 4.5, fade: 0.6 },
-  { radius: 288, meanTop: 19, stepDepth: 4, fade: 0.75 },
+  { radius: 246, meanTop: 10, stepDepth: 5, fade: 0.22 },
+  { radius: 266, meanTop: 17, stepDepth: 4.5, fade: 0.42 },
+  { radius: 288, meanTop: 24, stepDepth: 4, fade: 0.6 },
 ];
 
 const SEGMENTS = 220;
@@ -61,7 +64,7 @@ const SEGMENTS = 220;
 const FOOT = -50;
 
 /** Green-violet ink: the fog colour taken down, red above green's cut. */
-const INK = new Color(0.6, 0.7, 0.58);
+const INK = new Color(0.44, 0.54, 0.43);
 
 /** Half-angle of the gap the rings leave over the pass's approach. */
 const GAP_HALF = 0.42;
@@ -114,10 +117,36 @@ export function buildVerdant2Distance(): { meshes: (Mesh | InstancedMesh)[] } {
   // The hanging-garden pillars: instanced silhouettes — a stone lip with
   // a fall of ribbon straps below it — standing on the ring radii in two
   // bands. They carry the verticals the rings' skylines cannot.
-  for (const [band, spec] of [
-    { rFrom: 242, rTo: 258, count: 22, fade: 0.46, hMin: 14, hMax: 22 },
-    { rFrom: 262, rTo: 284, count: 16, fade: 0.66, hMin: 16, hMax: 26 },
-  ].entries()) {
+  // The third band is the Far Balcony's own promise (round 4): a near
+  // cluster in the basin sector beyond the balcony, tall enough that its
+  // heads break the rampart sightline from the balcony's −24 m — the
+  // ring bands' pillars all hide below that line from inside the bowl.
+  interface PillarBand {
+    readonly rFrom: number;
+    readonly rTo: number;
+    readonly count: number;
+    readonly fade: number;
+    readonly hMin: number;
+    readonly hMax: number;
+    /** Restrict placement to this angular sector, instead of avoiding the gap. */
+    readonly sector?: { readonly at: number; readonly half: number };
+  }
+  const bands: readonly PillarBand[] = [
+    { rFrom: 242, rTo: 258, count: 22, fade: 0.26, hMin: 26, hMax: 38 },
+    { rFrom: 262, rTo: 284, count: 16, fade: 0.45, hMin: 28, hMax: 42 },
+    // Sector narrowed in round 5: at ±0.5 the cluster's heads floated
+    // into mistfall-above's sky as dark chimneys.
+    {
+      rFrom: 132,
+      rTo: 172,
+      count: 9,
+      fade: 0.34,
+      hMin: 30,
+      hMax: 44,
+      sector: { at: VERDANT2_SLOT.azimuth + 0.34, half: 0.38 },
+    },
+  ];
+  for (const [band, spec] of bands.entries()) {
     const material = new MeshBasicMaterial({
       color: new Color(0x3f8f7a),
       fog: false,
@@ -134,7 +163,9 @@ export function buildVerdant2Distance(): { meshes: (Mesh | InstancedMesh)[] } {
     let placed = 0;
     let guard = 0;
     while (placed < spec.count && guard++ < 400) {
-      const theta = random.range(0, Math.PI * 2);
+      const theta = spec.sector
+        ? spec.sector.at + random.signed(spec.sector.half)
+        : random.range(0, Math.PI * 2);
       if (angleBetween(theta, gapAt) < GAP_HALF + 0.1) {
         continue;
       }

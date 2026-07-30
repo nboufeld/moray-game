@@ -11,6 +11,7 @@ import {
   FERN_VAULT,
   MISTFALL,
   VAULT_CEILING,
+  mistfallLipU,
   stairChannelCenter,
   stairChannelHalf,
   stepFootU,
@@ -115,22 +116,29 @@ export function buildVerdant2Stone(): Verdant2StoneBuild {
   // ─── The Emerald Gate ────────────────────────────────────────────────────
   // Two great jamb stacks where the first riser falls away: the doorway
   // into the country, worked-looking, moss-hung (the gardens dress them).
+  // Round 3: the jambs stand *inside* the channel (round 2 left them on
+  // the wall slopes, camouflaged against the banks) and wear the cool
+  // deep stone so they read as a doorway against the warm walls. The
+  // corridor narrows to ~9 m between them — a door, not a pinch.
+  // Round 4: moved past u 733 — verdant-1's outermost distance ring
+  // crosses the pass there as an opaque fog-coloured curtain, and three
+  // rounds of gate poses photographed the back of it (see the ledger).
   for (const [i, side] of [-1, 1].entries()) {
-    const u = 735 + i * 2;
+    const u = 747 + i * 2;
     stand(
-      jade,
+      deep,
       stackGeometry(
         [
-          { radius: 1.7 - i * 0.2, rise: 0.7, stretch: 2.0, lean: side * 0.4 },
-          { radius: 1.2 - i * 0.2, rise: 3.9 - i * 0.5, stretch: 1.8, lean: side * 1.0 },
+          { radius: 2.2 - i * 0.2, rise: 0.9, stretch: 2.2, lean: side * 0.4 },
+          { radius: 1.5 - i * 0.2, rise: 6.4 - i * 0.7, stretch: 2.0, lean: side * 1.2 },
         ],
         { seed: SEED ^ (0x0a20 + i) },
       ),
       u,
-      stairChannelCenter(u) + side * (stairChannelHalf(u) + 0.5),
+      stairChannelCenter(u) + side * (stairChannelHalf(u) - 3),
       side * 0.9,
-      1.7,
-      6.0 - i * 0.6,
+      2.2,
+      9.4 - i * 0.8,
     );
   }
 
@@ -138,20 +146,23 @@ export function buildVerdant2Stone(): Verdant2StoneBuild {
   // A low slab lip at every other step's foot, alternating sides — the
   // crisp edge the soft terrain riser needs, and the fog-rhythm dressing
   // down the stair with the ledge gardens above them.
-  for (let i = 0; i < 8; i += 2) {
+  // Round 3: lips on both flanks of every step, so the descent reads as
+  // rhythm from above as well as from the side.
+  for (let i = 0; i < 8; i++) {
     const u = stepFootU(i) + 0.8;
-    const side = i % 4 === 0 ? -1 : 1;
-    const v = stairChannelCenter(u) + side * random.range(4, 7);
-    const radius = random.range(2.0, 3.0);
-    stand(
-      moss,
-      slabGeometry({ seed: SEED ^ (0x0a30 + i), radius, height: radius * 0.42 }),
-      u,
-      v,
-      random.range(0, Math.PI * 2),
-      radius,
-      radius * 0.42,
-    );
+    for (const side of [-1, 1]) {
+      const v = stairChannelCenter(u) + side * random.range(4, 7);
+      const radius = random.range(1.7, 2.8);
+      stand(
+        moss,
+        slabGeometry({ seed: SEED ^ (0x0a30 + i * 2 + (side + 1) / 2), radius, height: radius * 0.42 }),
+        u + random.signed(1.2),
+        v,
+        random.range(0, Math.PI * 2),
+        radius,
+        radius * 0.42,
+      );
+    }
   }
 
   // ─── The stair-foot overlook boulder ─────────────────────────────────────
@@ -207,35 +218,37 @@ export function buildVerdant2Stone(): Verdant2StoneBuild {
   // Ten worked stones spaced *evenly* — regularity is what says "built" —
   // leaning gently inward over the mirror floor, with two of the ring
   // fallen where the ages won.
+  // Round 2: the ring grown ~40% and tightened (33 m) — metre stones on
+  // a 72 m ring read as pebbles on a horizon.
   for (let i = 0; i < 10; i++) {
     const theta = (i / 10) * Math.PI * 2 + 0.25;
-    const u = CISTERN.u + Math.cos(theta) * 36;
-    const v = CISTERN.v + Math.sin(theta) * 36;
+    const u = CISTERN.u + Math.cos(theta) * 33;
+    const v = CISTERN.v + Math.sin(theta) * 33;
     if (i === 3 || i === 7) {
       // The fallen pair: lying along the ring, half-sunk.
       const fallen = stackGeometry(
         [
-          { radius: 1.1, rise: 0.5, stretch: 1.8, lean: 0.2 },
-          { radius: 0.8, rise: 2.6, stretch: 1.6, lean: 0.5 },
+          { radius: 1.5, rise: 0.7, stretch: 2.0, lean: 0.2 },
+          { radius: 1.1, rise: 3.6, stretch: 1.8, lean: 0.5 },
         ],
         { seed: SEED ^ (0x0a60 + i) },
       );
       fallen.applyMatrix4(new Matrix4().makeRotationZ(Math.PI / 2 - 0.12));
-      stand(jade, fallen, u, v, theta + 0.4, 1.6, 1.4, 0.35);
+      stand(jade, fallen, u, v, theta + 0.4, 2.1, 1.9, 0.45);
       continue;
     }
     const lean = 0.35;
     const stone = stackGeometry(
       [
-        { radius: 1.05, rise: 0.55, stretch: 1.9, lean: 0 },
-        { radius: 0.75, rise: 3.0, stretch: 1.7, lean: 0 },
+        { radius: 1.45, rise: 0.75, stretch: 2.1, lean: 0 },
+        { radius: 1.0, rise: 4.4, stretch: 1.9, lean: 0 },
       ],
       { seed: SEED ^ (0x0a60 + i) },
     );
     // The inward lean, applied as a rotation toward the bowl's centre.
     stone.applyMatrix4(new Matrix4().makeRotationX(lean * Math.sin(theta)));
     stone.applyMatrix4(new Matrix4().makeRotationZ(-lean * Math.cos(theta)));
-    stand(jade, stone, u, v, random.range(0, Math.PI * 2), 1.05, 4.4);
+    stand(jade, stone, u, v, random.range(0, Math.PI * 2), 1.45, 6.2);
   }
 
   // ─── The Fern Vault's shelf and pillars ──────────────────────────────────
@@ -271,35 +284,37 @@ export function buildVerdant2Stone(): Verdant2StoneBuild {
   // ─── The Mistfall's lip horns ────────────────────────────────────────────
   // Two tall stacks flanking the fall where it leaves the lip — the
   // frame the whole cliff composition hangs from, above and below.
+  // Round 2: the horns stand on the *local* lip (the meander carries the
+  // cliff ~7 m past MISTFALL.u here) and grew into the frame they hold.
   stand(
     deep,
     stackGeometry(
       [
-        { radius: 1.6, rise: 0.8, stretch: 2.1, lean: 0.5 },
-        { radius: 1.0, rise: 4.6, stretch: 1.9, lean: 1.1 },
+        { radius: 2.0, rise: 1.0, stretch: 2.3, lean: 0.5 },
+        { radius: 1.3, rise: 7.0, stretch: 2.1, lean: 1.3 },
       ],
       { seed: SEED ^ 0x0a90 },
     ),
-    MISTFALL.u - 6,
+    mistfallLipU(MISTFALL.v - 15) - 2.5,
     MISTFALL.v - 15,
     0.8,
-    1.6,
-    6.6,
+    2.0,
+    9.6,
   );
   stand(
     deep,
     stackGeometry(
       [
-        { radius: 1.4, rise: 0.7, stretch: 2.0, lean: -0.4 },
-        { radius: 0.9, rise: 4.0, stretch: 1.8, lean: -0.9 },
+        { radius: 1.7, rise: 0.9, stretch: 2.2, lean: -0.4 },
+        { radius: 1.1, rise: 6.0, stretch: 2.0, lean: -1.1 },
       ],
       { seed: SEED ^ 0x0a91 },
     ),
-    MISTFALL.u - 4,
+    mistfallLipU(MISTFALL.v + 17) - 2.5,
     MISTFALL.v + 17,
     3.9,
-    1.4,
-    5.8,
+    1.7,
+    8.4,
   );
 
   // ─── The basin's sleepers ────────────────────────────────────────────────
@@ -343,16 +358,16 @@ export function buildVerdant2Stone(): Verdant2StoneBuild {
       jade,
       stackGeometry(
         [
-          { radius: 1.2, rise: 0.6, stretch: 2.0, lean: side * 0.5 },
-          { radius: 0.8, rise: 3.4, stretch: 1.8, lean: side * 1.1 },
+          { radius: 1.4, rise: 0.7, stretch: 2.1, lean: side * 0.5 },
+          { radius: 0.95, rise: 4.8, stretch: 1.9, lean: side * 1.2 },
         ],
         { seed: SEED ^ (0x0ac0 + i) },
       ),
       BALCONY.u + 6,
       BALCONY.v + side * 9,
       side * 1.1,
-      1.2,
-      5.0,
+      1.4,
+      6.6,
     );
   }
 
@@ -383,7 +398,10 @@ export function buildVerdant2Stone(): Verdant2StoneBuild {
   const meshes = [
     mergedMesh(moss, createRockMaterial(0x6d7a62), "verdant2-stone-moss"),
     mergedMesh(jade, createRockMaterial(0x94a289), "verdant2-stone-jade"),
-    mergedMesh(deep, createRockMaterial(0x606c72), "verdant2-stone-deep"),
+    // Round 4: cool green-grey — the slate-violet read purple-orange
+    // against the rust weathering at close range (mistfall-above r3).
+    // Round 5: a half-value lift; the gate jambs read as pure blacks.
+    mergedMesh(deep, createRockMaterial(0x6a7a6a), "verdant2-stone-deep"),
   ];
 
   return {

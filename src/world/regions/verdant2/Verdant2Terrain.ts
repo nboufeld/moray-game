@@ -136,8 +136,12 @@ const STEP_U0 = 742;
 const STEP_PITCH = 13.2;
 const STEP_DROP = 3.1;
 const STEP_COUNT = 8;
-/** Metres of `u` a riser takes to fall its drop — steep, garden-draped. */
-const RISER_RUN = 4.6;
+/**
+ * Metres of `u` a riser takes to fall its drop — steep, garden-draped.
+ * Round 2: 4.6 m runs melted into swells under the 2.2 m ground grid;
+ * 2.8 m reads as a cut step.
+ */
+const RISER_RUN = 2.8;
 
 /** Total drop of the stair, for the tests and the builders. */
 export const STAIR_TOTAL_DROP = STEP_DROP * STEP_COUNT;
@@ -239,10 +243,18 @@ export function vaultWeight(u: number, v: number): number {
   return 1 - smoothstep01((d - 18) / 30);
 }
 
-/** How far past the Mistfall's lip a point is, in [0, 1] over the drop. */
+/** The Mistfall lip's own meander: where the cliff edge runs at a given `v`. */
+export function mistfallLipU(v: number): number {
+  return MISTFALL.u + 9 * Math.sin(v * 0.021 + 0.7);
+}
+
+/**
+ * How far past the Mistfall's lip a point is, in [0, 1] over the drop.
+ * The run is short on purpose (round 2): 14.5 m of fall over 7 m of run
+ * is a cliff; over 16 it was a hillside.
+ */
 export function mistfallDrop(u: number, v: number): number {
-  const lipU = MISTFALL.u + 9 * Math.sin(v * 0.021 + 0.7);
-  return smoothstep01((u - lipU) / 16);
+  return smoothstep01((u - mistfallLipU(v)) / 7);
 }
 
 export function balconyWeight(u: number, v: number): number {
@@ -263,8 +275,10 @@ export function gardenTerraces(u: number, v: number): { drop: number; riser: num
   let riser = 0;
   const edges = [10, 44, 82] as const;
   for (const edge of edges) {
-    const t = (tc - edge) / 6.5;
-    drop -= 3.0 * smoothstep01(t);
+    // Round 2: 3.0 m over 6.5 m read as meadow swells; 3.6 over 3.6 is a
+    // terrace wall the grid can still sample.
+    const t = (tc - edge) / 3.6;
+    drop -= 3.6 * smoothstep01(t);
     if (t > 0 && t < 1) {
       riser = Math.max(riser, 4 * t * (1 - t));
     }

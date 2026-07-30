@@ -17,7 +17,7 @@ import { buildColorTexture, fbm } from "../../../rendering/ProceduralTexture";
 import { Random, SEEDS } from "../../../util/Random";
 import { seabedHeight } from "../../Seabed";
 import { smoothstep01 } from "./Verdant2Shared";
-import { MISTFALL, worldOf } from "./Verdant2Terrain";
+import { MISTFALL, mistfallLipU, worldOf } from "./Verdant2Terrain";
 
 /**
  * THE MISTFALL — the region's landmark: a slow waterfall of silt pouring
@@ -40,9 +40,16 @@ import { MISTFALL, worldOf } from "./Verdant2Terrain";
 const SEED = SEEDS.regionVerdant2;
 
 /** The fall's plan-space band, shared with the terrain's silt-fan paint. */
-const FALL_HALF_WIDTH = 11;
+const FALL_HALF_WIDTH = 13;
 const LIP_Y = -30.6;
 const FOOT_Y = -45.2;
+
+/**
+ * The cliff edge at the fall's own `v` — round 1 placed the curtains at
+ * a fixed `MISTFALL.u` while the authored lip meanders ~7 m downstream
+ * there, which buried the fall inside its own cliff.
+ */
+const LIP_BASE_U = mistfallLipU(MISTFALL.v);
 
 export interface MistfallBuild {
   readonly meshes: (Mesh | Points)[];
@@ -56,8 +63,8 @@ export function buildMistfall(): MistfallBuild {
   // ─── The fall's curtains ─────────────────────────────────────────────────
   const curtains: { material: MeshBasicMaterial; rate: number }[] = [];
   for (const [i, spec] of [
-    { width: FALL_HALF_WIDTH * 2, lean: 1.6, opacity: 0.42, rate: 0.026 },
-    { width: FALL_HALF_WIDTH * 1.5, lean: 2.6, opacity: 0.3, rate: 0.041 },
+    { width: FALL_HALF_WIDTH * 2, lean: 1.6, opacity: 0.5, rate: 0.026 },
+    { width: FALL_HALF_WIDTH * 1.5, lean: 2.6, opacity: 0.36, rate: 0.041 },
   ].entries()) {
     const height = LIP_Y - FOOT_Y + 2;
     const geometry = new PlaneGeometry(spec.width, height, 6, 12);
@@ -70,10 +77,11 @@ export function buildMistfall(): MistfallBuild {
       const tx = position.getX(k) / spec.width;
       // The curtain bellies outward as it falls, like poured cream.
       position.setZ(k, spec.lean * Math.pow(ty, 1.6) + Math.sin(tx * Math.PI * 2 + i) * 0.4 * ty);
-      // Edge and end fades live in vertex colour (the texture multiplies).
-      const edge = 1 - smoothstep01((Math.abs(tx) - 0.28) / 0.22);
-      const head = smoothstep01(ty / 0.08);
-      const value = edge * head;
+      // Round 5: the fades moved into the alpha map — fading the vertex
+      // *colour* darkened the sheet's rim to a black line against the
+      // fog instead of dissolving it. The colour now carries only a
+      // gentle value drop toward the foot.
+      const value = 1 - ty * 0.18;
       colors[k * 3] = value;
       colors[k * 3 + 1] = value;
       colors[k * 3 + 2] = value;
@@ -91,14 +99,16 @@ export function buildMistfall(): MistfallBuild {
       depthWrite: false,
       side: DoubleSide,
       vertexColors: true,
+      alphaMap: fallAlphaTexture(),
     });
-    // Each curtain scrolls its own copy of the texture.
+    // Each curtain scrolls its own copy of the texture (the alpha map
+    // stays still — the edge fade must not scroll with the milk).
     material.map = map.clone();
     material.map.wrapS = RepeatWrapping;
     material.map.wrapT = RepeatWrapping;
     curtains.push({ material, rate: spec.rate });
 
-    const at = worldOf(MISTFALL.u + 1.5 + i * 2.2, MISTFALL.v + (i === 0 ? 0 : 1.5));
+    const at = worldOf(LIP_BASE_U + 0.5 + i * 2.2, MISTFALL.v + (i === 0 ? 0 : 1.5));
     geometry.rotateY(-1.35 - Math.PI / 2 + random.signed(0.05));
     geometry.translate(at.x, (LIP_Y + FOOT_Y) / 2 + 1, at.z);
     geometry.computeBoundingSphere();
@@ -116,7 +126,7 @@ export function buildMistfall(): MistfallBuild {
   const speeds = new Float32Array(count);
   for (let i = 0; i < count; i++) {
     const v = MISTFALL.v + random.signed(FALL_HALF_WIDTH * 0.9);
-    const u = MISTFALL.u + 1 + random.range(0, 4.5);
+    const u = mistfallLipU(v) + random.range(0.2, 4);
     const { x, z } = worldOf(u, v);
     base[i * 3] = x;
     base[i * 3 + 1] = 0;
@@ -130,7 +140,7 @@ export function buildMistfall(): MistfallBuild {
   grainAttribute.setUsage(DynamicDrawUsage);
   grainGeometry.setAttribute("position", grainAttribute);
   grainGeometry.computeBoundingSphere();
-  const lipWorld = worldOf(MISTFALL.u + 3, MISTFALL.v);
+  const lipWorld = worldOf(LIP_BASE_U + 3, MISTFALL.v);
   grainGeometry.boundingSphere!.center.set(lipWorld.x, (LIP_Y + FOOT_Y) / 2, lipWorld.z);
   grainGeometry.boundingSphere!.radius = 30;
 
@@ -153,17 +163,17 @@ export function buildMistfall(): MistfallBuild {
   // ─── The billow ──────────────────────────────────────────────────────────
   const billows: Mesh[] = [];
   for (let i = 0; i < 3; i++) {
-    const geometry = new PlaneGeometry(10 + i * 4, 5 + i * 1.6, 1, 1);
-    const at = worldOf(MISTFALL.u + 10 + i * 5, MISTFALL.v + random.signed(5));
+    const geometry = new PlaneGeometry(13 + i * 5, 6 + i * 1.8, 1, 1);
+    const at = worldOf(LIP_BASE_U + 7 + i * 5, MISTFALL.v + random.signed(5));
     const y = seabedHeight(at.x, at.z);
     geometry.rotateY(random.range(0, Math.PI));
-    geometry.translate(at.x, y + 2.2 + i * 0.8, at.z);
+    geometry.translate(at.x, y + 2.4 + i * 0.9, at.z);
     geometry.computeBoundingSphere();
     const material = new MeshBasicMaterial({
       map: billowTexture(),
       color: new Color(0xcfe4c8),
       transparent: true,
-      opacity: 0.2 - i * 0.04,
+      opacity: 0.26 - i * 0.05,
       depthWrite: false,
       side: DoubleSide,
     });
@@ -196,6 +206,23 @@ export function buildMistfall(): MistfallBuild {
       }
     },
   };
+}
+
+/**
+ * The curtain's alpha: a bell across the sheet, a dissolve at the head
+ * (the lip's spill starts thin) and a soft foot into the billow. Plane
+ * UVs put v = 1 at the lip.
+ */
+let fallAlphaMap: DataTexture | undefined;
+function fallAlphaTexture(): DataTexture {
+  fallAlphaMap ??= buildColorTexture(64, (u, v) => {
+    const bell = 1 - smoothstep01((Math.abs(u - 0.5) - 0.28) / 0.2);
+    const head = smoothstep01((1 - v) / 0.14);
+    const foot = smoothstep01(v / 0.1);
+    const a = bell * head * foot;
+    return [a, a, a];
+  });
+  return fallAlphaMap;
 }
 
 /** Vertical milk streaks, tileable along the fall. */

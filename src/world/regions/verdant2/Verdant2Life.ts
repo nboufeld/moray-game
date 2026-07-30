@@ -376,7 +376,9 @@ function buildTurtleProcession(): {
   }
   const path = new CatmullRomCurve3(points, true, "centripetal", 0.5);
 
-  const count = 4;
+  // Round 3: six — the pose covers a quarter of the circuit and the
+  // procession's phase rides wall-clock time, so four left frames empty.
+  const count = 6;
   const mesh = new InstancedMesh(turtleGeometry(), turtleMaterial(), count);
   mesh.name = "verdant2-turtle-procession";
   mesh.castShadow = false;
@@ -387,7 +389,7 @@ function buildTurtleProcession(): {
   const tint = new Color();
   const scales: number[] = [];
   for (let i = 0; i < count; i++) {
-    scales.push(random.range(1.9, 2.5));
+    scales.push(random.range(2.4, 3.1));
     tint.setHex(0xffffff).multiplyScalar(random.range(0.9, 1.05));
     mesh.setColorAt(i, tint);
   }
@@ -402,7 +404,7 @@ function buildTurtleProcession(): {
   const update = (_dt: number, time: number, calm: number): void => {
     const head = (time * calm * 0.004) % 1;
     for (let i = 0; i < count; i++) {
-      const s = (((head - i * 0.25) % 1) + 1) % 1;
+      const s = (((head - i / count) % 1) + 1) % 1;
       // Grazing gait: the procession slows near the path's stations and
       // drifts between them — a wobble on s, deterministic.
       const graze = s + Math.sin(time * calm * 0.11 + i * 2.4) * 0.004;
@@ -441,7 +443,7 @@ function turtleGeometry(): BufferGeometry {
     const rim = smoothstep01((0.12 - Math.abs(y)) / 0.1);
     const top = smoothstep01((y + 0.05) / 0.2);
     // Moss shell above, gold rim band, violet plastron below.
-    shade.setHex(0x4f7d4c).multiplyScalar(0.9 + top * 0.3);
+    shade.setHex(0x5d9155).multiplyScalar(0.92 + top * 0.34);
     shade.lerp(new Color(0xc2a95c), rim * 0.7);
     if (y < -0.06) {
       shade.setHex(0x6a5d7c).multiplyScalar(0.95);

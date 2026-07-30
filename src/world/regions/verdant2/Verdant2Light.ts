@@ -56,8 +56,8 @@ const BLADES: readonly Blade[] = [
   { u: 862, v: -18, top: 2, width: 3.2, opacity: 0.11, slant: 0.38 },
   { u: 908, v: -2, top: 0, width: 2.4, opacity: 0.1, slant: 0.42 },
   // The Cistern's great fall of light — the region's brightest mark.
-  { u: CISTERN.u, v: CISTERN.v, top: 4, width: 8.5, opacity: 0.15, slant: 0.3 },
-  { u: CISTERN.u - 8, v: CISTERN.v + 7, top: 0, width: 3.0, opacity: 0.09, slant: 0.34 },
+  { u: CISTERN.u, v: CISTERN.v, top: 4, width: 10.5, opacity: 0.22, slant: 0.3 },
+  { u: CISTERN.u - 8, v: CISTERN.v + 7, top: 0, width: 3.0, opacity: 0.11, slant: 0.34 },
   // The vault's mouth: one thin blade at the threshold of the half-light.
   { u: FERN_VAULT.u + 16, v: FERN_VAULT.v + 14, top: -12, width: 1.8, opacity: 0.09, slant: 0.3 },
   // The Mistfall lip: a blade catching the rising milk.
@@ -133,7 +133,12 @@ export function buildVerdant2Light(): { meshes: (Mesh | InstancedMesh)[] } {
       for (const normal of normals) {
         facing = Math.min(facing, Math.abs(view.dot(normal)));
       }
-      material.opacity = blade.opacity * smoothstep01((facing - 0.06) / 0.24);
+      // The fourth part of the discipline (round 6): `fog: false` marks
+      // never dim with distance, so without their own range fade the
+      // Cistern's great blade washes frames a whole region away (the
+      // Emerald Gate caught its bloom from 190 m). Dead by ~120 m.
+      const range = 1 - smoothstep01((distance - 70) / 50);
+      material.opacity = blade.opacity * smoothstep01((facing - 0.06) / 0.24) * range;
     };
     meshes.push(mesh);
   }
@@ -172,7 +177,7 @@ function buildCisternPool(): Mesh {
     color: 0xd6ecc4,
     vertexColors: true,
     transparent: true,
-    opacity: 0.32,
+    opacity: 0.44,
     blending: AdditiveBlending,
     depthWrite: false,
     fog: false,
@@ -180,6 +185,14 @@ function buildCisternPool(): Mesh {
   const mesh = new Mesh(ring, material);
   mesh.name = "verdant2-cistern-pool";
   mesh.renderOrder = 1;
+  // Same range fade as the blades — the pool is `fog: false` additive
+  // too, and reads as a floating glow from across the country without it.
+  const center = new Vector3(x, seabedHeight(x, z), z);
+  const baseOpacity = material.opacity;
+  mesh.onBeforeRender = (_renderer, _scene, camera: Camera) => {
+    const distance = center.distanceTo(camera.position);
+    material.opacity = baseOpacity * (1 - smoothstep01((distance - 70) / 50));
+  };
   return mesh;
 }
 

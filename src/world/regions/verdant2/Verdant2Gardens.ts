@@ -35,6 +35,7 @@ import {
   cisternWeight,
   gardenTerraces,
   mistfallDrop,
+  mistfallLipU,
   stairChannelCenter,
   stairChannelHalf,
   stepFootU,
@@ -96,9 +97,9 @@ export function buildVerdant2Gardens(): Verdant2GardensBuild {
   // gardens deepen step by step, so the runs thicken and lengthen as the
   // stair descends.
   for (let step = 0; step < 8; step++) {
-    const lipU = stepFootU(step) - 4.9;
+    const lipU = stepFootU(step) - 3.1;
     const lush = step / 7;
-    const count = Math.round(5 + lush * 9);
+    const count = Math.round(7 + lush * 11);
     for (let i = 0; i < count; i++) {
       const v =
         stairChannelCenter(lipU) +
@@ -108,15 +109,15 @@ export function buildVerdant2Gardens(): Verdant2GardensBuild {
         ribbonRandom,
         lipU + anchorRandom.signed(1.0),
         v,
-        anchorRandom.range(2.2, 3.4 + lush * 1.4),
+        anchorRandom.range(3.0, 4.6 + lush * 1.8),
         CURTAIN_TONES,
       );
     }
   }
-  // The gate jambs' drapes.
+  // The gate jambs' drapes (the jambs moved to u 747/749 in round 4).
   for (const side of [-1, 1]) {
-    const u = 735 + side;
-    const v = stairChannelCenter(u) + side * (stairChannelHalf(u) + 0.5);
+    const u = 748 + side;
+    const v = stairChannelCenter(u) + side * (stairChannelHalf(u) - 3);
     for (let i = 0; i < 4; i++) {
       growCurtain(
         chunks.pass!,
@@ -133,9 +134,11 @@ export function buildVerdant2Gardens(): Verdant2GardensBuild {
   // ─── The garden terraces' curtains ───────────────────────────────────────
   // The heart of the region: ribbons hung along the terrace riser
   // contours, found by walking each contour line laterally.
+  // Round 2: the runs thickened (spacing 4.6 → 3.1) and the ribbons
+  // doubled in length — 3–5 m sticks did not read as hanging gardens.
   for (const [t, edge] of [10, 44, 82].entries()) {
-    for (let k = 0; k < 34; k++) {
-      const v = -78 + k * 4.6 + anchorRandom.signed(1.8);
+    for (let k = 0; k < 50; k++) {
+      const v = -78 + k * 3.1 + anchorRandom.signed(1.4);
       const u = contourU(edge, v);
       if (u === null) {
         continue;
@@ -154,7 +157,7 @@ export function buildVerdant2Gardens(): Verdant2GardensBuild {
         ribbonRandom,
         u - 1.2,
         v,
-        anchorRandom.range(3.2, 5.2),
+        anchorRandom.range(4.5, 7.5),
         t % 2 === 0 ? CURTAIN_TONES : VIRIDIAN_TONES,
       );
     }
@@ -173,7 +176,7 @@ export function buildVerdant2Gardens(): Verdant2GardensBuild {
       ribbonRandom,
       891.4 + anchorRandom.signed(0.5),
       v,
-      anchorRandom.range(3.4, 4.6),
+      anchorRandom.range(4.0, 5.6),
       CURTAIN_TONES,
       4.4,
     );
@@ -198,18 +201,17 @@ export function buildVerdant2Gardens(): Verdant2GardensBuild {
   // ─── The Mistfall lip's long falls ───────────────────────────────────────
   // The longest ribbons in the region hang beside the silt-fall, so the
   // living green and the falling milk read as one cliff-face event.
-  for (let i = 0; i < 14; i++) {
-    const v = MISTFALL.v + (i - 6.5) * 3.4 + anchorRandom.signed(1.2);
-    if (Math.abs(v - MISTFALL.v) < 9) {
+  for (let i = 0; i < 18; i++) {
+    const v = MISTFALL.v + (i - 8.5) * 3.4 + anchorRandom.signed(1.2);
+    if (Math.abs(v - MISTFALL.v) < 10) {
       continue; // the fall itself owns the centre
     }
-    const lipU = MISTFALL.u + 9 * Math.sin(v * 0.021 + 0.7);
     growCurtain(
       chunks.deep!,
       ribbonRandom,
-      lipU - 1.0,
+      mistfallLipU(v) - 1.0,
       v,
-      anchorRandom.range(5.0, 8.5),
+      anchorRandom.range(7.0, 11.5),
       CURTAIN_TONES,
     );
   }
@@ -217,12 +219,12 @@ export function buildVerdant2Gardens(): Verdant2GardensBuild {
   // ─── The ferns ───────────────────────────────────────────────────────────
   // Giants in the vault, reaching for the shelf; smaller kin on the
   // treads and along the balcony's inner edge.
-  for (let i = 0; i < 11; i++) {
+  for (let i = 0; i < 14; i++) {
     const theta = fernRandom.range(0, Math.PI * 2);
     const d = Math.sqrt(fernRandom.next()) * 16;
     const u = FERN_VAULT.u + Math.cos(theta) * d;
     const v = FERN_VAULT.v + Math.sin(theta) * d * 0.9;
-    growFern(chunks.west!, fernRandom, u, v, fernRandom.range(4.2, 6.4), FERN_TONES, contacts);
+    growFern(chunks.west!, fernRandom, u, v, fernRandom.range(5.6, 8.4), FERN_TONES, contacts);
   }
   for (let i = 0; i < 9; i++) {
     const u = 838 + fernRandom.range(0, 130);
@@ -302,7 +304,7 @@ function growCurtain(
   for (let s = 0; s < strands; s++) {
     const ribbon = ribbonGeometry(
       length * random.range(0.75, 1.1),
-      random.range(0.22, 0.42),
+      random.range(0.3, 0.55),
       tones[Math.floor(random.next() * tones.length)]!,
       random,
     );
@@ -336,8 +338,8 @@ function ribbonGeometry(
   const twist = random.signed(0.7);
 
   const tint = new Color(tone).multiplyScalar(random.range(0.85, 1.12));
-  const lit = tint.clone().lerp(TIP_GOLD, 0.45).multiplyScalar(1.12);
-  const hem = tint.clone().lerp(SHADOW_VIOLET, 0.55).multiplyScalar(0.8);
+  const lit = tint.clone().lerp(TIP_GOLD, 0.45).multiplyScalar(1.22);
+  const hem = tint.clone().lerp(SHADOW_VIOLET, 0.42);
   const shade = new Color();
   const colors = new Float32Array(position.count * 3);
 
@@ -508,7 +510,7 @@ function buildTurf(
   };
   material.customProgramCacheKey = () => "verdant2-turf";
 
-  const capacity = 1500;
+  const capacity = 1900;
   const mesh = new InstancedMesh(bladeGeometry(), material, capacity);
   mesh.name = "verdant2-turf";
   mesh.castShadow = false;
@@ -567,6 +569,48 @@ function buildTurf(
       const spread = 3.6 * Math.sqrt(random.next());
       const angle = random.range(0, Math.PI * 2);
       plant(patchU + Math.cos(angle) * spread, patchV + Math.sin(angle) * spread, family);
+    }
+  }
+
+  // Fringe rows along the garden terrace crests (round 5): a bright turf
+  // line just uphill of each riser, so the terrace edges read from the
+  // overlook the way hedgerows draw a field map.
+  for (const [t, edge] of [10, 44, 82].entries()) {
+    const family = TURF_FAMILIES[t % TURF_FAMILIES.length]!;
+    for (let k = 0; k < 26; k++) {
+      const v = -74 + k * 5.9 + random.signed(1.6);
+      const u = contourU(edge, v);
+      if (u === null) {
+        continue;
+      }
+      if (
+        vaultWeight(u, v) > 0.3 ||
+        cisternWeight(u, v) > 0.3 ||
+        mistfallDrop(u - 3, v) > 0.05
+      ) {
+        continue;
+      }
+      plant(u - 1.6 + random.signed(0.5), v, family, 1.15);
+      plant(u - 2.2 + random.signed(0.5), v + random.signed(1.2), family, 0.95);
+    }
+  }
+
+  // The Fern Vault's floor tufts (round 4): sparse celadon between the
+  // giants, so the half-light floor is a place and not a mud sheet.
+  for (let patch = 0; patch < 7; patch++) {
+    const theta = random.range(0, Math.PI * 2);
+    const d = random.range(3, 15);
+    const patchU = FERN_VAULT.u + Math.cos(theta) * d;
+    const patchV = FERN_VAULT.v + Math.sin(theta) * d;
+    for (let blade = 0; blade < 18; blade++) {
+      const spread = 2.4 * Math.sqrt(random.next());
+      const angle = random.range(0, Math.PI * 2);
+      plant(
+        patchU + Math.cos(angle) * spread,
+        patchV + Math.sin(angle) * spread,
+        TURF_FAMILIES[2]!,
+        0.75,
+      );
     }
   }
 
@@ -643,6 +687,11 @@ function curtainMaterial(
     side: DoubleSide,
     map: ribbonTexture(),
     vertexColors: true,
+    // A floor under the toon shade: the hems kept reading black through
+    // three rounds of tone lifts — in this water the shadow side needs
+    // its own light, a colour, never a black (round 4).
+    emissive: 0x243d2c,
+    emissiveIntensity: 0.55,
   });
   material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
     injectHangingSway(shader, sway);

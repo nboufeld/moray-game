@@ -115,9 +115,10 @@ function bakeTerracePaint(geometry: PlaneGeometry, contacts: readonly ContactPat
     );
 
     // The base key: emerald terrace moss, deeper than the kelp sea's
-    // meadows — this country is older and lower.
-    let r = 0.62 - sward * 0.24;
-    let g = 0.92 - sward * 0.06;
+    // meadows — this country is older and lower. Round 3: red cut
+    // harder still; the treads were reading olive-beige.
+    let r = 0.55 - sward * 0.24;
+    let g = 0.97 - sward * 0.05;
     let b = 0.56 - sward * 0.08;
 
     // The threshold: milky-bright, agreeing with the kelp sea's Falling
@@ -136,11 +137,23 @@ function bakeTerracePaint(geometry: PlaneGeometry, contacts: readonly ContactPat
     const terraces = gardenTerraces(u, v);
     const riser = Math.max(stair.riser * (1 - smoothstep01((u - 860) / 30)), terraces.riser);
     if (riser > 0) {
-      r += (0.5 - r) * riser * 0.75;
-      g += (0.62 - g) * riser * 0.75;
-      b += (0.68 - b) * riser * 0.75;
-      value -= riser * 0.18;
+      // Round 2: pulled deeper — the step faces are what draw a stepped
+      // country, and at 0.75 they read as faint smudges. Round 4: the
+      // faces carry hanging-garden streaks (vertical runs of curtain
+      // green over the shade), because a 0.4 m ribbon is one pixel at
+      // sixty metres and the *paint* has to say "gardens" from there.
+      const hang = smoothstep01(
+        (fbm(v * 0.31, u * 0.05, { seed: SEED ^ 0x517c, period: 9, octaves: 2 }) - 0.46) / 0.2,
+      );
+      r += (0.42 + hang * 0.06 - r) * riser * 0.85;
+      g += (0.52 + hang * 0.26 - g) * riser * 0.85;
+      b += (0.62 - hang * 0.12 - b) * riser * 0.85;
+      value -= riser * (0.26 - hang * 0.1);
     }
+    // Each garden tread sits a step deeper in value than the one above
+    // (round 5): from the overlook the country was reading as one plane,
+    // and stacked value bands are what say "terraces" from uphill.
+    value += terraces.drop * 0.02;
 
     // Depth key: the lower the country, the cooler and more violet the
     // ground — the light is further away. Red stays above green's cut.
@@ -165,29 +178,33 @@ function bakeTerracePaint(geometry: PlaneGeometry, contacts: readonly ContactPat
       value += rim * (crest * 0.1 - ledge * 0.08);
     }
 
-    // The Cistern: pale worked jade; the mirror floor is the brightest
-    // ground in the region, with faint concentric stillness rings.
+    // The Cistern: pale worked jade on the rim; the mirror floor is a
+    // *dark* still emerald (round 2 — a bright floor read as bare sand;
+    // a mirror is dark, and the additive light pool rides on top of it),
+    // with faint concentric stillness rings.
     const cistern = cisternWeight(u, v);
     if (cistern > 0) {
       const d = Math.hypot(u - CISTERN.u, v - CISTERN.v);
       const rings = 0.5 + 0.5 * Math.sin(d * 0.9);
-      const floor = 1 - smoothstep01((d - 24) / 8);
-      r += (0.88 + floor * 0.06 - r) * cistern;
-      g += (0.98 + floor * 0.08 - g) * cistern;
-      b += (0.86 + floor * 0.1 - b) * cistern;
-      value += cistern * (0.1 + floor * (0.12 + rings * 0.03));
+      const floor = 1 - smoothstep01((d - 22) / 8);
+      r += (0.86 - floor * 0.44 - r) * cistern;
+      g += (0.96 - floor * 0.3 - g) * cistern;
+      b += (0.84 - floor * 0.18 - b) * cistern;
+      value += cistern * (0.08 - floor * (0.22 - rings * 0.04));
     }
 
     // The Fern Vault: violet half-light, drifted with olive fern litter.
     const vault = vaultWeight(u, v);
     if (vault > 0) {
+      // Round 4: the litter drifts widened and warmed — the r3 floor
+      // read as one bare violet mud sheet.
       const litter = smoothstep01(
-        (fbm(x * 0.045, z * 0.045, { seed: SEED ^ 0x517b, period: 11, octaves: 2 }) - 0.6) / 0.2,
+        (fbm(x * 0.045, z * 0.045, { seed: SEED ^ 0x517b, period: 11, octaves: 2 }) - 0.52) / 0.24,
       );
-      r += (0.5 + litter * 0.22 - r) * vault;
-      g += (0.48 + litter * 0.16 - g) * vault;
-      b += (0.66 - litter * 0.06 - b) * vault;
-      value -= vault * (0.12 - litter * 0.08);
+      r += (0.5 + litter * 0.3 - r) * vault;
+      g += (0.48 + litter * 0.26 - g) * vault;
+      b += (0.66 - litter * 0.1 - b) * vault;
+      value -= vault * (0.12 - litter * 0.12);
     }
 
     // The Mistfall's fan and basin: milky silt pouring into the deepest
@@ -197,11 +214,19 @@ function bakeTerracePaint(geometry: PlaneGeometry, contacts: readonly ContactPat
       const fanAcross = 1 - smoothstep01((Math.abs(v - MISTFALL.v) - 12) / 16);
       const streaks =
         fbm(u * 0.06, v * 0.14, { seed: SEED ^ 0x70af, period: 10, octaves: 2 }) - 0.5;
-      // Basin base: deep viridian-violet.
-      r += (0.48 - r) * drop * 0.8;
-      g += (0.56 - g) * drop * 0.8;
-      b += (0.72 - b) * drop * 0.8;
-      value -= drop * 0.1;
+      // Basin base: deep viridian-violet, red above green.
+      r += (0.44 - r) * drop * 0.85;
+      g += (0.5 - g) * drop * 0.85;
+      b += (0.74 - b) * drop * 0.85;
+      value -= drop * 0.16;
+      // The cliff face itself (round 4): stacked ledge bands by height,
+      // so the great drop reads as cut stone rather than a smooth bank.
+      const face = drop * (1 - drop) * 4;
+      if (face > 0.1) {
+        const band = Math.max(0, Math.sin(y * 0.85 + 1.2)) ** 2;
+        value -= face * band * 0.14;
+        g += face * band * 0.05;
+      }
       // The silt fan under the fall, streaked along the flow.
       const fan = drop * fanAcross;
       if (fan > 0) {

@@ -30,12 +30,17 @@ export function smoothstep01(t: number): number {
   return k * k * (3 - 2 * k);
 }
 
-/** The hanging curtains' deep moss greens — the shadow side of the region. */
-export const CURTAIN_TONES = [0x477d4d, 0x549256, 0x3a6c46] as const;
+/**
+ * The hanging curtains' moss greens — the shadow side of the region.
+ * Round 3: the whole family lifted a value step; the round-2 tones read
+ * near-black through this water, and the darkest thing must stay a
+ * colour.
+ */
+export const CURTAIN_TONES = [0x5c9c62, 0x6db273, 0x4b8a58] as const;
 /** The bright viridian of terrace faces the light reaches. */
-export const VIRIDIAN_TONES = [0x5da76c, 0x6fbd75, 0x4c945e] as const;
+export const VIRIDIAN_TONES = [0x6cbc7c, 0x80d187, 0x59a86c] as const;
 /** The Fern Vault's fronds: cooler, celadon-leaning half-light greens. */
-export const FERN_TONES = [0x5b9a63, 0x6fae6e, 0x4a8758] as const;
+export const FERN_TONES = [0x69ae72, 0x7dc27d, 0x589a67] as const;
 /** The golden-olive every lit tip leans toward. */
 export const TIP_GOLD = new Color(0xcdb662);
 /** The violet the deepest shadow is mixed from — a colour, never a black. */

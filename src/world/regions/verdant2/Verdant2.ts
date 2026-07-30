@@ -120,28 +120,52 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // From the kelp sea's side of the overlap, looking into the country —
   // the pass pose the handover is judged by.
   { name: "pass-threshold", u: 650, v: 0, lift: 1.8, atU: 720, atV: 2, pitch: 0.0 },
-  // The Emerald Gate: the jambs, the first riser falling away.
-  { name: "emerald-gate", u: 722, v: 0, lift: 2.2, atU: 748, atV: 2, pitch: -0.05 },
-  // Mid-stair: steps and ledge gardens descending into thicker green.
-  { name: "stair-descent", u: 764, v: 0, lift: 2.8, atU: 810, atV: 0, pitch: -0.12 },
+  // The Emerald Gate: the jambs, the stair falling away between them.
+  // Round 4: the whole composition lives past u 733 now — verdant-1's
+  // outermost distance ring crosses the pass there as an opaque curtain
+  // and swallowed the gate from every camera before it (see the ledger).
+  { name: "emerald-gate", u: 735.8, v: 0, lift: 3.0, atU: 754, atV: 0, pitch: -0.16 },
+  // Mid-stair from the flank crest (round 5): the staircase in profile —
+  // from mid-channel every tread hid its own riser. Round 6: pitch
+  // deepened, not enough — from the crest the treads live beyond the
+  // fog's value-merge distance and the frame is still one teal band.
+  // Round 7: onto the stair itself, close and steep — the near treads
+  // must read before the fog closes (subject inside ~30 m).
+  { name: "stair-descent", u: 774, v: -10, lift: 4.0, atU: 794, atV: -1, pitch: -0.34 },
   // The stair's foot: the Hanging Gardens opening in one breath.
-  { name: "gardens-vista", u: 846, v: -4, lift: 3.4, atU: 905, atV: -18, pitch: -0.07 },
+  // Round 6: raised and pitched down — lift 3.4 / pitch −0.07 stared
+  // at the fog band instead of down the terrace field.
+  { name: "gardens-vista", u: 843, v: -2, lift: 7.0, atU: 900, atV: -24, pitch: -0.2 },
   // The Slab Bridge over the garden riser, swim-under in frame.
   { name: "slab-bridge", u: 862, v: -26, lift: 2.0, atU: 878, atV: -36, pitch: -0.03 },
-  // The turtle procession grazing the terrace line.
-  { name: "turtle-terraces", u: 886, v: -28, lift: 3.2, atU: 902, atV: -50, pitch: 0.0, settle: 8 },
+  // The turtle procession grazing the terrace line. The pose covers a
+  // quarter of the circuit (stations 866,−24 → 902,−52) because the
+  // procession's phase rides wall-clock time and is not pose-stable.
+  { name: "turtle-terraces", u: 880, v: -18, lift: 4.2, atU: 894, atV: -46, pitch: -0.02, settle: 8 },
   // The grotto behind the green curtain — the Warden's rounds. The aim
   // rides a step off the anchor so the settle does not complete a
   // discovery and drop the ceremony plate over the frame being judged.
   { name: "curtain-grotto", u: 882, v: 14, lift: 2.0, atU: 892, atV: 27, pitch: 0.04, settle: 6 },
-  // The Cistern from its rim: the ring stones and the mirror floor.
-  { name: "cistern", u: 897, v: 52, lift: 2.8, atU: CISTERN.u, atV: CISTERN.v, pitch: -0.16, settle: 4 },
+  // The Cistern from *inside* the bowl (round 6): low over the mirror
+  // floor, across the light pool to the far ring stones. Rounds 4–5
+  // both died outside the ring — r4 against a ring stone's face, r5
+  // a solid violet frame at (880, 26) that never matched any terrain
+  // profile (an occluder at the camera; the bowl is clear of suspects).
+  { name: "cistern", u: 905, v: 55, lift: 4.0, atU: 940, atV: 80, pitch: -0.06, settle: 4 },
   // Inside the Fern Vault's half-light, fronds against the stone sky.
   { name: "fern-vault", u: 918, v: -76, lift: 1.8, atU: FERN_VAULT.u - 4, atV: FERN_VAULT.v - 2, pitch: 0.05 },
   // The Mistfall from above: the lip, the pour, the basin far below.
-  { name: "mistfall-above", u: 984, v: 10, lift: 2.8, atU: 1022, atV: 16, pitch: -0.3, settle: 4 },
+  // Round 2: both poses re-aimed at the *local* lip (u ≈ 1005 at the
+  // fall's v) — round 1 aimed at MISTFALL.u and framed the hillside.
+  // Round 4: between the horns rather than on one — r3 planted the
+  // camera against the south horn's flank. Round 6: up and back —
+  // lift 4 / pitch −0.44 filled the frame with the shoulder underfoot;
+  // from 7 m up at −0.3 the lip crosses mid-frame with the drop beyond.
+  // Round 7: v −2 → 4 — the south horn (v ≈ −1) stood five metres off
+  // the r6 camera's nose and ate the frame's left quarter.
+  { name: "mistfall-above", u: 996, v: 4, lift: 7.0, atU: 1012, atV: 14, pitch: -0.3, settle: 4 },
   // The Mistfall from below: the whole cliff face and its falling milk.
-  { name: "mistfall-below", u: 1030, v: 24, lift: 2.4, atU: MISTFALL.u, atV: MISTFALL.v, pitch: 0.32, settle: 4 },
+  { name: "mistfall-below", u: 1034, v: 20, lift: 4.5, atU: 1005.5, atV: 12, pitch: 0.18, settle: 4 },
   // The Far Balcony: balustrade, the deep, the painted cliff-lines.
   { name: "far-balcony", u: 1044, v: 38, lift: 2.2, atU: 1090, atV: 52, pitch: 0.06 },
 ];
@@ -178,7 +202,10 @@ export const VERDANT_2: RegionDef = {
     // held (the value key's first rule) so the green never turns
     // electric; the density gain closes the vistas a step sooner than
     // upstream, which is what "deeper country" feels like.
-    fog: { colorScale: [0.74, 0.9, 0.66], densityGain: 0.0045, backdropFade: 0.4 },
+    // Round 4: blue trimmed — the water read teal-cyan rather than the
+    // emerald the country is named for. Red held at the value key's
+    // floor (the pilot measured 0.58 as electric).
+    fog: { colorScale: [0.72, 0.9, 0.58], densityGain: 0.0045, backdropFade: 0.4 },
     light: { sun: 0.2, hemisphere: 0.16, ambient: 0.02 },
   },
   // The country lives 22–46 m down; the mood is fully on well above the
