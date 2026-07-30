@@ -194,7 +194,10 @@ describe("kit plain-Node safety", () => {
 // ─── carpetField ─────────────────────────────────────────────────────────────
 
 describe("carpetField", () => {
-  const build = (seed: number, profile: "card" | "tuft" = "card"): ReturnType<typeof buildCarpetField> =>
+  const build = (
+    seed: number,
+    profile: "card" | "tuft" | "blade" | "frond" = "card",
+  ): ReturnType<typeof buildCarpetField> =>
     buildCarpetField({
       seed,
       palette: PALETTE,
@@ -206,25 +209,30 @@ describe("carpetField", () => {
       swayAmp: 0.06,
     });
 
-  it("is deterministic given a seed and differs with seed ^ 1", () => {
-    expectDeterminism((seed) => build(seed), 0x11);
+  it("is deterministic given a seed and differs with seed ^ 1 (all four profiles)", () => {
+    for (const profile of ["card", "tuft", "blade", "frond"] as const) {
+      expectDeterminism((seed) => build(seed, profile), 0x11);
+    }
   });
 
-  it("declares an honest 1-draw budget at 4 (card) / 12 (tuft) tris each", () => {
-    for (const profile of ["card", "tuft"] as const) {
+  it("declares an honest 1-draw budget: 4 card / 12 tuft / 48 blade / 60 frond tris", () => {
+    const shapes = { card: 4, tuft: 12, blade: 48, frond: 60 } as const;
+    for (const profile of ["card", "tuft", "blade", "frond"] as const) {
       const field = build(0x12, profile);
       expectHonestBudget(field);
       expect(field.draws).toBe(1);
       const mesh = meshesOf(field)[0] as InstancedMesh;
-      expect(field.triangles).toBe(mesh.count * (profile === "card" ? 4 : 12));
+      expect(field.triangles).toBe(mesh.count * shapes[profile]);
       field.dispose();
     }
   });
 
-  it("contains every blade in the gated area with honest bounds, and disposes clean", () => {
-    const field = build(0x13);
-    expectContained(field, FAR_CENTER, 6, halfGate);
-    expectCleanDispose(field);
+  it("contains every instance in the gated area with honest bounds, and disposes clean", () => {
+    for (const profile of ["card", "blade", "frond"] as const) {
+      const field = build(0x13, profile);
+      expectContained(field, FAR_CENTER, 6, halfGate);
+      expectCleanDispose(field);
+    }
   });
 
   it("advances sway without touching a buffer (capture-safe motion)", () => {
@@ -235,6 +243,76 @@ describe("carpetField", () => {
     for (const [index, buffer] of after.entries()) {
       expect(bytesEqual(buffer, before[index]!)).toBe(true);
     }
+    field.dispose();
+  });
+
+  it("keeps the R12 knobs opt-in: default ≡ looseShare 0.3, and sunGlow moves no buffer", () => {
+    const plain = build(0x15);
+    const explicit = buildCarpetField({
+      seed: 0x15,
+      palette: PALETTE,
+      area: FAR_DISC,
+      gate: halfGate,
+      ground: wavyGround,
+      count: 150,
+      swayAmp: 0.06,
+      looseShare: 0.3,
+    });
+    const glowing = buildCarpetField({
+      seed: 0x15,
+      palette: PALETTE,
+      area: FAR_DISC,
+      gate: halfGate,
+      ground: wavyGround,
+      count: 150,
+      swayAmp: 0.06,
+      sunGlow: true,
+    });
+    const a = buffersOf(plain);
+    for (const [index, buffer] of buffersOf(explicit).entries()) {
+      expect(bytesEqual(buffer, a[index]!), `looseShare default buffer ${index}`).toBe(true);
+    }
+    for (const [index, buffer] of buffersOf(glowing).entries()) {
+      expect(bytesEqual(buffer, a[index]!), `sunGlow buffer ${index}`).toBe(true);
+    }
+    // And looseShare is really wired to the scatter.
+    const loose = buildCarpetField({
+      seed: 0x15,
+      palette: PALETTE,
+      area: FAR_DISC,
+      gate: halfGate,
+      ground: wavyGround,
+      count: 150,
+      swayAmp: 0.06,
+      looseShare: 0.9,
+    });
+    expect(
+      buffersOf(loose).some((buffer, index) => !bytesEqual(buffer, a[index]!)),
+      "looseShare 0.9 must change the scatter",
+    ).toBe(true);
+    plain.dispose();
+    explicit.dispose();
+    glowing.dispose();
+    loose.dispose();
+  });
+
+  it("cups the near profiles: blade clumps carry off-plane normals, not card facing", () => {
+    // A flat card's normals all agree; an S-bent, cupped, twisted clump
+    // must spread its normals — the W-N2 cup lesson held by a test.
+    const field = build(0x16, "blade");
+    const normal = meshesOf(field)[0]!.geometry.getAttribute("normal");
+    let minY = Infinity;
+    let maxY = -Infinity;
+    let minX = Infinity;
+    let maxX = -Infinity;
+    for (let i = 0; i < normal.count; i++) {
+      minY = Math.min(minY, normal.getY(i));
+      maxY = Math.max(maxY, normal.getY(i));
+      minX = Math.min(minX, normal.getX(i));
+      maxX = Math.max(maxX, normal.getX(i));
+    }
+    expect(maxY - minY).toBeGreaterThan(0.5);
+    expect(maxX - minX).toBeGreaterThan(0.5);
     field.dispose();
   });
 });
@@ -330,6 +408,56 @@ describe("groundLitter", () => {
     bone.dispose();
     rib.dispose();
   });
+
+  it("builds the R12 split stone: honest 20-tri budget, contained, deterministic", () => {
+    const make = (seed: number): KitBuild =>
+      buildGroundLitter({
+        seed,
+        palette: PALETTE,
+        area: FAR_DISC,
+        gate: halfGate,
+        ground: wavyGround,
+        count: 60,
+        shapeSet: "split",
+      });
+    expectDeterminism(make, 0x26);
+    const split = make(0x26);
+    expectHonestBudget(split);
+    expect(split.draws).toBe(1);
+    const mesh = meshesOf(split)[0] as InstancedMesh;
+    expect(split.triangles).toBe(mesh.count * 20);
+    expectContained(split, FAR_CENTER, 6, halfGate);
+    expectCleanDispose(split);
+  });
+
+  it("keeps grade opt-in: grade 0 ≡ old build, graded sizes anchor the hearts", () => {
+    const make = (grade?: number): KitBuild =>
+      buildGroundLitter({
+        seed: 0x27,
+        palette: PALETTE,
+        area: FAR_DISC,
+        gate: halfGate,
+        ground: wavyGround,
+        count: 120,
+        shapeSet: "gravel",
+        ...(grade === undefined ? {} : { grade }),
+      });
+    const plain = make();
+    const zero = make(0);
+    const a = buffersOf(plain);
+    for (const [index, buffer] of buffersOf(zero).entries()) {
+      expect(bytesEqual(buffer, a[index]!), `grade 0 buffer ${index}`).toBe(true);
+    }
+    const graded = make(0.9);
+    expect(
+      buffersOf(graded).some((buffer, index) => !bytesEqual(buffer, a[index]!)),
+      "grade 0.9 must rescale",
+    ).toBe(true);
+    expectContained(graded, FAR_CENTER, 6, halfGate);
+    plain.dispose();
+    zero.dispose();
+    graded.dispose();
+  });
 });
 
 // ─── screeApron ──────────────────────────────────────────────────────────────
@@ -352,7 +480,7 @@ describe("screeApron", () => {
     expectDeterminism(build, 0x31);
   });
 
-  it("declares one honest draw at 12 tris per slab", () => {
+  it("declares one honest merged draw at 12 tris per slab (three variants, one bake)", () => {
     const apron = build(0x32);
     expectHonestBudget(apron);
     expect(apron.draws).toBe(1);
@@ -360,22 +488,22 @@ describe("screeApron", () => {
     apron.dispose();
   });
 
-  it("keeps every slab inside its anchor's runout, with honest bounds", () => {
+  it("keeps every slab inside its anchor's runout, with honest merged bounds", () => {
     const apron = build(0x33);
-    const positions = instancePositions(apron);
-    expect(positions.length).toBe(18);
-    for (const position of positions) {
+    const mesh = meshesOf(apron)[0]!;
+    const position = mesh.geometry.getAttribute("position");
+    // 18 slabs × 24 box vertices, baked world-space.
+    expect(position.count).toBe(2 * 9 * 24);
+    for (let i = 0; i < position.count; i++) {
       const near = anchors.some(
         (anchor) =>
-          Math.hypot(position.x - anchor.pos[0], position.z - anchor.pos[1]) <=
-          anchor.spread + 0.6,
+          Math.hypot(position.getX(i) - anchor.pos[0], position.getZ(i) - anchor.pos[1]) <=
+          anchor.spread + 1.0,
       );
-      expect(near).toBe(true);
+      expect(near, `vertex ${i} inside a runout`).toBe(true);
     }
-    const mesh = meshesOf(apron)[0] as InstancedMesh;
-    expect(
-      Math.hypot(mesh.boundingSphere!.center.x, mesh.boundingSphere!.center.z),
-    ).toBeGreaterThan(10);
+    const sphere = mesh.geometry.boundingSphere!;
+    expect(Math.hypot(sphere.center.x, sphere.center.z)).toBeGreaterThan(10);
     expectCleanDispose(apron);
   });
 });
@@ -486,6 +614,57 @@ describe("bushBank", () => {
       expect(color.getZ(i)).toBeLessThanOrEqual(1);
     }
     bank.dispose();
+  });
+
+  it("builds the R12 rich bush honestly: lobes×36 + fronds×12 + accents×8 tris", () => {
+    const make = (seed: number): KitBuild =>
+      buildBushBank({
+        seed,
+        palette: PALETTE,
+        area: FAR_DISC,
+        gate: halfGate,
+        ground: wavyGround,
+        count: 14,
+        lobes: 7,
+        fronds: 10,
+        accents: 6,
+      });
+    expectDeterminism(make, 0x55);
+    const rich = make(0x55);
+    expectHonestBudget(rich);
+    expect(rich.draws).toBe(1);
+    const mesh = meshesOf(rich)[0] as InstancedMesh;
+    expect(rich.triangles).toBe(mesh.count * (7 * 36 + 10 * 12 + 6 * 8));
+    // The ceiling holds for the overhangs and the berry knots too.
+    const color = mesh.geometry.getAttribute("color");
+    for (let i = 0; i < color.count; i++) {
+      expect(Math.max(color.getX(i), color.getY(i), color.getZ(i))).toBeLessThanOrEqual(1);
+    }
+    expectContained(rich, FAR_CENTER, 6, halfGate);
+    expectCleanDispose(rich);
+  });
+
+  it("keeps fronds/accents/looseShare opt-in: defaults ≡ the pre-R12 placement stream", () => {
+    const plain = build(0x56);
+    const explicit = buildBushBank({
+      seed: 0x56,
+      palette: PALETTE,
+      area: FAR_DISC,
+      gate: halfGate,
+      ground: wavyGround,
+      count: 20,
+      fronds: 0,
+      accents: 0,
+      looseShare: 0.22,
+    });
+    const a = buffersOf(plain);
+    const b = buffersOf(explicit);
+    expect(a.length).toBe(b.length);
+    for (const [index, buffer] of b.entries()) {
+      expect(bytesEqual(buffer, a[index]!), `buffer ${index}`).toBe(true);
+    }
+    plain.dispose();
+    explicit.dispose();
   });
 });
 
@@ -710,6 +889,25 @@ describe("farGrassCards", () => {
     const cards = build(0x93);
     expectContained(cards, FAR_CENTER, 6, halfGate);
     expectCleanDispose(cards);
+  });
+
+  it("keeps nearFade shader-only: buffers byte-identical with the guard on", () => {
+    const plain = build(0x94);
+    const guarded = buildFarGrassCards({
+      seed: 0x94,
+      palette: PALETTE,
+      area: FAR_DISC,
+      gate: halfGate,
+      ground: wavyGround,
+      count: 400,
+      nearFade: 9,
+    });
+    const a = buffersOf(plain);
+    for (const [index, buffer] of buffersOf(guarded).entries()) {
+      expect(bytesEqual(buffer, a[index]!), `buffer ${index}`).toBe(true);
+    }
+    plain.dispose();
+    guarded.dispose();
   });
 });
 

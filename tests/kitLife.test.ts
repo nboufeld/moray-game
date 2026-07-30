@@ -408,6 +408,34 @@ describe("glowColony caps", () => {
   });
 });
 
+describe("percherColony star body (R12)", () => {
+  it("publishes the authored five-arm star at 100 tris per body, five real arms", () => {
+    const build = REFERENCE.percherColony!(0x900e);
+    // 3 anchors × 4 bodies × the polar dome's 100 triangles.
+    expect(build.triangles).toBe(12 * 100);
+    // The arm profile is in the topology: the outer ring's radius must
+    // swing between arm tips and valleys (the q-r1 "green blob" failure
+    // was a lattice that could not carry the swing).
+    let mesh: InstancedMesh | null = null;
+    build.group.traverse((node) => {
+      if (node instanceof InstancedMesh && !mesh) {
+        mesh = node;
+      }
+    });
+    const geometry = (mesh as unknown as InstancedMesh).geometry;
+    const position = geometry.attributes.position!;
+    let minR = Infinity;
+    let maxR = 0;
+    for (let i = 1 + 40; i < 1 + 60; i++) {
+      const r = Math.hypot(position.getX(i), position.getZ(i));
+      minR = Math.min(minR, r);
+      maxR = Math.max(maxR, r);
+    }
+    expect(maxR / minR).toBeGreaterThan(1.8);
+    build.dispose();
+  });
+});
+
 describe("the additive light discipline", () => {
   it("beamAndPool: fog off, depth-write off, and the 0.3 cap lives in the buffers", () => {
     const build = buildBeamAndPool({
