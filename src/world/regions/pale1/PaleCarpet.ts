@@ -91,14 +91,16 @@ function channelArea(fromU: number, toU: number, width: number): KitArea {
   return { polyline, width };
 }
 
-/** The blush band as a road up the spine. */
+/** The blush band as a road up the spine. Round 3: width 170 → 340 and
+ *  a fifth station — the r2 sweep's 04 stood at v −159, OUTSIDE the old
+ *  corridor, over pink paint with not one stone on it. */
 function blushArea(): KitArea {
   const polyline: [number, number][] = [];
-  for (const u of [398, 436, 474, 512]) {
+  for (const u of [398, 436, 474, 512, 548]) {
     const { x, z } = worldOf(u, 0);
     polyline.push([x, z]);
   }
-  return { polyline, width: 170 };
+  return { polyline, width: 340 };
 }
 
 function discAreaAt(u: number, v: number, radius: number): KitArea {
@@ -130,6 +132,22 @@ const shardDriftGate: GateFn = (x, z) => {
   const shoulder =
     smoothstep01((away - 2) / 2.5) * (1 - smoothstep01((away - ravineChannelHalf(u) - 6) / 4));
   return shoulder * hushFree(u) * t1Free(x, z);
+};
+
+/** The ravine's high banks (round 3): the r2 sweep's 02 stood on the
+ *  bank dune at u 250 and saw NOTHING in its first 35 m — every ravine
+ *  family hugged the channel and the grit floor started at the lip
+ *  (u ≥ 292). Chalk shards hold the bank tops; the lane below keeps the
+ *  hush law by construction (only `away > half + 7` places at all). */
+const bankShardGate: GateFn = (x, z) => {
+  const { u, v } = spokeOf(x, z);
+  if (u < 62 || u > 294) {
+    return 0;
+  }
+  const away = Math.abs(v - ravineChannelCenter(u));
+  const beyond = smoothstep01((away - ravineChannelHalf(u) - 7) / 5);
+  const reach = 1 - smoothstep01((away - 88) / 40);
+  return beyond * reach * t1Free(x, z);
 };
 
 /** The descent fan: over the lip, spilling toward the treeline. */
@@ -195,12 +213,26 @@ const ossuaryGate =
     );
   };
 
-/** Blush gravel: the freckle band drawn as stones, thinning both ways. */
+/** Blush gravel: the freckle band drawn as stones, thinning both ways.
+ *  Round 3: the high fade pushed from k 0.9 to ~0.96 — the coloured
+ *  half's far flanks (r2 sweep 04, k 0.72) sat past the old band. */
 const blushGravelGate: GateFn = (x, z) => {
   const { u, v } = spokeOf(x, z);
   const k = recovery(u, v);
-  const band = smoothstep01((k - 0.04) / 0.1) * (1 - smoothstep01((k - 0.6) / 0.3));
+  const band = smoothstep01((k - 0.04) / 0.1) * (1 - smoothstep01((k - 0.72) / 0.24));
   return band * (1 - bloomWeight(u, v) * 0.55) * paleWeight(x, z) * t1Free(x, z);
+};
+
+/** Petal-fall (round 3): the grove sheds. Fallen rose chips own the
+ *  deep-recovery flanks the gravel band leaves (r2 sweep 09 stood at
+ *  k = 1.0 over bare rose paint); dense toward the grove, never in the
+ *  pool (t1Free), thinner where the bowl turf already answers. */
+const petalFallGate: GateFn = (x, z) => {
+  const { u, v } = spokeOf(x, z);
+  const k = recovery(u, v);
+  const deep = smoothstep01((k - 0.58) / 0.16);
+  const grove = 1 - groveWeight(u, v) * 0.5;
+  return deep * grove * paleWeight(x, z) * t1Free(x, z);
 };
 
 /** The shelf's rose-gold turf, thickening with the gardens. */
@@ -320,7 +352,7 @@ function buildBoneStumps(): InstancedMesh {
   const random = new Random(SEED ^ FILL_SEEDS.stumps);
   const geometry = stumpGeometry();
   const material = createToonMaterial({ vertexColors: true });
-  const count = 520;
+  const count = 640;
   const mesh = new InstancedMesh(geometry, material, count);
   mesh.name = "pale-bone-stumps";
   mesh.castShadow = false;
@@ -343,7 +375,12 @@ function buildBoneStumps(): InstancedMesh {
     const roll = random.next();
     const { u, v } = spokeOf(x, z);
     if (u < RAVINE_TO - 6) {
-      continue;
+      // Round 3: the ravine's bank tops may carry stumps too (r2 sweep
+      // 02's first 35 m had nothing standing) — but never the lane.
+      const away = Math.abs(v - ravineChannelCenter(u));
+      if (u < 62 || away < ravineChannelHalf(u) + 9) {
+        continue;
+      }
     }
     const k = recovery(u, v);
     const rc = Math.hypot(x - discCenter.x, z - discCenter.z);
@@ -463,6 +500,23 @@ export function buildPaleCarpet(
     }),
   );
 
+  // The ravine's bank tops (round 3): chalk shards over the shoulders'
+  // dunes — the walls and the lane stay clean, the banks stop being the
+  // accident the sweep kept finding.
+  keep(
+    buildGroundLitter({
+      seed: SEED ^ FILL_SEEDS.bankShards,
+      palette: { base: 0xf4edda, accent: 0xb9a8cc, shade: 0x8d78ab },
+      area: channelArea(62, 292, 190),
+      gate: bankShardGate,
+      ground: seabedHeight,
+      count: 760,
+      shapeSet: "shard",
+      size: [0.12, 0.3],
+      twoTone: true,
+    }),
+  );
+
   // The base grit floor: the whole disc carries a deliberate cover state.
   // Round 2: the r1 sweep's verdict — bone chips painted bone on bone
   // ground VANISH (verdant's round-7 camouflage lesson, pre-paid here):
@@ -493,7 +547,7 @@ export function buildPaleCarpet(
       area: discAreaAt(BONE_FOREST.u, BONE_FOREST.v, 100),
       gate: ossuaryGate(treeSpots),
       ground: seabedHeight,
-      count: 3200,
+      count: 2950,
       shapeSet: [vertebraGeometry(), branchFragmentGeometry()],
       size: [0.13, 0.3],
       twoTone: true,
@@ -512,7 +566,7 @@ export function buildPaleCarpet(
       area: blushArea(),
       gate: blushGravelGate,
       ground: seabedHeight,
-      count: 1800,
+      count: 2100,
       shapeSet: "shard",
       size: [0.09, 0.22],
       twoTone: true,
@@ -527,7 +581,7 @@ export function buildPaleCarpet(
       area: discAreaAt(BLOOM_SHELF.u, BLOOM_SHELF.v, 90),
       gate: shelfTurfGate,
       ground: seabedHeight,
-      count: 2000,
+      count: 1700,
       profile: "tuft",
       size: [0.3, 0.58],
       swayAmp: 0.03,
@@ -547,6 +601,23 @@ export function buildPaleCarpet(
       profile: "tuft",
       size: [0.22, 0.44],
       swayAmp: 0.03,
+    }),
+  );
+
+  // Petal-fall (round 3): the deep-recovery flanks wear the grove's
+  // shed petals — rose chips with a cream second tone, the coloured
+  // half's answer to the white half's grit floor.
+  keep(
+    buildGroundLitter({
+      seed: SEED ^ FILL_SEEDS.petalFall,
+      palette: { base: 0xf0b9c8, accent: 0xf7dcc9, shade: 0xa06888 },
+      area: discAreaAt(SEED_GROVE.u - 42, SEED_GROVE.v, 130),
+      gate: petalFallGate,
+      ground: seabedHeight,
+      count: 950,
+      shapeSet: "shard",
+      size: [0.06, 0.15],
+      twoTone: true,
     }),
   );
 

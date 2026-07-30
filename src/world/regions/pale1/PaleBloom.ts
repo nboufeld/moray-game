@@ -101,13 +101,16 @@ export interface PaleBloomBuild {
 // the difference — the densified gardens measured 12k over the triangle
 // cap and the staghorn is the costliest kind by far (990 tris against
 // the branch's 150); the beds keep their density, the bill drops.
+// Round 3: staghorn → 0.03 and brain → 0.04, fans take the freed weight
+// — the round pays for the ravine banks' and deep flanks' new ground
+// cover (the r2 sweep's four misses) without touching bed density.
 const KIND_WEIGHTS: readonly (readonly [CoralKind, number])[] = [
   ["branch", 0.36],
   ["tube", 0.18],
   ["plateStack", 0.16],
-  ["staghorn", 0.06],
-  ["brain", 0.06],
-  ["fan", 0.18],
+  ["staghorn", 0.03],
+  ["brain", 0.04],
+  ["fan", 0.23],
 ];
 
 /**
@@ -677,7 +680,22 @@ function buildMother(random: Random): {
     { radius: 2.1, at: 0.82, offset: -0.3 },
   ];
   for (const [index, tier] of tiers.entries()) {
-    const plate = new CylinderGeometry(tier.radius, tier.radius * 0.82, 0.24, 22);
+    // Round 2: the plate is a LATHE, not a cylinder — a cylinder's caps
+    // hold vertices only at centre and rim, so the underside's radial
+    // growth rings had nothing to paint on (r1/r2's flat magenta).
+    const r = tier.radius;
+    const platePoints: Vector2[] = [
+      new Vector2(0.02, 0.1),
+      new Vector2(r * 0.3, 0.11),
+      new Vector2(r * 0.6, 0.09),
+      new Vector2(r * 0.9, 0.03),
+      new Vector2(r, -0.03),
+      new Vector2(r * 0.9, -0.08),
+      new Vector2(r * 0.6, -0.11),
+      new Vector2(r * 0.3, -0.13),
+      new Vector2(0.02, -0.14),
+    ];
+    const plate = new LatheGeometry(platePoints, 22);
     const position = plate.attributes.position!;
     for (let i = 0; i < position.count; i++) {
       const x = position.getX(i);
@@ -693,7 +711,11 @@ function buildMother(random: Random): {
         1.1 *
         radial;
       const crownLift = 0.24 * (1 - radial * radial);
-      position.setXYZ(i, x * lobe, position.getY(i) + warp + crownLift, z * lobe);
+      // The growth rings as geometry too: a gentle corrugation on the
+      // underside, so the rings catch the toon shade as well as paint.
+      const ripple =
+        position.getY(i) < -0.04 ? Math.sin(radial * Math.PI * 14) * 0.03 : 0;
+      position.setXYZ(i, x * lobe, position.getY(i) + warp + crownLift - ripple, z * lobe);
     }
     position.needsUpdate = true;
     plate.computeVertexNormals();
@@ -722,11 +744,11 @@ function buildMother(random: Random): {
         const z = platePosition.getZ(i);
         const radial = Math.min(1, Math.hypot(x, z) / (tier.radius * 1.2));
         plateShade.copy(rose).lerp(cream, smoothstep01((radial - 0.78) / 0.22));
-        const under = smoothstep01((-plateNormal.getY(i) - 0.15) / 0.5);
+        const under = smoothstep01((-plateNormal.getY(i) - 0.1) / 0.4);
         if (under > 0) {
-          const ring = 0.5 + 0.5 * Math.sin(radial * Math.PI * 9);
-          plateShade.lerp(roseDeepRing, under * (1 - ring) * 0.75);
-          plateShade.multiplyScalar(1 - under * (1 - ring) * 0.14);
+          const ring = 0.5 + 0.5 * Math.sin(radial * Math.PI * 14);
+          plateShade.lerp(roseDeepRing, under * (1 - ring) * 0.85);
+          plateShade.multiplyScalar(1 - under * (1 - ring) * 0.16);
         }
         plateColors[i * 3] = plateShade.r;
         plateColors[i * 3 + 1] = plateShade.g;

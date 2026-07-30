@@ -638,15 +638,17 @@ export function buildPaleBones(): PaleBonesBuild {
       const floor = seabedHeight(seat.x, seat.z);
       // Round 2: the first plate sinks INTO the bank and the channel-ward
       // step is short — r1's stack hovered off the bank edge and read as
-      // flying saucers, not strata.
-      let level = floor - 0.35;
+      // flying saucers, not strata. Round 3: deeper still, and the climb
+      // steps SHORTER — the u-96 stack's top plate was breaking the bank
+      // silhouette against the milk band and floating again.
+      let level = floor - 0.55;
       for (let p = 0; p < station.plates; p++) {
         const radius = ledgeRandom.range(2.0, 3.0) * (1 - p * 0.14);
         const height = radius * ledgeRandom.range(0.22, 0.3);
         const plate = slabGeometry({ seed: SEED ^ (0xfb00 + index * 8 + p), radius, height });
         // Each plate steps a little toward the channel as it climbs — the
         // overhang that turns a bank into architecture.
-        const reachV = seatV - station.side * (0.3 + p * 0.45);
+        const reachV = seatV - station.side * (0.3 + p * 0.3);
         const at = worldOf(station.u + ledgeRandom.signed(0.8), reachV);
         plate.applyMatrix4(new Matrix4().makeRotationY(ledgeRandom.range(0, Math.PI * 2)));
         plate.translate(at.x, level, at.z);
