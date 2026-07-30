@@ -1,6 +1,17 @@
-import { BufferAttribute, BufferGeometry, Group, Mesh, type Material, type Object3D } from "three";
+import {
+  BufferAttribute,
+  BufferGeometry,
+  Color,
+  DirectionalLight,
+  Group,
+  Mesh,
+  type Material,
+  type Object3D,
+  type Scene,
+} from "three";
 import type { KitBuild, KitDemoRegistry, KitDemoStage } from "./KitTypes";
 import { buildBeamAndPool } from "./BeamAndPool";
+import { buildGateVeil } from "./GateVeil";
 import { buildParticulateField } from "./ParticulateField";
 import { buildShoalRunner } from "./ShoalRunner";
 
@@ -54,10 +65,59 @@ function stageRepair(): Mesh {
   return probe;
 }
 
+/**
+ * FLAGGED STAGE REPAIR №2 (ledger): the page's dark mood writes
+ * `lighting.sun.intensity *= 0.15` once — but `Lighting.addTo` chains a
+ * per-frame `scene.onBeforeRender` hook that rewrites the sun from its
+ * base levels, so the dark mood is overwritten before the first frame's
+ * lights are set up and the "dark" capture ships byte-identical to the
+ * bright one. Dark demos carry this shim: on first render it chains ONE
+ * more hook after the lighting's (same channel, later in the chain), so
+ * the dimming is re-applied each frame after the rig writes base — and
+ * it darkens the background colour once, which is what the page's
+ * `backgroundIntensity` intended (ignored for `Color` backgrounds).
+ */
+function darkStageRepair(): Mesh {
+  const probe = new Mesh(new BufferGeometry());
+  probe.frustumCulled = false;
+  let chained = false;
+  probe.onBeforeRender = (_renderer, sceneLike) => {
+    if (chained) {
+      return;
+    }
+    chained = true;
+    const scene = sceneLike as Scene;
+    let sun: DirectionalLight | null = null;
+    scene.traverse((node) => {
+      if (node instanceof DirectionalLight && !sun) {
+        sun = node;
+      }
+    });
+    const dimmed = sun === null ? 0 : (sun as DirectionalLight).intensity * 0.15;
+    if (scene.background instanceof Color) {
+      scene.background.multiplyScalar(0.25);
+    }
+    if (scene.fog) {
+      scene.fog.color.multiplyScalar(0.25);
+    }
+    const previous = scene.onBeforeRender.bind(scene);
+    scene.onBeforeRender = (...args: Parameters<Scene["onBeforeRender"]>) => {
+      previous(...args);
+      if (sun) {
+        (sun as DirectionalLight).intensity = dimmed;
+      }
+    };
+  };
+  return probe;
+}
+
 /** Several kit builds staged as one, for side-by-side demos. */
-function composite(builds: readonly KitBuild[]): KitBuild {
+function composite(builds: readonly KitBuild[], dark = false): KitBuild {
   const group = new Group();
   group.add(stageRepair());
+  if (dark) {
+    group.add(darkStageRepair());
+  }
   let draws = 0;
   let triangles = 0;
   for (const build of builds) {
@@ -128,7 +188,37 @@ function shoalDemo(_stage: KitDemoStage, timeSec: number): KitBuild {
   return composite([shoal]);
 }
 
+/**
+ * A veil standing in a demo doorway right of the wall panel, seen from
+ * the wing side (spec §3.7's demo brief: two moods — the registry pairs
+ * this build with a bright and a dark stage entry).
+ */
+function gateVeilDemo(_stage: KitDemoStage, timeSec: number, dark: boolean): KitBuild {
+  const veil = buildGateVeil({
+    seed: 0xb0_0030,
+    doorway: { pos: [11, 0, -3], facing: 0, width: 6, height: 5.2 },
+    // A verdant-register promise: deep spring-green inks, near → far —
+    // dark enough that the 0.2-cap planes stack into a real silhouette.
+    palette: [0x123526, 0x22553c, 0x3e7a58],
+    particulate: { tint: 0xdce8a8, count: 90 },
+    column: { tint: 0xe4f0c0, opacity: 0.1 },
+  });
+  veil.update(timeSec);
+  return composite([veil], dark);
+}
+
 export const KIT_DEMOS_B: KitDemoRegistry = {
+  gateVeil: {
+    camera: { position: [6.2, 2.3, 5.6], lookAt: [11, 3.2, -10] },
+    timeSec: 5,
+    build: (stage) => gateVeilDemo(stage, 5, false),
+  },
+  gateVeilDark: {
+    camera: { position: [6.2, 2.3, 5.6], lookAt: [11, 3.2, -10] },
+    dark: true,
+    timeSec: 5,
+    build: (stage) => gateVeilDemo(stage, 5, true),
+  },
   beamAndPool: {
     camera: { position: [0.5, 2.6, 8.5], lookAt: [0, 2.4, -3] },
     build: (stage) =>
