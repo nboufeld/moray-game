@@ -287,3 +287,70 @@ grove all hold; nothing breaks.
   vec3`, unnamed material) fires at game startup on the capture harness
   — reproduced with this region's registry entry reverted; not this
   region's code, and invisible in every captured frame.
+
+## Phase 3 fill rework (docs/fill-plans/sunken-calamity-1.md)
+
+Baseline: the main tree's `_verify` set (this region's own
+`calamity-final` set was port-corrupted; documented above). Budgets
+before the fill: 78 draws / 210,609 tris measured (the budget section
+above). After round 0 of the fill: 110 draws / 345,828 tris measured
+(caps updated honestly to 160/450k per MASTER). Reroll fence proven in tests: amphora 0, tooth 0,
+stone collider 3 and ghost 0 pinned to nine decimals against the
+pre-fill build — every kit stream is `SEEDS.regionCalamity ^ <fresh
+constant>` appended after existing draws.
+
+### Round 1 (`ca-fill-r1`) — the spine got the fill, the banks got nothing
+
+Captured 18 authored poses + 12 sweep poses on :5196 (verified before
+capture). READ all 30.
+
+**Sweep verdict: 3/12** (04 ghost-forest core, 12 forest east edge, 03
+grove-approach marginal). The nine misses are NOT in registered rests —
+this round fails the standard, and the reason is structural: the pose
+stream was computed offline (same FNV ^ KIT_SWEEP_SALT stream the
+sweep script draws) and nine of twelve poses sit on the OUTER BANKS at
+|v| ≥ 60 (u 548–819) — the crater rim shoulders and mid-bank flats —
+exactly the rim-facing flanks MASTER's field note warned about. Round
+0's fill hugged the march channel and the named zones; the banks read
+as bare felt with a horizon (01: shatterfield east flank, bare with
+shard flecks only at frame edge; 05/06/07/08: east bank flats, empty
+first-35-m; 09: west bank outside the ghost wood, empty; 10: gardens'
+east edge, two worm tents on the horizon and nothing near; 11:
+mid-water over the far rim, wisp+bubbles mid, floor bare).
+
+**The round-2 answer is story, not garnish: the ejecta blanket.** The
+Wound is an explosion; its debris didn't politely follow the road. A
+region-wide sparse T1 ejecta pass (pavement crumbs + ash clots + bone
+gravel, raked AWAY from the Wound like everything else) over all owned
+ground, plus the field-note flank bands: dead-scrub + straw + knuckle
+stands banded along the rim-facing outer flanks, and a handful of
+extra snapped ghost snags scattered up the east/west banks so the
+mid-ground has things that stand.
+
+Authored-set critique (all 18 read):
+
+- silhouette — `the-gardener`: a relocated fill tooth photobombs the
+  frame behind the statue like an unintended totem; MOVE it. `the-
+  shrine`: a grove plant leans diagonally across the lens; move it off
+  the pose axis. `shatterfield`: the foreground bench is nearly bare —
+  the shard families are too sparse for the bench's scale; densify and
+  pull tighter to the camera line. `wound-gate`: right bank bare —
+  ejecta blanket will cover it.
+- value — `sorrow-gate`: the shard carpet drifts salmon/warm and reads
+  as wood chips under the entry light; cool the palette toward ash
+  violet/bone (the verdant round-3 lesson: paint for THIS region's
+  light). `ghost-forest`/`the-wound`: straw lanes too dark, reading as
+  sticks; lift straw values toward bleached bone. `last-grove`: meadow
+  blades invisible — too small and palette-merged with the lawn; grow
+  the blades and brighten tips so the meadow answers the shaft.
+- colour — mile pots, wisps, terrace seams, sky card all read and stay
+  cold; the warm near-field wash is covered where the ejecta lies.
+- detail — pioneer worm trails read (cold-candle excellent); gleam
+  crabs read at the banks; ash-moths too faint to register at
+  ghost-forest — acceptable, they are a whisper by design; ghost
+  shrimp sparkles faint at gardens (leave — the wisps carry it).
+
+Working frames: first-dead, mid-march, shock-rings, card-house,
+suffocated-mile (registry-still: pots + one bubble thread + eighth-
+density snow all present), the-reveal, cold-candle, seep-gardens,
+grove-lawn, quiet-rim (rest — bare by registry).
