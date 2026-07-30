@@ -38,6 +38,7 @@ import {
   polarPoint,
   smoothstep01,
 } from "./W1FloraShared";
+import { mountGateVeil } from "./GateVeilMount";
 
 /**
  * Wing 0 — the Kelp Cathedral. Awe and hush.
@@ -244,6 +245,21 @@ export function buildKelpCathedralFlora(def: WingDef): WingFlora {
   }
   group.add(buildPools(def));
 
+  // ─── The gate veil (connective-1) ────────────────────────────────────────
+  // The opened end wall dressed with the Great Kelp Sea's own inks — deep
+  // spring greens receding behind the door, a soft leaf-lit column and a
+  // drift of pollen-pale motes — so the nave's axis ends on a promise of
+  // the country beyond instead of the backdrop's flat cut. Appended after
+  // every existing draw, on its own `^` substream: nothing above re-rolls.
+  const veil = mountGateVeil(def, {
+    width: 7.5,
+    height: 6,
+    palette: [0x123526, 0x22553c, 0x3e7a58],
+    column: { tint: 0xe4f0c0, opacity: 0.1 },
+    particulate: { tint: 0xdce8a8, count: 90 },
+  });
+  group.add(veil.group);
+
   return {
     group,
     contacts,
@@ -252,6 +268,7 @@ export function buildKelpCathedralFlora(def: WingDef): WingFlora {
       // motion, at a third of the rate and two fifths of the strength.
       sway.value += dt * (reducedMotion ? 0.3 : 1);
       wind.value = reducedMotion ? 0.4 : 1;
+      veil.update(dt, reducedMotion);
     },
   };
 }

@@ -8,6 +8,7 @@ import { wedgeHalfAt } from "../WingGeometry";
 import type { WingDef, WingFlora } from "../WingTypes";
 import { VentSpringsBubbles, type VentSource } from "./VentSpringsBubbles";
 import { applyVeinGlow, chimneyGeometry } from "./VentSpringsChimneys";
+import { mountGateVeil } from "./GateVeilMount";
 
 /**
  * Wing 4 — the Vent Springs. Otherworldly warmth: mineral chimneys on a
@@ -218,11 +219,29 @@ export function buildVentSpringsFlora(def: WingDef): WingFlora {
   const bubbles = new VentSpringsBubbles(vents, BUBBLE_COUNT, SEEDS.wingVentSprings ^ 0x5b22);
   group.add(bubbles.mesh);
 
+  // ── The gate veil (connective-1). ──
+  // The end wall dressed with the Smoulder's own inks — charcoal-rust
+  // silhouettes and a warm amber column, light from BELOW held warm and
+  // rising per the province's register. The doorway is kept narrow and a
+  // half-metre deeper than the others so the mote drift stays wholly past
+  // r 46 — the den corridor law reads every vertex under that radius.
+  // Appended after every existing draw, on its own `^` substream.
+  const veil = mountGateVeil(def, {
+    doorR: 48.9,
+    width: 4.6,
+    height: 5,
+    palette: [0x2c1c14, 0x513226, 0x7a5138],
+    column: { tint: 0xffc27a, opacity: 0.11 },
+    particulate: { tint: 0xffb680, count: 70 },
+  });
+  group.add(veil.group);
+
   return {
     group,
     contacts,
     update(dt: number, reducedMotion: boolean): void {
       bubbles.update(dt, reducedMotion);
+      veil.update(dt, reducedMotion);
     },
   };
 }

@@ -39,12 +39,33 @@ const ALL: readonly WingCase[] = [ICE, SARGASSUM, SANDFALL];
  * and the points are built in world space already; instanced populations
  * are transformed per live instance.
  */
+/**
+ * Connective-1 (MASTER R2): the sandfall doorway's gate veil recedes
+ * BEHIND the end wall on purpose — its planes promise the Hourglass Sea
+ * past the carve's radial envelope, so the wave-8 envelope law below
+ * cannot apply to them. The veil subtree keeps its own contracts
+ * (determinism, budgets, honest bounds past r 27, additive discipline)
+ * in `tests/wingsConnective1.test.ts`; everything the wave-8 workers
+ * built is still read here, vertex for vertex.
+ */
+function insideGateVeil(object: Object3D): boolean {
+  for (let o: Object3D | null = object; o; o = o.parent) {
+    if (o.name === "wing-gate-veil") {
+      return true;
+    }
+  }
+  return false;
+}
+
 function collectVertices(flora: WingFlora): number[] {
   const out: number[] = [];
   const scratch = new Vector3();
   const matrix = new Matrix4();
   flora.group.updateMatrixWorld(true);
   flora.group.traverse((object: Object3D) => {
+    if (insideGateVeil(object)) {
+      return;
+    }
     if (object instanceof InstancedMesh) {
       const position = object.geometry.attributes.position;
       if (!position) {

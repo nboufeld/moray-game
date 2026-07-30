@@ -22,6 +22,7 @@ import { Random, SEEDS } from "../../../util/Random";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
 import { wedgeHalfAt } from "../WingGeometry";
 import type { WingDef, WingFlora } from "../WingTypes";
+import { mountGateVeil } from "./GateVeilMount";
 
 /**
  * The Sandfall Dunes' flora (wave 8, `SEEDS.wingSandfallDunes` + substreams):
@@ -149,11 +150,27 @@ export function buildSandfallDunesFlora(def: WingDef): WingFlora {
   group.add(streaks.mesh);
   group.add(buildPebbles(def));
 
+  // ── The gate veil (connective-1). ──
+  // The quietest doorway ends on the Hourglass Sea's promise: honey over
+  // violet — a deep violet-umber near ink warming to pale honey behind
+  // the door — a gold-dapple column and the first gold motes drifting in,
+  // the life gradient starting before the door the way the golden plan
+  // asks. Appended after every existing draw, on its own `^` substream.
+  const veil = mountGateVeil(def, {
+    width: 7,
+    height: 5,
+    palette: [0x4a3a2e, 0x74583a, 0xa08252],
+    column: { tint: 0xffe0a0, opacity: 0.1 },
+    particulate: { tint: 0xffe0a0, count: 80 },
+  });
+  group.add(veil.group);
+
   let time = 0;
   return {
     group,
     contacts,
     update(dt: number, reducedMotion: boolean): void {
+      veil.update(dt, reducedMotion);
       if (reducedMotion) {
         // Becalmed: the falls freeze mid-fall and dim to faint static
         // veils — the baked curtains carry the look on their own.

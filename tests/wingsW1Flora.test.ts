@@ -1,4 +1,4 @@
-import { InstancedMesh, Mesh, Points, Vector3 } from "three";
+import { InstancedMesh, Mesh, Points, Vector3, type Object3D } from "three";
 import { describe, expect, it } from "vitest";
 import { seabedHeight } from "../src/world/Seabed";
 import { angleBetween, wedgeHalfAt } from "../src/world/wings/WingGeometry";
@@ -60,10 +60,30 @@ interface DrawStats {
   tris: number;
 }
 
+/**
+ * Connective-1 (MASTER R2): a gateway wing's gate veil is Phase 3 uplift
+ * on its own budget (≤ +10 draws / ≤ 35k tris per Tier A wing), measured
+ * and asserted in `tests/wingsConnective1.test.ts`. The wave-8 cap below
+ * keeps pinning the ORIGINAL flora, so the veil's subtree is excluded
+ * here — and only here; the determinism and confinement checks still
+ * read it.
+ */
+function insideGateVeil(object: Object3D): boolean {
+  for (let o: Object3D | null = object; o; o = o.parent) {
+    if (o.name === "wing-gate-veil") {
+      return true;
+    }
+  }
+  return false;
+}
+
 function drawStats(flora: WingFlora): DrawStats {
   let draws = 0;
   let tris = 0;
   flora.group.traverse((object) => {
+    if (insideGateVeil(object)) {
+      return;
+    }
     if (object instanceof Points) {
       draws++;
       return;

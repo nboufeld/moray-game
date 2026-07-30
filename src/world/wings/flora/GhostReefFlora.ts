@@ -19,6 +19,7 @@ import { createToonMaterial } from "../../../rendering/ToonShading";
 import { Random, SEEDS } from "../../../util/Random";
 import type { WingDef, WingFlora } from "../WingTypes";
 import { drawFloorSpot, drawGateSpot, smoothstep01, swayClock, wingFrame } from "./W3FloraKit";
+import { mountGateVeil } from "./GateVeilMount";
 
 /**
  * Wing 7 — the Ghost Reef (worker W3). Grief with a door out of it: a
@@ -303,9 +304,26 @@ export function buildGhostReefFlora(def: WingDef): WingFlora {
     group.add(mesh);
   }
 
+  // ── The gate veil (connective-1). ──
+  // The end wall dressed with the Pale Passage's promise: bone-milk inks
+  // that LIGHTEN toward the door (the one province whose distance is
+  // whiter than its water), the far ink leaning rose-violet — the Bone
+  // Meadows' blush read from the wing side — under a pearl column and a
+  // drift of pearl motes. Appended after every existing draw, on its own
+  // `^` substream: the recovery ramp above re-rolls nothing.
+  const veil = mountGateVeil(def, {
+    width: 7,
+    height: 5.5,
+    palette: [0x778b88, 0x9aa9a5, 0xb9a9b2],
+    column: { tint: 0xeef4ee, opacity: 0.09 },
+    particulate: { tint: 0xf2f4ee, count: 80 },
+  });
+  group.add(veil.group);
+
   const update = (dt: number, reducedMotion: boolean): void => {
     // Even at the living end the sway is a breath, not a dance.
     clock.advance(dt, reducedMotion, 0.3);
+    veil.update(dt, reducedMotion);
   };
 
   return { group, contacts, update };

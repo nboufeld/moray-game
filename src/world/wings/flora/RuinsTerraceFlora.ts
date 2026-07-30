@@ -27,6 +27,7 @@ import {
   worldMerge,
   type PlacedPart,
 } from "./W4FloraKit";
+import { mountGateVeil } from "./GateVeilMount";
 
 /**
  * Wing 9 — the Ruins Terrace. Ancient majesty, no menace: a terrace of
@@ -313,7 +314,29 @@ export function buildRuinsTerraceFlora(def: WingDef): WingFlora {
   }
   group.add(instantiate(tuftGeometry(), tuftMaterial, tuftParts, "w4-ruins-tufts"));
 
-  return { group, contacts };
+  // ── The gate veil (connective-1). ──
+  // The processional way ends on the Sunken Calamity's promise: grey-violet
+  // inks (the march's own distance family) behind the door, a faint COLD
+  // column — the one register allowed to burn cold (MASTER §1.1) — and a
+  // sparse settling drift of ash-grey motes. The gold of the intact wing
+  // against the grey beyond IS the story. Appended after every existing
+  // draw, on its own `^` substream.
+  const veil = mountGateVeil(def, {
+    width: 7,
+    height: 5.5,
+    palette: [0x2f2b38, 0x4a4656, 0x635f70],
+    column: { tint: 0xaebccc, opacity: 0.08 },
+    particulate: { tint: 0xb8bcc4, count: 60 },
+  });
+  group.add(veil.group);
+
+  return {
+    group,
+    contacts,
+    update(dt: number, reducedMotion: boolean): void {
+      veil.update(dt, reducedMotion);
+    },
+  };
 }
 
 /** The corridor: nothing inside |across| 0.06 rad of the axis, plus the piece's own margin. */

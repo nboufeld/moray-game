@@ -11,9 +11,11 @@ import {
   PointsMaterial,
 } from "three";
 import { createToonMaterial } from "../../../rendering/ToonShading";
+import { fbm } from "../../../rendering/ProceduralTexture";
 import { Random, SEEDS } from "../../../util/Random";
 import { slabGeometry, stackGeometry } from "../../RockShapes";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
+import { buildParticulateField } from "../../regions/kit/ParticulateField";
 import { wedgeHalfAt } from "../WingGeometry";
 import type { WingDef, WingFlora } from "../WingTypes";
 import {
@@ -26,6 +28,7 @@ import {
   wingPoint,
   type PlacedPart,
 } from "./W4FloraKit";
+import { mountGateVeil } from "./GateVeilMount";
 
 /**
  * Wing 11 — the Open Blue. Vertigo and freedom: the drop-off, and then
@@ -217,7 +220,212 @@ export function buildOpenBlueFlora(def: WingDef): WingFlora {
   group.add(spire);
   contacts.push({ x: spireAt.x, z: spireAt.z, radius: 2.4, strength: 0.5 });
 
+  // ── The doorway (connective-1): the hole repainted, then veiled. ──
+  // The wave-8 audit's words: "a flat poster-blue blob with a hard
+  // scalloped edge ... the wing that sells vertigo currently sells a
+  // sticker". The fix is the connective plan's own recipe — depth as
+  // paint, not as a blue disc: a baked radial gradient standing in the
+  // opening (deepest ink in the middle, dissolving to nothing before the
+  // terrain edge), a faint rim-light band where the drop swallows the
+  // sun, and a column of marine snow sinking into it. Behind those, the
+  // gate veil promises the Drop Plains in the province's own arc — deep
+  // prairie green handing to the Under-Blue's violet (red above green,
+  // never cobalt). No light column here: the Old Current's water owns
+  // the middle of this wing, and the emptiness stays composed.
+  const dressing = new Group();
+  dressing.name = "wing-gate-hole";
+  const holeSeed = (seed ^ 0x9a7f) >>> 0;
+  const hole = holeFrame(def);
+  dressing.add(buildHoleGradient(hole, holeSeed));
+  dressing.add(buildHoleRim(hole, holeSeed));
+  const snow = buildParticulateField({
+    seed: (seed ^ 0x9a80) >>> 0,
+    tint: 0xcfe0ec,
+    count: 90,
+    mode: "fall",
+    volume: { center: [hole.x, hole.y + 1.5, hole.z], size: [7, 11, 5] },
+    opacity: 0.5,
+  });
+  dressing.add(snow.group);
+  group.add(dressing);
+
+  const veil = mountGateVeil(def, {
+    width: 8,
+    height: 6,
+    palette: [0x1e4038, 0x3a3656, 0x565078],
+  });
+  group.add(veil.group);
+
   // The test asserts what this module refuses to build: the spire and the
   // curtains are the only marks past the drop-off's lip.
-  return { group, contacts };
+  let time = 0;
+  return {
+    group,
+    contacts,
+    update(dt: number, reducedMotion: boolean): void {
+      veil.update(dt, reducedMotion);
+      time += dt * (reducedMotion ? 0.3 : 1);
+      snow.update(time);
+    },
+  };
+}
+
+/** Where the doorway's opening stands, and its frame vectors. */
+interface HoleFrame {
+  readonly x: number;
+  readonly y: number;
+  readonly z: number;
+  /** Unit tangent across the doorway (perpendicular to the axis). */
+  readonly tanX: number;
+  readonly tanZ: number;
+}
+
+/** The aperture's visual centre: on the axis at the end wall, mid-water. */
+const HOLE_R = 48.3;
+
+function holeFrame(def: WingDef): HoleFrame {
+  const x = Math.cos(def.azimuth) * HOLE_R;
+  const z = Math.sin(def.azimuth) * HOLE_R;
+  // The gradient hangs over the deep floor: its centre rides a body's
+  // height over the carved ground, which at the end wall is already on
+  // its way back up toward the rim.
+  const y = seabedHeight(x, z) + 2.2;
+  return { x, y, z, tanX: -Math.sin(def.azimuth), tanZ: Math.cos(def.azimuth) };
+}
+
+/** The gradient's inks, centre → shoulder: violet over green, never black. */
+const HOLE_INK_CENTRE = new Color(0x232040);
+const HOLE_INK_SHOULDER = new Color(0x3c3760);
+const HOLE_HALF_WIDTH = 7.2;
+const HOLE_HALF_HEIGHT = 6.4;
+const HOLE_ALPHA = 0.52;
+
+/**
+ * The baked radial gradient: one vertical grid standing in the opening,
+ * normal blending, alpha dissolving to zero well inside its own edge so
+ * the geometry's rectangle can never read. The edge is wobbled by one
+ * seeded fbm so the dissolve follows no perfect ellipse.
+ */
+function buildHoleGradient(hole: HoleFrame, seed: number): Mesh {
+  const cols = 24;
+  const rows = 14;
+  const positions = new Float32Array((cols + 1) * (rows + 1) * 3);
+  const colors = new Float32Array((cols + 1) * (rows + 1) * 4);
+  const indices: number[] = [];
+  const ink = new Color();
+
+  for (let c = 0; c <= cols; c++) {
+    const u = c / cols - 0.5;
+    for (let r = 0; r <= rows; r++) {
+      const v = r / rows - 0.5;
+      const vertex = c * (rows + 1) + r;
+      positions[vertex * 3] = hole.x + hole.tanX * u * HOLE_HALF_WIDTH * 2;
+      positions[vertex * 3 + 1] = hole.y + v * HOLE_HALF_HEIGHT * 2;
+      positions[vertex * 3 + 2] = hole.z + hole.tanZ * u * HOLE_HALF_WIDTH * 2;
+
+      const wobble =
+        (fbm(u * 2 + 3, v * 2, { seed, period: 4, octaves: 2 }) - 0.5) * 0.34;
+      const d = Math.hypot(u * 2, v * 2) * (1 + wobble);
+      const fall = 1 - smoothstep01((d - 0.28) / 0.62);
+      ink.copy(HOLE_INK_CENTRE).lerp(HOLE_INK_SHOULDER, Math.min(1, d));
+      colors[vertex * 4] = ink.r;
+      colors[vertex * 4 + 1] = ink.g;
+      colors[vertex * 4 + 2] = ink.b;
+      colors[vertex * 4 + 3] = HOLE_ALPHA * fall;
+    }
+  }
+  for (let c = 0; c < cols; c++) {
+    for (let r = 0; r < rows; r++) {
+      const a = c * (rows + 1) + r;
+      const b = (c + 1) * (rows + 1) + r;
+      indices.push(a, b, a + 1, b, b + 1, a + 1);
+    }
+  }
+
+  const geometry = new BufferGeometry();
+  geometry.setAttribute("position", new BufferAttribute(positions, 3));
+  geometry.setAttribute("color", new BufferAttribute(colors, 4));
+  geometry.setIndex(indices);
+  geometry.computeBoundingSphere();
+
+  const material = new MeshBasicMaterial({
+    vertexColors: true,
+    transparent: true,
+    depthWrite: false,
+    side: DoubleSide,
+    fog: false,
+    toneMapped: true,
+  });
+  const mesh = new Mesh(geometry, material);
+  mesh.name = "w4-openblue-hole-gradient";
+  mesh.renderOrder = 1;
+  return mesh;
+}
+
+/** The rim light: a faint additive band around the opening, sun-heavy on top. */
+const RIM_TINT = new Color(0xbcd8ea);
+const RIM_INNER = 0.62;
+const RIM_PEAK = 0.8;
+const RIM_ALPHA = 0.14;
+
+function buildHoleRim(hole: HoleFrame, seed: number): Mesh {
+  const spokes = 40;
+  const rings = 4;
+  const positions = new Float32Array((spokes + 1) * (rings + 1) * 3);
+  const colors = new Float32Array((spokes + 1) * (rings + 1) * 4);
+  const indices: number[] = [];
+
+  for (let s = 0; s <= spokes; s++) {
+    const theta = (s / spokes) * Math.PI * 2;
+    const wobble = 1 + (fbm(Math.cos(theta) + 2, Math.sin(theta), { seed: seed ^ 0x11, period: 4, octaves: 2 }) - 0.5) * 0.22;
+    for (let k = 0; k <= rings; k++) {
+      const t = RIM_INNER + (k / rings) * (1.06 - RIM_INNER);
+      const vertex = s * (rings + 1) + k;
+      const across = Math.cos(theta) * t * HOLE_HALF_WIDTH * wobble;
+      const up = Math.sin(theta) * t * HOLE_HALF_HEIGHT * wobble;
+      positions[vertex * 3] = hole.x + hole.tanX * across;
+      positions[vertex * 3 + 1] = hole.y + up;
+      positions[vertex * 3 + 2] = hole.z + hole.tanZ * across;
+
+      // The band: zero at both edges, peaking just inside the terrain's
+      // rim; the top arc carries the sun, the underside barely answers.
+      const band = 1 - Math.min(1, Math.abs(t - RIM_PEAK) / (1.06 - RIM_PEAK));
+      const sunward = 0.35 + 0.65 * smoothstep01((Math.sin(theta) + 1) / 2);
+      colors[vertex * 4] = RIM_TINT.r;
+      colors[vertex * 4 + 1] = RIM_TINT.g;
+      colors[vertex * 4 + 2] = RIM_TINT.b;
+      colors[vertex * 4 + 3] = RIM_ALPHA * band * band * sunward;
+    }
+  }
+  for (let s = 0; s < spokes; s++) {
+    for (let k = 0; k < rings; k++) {
+      const a = s * (rings + 1) + k;
+      const b = (s + 1) * (rings + 1) + k;
+      indices.push(a, b, a + 1, b, b + 1, a + 1);
+    }
+  }
+
+  const geometry = new BufferGeometry();
+  geometry.setAttribute("position", new BufferAttribute(positions, 3));
+  geometry.setAttribute("color", new BufferAttribute(colors, 4));
+  geometry.setIndex(indices);
+  geometry.computeBoundingSphere();
+
+  const material = new MeshBasicMaterial({
+    vertexColors: true,
+    transparent: true,
+    blending: AdditiveBlending,
+    depthWrite: false,
+    side: DoubleSide,
+    fog: false,
+  });
+  const mesh = new Mesh(geometry, material);
+  mesh.name = "w4-openblue-hole-rim";
+  mesh.renderOrder = 2;
+  return mesh;
+}
+
+function smoothstep01(t: number): number {
+  const k = Math.min(1, Math.max(0, t));
+  return k * k * (3 - 2 * k);
 }
