@@ -16,6 +16,7 @@ import type { DiscoveryTarget } from "../../../discovery/DiscoverySystem";
 import type { SphereCollider } from "../../CollisionField";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
 import { EMBER, SINTER_PALE, applyVeinGlow, smoothstep01 } from "./SmokingShared";
+import { FILL_SEEDS } from "./SmokingFillShared";
 import { KILN, worldOf } from "./SmokingTerrain";
 
 /**
@@ -130,6 +131,90 @@ export function buildKeeper(): KeeperBuild {
     position: new Vector3(kilnSpot.x, kilnY + 1.4, kilnSpot.z),
   };
 
+  const pose = makeBodyPoser(geometry, pathAt, 1, LOOP_SECONDS, 2.1);
+
+  pose(0);
+  geometry.computeBoundingSphere();
+  // The patrol never leaves the kiln's reach; one honest sphere, forever.
+  geometry.boundingSphere!.center.set(kilnSpot.x, kilnY + 2, kilnSpot.z);
+  geometry.boundingSphere!.radius = 9;
+
+  // ─── The hatchlings (Phase 3 fill — the resident made a family) ──────────
+  // Two half-scale keeper bodies on short seam-loops at the kiln's north
+  // and east feet (fill plan §5): no discovery target, no codex — they are
+  // satellites of the centrepiece, not a second find. Fresh substream,
+  // appended after every pilot draw (the fence); their loops hug the
+  // kiln's feet (d ≤ ~8), far inside the north floor quadrant's rest ring
+  // (which starts at d 12).
+  const hatchRandom = new Random(SEED ^ FILL_SEEDS.hatchlings);
+  const hatchPosers: ((time: number) => void)[] = [];
+  const hatchSpecs = [
+    { du: 0.4, dv: 5.6, ring: 2.0, loop: 21, dir: 1 },
+    { du: 5.8, dv: -0.6, ring: 2.3, loop: 26, dir: -1 },
+  ] as const;
+  for (const [h, spec] of hatchSpecs.entries()) {
+    const foot = worldOf(KILN.u + spec.du, KILN.v + spec.dv);
+    const footY = seabedHeight(foot.x, foot.z);
+    const hatchPhase = hatchRandom.range(0, Math.PI * 2);
+    const hatchPath = (t: number, out: Vector3): Vector3 => {
+      const theta = spec.dir * t * Math.PI * 2 + hatchPhase;
+      const r = spec.ring + 0.35 * Math.sin(theta * 2 + hatchPhase);
+      out.set(
+        foot.x + Math.cos(theta) * r,
+        footY + 0.7 + 0.25 * Math.sin(theta * 3 + hatchPhase * 0.7),
+        foot.z + Math.sin(theta) * r,
+      );
+      return out;
+    };
+    const hatchGeometry = buildKeeperBody();
+    const hatchMesh = new Mesh(hatchGeometry, material);
+    hatchMesh.name = `smoulder-keeper-hatchling-${h}`;
+    hatchMesh.castShadow = false;
+    hatchMesh.receiveShadow = false;
+    hatchMesh.frustumCulled = false;
+    meshes.push(hatchMesh);
+    const hatchPose = makeBodyPoser(hatchGeometry, hatchPath, 0.5, spec.loop, 3.1);
+    hatchPose(0);
+    hatchGeometry.computeBoundingSphere();
+    // The loop never leaves the foot's reach; one honest sphere, forever.
+    hatchGeometry.boundingSphere!.center.set(foot.x, footY + 1, foot.z);
+    hatchGeometry.boundingSphere!.radius = spec.ring + 2.5;
+    hatchPosers.push(hatchPose);
+  }
+
+  let slowTime = 0;
+  let last = 0;
+  return {
+    meshes,
+    colliders,
+    contacts,
+    target,
+    update(time: number, reducedMotion: boolean): void {
+      const dt = Math.max(0, time - last);
+      last = time;
+      slowTime += dt * (reducedMotion ? 0.5 : 1);
+      pose(slowTime);
+      for (const hatchPose of hatchPosers) {
+        hatchPose(slowTime);
+      }
+    },
+  };
+}
+
+/**
+ * The fixed-topology poser, shared by the Keeper and its hatchlings: the
+ * body's positions are rewritten each frame along a closed path. `scale`
+ * multiplies every body measure (radius, crest, leg reach); at 1 the
+ * arithmetic is byte-identical to the pilot's inline poser (multiplying a
+ * float by 1 is exact), which is what keeps the Keeper's fence.
+ */
+function makeBodyPoser(
+  geometry: BufferGeometry,
+  pathAt: (t: number, out: Vector3) => Vector3,
+  scale: number,
+  loopSeconds: number,
+  wagRate: number,
+): (time: number) => void {
   const position = geometry.attributes.position as BufferAttribute;
   const at = new Vector3();
   const ahead = new Vector3();
@@ -138,9 +223,9 @@ export function buildKeeper(): KeeperBuild {
   const lift = new Vector3();
   const up = new Vector3(0, 1, 0);
 
-  const pose = (time: number): void => {
-    const head = (time / LOOP_SECONDS) % 1;
-    const wag = time * 2.1;
+  return (time: number): void => {
+    const head = (time / loopSeconds) % 1;
+    const wag = time * wagRate;
     for (let ring = 0; ring < RINGS; ring++) {
       const along = ring / (RINGS - 1);
       const s = (((head - along * BODY_SPAN) % 1) + 1) % 1;
@@ -151,10 +236,10 @@ export function buildKeeper(): KeeperBuild {
       lift.crossVectors(side, tangent).normalize();
 
       // The swim: a lateral wave that grows toward the tail.
-      const sway = Math.sin(wag - along * 4.2) * 0.14 * along;
+      const sway = Math.sin(wag - along * 4.2) * (0.14 * scale) * along;
       at.addScaledVector(side, sway);
 
-      const radius = bodyRadius(along);
+      const radius = bodyRadius(along) * scale;
       const flat = 1 - smoothstep01((along - 0.55) / 0.45) * 0.55;
       for (let i = 0; i < SIDES; i++) {
         const a = (i / SIDES) * Math.PI * 2;
@@ -169,7 +254,7 @@ export function buildKeeper(): KeeperBuild {
 
       // The crest: a back ridge riding the spine, tallest at the shoulders.
       const crestBase = RINGS * SIDES + ring * 2;
-      const crest = crestHeight(along);
+      const crest = crestHeight(along) * scale;
       position.setXYZ(
         crestBase,
         at.x + lift.x * radius * 1.05,
@@ -195,9 +280,9 @@ export function buildKeeper(): KeeperBuild {
       tangent.subVectors(ahead, at).normalize();
       side.crossVectors(tangent, up).normalize();
       lift.crossVectors(side, tangent).normalize();
-      const radius = bodyRadius(along);
+      const radius = bodyRadius(along) * scale;
       for (const [k, dir] of [-1, 1].entries()) {
-        const swing = Math.sin(wag * 0.9 + pair * Math.PI + k * Math.PI * 0.5) * 0.24;
+        const swing = Math.sin(wag * 0.9 + pair * Math.PI + k * Math.PI * 0.5) * (0.24 * scale);
         const base = legStart + (pair * 2 + k) * 2;
         const bx = at.x + side.x * dir * radius;
         const by = at.y + side.y * dir * radius - radius * 0.4;
@@ -205,36 +290,15 @@ export function buildKeeper(): KeeperBuild {
         position.setXYZ(base, bx, by, bz);
         position.setXYZ(
           base + 1,
-          bx + side.x * dir * 0.5 + tangent.x * swing - lift.x * 0.3,
-          by + side.y * dir * 0.5 + tangent.y * swing - lift.y * 0.3,
-          bz + side.z * dir * 0.5 + tangent.z * swing - lift.z * 0.3,
+          bx + side.x * dir * (0.5 * scale) + tangent.x * swing - lift.x * (0.3 * scale),
+          by + side.y * dir * (0.5 * scale) + tangent.y * swing - lift.y * (0.3 * scale),
+          bz + side.z * dir * (0.5 * scale) + tangent.z * swing - lift.z * (0.3 * scale),
         );
       }
     }
 
     position.needsUpdate = true;
     geometry.computeVertexNormals();
-  };
-
-  pose(0);
-  geometry.computeBoundingSphere();
-  // The patrol never leaves the kiln's reach; one honest sphere, forever.
-  geometry.boundingSphere!.center.set(kilnSpot.x, kilnY + 2, kilnSpot.z);
-  geometry.boundingSphere!.radius = 9;
-
-  let slowTime = 0;
-  let last = 0;
-  return {
-    meshes,
-    colliders,
-    contacts,
-    target,
-    update(time: number, reducedMotion: boolean): void {
-      const dt = Math.max(0, time - last);
-      last = time;
-      slowTime += dt * (reducedMotion ? 0.5 : 1);
-      pose(slowTime);
-    },
   };
 }
 

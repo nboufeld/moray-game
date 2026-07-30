@@ -27,8 +27,9 @@ import { createToonMaterial } from "../../../rendering/ToonShading";
 import { Random, SEEDS } from "../../../util/Random";
 import { seabedHeight } from "../../Seabed";
 import { EMBER, smoothstep01 } from "./SmokingShared";
+import { restFree } from "./SmokingFillShared";
 import type { ChimneyStand } from "./SmokingChimneys";
-import { CALDERA, SPRINGS, worldOf } from "./SmokingTerrain";
+import { CALDERA, SPRINGS, gorgeChannelCenter, worldOf } from "./SmokingTerrain";
 
 /**
  * The Smoulder Fields' ambient life:
@@ -107,17 +108,27 @@ function buildEmberMotes(): {
   update: (dt: number, time: number, calm: number) => void;
 } {
   const random = new Random(SEED ^ 0xe40e);
-  const count = 600;
+  // 600 pilot motes byte-identical; 80 appended into the gorge (plan §5:
+  // the approach was thin below u 292 — the road breathes too).
+  const count = 680;
   const base = new Float32Array(count * 3);
   const live = new Float32Array(count * 3);
   const phases = new Float32Array(count);
   const spans = new Float32Array(count);
 
   for (let i = 0; i < count; i++) {
-    // Thicker over the chimney forest and caldera, thinner down the gorge.
-    const nearHeat = random.next() < 0.62;
-    const u = nearHeat ? 440 + random.signed(130) : random.range(90, 560);
-    const v = u < 292 ? random.signed(14) : random.signed(130);
+    let u: number;
+    let v: number;
+    if (i < 600) {
+      // Thicker over the chimney forest and caldera, thinner down the gorge.
+      const nearHeat = random.next() < 0.62;
+      u = nearHeat ? 440 + random.signed(130) : random.range(90, 560);
+      v = u < 292 ? random.signed(14) : random.signed(130);
+    } else {
+      // The appended gorge bias, drawn after every pilot mote.
+      u = random.range(58, 290);
+      v = gorgeChannelCenter(u) + random.signed(7);
+    }
     const { x, z } = worldOf(u, v);
     const floor = seabedHeight(x, z);
     base[i * 3] = x;
@@ -483,7 +494,11 @@ totalEmissiveRadiance *= vColor;`,
   };
   material.customProgramCacheKey = () => "smoulder-cinder-star";
 
-  const count = 24;
+  // Fill growth: 24 pilot stars → 50, appended on the same stream. Every
+  // star (pilot and fill alike) is PARKED below the world if it landed
+  // inside a registered rest — the registry is inviolable and outranks
+  // the fence for non-landmarks; the stream itself is never re-ordered.
+  const count = 50;
   const mesh = new InstancedMesh(geometry, material, count);
   mesh.name = "smoulder-cinder-stars";
   mesh.castShadow = false;
@@ -500,6 +515,10 @@ totalEmissiveRadiance *= vColor;`,
     dummy.position.set(x, seabedHeight(x, z) + 0.02, z);
     dummy.rotation.set(0, random.range(0, Math.PI * 2), 0);
     dummy.scale.setScalar(random.range(0.8, 1.6));
+    if (restFree(x, z) < 0.6) {
+      dummy.position.set(0, -300, 0);
+      dummy.scale.setScalar(0.0001);
+    }
     dummy.updateMatrix();
     mesh.setMatrixAt(i, dummy.matrix);
     tint.setScalar(random.range(0.85, 1.12));
@@ -564,7 +583,9 @@ function buildEmberUrchins(): InstancedMesh {
   const random = new Random(SEED ^ 0x0bc8);
   const geometry = urchinGeometry();
   const material = createToonMaterial({ vertexColors: true });
-  const count = 18;
+  // Fill growth: 18 pilot urchins → 44, appended on the same stream,
+  // rest-parked like the stars.
+  const count = 44;
   const mesh = new InstancedMesh(geometry, material, count);
   mesh.name = "smoulder-ember-urchins";
   mesh.castShadow = false;
@@ -578,6 +599,10 @@ function buildEmberUrchins(): InstancedMesh {
     dummy.position.set(x, seabedHeight(x, z) + 0.04, z);
     dummy.rotation.set(0, random.range(0, Math.PI * 2), 0);
     dummy.scale.setScalar(random.range(0.8, 1.7));
+    if (restFree(x, z) < 0.6) {
+      dummy.position.set(0, -300, 0);
+      dummy.scale.setScalar(0.0001);
+    }
     dummy.updateMatrix();
     mesh.setMatrixAt(i, dummy.matrix);
     tint.setScalar(random.range(0.85, 1.1));

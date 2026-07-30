@@ -117,6 +117,10 @@ export function buildSmokingDistance(): { meshes: (Mesh | InstancedMesh)[] } {
       fog: false,
       side: DoubleSide,
       toneMapped: true,
+      // Fill (plan §4.2, the milk ladder): the crown warm-up rides the
+      // card's vertex colours — zero draws, and every horizon carries one
+      // ember note.
+      vertexColors: true,
     });
     cardMaterials.push({ material, fade: spec.fade });
     const mesh = new InstancedMesh(chimneyCardGeometry(), material, spec.count);
@@ -198,6 +202,19 @@ function chimneyCardGeometry(): BufferGeometry {
   if (!merged) {
     throw new Error("smoulder distance card blades could not be merged");
   }
+  // The crown warm-up (fill, plan §4.2): the top sixth of the spire leans
+  // faintly ember in vertex colour, so the far country's smokers carry a
+  // live tip against the milky distance. Multiplied over the fog-derived
+  // ink, so the mood hook still owns the hue.
+  const position = merged.attributes.position!;
+  const colors = new Float32Array(position.count * 3);
+  for (let i = 0; i < position.count; i++) {
+    const t = Math.min(1, Math.max(0, (position.getY(i) / CARD_HEIGHT - 0.82) / 0.18));
+    colors[i * 3] = 1 + t * 0.16;
+    colors[i * 3 + 1] = 1 - t * 0.02;
+    colors[i * 3 + 2] = 1 - t * 0.12;
+  }
+  merged.setAttribute("color", new BufferAttribute(colors, 3));
   merged.computeBoundingSphere();
   chimneyCard = merged;
   return chimneyCard;
