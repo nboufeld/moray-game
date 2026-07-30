@@ -15,7 +15,8 @@ import { UnderwaterFog } from "../rendering/UnderwaterFog";
 import { createSandMaterial } from "../world/SandMaterial";
 import { createRockMaterial } from "../world/RockMaterial";
 import { boulderGeometry } from "../world/RockShapes";
-import { createSeabedGeometryAt } from "../world/Seabed";
+import { createSeabedGeometryAt, seabedHeight } from "../world/Seabed";
+import { onSceneRender } from "../world/Abyss";
 
 /**
  * The kit demo stage (KIT-SPEC §4): a standard scene every kit piece is
@@ -62,10 +63,13 @@ fog.applyTo(scene);
 const lighting = new Lighting();
 lighting.addTo(scene);
 if (demo.dark) {
-  // The dark stage mood for glow pieces: the key mostly gone, the water
-  // deepened — a plain stand-in for a dark region register.
-  lighting.sun.intensity *= 0.15;
-  scene.backgroundIntensity = 0.25;
+  // The dark stage mood for glow pieces (Package B's flag: the rig's own
+  // per-frame hooks rewrite intensities, so a one-shot assignment is a
+  // no-op — this hook chains AFTER them and wins every frame).
+  onSceneRender(scene, () => {
+    lighting.sun.intensity = 0.24;
+    scene.backgroundIntensity = 0.25;
+  });
 }
 
 // The standard stage: sand patch, wall panel, boulder. The stage bakes a
@@ -103,12 +107,9 @@ boulder.position.set(-6, 0, -4);
 scene.add(boulder);
 
 const stage: KitDemoStage = {
-  ground: (x, z) => {
-    // The stage's own sand patch is the bowl's dunes; beyond it, flat.
-    void x;
-    void z;
-    return 0;
-  },
+  // The truth, not a promise (Package B's flag): the stage sand IS the
+  // bowl's dunes, so the contract sampler reports them.
+  ground: (x, z) => seabedHeight(x, z),
 };
 
 const build = demo.build(stage);

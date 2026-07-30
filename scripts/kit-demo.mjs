@@ -7,8 +7,9 @@
  * SHOT_URL — kit workers run their own server on their own port).
  * Writes visual-qa/kit/<piece>_<tag>.png and prints each build's declared
  * draws/triangles beside the renderer's own counters — a dishonest budget
- * note fails loudly here. Pieces with a `timeSec` (moving pieces) are
- * captured twice, one simulated second apart, as <piece>_<tag>-b.png.
+ * note fails loudly here. Moving pieces prove motion by registering a
+ * twin demo named `<piece>T1` with a different `timeSec` (Package B's
+ * convention) and byte-comparing the two captures.
  */
 import { chromium } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
