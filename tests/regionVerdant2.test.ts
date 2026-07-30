@@ -172,11 +172,57 @@ describe("verdant-line-2 build", () => {
         }
       }
     });
-    expect(draws).toBeLessThanOrEqual(120);
-    expect(triangles).toBeLessThanOrEqual(250_000);
-    // Honest floors as well as caps: an empty region passes no bar.
+    // The doctrine's Phase 3 ceilings (FILL-DOCTRINE budgets, MASTER R1):
+    // 160 draws / 450k tris, superseding the old 120/250k caps the region
+    // shipped under.
+    expect(draws).toBeLessThanOrEqual(160);
+    expect(triangles).toBeLessThanOrEqual(450_000);
+    // Honest floors as well as caps: an empty region passes no bar. The
+    // pre-fill build measured 40 draws / 189,862 tris; the floors rise
+    // with the fill so it may not quietly be lost.
     expect(draws).toBeGreaterThan(20);
     expect(triangles).toBeGreaterThan(100_000);
+  });
+
+  it("keeps existing landmark stone byte-identical (the reroll fence)", () => {
+    // Pins measured from the pre-fill build (terraces-final): the first
+    // stone collider (the Rim Sentinel), the Mistfall's north horn, the
+    // Emerald Gate's west jamb and a Cistern ring stone. Every fill
+    // substream is `SEEDS.regionVerdant2 ^ <fresh constant>` appended
+    // AFTER the existing draws, so these may never shift by a byte.
+    const pins: readonly (readonly [string, number, number, number, number, number, number])[] = [
+      ["rim sentinel", 0, 153.81821545778652, 1.6150740668822237, 654.1944262150432, 1.19, 0],
+      ["mistfall north horn", 990, 220.23473599040204, -29.041672180034112, 976.6285173737908, 1.7, -1],
+      ["emerald gate jamb", 747, 166.89677005627428, -2.0583394998655447, 728.1249194299395, 1.87, -14],
+      ["cistern ring stone", 958, 135.26841299290805, -30.440370114508227, 950.4224896123562, 1.2325, 68],
+    ];
+    const first = pins[0]!;
+    const collider0 = build.colliders[0]!;
+    expect(collider0.center.x).toBe(first[2]);
+    expect(collider0.center.y).toBe(first[3]);
+    expect(collider0.center.z).toBe(first[4]);
+    expect(collider0.radius).toBe(first[5]);
+    for (const [label, tu, x, y, z, radius, tv] of pins.slice(1)) {
+      let best = collider0;
+      let bestD = Number.POSITIVE_INFINITY;
+      for (const collider of build.colliders) {
+        const { u, v } = spokeOf(collider.center.x, collider.center.z);
+        const d = Math.hypot(u - tu, v - tv);
+        if (d < bestD) {
+          bestD = d;
+          best = collider;
+        }
+      }
+      expect(best.center.x, label).toBe(x);
+      expect(best.center.y, label).toBe(y);
+      expect(best.center.z, label).toBe(z);
+      expect(best.radius, label).toBe(radius);
+    }
+    // The Warden's beat is a landmark too: the discovery target may not move.
+    const target = build.targets![0]!;
+    expect(target.position.x).toBe(170.67421090128718);
+    expect(target.position.y).toBe(-26.88172036791914);
+    expect(target.position.z).toBe(873.6300096340686);
   });
 
   it("keeps every collider inside the domain", () => {
