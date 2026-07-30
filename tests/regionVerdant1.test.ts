@@ -325,8 +325,10 @@ describe("verdant-line-1 carpet determinism", () => {
     const first = collect(firstBuild);
     const second = collect(secondBuild);
     // The fill plan's §3 seven carpet families plus the round-2 base turf
-    // floor (the sweep's "never bare by default" answer).
-    expect(first.length).toBe(8);
+    // floor (the sweep's "never bare by default" answer), the round-4
+    // flank tussocks (the sweep's "nothing STANDS on the flanks" answer)
+    // and the round-7 saddle-mouth stand (sweep 12's outward-facing pose).
+    expect(first.length).toBe(10);
     expect(second.length).toBe(first.length);
     for (const [index, mesh] of first.entries()) {
       const twin = second[index]!;

@@ -136,20 +136,27 @@ function bakeVerdantPaint(geometry: PlaneGeometry, contacts: readonly ContactPat
     // look brutal on paper because the sand wash under them is strongly
     // warm — "a tile and a tint cannot both carry the colour", so green
     // ground means red is *cut*, not green raised. Round 2 measured the
-    // polite version as beige.
-    let r = 0.95 - sward * 0.4;
-    let g = 0.99 - sward * 0.08;
-    let b = 0.62 - sward * 0.14;
+    // polite version as beige; the round-2 SWEEP measured the off-sward
+    // base itself as bare mustard (frames 03/04/05/08/11/12 — every fail
+    // stood on it), so round 3 greens the base and lets the sward patches
+    // deepen from an already-green floor. No square metre of owned disc
+    // may read as bare sand by default.
+    let r = 0.74 - sward * 0.3;
+    let g = 0.99 - sward * 0.05;
+    let b = 0.56 - sward * 0.08;
 
     if (u < VALE_TO) {
       // The vale: mossy green walls banded by height, and a violet-leaning
       // shadow pooled in the deep narrows.
       const deep = smoothstep01((-valeFloor(u) - 5.0) / 2.4);
       const inChannel = 1 - smoothstep01((Math.abs(v - valeChannelCenter(u)) - valeChannelHalf(u)) / 8);
+      // Round 3: the descent's walls still read mustard-tan under the
+      // warm wash at round 2's figures — red comes down another step so
+      // the vale is a green corridor, not a tan trench with a green line.
       const moss = 0.4 + sward * 0.5;
-      const vr = 0.85 - moss * 0.36 - deep * inChannel * 0.1;
-      const vg = 0.98 - moss * 0.1 - deep * inChannel * 0.18;
-      const vb = 0.74 - moss * 0.2 + deep * inChannel * 0.2;
+      const vr = 0.68 - moss * 0.3 - deep * inChannel * 0.08;
+      const vg = 0.98 - moss * 0.08 - deep * inChannel * 0.16;
+      const vb = 0.68 - moss * 0.16 + deep * inChannel * 0.2;
       const s = 1 - smoothstep01((u - 250) / 42);
       r += (vr - r) * s;
       g += (vg - g) * s;
@@ -178,9 +185,11 @@ function bakeVerdantPaint(geometry: PlaneGeometry, contacts: readonly ContactPat
     // the meadows' green.
     const lip = smoothstep01((u - 248) / 14) * (1 - smoothstep01((u - 330) / 26));
     if (lip > 0) {
+      // Eased from 0.2 in round 3: the base is green now, and the old cut
+      // stacked on it ran the swarded doorstep into the clamp floor.
       const deepen = lip * (0.35 + sward * 0.65);
-      r -= deepen * 0.2;
-      b -= deepen * 0.08;
+      r -= deepen * 0.14;
+      b -= deepen * 0.06;
     }
 
     // The forest floor: deep cool moss, drifted with warm leaf-litter.

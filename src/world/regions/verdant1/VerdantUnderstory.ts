@@ -582,7 +582,9 @@ function buildCanopyPads(giants: readonly KelpFoot[]): Mesh {
         giant.z + Math.sin(heading) * out,
       );
       dummy.rotation.set(random.signed(0.16), random.range(0, Math.PI * 2), random.signed(0.16));
-      const size = random.range(1.3, 2.6);
+      // Round 3: 1.3–2.6 left `canopy-breach`'s far crown band a flat teal
+      // line — bigger pads are the free lever (same draws, same stream).
+      const size = random.range(1.6, 3.0);
       dummy.scale.set(size, 1, size * random.range(0.8, 1.1));
       dummy.updateMatrix();
       mesh.setMatrixAt(placed, dummy.matrix);
