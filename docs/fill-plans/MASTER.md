@@ -245,3 +245,14 @@ directories; see R8).
 
 Everything else in the plans' §6 lists is REUSE of existing region/bowl
 code (counts, palettes, loop constants) and needs no kit entry.
+
+## Field notes from executed reworks (orchestrator-appended)
+
+- **Rim poses face outward** (verdant-1 fill, F-R3): near a region's rim a
+  random sweep pose can look out of the region entirely, so the
+  three-layer answer must live in the first ~35 m — plant a flank band at
+  the rim-facing edges of every zone. Applies to all remaining reworks.
+- **Kit wish** (F-R2): `carpetField`/`bushBank` clump scatter cannot
+  guarantee an instance in an arbitrary view cone; a `looseShare` knob
+  (fraction scattered loose between clumps) would make sweep-critical
+  bands cheaper. Candidate for a small kit follow-up, not a blocker.
