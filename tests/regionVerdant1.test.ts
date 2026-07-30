@@ -147,14 +147,17 @@ describe("verdant-line-1 build", () => {
         }
       }
     });
-    // The fill doctrine's Phase 3 ceilings (MASTER R1): the old 120/250k
-    // caps are superseded; the measured numbers go in the region ledger.
-    expect(draws).toBeLessThanOrEqual(160);
-    expect(triangles).toBeLessThanOrEqual(450_000);
+    // MASTER R12 ceilings (260 / 1.35M — the binding gate is the headed
+    // frame measure, recorded in the ledger's re-pass section). The caps
+    // here are set to what the R12.3 re-pass MEASURED plus working
+    // margin, not to the doctrine maximum: honest caps catch regressions.
+    expect(draws).toBeLessThanOrEqual(130);
+    expect(triangles).toBeLessThanOrEqual(1_250_000);
     // Honest floors as well as caps: an empty region passes no bar, and a
-    // FILLED region must actually be filled (plan §7.1).
-    expect(draws).toBeGreaterThan(90);
-    expect(triangles).toBeGreaterThan(300_000);
+    // FILLED region must actually be filled — after the R12.3 profile
+    // upgrades the region cannot legitimately shrink below these.
+    expect(draws).toBeGreaterThan(100);
+    expect(triangles).toBeGreaterThan(900_000);
   });
 
   it("keeps every collider inside the domain", () => {
@@ -218,6 +221,14 @@ describe("verdant-line-1 reroll fence", () => {
   // Every fill stream is a fresh `^` substream appended after the pilot's
   // draws, so these numbers must never move — if they do, existing
   // content re-rolled and the fence is broken.
+  //
+  // R12.3 restatement: the quality re-pass swaps carpet PROFILES and opts
+  // banks into richness knobs, which may re-roll those families' OWN
+  // buffers (expected and honest — the swap is the point); its new
+  // families draw only from fresh `0xf21x`/`0xf22x` substreams appended
+  // after every existing draw. The pins below therefore still hold to
+  // nine decimal places: the landmarks, the kelp, the weaver and every
+  // other pilot system are byte-unchanged by the re-pass.
   it("keeps the pilot's first and last giants exactly where they stood", () => {
     const kelp = buildVerdantKelp();
     expect(kelp.giants.length).toBe(39);
@@ -326,9 +337,11 @@ describe("verdant-line-1 carpet determinism", () => {
     const second = collect(secondBuild);
     // The fill plan's §3 seven carpet families plus the round-2 base turf
     // floor (the sweep's "never bare by default" answer), the round-4
-    // flank tussocks (the sweep's "nothing STANDS on the flanks" answer)
-    // and the round-7 saddle-mouth stand (sweep 12's outward-facing pose).
-    expect(first.length).toBe(10);
+    // flank tussocks (the sweep's "nothing STANDS on the flanks" answer),
+    // the round-7 saddle-mouth stand (sweep 12's outward-facing pose) —
+    // and the R12.3 re-pass's four: holdfast skirt-grass collars, forest
+    // ferns, and the vale/aisle road-edge blade stands.
+    expect(first.length).toBe(14);
     expect(second.length).toBe(first.length);
     for (const [index, mesh] of first.entries()) {
       const twin = second[index]!;

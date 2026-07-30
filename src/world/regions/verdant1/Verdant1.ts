@@ -179,6 +179,27 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "weaver-grotto", u: 496, v: -96, lift: 2.6, atU: 504, atV: -107, pitch: -0.08, settle: 6 },
   // The Falling Edge: the shelf, the stones, the painted distance.
   { name: "falling-edge", u: 578, v: 14, lift: 3, atU: 640, atV: 0, pitch: 0.02 },
+  // ── The R12.3 close poses: camera 2–4 m from the flora, at the height a
+  // player actually swims — the owner's "half-cut grass" verdict was made
+  // from here, so this is where the re-pass is judged (pass/fail: the
+  // fill reads as painted plants, not wedges).
+  // The vale road underfoot: moss fronds, pebbles, the road-edge stands.
+  {
+    name: "close-vale-road",
+    u: 112,
+    v: valeChannelCenter(112) + 1.5,
+    lift: 1.5,
+    atU: 118,
+    atV: valeChannelCenter(118),
+    pitch: -0.32,
+    settle: 3,
+  },
+  // A meadow swell crest: sward blades and turf at arm's length.
+  { name: "close-meadow-sward", u: 332, v: 24, lift: 1.4, atU: 338, atV: 28, pitch: -0.3, settle: 3 },
+  // The forest floor by the aisle: litter fronds, ferns, wayside stands.
+  { name: "close-forest-floor", u: 420, v: 46, lift: 1.5, atU: 426, atV: 50, pitch: -0.28, settle: 3 },
+  // A maze gully floor: silt-bloom rosettes, split stones, wine scrub.
+  { name: "close-maze-floor", u: 490, v: -68, lift: 1.4, atU: 494, atV: -72, pitch: -0.3, settle: 3 },
 ];
 
 function buildPoses(): RegionCapturePose[] {
@@ -234,7 +255,7 @@ export const VERDANT_1: RegionDef = {
     const light = buildVerdantLight();
     const distance = buildVerdantDistance();
     // The Phase 3 fill tiers (fresh substreams — nothing above re-rolls).
-    const cover = buildVerdantCover();
+    const cover = buildVerdantCover(kelp.giants);
     const understory = buildVerdantUnderstory(kelp.giants);
     const fillLife = buildVerdantFillLife(kelp.giants);
     const ground = buildVerdantGround([...kelp.contacts, ...rocks.contacts]);

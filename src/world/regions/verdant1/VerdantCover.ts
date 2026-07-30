@@ -6,10 +6,12 @@ import { buildDriftDebris } from "../kit/DriftDebris";
 import { buildGroundLitter } from "../kit/GroundLitter";
 import type { GateFn, KitArea, KitBuild } from "../kit/KitTypes";
 import { smoothstep01 } from "./VerdantShared";
+import type { KelpFoot } from "./VerdantKelp";
 import {
   ERRATIC,
   FILL_SEEDS,
   WRECK_AT,
+  aisleAt,
   aisleDistance,
   restFree,
 } from "./VerdantFillShared";
@@ -21,6 +23,7 @@ import {
   sunwellWeight,
   tongueHalfWidth,
   valeChannelCenter,
+  valeChannelHalf,
   verdantWeight,
   worldOf,
 } from "./VerdantTerrain";
@@ -59,8 +62,24 @@ import {
  *
  * Every call takes a fresh `SEEDS.regionVerdant1 ^ FILL_SEEDS.*` stream
  * (the reroll fence) and multiplies {@link restFree} into its gate so the
- * registered rests stay composed bareness. Budget shape: 16 draws, ~90k
- * triangles — measured by the region test, not claimed.
+ * registered rests stay composed bareness.
+ *
+ * ## The R12.3 quality re-pass (MASTER R12, the owner's "half-cut grass")
+ *
+ * Every family the diver swims THROUGH moved off the 4-tri card onto the
+ * kit's authored near profiles — `"blade"` (48-tri S-bend clumps) for the
+ * grass families (turf, sward, tussocks, saddle stand, ring rim), and
+ * `"frond"` (60-tri cupped rosettes) for the growth families (vale moss,
+ * forest leaf-fall, maze silt bloom). Only the Falling Edge's shell
+ * scatter keeps `"card"` — it draws shell CHIPS, not plants, and a flat
+ * bent quad at 0.16–0.32 m is the right silhouette for a shell. The
+ * sunlit families adopt `sunGlow` (the meadow's two-note translucency)
+ * and the sweep-critical broad-disc families adopt a raised `looseShare`
+ * (the F-R2 field note: loose singles are what a narrow view cone can be
+ * promised). The re-pass also appends four NEW families from fresh
+ * `0xf21x` streams — holdfast skirt-grass collars, forest ferns, and the
+ * road-edge blade stands (vale + aisle) — spending the R12 headroom on
+ * presence where the player actually swims.
  */
 
 const SEED = SEEDS.regionVerdant1;
@@ -245,7 +264,7 @@ const tussockGate: GateFn = (x, z) => {
 
 // ─── The build ───────────────────────────────────────────────────────────────
 
-export function buildVerdantCover(): VerdantCoverBuild {
+export function buildVerdantCover(giants: readonly KelpFoot[]): VerdantCoverBuild {
   const groups: Group[] = [];
   const updaters: ((timeSec: number) => void)[] = [];
   const keep = (build: KitBuild | CarpetFieldBuild): void => {
@@ -255,11 +274,10 @@ export function buildVerdantCover(): VerdantCoverBuild {
     }
   };
 
-  // The moss carpet: the vale's own road turned green underfoot. Round 2
-  // lifted the whole ramp (r1 read as near-black thorns under the region's
-  // dim sun); round 3 takes the ROOT off violet entirely — at speck size a
-  // card reads by colour alone, and a violet root under the toon shade
-  // band is soot whatever the tip does. Roots go olive, tips stay bright.
+  // The moss carpet: the vale's own road turned green underfoot. Re-pass:
+  // the road is the one floor the diver stares at for 200 m, so it moved
+  // to the "frond" rosette — low cupped growth instead of card wedges —
+  // with the sun glow, since the vale's beams land on it.
   keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.carpetMoss,
@@ -267,24 +285,20 @@ export function buildVerdantCover(): VerdantCoverBuild {
       area: valeChannelArea(54, 252, 15),
       gate: mossGate,
       ground: seabedHeight,
-      // 2,300 → 1,780 across rounds 4–7: the r3 cards grew, the density
-      // can pay for the flank tussocks — the vale passes comfortably.
       count: 1780,
+      profile: "frond",
       size: [0.2, 0.4],
       swayAmp: 0.03,
+      sunGlow: true,
     }),
   );
 
-  // The base turf floor: the round-2 sweep answer — olive stubble over the
-  // whole disc so no pose lands on bare mustard by accident. Round 3 grew
-  // it (traded from the sward, whose zones already pass), lifted the root
-  // and sized the cards up; round 4 grew it again (2,800 → 3,600) — the
-  // flank poses had colour underfoot but the stubble was still a rumour.
-  // Round 7 found the last failure mode: the r3 ground paint and this
-  // palette had CONVERGED — same greens, so 3,600 cards stood on the disc
-  // and vanished into their own floor. Tips go a value brighter, roots a
-  // value darker (silhouette against the paint), cards a hand taller —
-  // all free, the count doesn't move.
+  // The base turf floor: the round-2 sweep answer — stubble over the
+  // whole disc so no pose lands on bare mustard by accident. Re-pass:
+  // this family IS the owner's "half-cut grass everywhere" — 3,600 card
+  // wedges — so it carries the heaviest upgrade: the 48-tri "blade"
+  // S-bend clumps, the sun-through-leaf glow, and a raised looseShare
+  // (F-R2) so any random view cone owns loose singles between clumps.
   keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.carpetTurf,
@@ -293,8 +307,11 @@ export function buildVerdantCover(): VerdantCoverBuild {
       gate: turfGate,
       ground: seabedHeight,
       count: 3600,
-      size: [0.3, 0.6],
+      profile: "blade",
+      size: [0.3, 0.62],
       swayAmp: 0.035,
+      looseShare: 0.55,
+      sunGlow: true,
     }),
   );
 
@@ -314,10 +331,15 @@ export function buildVerdantCover(): VerdantCoverBuild {
       ground: seabedHeight,
       // 430 → 520 in round 7, paid by the sward and moss trims below: the
       // mid ring between the zones is this family's to carry alone.
+      // Re-pass: knee-high crossed wedges → knee-high S-bend clumps; the
+      // family whose whole job is standing in the near layer takes the
+      // authored silhouette and a raised loose share (F-R2).
       count: 520,
-      profile: "tuft",
+      profile: "blade",
       size: [0.6, 1.1],
       swayAmp: 0.05,
+      looseShare: 0.5,
+      sunGlow: true,
     }),
   );
 
@@ -341,15 +363,19 @@ export function buildVerdantCover(): VerdantCoverBuild {
       },
       ground: seabedHeight,
       count: 130,
-      profile: "tuft",
+      // Re-pass: same profile upgrade as its parent tussock family; the
+      // stand stays CLUMPED (default looseShare) — concentration was the
+      // whole point of round 7's fix for the outward-facing pose.
+      profile: "blade",
       size: [0.5, 0.95],
       swayAmp: 0.05,
+      sunGlow: true,
     }),
   );
 
   // The sward: the meadows' swell crests carry the green the paint began.
-  // Trimmed 3,400 → 3,000 → 2,700 → 2,500 across rounds 3–7 to pay for
-  // the turf and the tussocks — the swarded crests pass the sweep already.
+  // Re-pass: the sunniest grass in the region moves to "blade" with the
+  // sun glow — the swells should read as backlit eelgrass, not stubble.
   keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.carpetSward,
@@ -358,14 +384,20 @@ export function buildVerdantCover(): VerdantCoverBuild {
       gate: swardGate,
       ground: seabedHeight,
       count: 2400,
-      size: [0.24, 0.52],
+      profile: "blade",
+      size: [0.26, 0.55],
       swayAmp: 0.045,
+      looseShare: 0.4,
+      sunGlow: true,
     }),
   );
 
   // The forest litter, in two warm tones so the drifts read as seasons of
   // leaf-fall rather than one pour (fill plan §3 — golden-olive, held off
-  // rust: round 3's redder litter dried into shipwreck colour).
+  // rust: round 3's redder litter dried into shipwreck colour). Re-pass:
+  // the "frond" rosette at ankle height — five cupped straps drooped past
+  // horizontal READ as curled shed leaves lying where they fell, which is
+  // what a card wedge never managed at swimming distance.
   keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.carpetLitterA,
@@ -374,7 +406,8 @@ export function buildVerdantCover(): VerdantCoverBuild {
       gate: litterGate,
       ground: seabedHeight,
       count: 950,
-      size: [0.2, 0.42],
+      profile: "frond",
+      size: [0.18, 0.36],
     }),
   );
   keep(
@@ -385,12 +418,16 @@ export function buildVerdantCover(): VerdantCoverBuild {
       gate: litterGate,
       ground: seabedHeight,
       count: 950,
-      size: [0.2, 0.42],
+      profile: "frond",
+      size: [0.18, 0.36],
     }),
   );
 
   // The maze's silt bloom: a violet family whose red stays above green —
-  // the gully floors carry their own half-light growth now.
+  // the gully floors carry their own half-light growth now. Re-pass: the
+  // "bloom" finally looks like one — frond rosettes instead of chips. No
+  // sun glow: the maze is the half-light quarter, and its growth carrying
+  // the sun's note would argue with the register.
   keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.carpetSilt,
@@ -398,15 +435,19 @@ export function buildVerdantCover(): VerdantCoverBuild {
       area: discAreaAt(495, -82, 60),
       gate: siltGate,
       ground: seabedHeight,
-      // 1,500 → 1,100 across rounds 4–7: the maze poses pass with margin,
-      // and the trims paid for the tussocks and the saddle-mouth stand.
       count: 1100,
-      size: [0.16, 0.36],
+      profile: "frond",
+      size: [0.16, 0.34],
       swayAmp: 0.02,
     }),
   );
 
-  // The Falling Edge's shell scatter: milky-pale, thinning outward.
+  // The Falling Edge's shell scatter: milky-pale, thinning outward. The
+  // ONE family that keeps "card" through the re-pass, deliberately: it
+  // draws shell chips, not plants — a flat bent quad at 0.16–0.32 m is a
+  // shell's own silhouette, and the R12 near profiles would turn the
+  // decrescendo's chips into grass it never claimed to be. (The region
+  // consumes no farGrassCards, so there is no nearFade case to guard.)
   keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.carpetShell,
@@ -415,9 +456,6 @@ export function buildVerdantCover(): VerdantCoverBuild {
       gate: shellGate,
       ground: seabedHeight,
       count: 960,
-      // Grown a step in round 6: at 0.12–0.26 the outer-shelf chips read
-      // as specks from a pose's 1.2 m eye height (sweep 08) — same
-      // triangle bill either way.
       size: [0.16, 0.32],
     }),
   );
@@ -437,12 +475,19 @@ export function buildVerdantCover(): VerdantCoverBuild {
       },
       ground: seabedHeight,
       count: 600,
-      size: [0.18, 0.38],
+      // Re-pass: the light peak's own band gets the blade clumps and the
+      // glow — this is where the sun-through-leaf note pays most.
+      profile: "blade",
+      size: [0.2, 0.42],
       swayAmp: 0.04,
+      sunGlow: true,
     }),
   );
 
   // ─── Pebbles, rubble, debris ─────────────────────────────────────────────
+  // Re-pass: the runs adopt the R12 `grade` hierarchy — clump hearts
+  // anchor formed foreground stones, the loose fill thins — so the road's
+  // pebbles read as gathered drifts instead of even confetti.
   keep(
     buildGroundLitter({
       seed: SEED ^ FILL_SEEDS.valePebbles,
@@ -453,6 +498,7 @@ export function buildVerdantCover(): VerdantCoverBuild {
       count: 520,
       shapeSet: "pebble",
       twoTone: true,
+      grade: 0.55,
     }),
   );
   keep(
@@ -464,6 +510,7 @@ export function buildVerdantCover(): VerdantCoverBuild {
       ground: seabedHeight,
       count: 140,
       shapeSet: "pebble",
+      grade: 0.5,
     }),
   );
   // The erratic's skirt: twelve stones seated at the lone boulder's foot,
@@ -492,8 +539,10 @@ export function buildVerdantCover(): VerdantCoverBuild {
       ground: seabedHeight,
       count: 420,
       // Shards, not gravel: angular rubble suits the tangle, at 8 tris a
-      // stone instead of 20 (the budget's biggest single T1 cut).
+      // stone instead of 20. Re-pass: graded hard — a gully floor's piles
+      // gather at the roots, they don't fall evenly.
       shapeSet: "shard",
+      grade: 0.65,
     }),
   );
   // The wreck's debris field: planks the hull shed, strewn down-current.
@@ -506,6 +555,154 @@ export function buildVerdantCover(): VerdantCoverBuild {
       ground: seabedHeight,
       count: 24,
       shapeSet: "planks",
+    }),
+  );
+
+  // ─── R12.3 — the headroom spend (fresh 0xf21x/0xf22x streams, appended
+  // after every draw above; the reroll fence holds) ─────────────────────────
+
+  // Holdfast skirt-grass collars: a ring of blade clumps seated just
+  // outside every giant's root knuckles, so a trunk grows out of GROWTH
+  // instead of out of a collar on bare paint — the single change the
+  // close forest poses wanted most.
+  const feet = giants.map((giant) => ({ x: giant.x, z: giant.z }));
+  const footLine: [number, number][] = feet.map((foot) => [foot.x, foot.z]);
+  const nearestFoot = (x: number, z: number): number => {
+    let best = Infinity;
+    for (const foot of feet) {
+      const d = Math.hypot(x - foot.x, z - foot.z);
+      if (d < best) {
+        best = d;
+      }
+    }
+    return best;
+  };
+  keep(
+    buildCarpetField({
+      seed: SEED ^ FILL_SEEDS.carpetSkirtGrass,
+      palette: { base: 0x86a75c, tip: 0xb8d778, shade: 0x5a6a48 },
+      area: { polyline: footLine, width: 7 },
+      gate: (x, z) => {
+        const d = nearestFoot(x, z);
+        return (
+          smoothstep01((d - 0.9) / 0.5) *
+          (1 - smoothstep01((d - 2.4) / 0.8)) *
+          restFree(x, z)
+        );
+      },
+      ground: seabedHeight,
+      count: 380,
+      profile: "blade",
+      size: [0.4, 0.8],
+      swayAmp: 0.04,
+      looseShare: 0.5,
+      sunGlow: true,
+    }),
+  );
+
+  // The forest ferns: a mid-value frond understory between the trunks —
+  // the leaf-fall lies flat, the ferns stand out of it, and the floor
+  // finally has the two heights a forest floor has.
+  keep(
+    buildCarpetField({
+      seed: SEED ^ FILL_SEEDS.carpetFerns,
+      palette: { base: 0x6da05c, tip: 0x9ed077, shade: 0x4d7048 },
+      area: discAreaAt(450, -10, 118),
+      gate: litterGate,
+      ground: seabedHeight,
+      count: 650,
+      profile: "frond",
+      size: [0.3, 0.55],
+      swayAmp: 0.03,
+      looseShare: 0.4,
+    }),
+  );
+
+  // The vale's road-edge stands: thigh-high blades lining the channel
+  // where its floor meets the wall feet — the road reads as a mown lane
+  // through TALL growth now, which is what "the road is a place" looks
+  // like at swimming height. Dies before the crest rest, like the moss.
+  keep(
+    buildCarpetField({
+      seed: SEED ^ FILL_SEEDS.carpetValeStands,
+      palette: { base: 0x7fb060, tip: 0xb4dd7c, shade: 0x5d7a4e },
+      area: valeChannelArea(58, 246, 22),
+      gate: (x, z) => {
+        const { u, v } = spokeOf(x, z);
+        if (u < 58 || u > 246) {
+          return 0;
+        }
+        const off = Math.abs(v - valeChannelCenter(u));
+        const half = valeChannelHalf(u);
+        const band =
+          smoothstep01((off - (half - 2)) / 1.5) *
+          (1 - smoothstep01((off - (half + 4)) / 2.5));
+        const beforeCrest = 1 - smoothstep01((u - 240) / 8);
+        return band * beforeCrest * restFree(x, z);
+      },
+      ground: seabedHeight,
+      count: 300,
+      profile: "blade",
+      size: [0.8, 1.45],
+      swayAmp: 0.06,
+      looseShare: 0.45,
+      sunGlow: true,
+    }),
+  );
+
+  // The forest aisle's wayside stands: the same tall-blade idea along the
+  // swim line's shoulders (3.5–9 m off it — the line itself stays clear),
+  // so the aisle is an avenue through standing grass, not across paint.
+  const aislePolyline: [number, number][] = [];
+  for (const u of [305, 330, 355, 380, 405, 430, 455, 480]) {
+    const { x, z } = worldOf(u, aisleAt(u));
+    aislePolyline.push([x, z]);
+  }
+  keep(
+    buildCarpetField({
+      seed: SEED ^ FILL_SEEDS.carpetAisleStands,
+      palette: { base: 0x74a85e, tip: 0xa6d478, shade: 0x53724c },
+      area: { polyline: aislePolyline, width: 22 },
+      gate: (x, z) => {
+        const { u, v } = spokeOf(x, z);
+        const aisle = aisleDistance(u, v);
+        if (!Number.isFinite(aisle)) {
+          return 0;
+        }
+        const band =
+          smoothstep01((aisle - 3.5) / 1.5) * (1 - smoothstep01((aisle - 9) / 3));
+        return (
+          band *
+          forestWeight(u, v) *
+          (1 - sunwellWeight(u, v)) *
+          (1 - mazeWeight(u, v)) *
+          restFree(x, z)
+        );
+      },
+      ground: seabedHeight,
+      count: 260,
+      profile: "blade",
+      size: [0.7, 1.3],
+      swayAmp: 0.05,
+      looseShare: 0.45,
+      sunGlow: true,
+    }),
+  );
+
+  // The maze's split stones: formed fracture-faced rock among the shard
+  // rubble — the R12 `"split"` family, graded so the gully floors carry
+  // foreground stones a close pose can rest on.
+  keep(
+    buildGroundLitter({
+      seed: SEED ^ FILL_SEEDS.mazeSplitStones,
+      palette: { base: 0x9a8fa8, shade: 0x6b6080 },
+      area: discAreaAt(495, -82, 58),
+      gate: siltGate,
+      ground: seabedHeight,
+      count: 160,
+      shapeSet: "split",
+      size: [0.14, 0.34],
+      grade: 0.6,
     }),
   );
 
