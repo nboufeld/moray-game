@@ -5,6 +5,7 @@ import {
   Color,
   ConeGeometry,
   DynamicDrawUsage,
+  Group,
   InstancedMesh,
   LatheGeometry,
   Mesh,
@@ -22,6 +23,8 @@ import { createToonMaterial } from "../../../rendering/ToonShading";
 import { Random, SEEDS } from "../../../util/Random";
 import type { SphereCollider } from "../../CollisionField";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
+import { buildMatRings } from "../kit/MatRings";
+import { FILL_SEEDS } from "./CalamityFillShared";
 import {
   ARTERY_RED,
   MAT_PALE,
@@ -51,7 +54,7 @@ import { WOUND, worldOf } from "./CalamityTerrain";
 const SEED = SEEDS.regionCalamity;
 
 export interface CalamitySeepsBuild {
-  readonly meshes: (Mesh | Points | InstancedMesh)[];
+  readonly meshes: (Mesh | Points | InstancedMesh | Group)[];
   readonly colliders: SphereCollider[];
   readonly contacts: ContactPatch[];
   /** Where the plume stands, for the gyre to ride and poses to aim at. */
@@ -59,8 +62,10 @@ export interface CalamitySeepsBuild {
   update(dt: number, time: number, reducedMotion: boolean): void;
 }
 
-/** The lesser seeps of the Gardens' shelf, in spoke coordinates. */
-const SEEP_SPOTS: readonly { u: number; v: number; scale: number }[] = [
+/** The lesser seeps of the Gardens' shelf, in spoke coordinates.
+ *  Exported for the fill's cold-fire wisps (one truth about where the
+ *  ground still breathes). */
+export const SEEP_SPOTS: readonly { u: number; v: number; scale: number }[] = [
   { u: 742, v: 50, scale: 1.2 },
   { u: 756, v: 62, scale: 1.0 },
   { u: 764, v: 52, scale: 0.8 },
@@ -73,7 +78,7 @@ const SEEP_SPOTS: readonly { u: number; v: number; scale: number }[] = [
 
 export function buildCalamitySeeps(): CalamitySeepsBuild {
   const random = new Random(SEED ^ 0x5eed);
-  const meshes: (Mesh | Points | InstancedMesh)[] = [];
+  const meshes: (Mesh | Points | InstancedMesh | Group)[] = [];
   const colliders: SphereCollider[] = [];
   const contacts: ContactPatch[] = [];
 
@@ -143,6 +148,115 @@ export function buildCalamitySeeps(): CalamitySeepsBuild {
   // ─── The white mats ──────────────────────────────────────────────────────
   const mats = buildMats(random, SEEP_SPOTS);
   meshes.push(mats);
+
+  // ═══ THE PHASE 3 FILL — fresh streams, appended after every pilot draw
+  // (the reroll fence: no existing worm, mat or bubble moves). ═══
+
+  // The pioneer worms: wrong-regrowth made SPATIAL — densest new growth
+  // thickening the gardens, a colony working down the Wound's wall toward
+  // the Candle, and single scouts reaching as far as the causeway.
+  {
+    const fill = new Random(SEED ^ FILL_SEEDS.fillWorms);
+    const geometry = wormGeometry();
+    const material = createToonMaterial({
+      vertexColors: true,
+      emissive: 0x322a26,
+      emissiveIntensity: 0.75,
+    });
+    const spots: { u: number; v: number; scale: number }[] = [];
+    // Garden densifiers: the rings grown outward.
+    for (let i = 0; i < 36; i++) {
+      const seep = SEEP_SPOTS[i % 5]!;
+      const angle = fill.range(0, Math.PI * 2);
+      const r = fill.range(3.5, 8) * seep.scale;
+      spots.push({
+        u: seep.u + Math.cos(angle) * r,
+        v: seep.v + Math.sin(angle) * r,
+        scale: fill.range(1.1, 2.4),
+      });
+    }
+    // The wall colony: a trail spiralling down the Wound's gardens-side
+    // slope, from the rim toward the Candle — the trail INTO the Wound.
+    for (let i = 0; i < 26; i++) {
+      const t = i / 25;
+      const angle = 0.9 - t * 2.4 + fill.signed(0.25);
+      const r = 30 - t * 22 + fill.signed(2.5);
+      spots.push({
+        u: WOUND.u + Math.cos(angle) * r,
+        v: WOUND.v + Math.sin(angle) * r,
+        scale: fill.range(1.0, 2.0) * (1 - t * 0.25),
+      });
+    }
+    // The scouts: single worms strung toward the causeway, thinning with
+    // every step away from the seeps' breath.
+    for (const [i, at] of [
+      { u: 724, v: 34 },
+      { u: 706, v: 40 },
+      { u: 682, v: 34 },
+      { u: 664, v: 24 },
+      { u: 638, v: 16 },
+      { u: 616, v: 10 },
+      { u: 596, v: 2 },
+      { u: 578, v: -4 },
+      { u: 566, v: 6 },
+      { u: 556, v: -10 },
+    ].entries()) {
+      spots.push({
+        u: at.u + fill.signed(2),
+        v: at.v + fill.signed(2),
+        scale: fill.range(0.9, 1.5) * (1 - i * 0.04),
+      });
+    }
+    const mesh = new InstancedMesh(geometry, material, spots.length);
+    mesh.name = "calamity-pioneer-worms";
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    const dummy = new Object3D();
+    const tint = new Color();
+    for (const [i, spot] of spots.entries()) {
+      const { x, z } = worldOf(spot.u, spot.v);
+      dummy.position.set(x, seabedHeight(x, z) - 0.04, z);
+      dummy.rotation.set(fill.signed(0.3), fill.range(0, Math.PI * 2), fill.signed(0.3));
+      dummy.scale.setScalar(spot.scale);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+      tint.setHex(0xffffff).multiplyScalar(fill.range(0.8, 1.05));
+      mesh.setColorAt(i, tint);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) {
+      mesh.instanceColor.needsUpdate = true;
+    }
+    mesh.computeBoundingSphere();
+    meshes.push(mesh);
+  }
+
+  // The felt grown 26 → 40: fourteen kit mats in the region's OWN mat
+  // signature — white felt hearts under a rust ring (MASTER R8: the
+  // builder is kit, this palette is the Calamity's).
+  {
+    const fill = new Random(SEED ^ FILL_SEEDS.feltMats);
+    const anchors: { pos: readonly [number, number]; radius: number }[] = [];
+    for (let i = 0; i < 14; i++) {
+      const seep = SEEP_SPOTS[i % SEEP_SPOTS.length]!;
+      const angle = fill.range(0, Math.PI * 2);
+      const r = fill.range(2.5, 7.5) * seep.scale;
+      const { x, z } = worldOf(seep.u + Math.cos(angle) * r, seep.v + Math.sin(angle) * r);
+      anchors.push({ pos: [x, z], radius: fill.range(1.6, 3.1) * seep.scale });
+    }
+    const felt = buildMatRings({
+      seed: SEED ^ FILL_SEEDS.feltMats ^ 0x0001,
+      bands: [
+        { color: 0xe8e2d2, width: 1.0 },
+        { color: 0xd6cfbc, width: 0.7 },
+        { color: 0xa06a48, width: 0.45 },
+        { color: 0x8a8090, width: 0.55 },
+      ],
+      ground: seabedHeight,
+      anchors,
+    });
+    meshes.push(felt.group);
+  }
 
   return {
     meshes,
@@ -222,6 +336,8 @@ function buildBubbles(
   seeps: readonly { u: number; v: number; scale: number }[],
 ): { points: Points; update: (time: number, calm: number) => void } {
   const random = new Random(SEED ^ 0xb0b1);
+  // In the violet pool itself, beside the channel's wandering centre.
+  const mileVent = worldOf(396, 4.5);
   const vents = [
     { x: plume.x, z: plume.z, base: plume.base, top: plume.top, count: 300, spread: 1.1 },
     ...seeps.map((spot) => {
@@ -235,6 +351,17 @@ function buildBubbles(
         spread: 0.5 * spot.scale,
       };
     }),
+    // The Suffocated Mile's ONE bubble thread (registry clause: it and
+    // the amphora clusters are the Mile's only fill) — appended after
+    // every existing vent, so no pilot bubble re-rolls.
+    {
+      x: mileVent.x,
+      z: mileVent.z,
+      base: seabedHeight(mileVent.x, mileVent.z) + 0.4,
+      top: seabedHeight(mileVent.x, mileVent.z) + 6,
+      count: 14,
+      spread: 0.35,
+    },
   ];
   const total = vents.reduce((sum, vent) => sum + vent.count, 0);
   const base = new Float32Array(total * 4); // x, z, y0, range

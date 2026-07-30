@@ -153,6 +153,13 @@ function bakeCalamityPaint(geometry: PlaneGeometry, contacts: readonly ContactPa
     if (u < MARCH_TO) {
       const ring = shockRing(x, z);
       value += ring * 0.18;
+      // The fill's commit (plan §4): the ring CRESTS take pale sinter —
+      // the blast itself drawn in value on the floor, the march's only
+      // "light". Colour, not just value, so the bands survive the wash.
+      const crest = Math.max(0, ring) * 0.5;
+      r += (0.78 - r) * crest;
+      g += (0.8 - g) * crest;
+      b += (0.82 - b) * crest;
       const deep = smoothstep01((-marchFloor(u) - 6.4) / 2.2);
       const inChannel = 1 - smoothstep01((Math.abs(v - marchChannelCenter(u)) - marchChannelHalf(u)) / 8);
       const pool = deep * inChannel * smoothstep01((u - 280) / 60) * (1 - smoothstep01((u - 420) / 60));

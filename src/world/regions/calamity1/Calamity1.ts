@@ -3,10 +3,12 @@ import type { SphereCollider } from "../../CollisionField";
 import type { RegionBuild, RegionCapturePose, RegionDef } from "../RegionTypes";
 import { CURATOR_SPECIES_ID, buildCurator } from "./CalamityCurator";
 import { buildCalamityDistance } from "./CalamityDistance";
+import { buildCalamityFillLife } from "./CalamityFillLife";
 import { buildCalamityForest } from "./CalamityForest";
 import { buildCalamityGround } from "./CalamityGround";
 import { buildCalamityLife } from "./CalamityLife";
 import { buildCalamityLight } from "./CalamityLight";
+import { buildCalamityLitter } from "./CalamityLitter";
 import { buildCalamityRubble } from "./CalamityRubble";
 import { buildCalamitySeeps } from "./CalamitySeeps";
 import {
@@ -146,13 +148,20 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "sorrow-gate", u: 58, v: 0, lift: 2.4, atU: 100, atV: 2, pitch: -0.03 },
   // The First Dead One: a single grey giant in water still half gold.
   { name: "first-dead", u: 138, v: 2, lift: 2.4, atU: 168, atV: -2, pitch: 0.04 },
+  // Mid-march, looking down-road: the fill pose over the old bare
+  // stretch u 90–160 — shard carpets, relics and the lintel must carry it.
+  { name: "mid-march", u: 118, v: -2, lift: 2.5, atU: 165, atV: 3, pitch: -0.04 },
   // The blast road: the shock rings standing in the sand.
   { name: "shock-rings", u: 218, v: 0, lift: 2.6, atU: 262, atV: 4, pitch: -0.06 },
   // The Drowned Gardener: the fallen guardian on the road it walked.
   { name: "the-gardener", u: 245, v: 1, lift: 2.4, atU: 253, atV: 5.5, pitch: -0.08, settle: 4 },
   // The Card House: the pavement slabs jumbled over the road.
   { name: "card-house", u: 296, v: -2, lift: 2.6, atU: 330, atV: 6, pitch: -0.02 },
-  // The Suffocated Mile: the violet pool, the ghost traps.
+  // The Suffocated Mile: the violet pool, the ghost traps. STILL ON
+  // PURPOSE — the registry's grief clause (MASTER §1.2): no shoal, no
+  // darts, no crabs, ash snow at an eighth, no new glow; the only fill
+  // is the four amphora clusters and one bubble thread. A bare read
+  // here is CORRECT.
   { name: "suffocated-mile", u: 366, v: 0, lift: 2.4, atU: 408, atV: -4, pitch: -0.04 },
   // The Wound Gate: the thrown ridge pinching the light.
   { name: "wound-gate", u: 438, v: 0, lift: 2.6, atU: 470, atV: 0, pitch: 0.02 },
@@ -173,6 +182,10 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "seep-gardens", u: 741, v: 47, lift: 2.2, atU: 760, atV: 60, pitch: -0.05, settle: 4 },
   // The Last Grove: green in the grey, behind the ridge.
   { name: "last-grove", u: 748, v: -60, lift: 2.8, atU: LAST_GROVE.u, atV: LAST_GROVE.v, pitch: 0.03, settle: 5 },
+  // The grove lawn, looking up the survivor: standing on the inner
+  // lawn (the registry rest — bare underfoot by design), the meadow and
+  // the 17 m survivor climbing the green-gold fall above.
+  { name: "grove-lawn", u: 774.5, v: -81, lift: 1.6, atU: 773, atV: -88, pitch: 0.28, settle: 5 },
   // The shrine: the Curator at the memorial, close enough to watch her
   // work. The aim rides a step off the anchor so the settle does not
   // complete a discovery and drop the ceremony plate over the frame.
@@ -232,6 +245,8 @@ export const CALAMITY_1: RegionDef = {
     const forest = buildCalamityForest();
     const seeps = buildCalamitySeeps();
     const life = buildCalamityLife(seeps.plume);
+    const litter = buildCalamityLitter();
+    const fillLife = buildCalamityFillLife(forest.ghosts);
     const curator = buildCurator();
     const light = buildCalamityLight();
     const distance = buildCalamityDistance();
@@ -248,6 +263,8 @@ export const CALAMITY_1: RegionDef = {
       ...forest.meshes,
       ...seeps.meshes,
       ...life.meshes,
+      ...litter.groups,
+      ...fillLife.groups,
       ...curator.meshes,
       ...light.meshes,
       ...distance.meshes,
@@ -272,6 +289,10 @@ export const CALAMITY_1: RegionDef = {
         seeps.update(dt, ctx.time, ctx.reducedMotion);
         life.update(dt, ctx.time, ctx.reducedMotion);
         curator.update(ctx.time, ctx.reducedMotion);
+        const calm = ctx.reducedMotion ? 0.45 : 1;
+        litter.update(ctx.time * calm);
+        fillLife.update(ctx.time * calm);
+        light.update(ctx.time, ctx.reducedMotion);
       },
     };
   },
