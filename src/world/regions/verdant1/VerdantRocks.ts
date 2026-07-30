@@ -16,7 +16,15 @@ import { createRockMaterial } from "../../RockMaterial";
 import { archGeometry, boulderGeometry, slabGeometry, stackGeometry } from "../../RockShapes";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
 import { mergedMesh, smoothstep01 } from "./VerdantShared";
-import { ROOT_MAZE, VALE_LIP_U, valeChannelCenter, worldOf } from "./VerdantTerrain";
+import {
+  CENTER_X,
+  CENTER_Z,
+  ROOT_MAZE,
+  VALE_LIP_U,
+  spokeOf,
+  valeChannelCenter,
+  worldOf,
+} from "./VerdantTerrain";
 
 /**
  * The Great Kelp Sea's stone and dead wood: the vale's gate jambs, the
@@ -355,6 +363,75 @@ export function buildVerdantRocks(): VerdantRocksBuild {
     5.4,
     paleStone,
   );
+
+  // ─── The fill growth (plan §7.5) ─────────────────────────────────────────
+  // Fresh substreams appended after every pilot draw (the reroll fence);
+  // everything below is SCENERY ONLY — no colliders, the sightline rule.
+
+  // Root hubs 11 → 20: nine more knuckles gripping the gully ridges, so
+  // the tangle finally tangles. Merged as their own draw.
+  const hubGrowth = new Random(SEED ^ 0xf156);
+  const growthRootParts: BufferGeometry[] = [];
+  for (let hub = 0; hub < 9; hub++) {
+    const angle = hubGrowth.range(0, Math.PI * 2);
+    const spread = 10 + Math.sqrt(hubGrowth.next()) * 38;
+    const u = ROOT_MAZE.u + Math.cos(angle) * spread;
+    const v = ROOT_MAZE.v + Math.sin(angle) * spread;
+    const { x, z } = worldOf(u, v);
+    const y = seabedHeight(x, z);
+    const crown = y + hubGrowth.range(1.6, 3.2);
+    const legs = 5 + Math.floor(hubGrowth.next() * 4);
+    for (let leg = 0; leg < legs; leg++) {
+      const heading = (leg / legs) * Math.PI * 2 + hubGrowth.signed(0.5);
+      const reach = hubGrowth.range(1.4, 3.0);
+      const fx = x + Math.cos(heading) * reach;
+      const fz = z + Math.sin(heading) * reach;
+      growthRootParts.push(
+        rootTube(
+          new Vector3(x + hubGrowth.signed(0.3), crown, z + hubGrowth.signed(0.3)),
+          new Vector3(fx, seabedHeight(fx, fz) - 0.3, fz),
+          hubGrowth.range(0.1, 0.2),
+          hubGrowth,
+        ),
+      );
+    }
+    contacts.push({ x, z, radius: 2.4, strength: 0.5 });
+  }
+  meshes.push(mergedMesh(growthRootParts, rootMaterial(), "verdant-roots-growth"));
+
+  // Rim-crest dressing: twelve low stones seated on the shelf's crest
+  // (rc ≈ 196–204) so the invisible rim wall finally has a visual excuse
+  // (the pilot ledger's own flag). Both pass corridors stay clear.
+  const crestRandom = new Random(SEED ^ 0xf155);
+  const crestParts: BufferGeometry[] = [];
+  let crestPlaced = 0;
+  let crestGuard = 0;
+  while (crestPlaced < 12 && crestGuard++ < 200) {
+    const theta = crestRandom.range(0, Math.PI * 2);
+    const rc = crestRandom.range(196, 204);
+    const x = CENTER_X + Math.cos(theta) * rc;
+    const z = CENTER_Z + Math.sin(theta) * rc;
+    const { u, v } = spokeOf(x, z);
+    if (u < 330) {
+      continue; // the vale corridor's side of the disc
+    }
+    if (u > 610 && Math.abs(v) < 22) {
+      continue; // the depth-2 pass corridor (MASTER R4's sightline)
+    }
+    const radius = crestRandom.range(0.8, 1.6);
+    const height = radius * crestRandom.range(0.7, 1.05);
+    const stone = boulderGeometry({
+      seed: SEED ^ (0xf1a0 + crestPlaced),
+      radius,
+      height,
+    });
+    stone.applyMatrix4(new Matrix4().makeRotationY(crestRandom.range(0, Math.PI * 2)));
+    stone.translate(x, seabedHeight(x, z), z);
+    crestParts.push(stone);
+    contacts.push({ x, z, radius: radius * 1.3, strength: 0.35 });
+    crestPlaced++;
+  }
+  meshes.push(mergedMesh(crestParts, paleStone, "verdant-rim-crest"));
 
   return {
     meshes,

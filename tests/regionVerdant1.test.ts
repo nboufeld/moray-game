@@ -1,4 +1,4 @@
-import { InstancedMesh, Mesh, Points, Scene, type Object3D } from "three";
+import { CatmullRomCurve3, InstancedMesh, Matrix4, Mesh, Points, Scene, Vector3, type Object3D } from "three";
 import { beforeAll, describe, expect, it } from "vitest";
 // Import order is load-bearing: `Seabed` pulls `RegionField` →
 // `RegionRegistry` → the def, and that chain tolerates the cycle (every
@@ -7,6 +7,9 @@ import { beforeAll, describe, expect, it } from "vitest";
 // reads `VERDANT_1` before its module finishes evaluating.
 import { seabedHeight } from "../src/world/Seabed";
 import { VERDANT_1, buildSeals } from "../src/world/regions/verdant1/Verdant1";
+import { buildVerdantDistance, PASS_GAP_HALF } from "../src/world/regions/verdant1/VerdantDistance";
+import { valeRunnerStations } from "../src/world/regions/verdant1/VerdantFillLife";
+import { buildVerdantKelp } from "../src/world/regions/verdant1/VerdantKelp";
 import {
   CENTER_X,
   CENTER_Z,
@@ -23,8 +26,11 @@ import type { RegionBuild } from "../src/world/regions/RegionTypes";
 /**
  * The Great Kelp Sea's own contracts: identity where it owns nothing,
  * determinism where it owns everything, budgets counted rather than
- * claimed, colliders inside the domain, and capture poses that stand in
- * water the region actually has.
+ * claimed, colliders inside the domain, capture poses that stand in water
+ * the region actually has — and, since the Phase 3 fill: the reroll fence
+ * (pilot landmarks pinned to their pre-fill coordinates), the MASTER R4
+ * far-pole gap, the vale runner's collider clearance, and the carpets'
+ * build-to-build determinism.
  */
 
 describe("verdant-line-1 weight confinement", () => {
@@ -141,11 +147,14 @@ describe("verdant-line-1 build", () => {
         }
       }
     });
-    expect(draws).toBeLessThanOrEqual(120);
-    expect(triangles).toBeLessThanOrEqual(250_000);
-    // Honest floors as well as caps: an empty region passes no bar.
-    expect(draws).toBeGreaterThan(20);
-    expect(triangles).toBeGreaterThan(120_000);
+    // The fill doctrine's Phase 3 ceilings (MASTER R1): the old 120/250k
+    // caps are superseded; the measured numbers go in the region ledger.
+    expect(draws).toBeLessThanOrEqual(160);
+    expect(triangles).toBeLessThanOrEqual(450_000);
+    // Honest floors as well as caps: an empty region passes no bar, and a
+    // FILLED region must actually be filled (plan §7.1).
+    expect(draws).toBeGreaterThan(90);
+    expect(triangles).toBeGreaterThan(300_000);
   });
 
   it("keeps every collider inside the domain", () => {
@@ -199,6 +208,130 @@ describe("verdant-line-1 seals", () => {
       const onSpine = u > 230 && u < 300 && Math.abs(v) < 8;
       expect(onSpine, `seal blocks the corridor at u=${u.toFixed(0)}, v=${v.toFixed(0)}`).toBe(
         false,
+      );
+    }
+  });
+});
+
+describe("verdant-line-1 reroll fence", () => {
+  // The pilot's landmark coordinates, captured BEFORE the fill landed.
+  // Every fill stream is a fresh `^` substream appended after the pilot's
+  // draws, so these numbers must never move — if they do, existing
+  // content re-rolled and the fence is broken.
+  it("keeps the pilot's first and last giants exactly where they stood", () => {
+    const kelp = buildVerdantKelp();
+    expect(kelp.giants.length).toBe(39);
+    const first = kelp.giants[0]!;
+    const last = kelp.giants[kelp.giants.length - 1]!;
+    expect(first.x).toBeCloseTo(76.44525357700229, 9);
+    expect(first.z).toBeCloseTo(417.49691112376604, 9);
+    expect(first.height).toBeCloseTo(24.06434390472714, 9);
+    expect(last.x).toBeCloseTo(51.15686027014214, 9);
+    expect(last.z).toBeCloseTo(262.1606866929158, 9);
+    expect(last.height).toBeCloseTo(12, 9);
+  });
+
+  it("keeps the weaver's haunt exactly where the pilot placed it", () => {
+    const build = VERDANT_1.build(new Scene());
+    const target = build.targets![0]!;
+    expect(target.position.x).toBeCloseTo(213.00160552272973, 9);
+    expect(target.position.y).toBeCloseTo(-15.8430871917494, 9);
+    expect(target.position.z).toBeCloseTo(467.70554416720296, 9);
+  });
+});
+
+describe("verdant-line-1 distance rings (MASTER R4)", () => {
+  function offAngle(x: number, z: number, at: number): number {
+    const theta = Math.atan2(z - CENTER_Z, x - CENTER_X);
+    const delta = Math.abs(theta - at) % (Math.PI * 2);
+    return delta > Math.PI ? Math.PI * 2 - delta : delta;
+  }
+
+  it("parts over the depth-2 pass corridor — rings and trunk cards both", () => {
+    const distance = buildVerdantDistance();
+    const passAt = VERDANT_SLOT.azimuth;
+    const matrix = new Matrix4();
+    const at = new Vector3();
+    let ringVertices = 0;
+    for (const mesh of distance.meshes) {
+      if (mesh instanceof InstancedMesh) {
+        for (let i = 0; i < mesh.count; i++) {
+          mesh.getMatrixAt(i, matrix);
+          at.setFromMatrixPosition(matrix);
+          expect(
+            offAngle(at.x, at.z, passAt),
+            `trunk card ${i} of ${mesh.name} inside the pass sector`,
+          ).toBeGreaterThan(PASS_GAP_HALF + 0.1 - 1e-6);
+        }
+        continue;
+      }
+      const position = mesh.geometry.attributes.position!;
+      for (let i = 0; i < position.count; i++) {
+        ringVertices++;
+        expect(
+          offAngle(position.getX(i), position.getZ(i), passAt),
+          `${mesh.name} vertex ${i} inside the pass sector`,
+        ).toBeGreaterThan(PASS_GAP_HALF - 1e-6);
+      }
+    }
+    expect(ringVertices).toBeGreaterThan(100);
+  });
+});
+
+describe("verdant-line-1 vale runner", () => {
+  it("keeps clearance from every collider along its whole loop", () => {
+    const build = VERDANT_1.build(new Scene());
+    const stations = valeRunnerStations();
+    const curve = new CatmullRomCurve3(
+      stations.map(([x, y, z]) => new Vector3(x, y, z)),
+      true,
+      "centripetal",
+      0.5,
+    );
+    const samples = curve.getPoints(240);
+    for (const sample of samples) {
+      for (const collider of build.colliders) {
+        const clear = sample.distanceTo(collider.center) - collider.radius;
+        expect(
+          clear,
+          `runner at ${sample.x.toFixed(1)},${sample.z.toFixed(1)} vs collider ` +
+            `${collider.center.x.toFixed(1)},${collider.center.z.toFixed(1)}`,
+        ).toBeGreaterThan(0.5);
+      }
+    }
+  });
+
+  it("stays out of the narrows shadow passage (MASTER §1.2 — motes only)", () => {
+    for (const [x, , z] of valeRunnerStations()) {
+      const { u } = spokeOf(x, z);
+      expect(u).toBeLessThan(190);
+    }
+  });
+});
+
+describe("verdant-line-1 carpet determinism", () => {
+  it("builds byte-identical carpets twice", () => {
+    const firstBuild = VERDANT_1.build(new Scene());
+    const secondBuild = VERDANT_1.build(new Scene());
+    const collect = (build: RegionBuild): InstancedMesh[] => {
+      const found: InstancedMesh[] = [];
+      (build.group as Object3D).traverse((node) => {
+        if (node instanceof InstancedMesh && node.name === "kit-carpet-field") {
+          found.push(node);
+        }
+      });
+      return found;
+    };
+    const first = collect(firstBuild);
+    const second = collect(secondBuild);
+    // The seven carpet families of the fill plan's §3 zone table.
+    expect(first.length).toBe(7);
+    expect(second.length).toBe(first.length);
+    for (const [index, mesh] of first.entries()) {
+      const twin = second[index]!;
+      expect(twin.count).toBe(mesh.count);
+      expect(Array.from(twin.instanceMatrix.array)).toEqual(
+        Array.from(mesh.instanceMatrix.array),
       );
     }
   });

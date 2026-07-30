@@ -35,6 +35,7 @@ import {
   FOREST_BASIN,
   ROOT_MAZE,
   SUNWELL,
+  forestWeight,
   mazeWeight,
   valeChannelCenter,
   worldOf,
@@ -154,9 +155,21 @@ export function buildVerdantKelp(): VerdantKelpBuild {
     kind: "giant" | "mid" | "young",
     tones: readonly number[],
     crownBias?: number,
+    streams?: { placement: Random; leaf: Random; canopy: Random },
   ): void => {
     const { x, z } = worldOf(u, v);
-    growPlant(chunk, random, leafRandom, canopyRandom, x, z, height, kind, tones, crownBias);
+    growPlant(
+      chunk,
+      streams?.placement ?? random,
+      streams?.leaf ?? leafRandom,
+      streams?.canopy ?? canopyRandom,
+      x,
+      z,
+      height,
+      kind,
+      tones,
+      crownBias,
+    );
     contacts.push({ x, z, radius: kind === "giant" ? 1.1 : 0.7, strength: 0.42 });
     if (kind === "giant") {
       giants.push({ x, z, u, v, height });
@@ -309,6 +322,85 @@ export function buildVerdantKelp(): VerdantKelpBuild {
   grow(chunks.edge!, 592, 18, 5.6, "young", FOREST_TONES);
   grow(chunks.edge!, 589, 3, 4.4, "young", FOREST_TONES);
 
+  // ─── The fill growth (plan §7.4) ─────────────────────────────────────────
+  // Everything below draws from FRESH substreams appended after every
+  // existing draw — the reroll fence: nothing above (no landmark, no
+  // trunk, no leaf) can move, which the region test pins.
+  const growth = {
+    placement: new Random(SEED ^ 0xf161),
+    leaf: new Random(SEED ^ 0xf162),
+    canopy: new Random(SEED ^ 0xf163),
+  };
+  const growthRandom = growth.placement;
+
+  // Ledge kelp doubled (11 → 22 clusters): the second set takes the walls
+  // the first left bare, offset half a stride and on the opposite feet.
+  for (let i = 0; i < 11; i++) {
+    const u = 62 + i * 20 + growthRandom.signed(5);
+    const side = i % 2 === 0 ? -1 : 1;
+    const vc = valeChannelCenter(u);
+    const lateral = vc + side * growthRandom.range(5.5, 8.5);
+    grow(
+      chunks.meadow!,
+      u + growthRandom.signed(1.6),
+      lateral + growthRandom.signed(1.2),
+      growthRandom.range(2.6, 4.8),
+      "young",
+      VALE_TONES,
+      undefined,
+      growth,
+    );
+  }
+
+  // Young stands 9 → 15: six more drifts across the meadows' swells.
+  for (let stand = 0; stand < 6; stand++) {
+    const u = growthRandom.range(300, 396);
+    const v = growthRandom.signed(72);
+    if (Math.abs(v - aisleAt(u)) < 6) {
+      continue;
+    }
+    const count = 2 + Math.floor(growthRandom.next() * 3);
+    for (let i = 0; i < count; i++) {
+      grow(
+        chunks.meadow!,
+        u + growthRandom.signed(2.2),
+        v + growthRandom.signed(2.2),
+        growthRandom.range(YOUNG_MIN, YOUNG_MAX),
+        "young",
+        MEADOW_TONES,
+        undefined,
+        growth,
+      );
+    }
+  }
+
+  // Six eave mids filling the treeline gaps at u 360–400, where
+  // `forest-eaves` showed open water between the wall and the giants.
+  let midsPlaced = 0;
+  let midAttempts = 0;
+  while (midsPlaced < 6 && midAttempts++ < 80) {
+    const u = growthRandom.range(356, 404);
+    const v = growthRandom.signed(78);
+    const eave = forestWeight(u, v);
+    if (eave < 0.15 || eave > 0.6) {
+      continue;
+    }
+    if (Math.abs(v - aisleAt(u)) < 6) {
+      continue;
+    }
+    grow(
+      chunks.forestWest!,
+      u,
+      v,
+      growthRandom.range(MID_MIN, MID_MAX),
+      "mid",
+      FOREST_TONES,
+      undefined,
+      growth,
+    );
+    midsPlaced++;
+  }
+
   // ─── The meshes ──────────────────────────────────────────────────────────
   const meshes: Mesh[] = [];
   const sunView = createSunViewUniform();
@@ -436,9 +528,11 @@ function growPlant(
   }
 
   // The canopy pads, giants only: the ceiling of leaf the breach swims
-  // through. Fanned in a ring so they tile the sky.
+  // through. Fanned in a ring so they tile the sky. Raised 6–8 → 9–12 in
+  // the fill rework (plan §7.4): `canopy-up` showed a ceiling that never
+  // closed, and the pads are the closing tier.
   if (kind === "giant") {
-    const padCount = Math.round(canopyRandom.range(6, 8));
+    const padCount = Math.round(canopyRandom.range(9, 12));
     for (let i = 0; i < padCount; i++) {
       const t = canopyRandom.range(0.955, 1.0);
       const around =
