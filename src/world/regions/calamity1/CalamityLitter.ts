@@ -18,6 +18,7 @@ import { smoothstep01 } from "./CalamityShared";
 import {
   FILL_SEEDS,
   channelDistance,
+  flankReach,
   mileThin,
   mileWeight,
   regrowthReach,
@@ -28,6 +29,7 @@ import {
   LAST_GROVE,
   SEEP_GARDENS,
   SHATTERFIELD,
+  WOUND,
   calamityWeight,
   forestWeight,
   gardensWeight,
@@ -303,10 +305,13 @@ export function buildCalamityLitter(): CalamityLitterBuild {
   const rakeFromWound = { from: [wound.x, wound.z] as const, strength: 0.85, jitter: 0.14 };
 
   // The march's pavement-shard carpet: two bone tones, blast-raked.
+  // Round 2: the tones cooled off salmon toward ash-bone — under the
+  // entry light the round-1 carpet read as wood chips (the Kelp Sea's
+  // lesson again: paint for the region's light).
   keep(
     buildGroundLitter({
       seed: SEED ^ FILL_SEEDS.shardMarch,
-      palette: { base: 0xa8a294, accent: 0xbcb6a6, shade: 0x7a7288 },
+      palette: { base: 0xa0a29c, accent: 0xb2b6b0, shade: 0x767388 },
       area: marchArea(56, 536, 46),
       gate: marchShardGate,
       ground: seabedHeight,
@@ -319,17 +324,19 @@ export function buildCalamityLitter(): CalamityLitterBuild {
     shardGroups,
   );
 
-  // The Shatterfield's field — the story's densest ground.
+  // The Shatterfield's field — the story's densest ground. Round 2 grows
+  // it 1050 → 1500 and a step larger: the authored bench read nearly
+  // bare at the field's own scale.
   keep(
     buildGroundLitter({
       seed: SEED ^ FILL_SEEDS.shardShatter,
-      palette: { base: 0xb4aea0, shade: 0x7e768c },
+      palette: { base: 0xaeb0a6, shade: 0x7a768c },
       area: discAreaAt(SHATTERFIELD.u, SHATTERFIELD.v, 96),
       gate: shatterShardGate,
       ground: seabedHeight,
-      count: 1050,
+      count: 1500,
       shapeSet: "shard",
-      size: [0.2, 0.6],
+      size: [0.22, 0.66],
       rake: rakeFromWound,
     }),
     shardGroups,
@@ -350,11 +357,13 @@ export function buildCalamityLitter(): CalamityLitterBuild {
   );
 
   // The fallen-strap straw lanes: raked away from the Wound, like
-  // everything else the blast touched.
+  // everything else the blast touched. Round 2 lifts the straw to
+  // bleached bone — the round-1 lanes read as dark sticks lost in the
+  // ash floor; a shed strap is PALER than the ground it dries on.
   keep(
     buildGroundLitter({
       seed: SEED ^ FILL_SEEDS.strawLanes,
-      palette: { base: 0x9a9382, shade: 0x6a6276 },
+      palette: { base: 0xb4ac96, shade: 0x807888 },
       area: discAreaAt(626, -4, 96),
       gate: strawGate,
       ground: seabedHeight,
@@ -380,15 +389,18 @@ export function buildCalamityLitter(): CalamityLitterBuild {
   );
 
   // The grove meadow — and the patch that answers the warm shaft.
+  // Round 2 grows the blades: at 0.18–0.4 m they were sub-pixel from
+  // every pose and the lawn read as bare paint. Brighter tips, so the
+  // meadow visibly answers the green-gold fall.
   keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.groveMeadow,
-      palette: { base: 0x6fae58, tip: 0x9ed070, shade: 0x4a7a48 },
+      palette: { base: 0x6fae58, tip: 0xaeda78, shade: 0x4a7a48 },
       area: discAreaAt(LAST_GROVE.u, LAST_GROVE.v, 44),
       gate: meadowGate,
       ground: seabedHeight,
       count: 820,
-      size: [0.18, 0.4],
+      size: [0.3, 0.62],
       swayAmp: 0.035,
     }),
     meadowGroups,
@@ -396,12 +408,12 @@ export function buildCalamityLitter(): CalamityLitterBuild {
   keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.groveMeadowLit,
-      palette: { base: 0x83c464, tip: 0xd2e87e, shade: 0x568a4c },
+      palette: { base: 0x8cc86a, tip: 0xe6f28c, shade: 0x568a4c },
       area: discAreaAt(LAST_GROVE.u - 2, LAST_GROVE.v + 2, 5.5),
       gate: meadowGate,
       ground: seabedHeight,
       count: 240,
-      size: [0.2, 0.44],
+      size: [0.34, 0.7],
       swayAmp: 0.04,
     }),
     meadowGroups,
@@ -480,6 +492,125 @@ export function buildCalamityLitter(): CalamityLitterBuild {
       count: 40,
       shapeSet: [knuckleGeometry(1), knuckleGeometry(-1)],
       size: [0.8, 1.6],
+    }),
+  );
+
+  // ═══ ROUND 2 — the ejecta blanket and the flank bands. The round-1
+  // sweep put nine of twelve poses on the crater's outer banks over bare
+  // felt (the ledger's verdict). The story answer: the Wound is an
+  // EXPLOSION — its debris did not politely follow the road. A sparse
+  // ejecta blanket lies over every owned metre of crater country, raked
+  // away from the Wound like everything else, densest near the rim and
+  // whispering out; the rim-facing shoulders get their flank bands
+  // (MASTER's field note): thrown straw, dead scrub, bone-coral
+  // pioneers. Fresh streams, appended after every round-0 draw. ═══
+
+  const craterArea = discAreaAt(WOUND.u, WOUND.v, 215);
+
+  const ejectaGate: GateFn = (x, z) => {
+    const { u, v } = spokeOf(x, z);
+    if (channelDistance(u, v) < 1.8) {
+      return 0; // the swim line stays clear here too (held by the test)
+    }
+    // The march keeps its own carpet — the blanket fades in past the Gate.
+    const seam = smoothstep01((u - 492) / 26);
+    const craterD = Math.hypot(u - WOUND.u, v - WOUND.v);
+    const falloff = 0.55 + 0.45 * (1 - smoothstep01((craterD - 70) / 150));
+    const bowl = 1 - woundWeight(u, v) * 0.5;
+    return seam * falloff * bowl * mileThin(u, v) * restFree(x, z) * calamityWeight(x, z);
+  };
+
+  // The blanket's grain: two ash-bone tones of pavement crumb.
+  keep(
+    buildGroundLitter({
+      seed: SEED ^ FILL_SEEDS.ejectaCrumbs,
+      palette: { base: 0xa6a39b, accent: 0x9296a6, shade: 0x6f6a80 },
+      area: craterArea,
+      gate: ejectaGate,
+      ground: seabedHeight,
+      count: 1500,
+      shapeSet: "shard",
+      size: [0.1, 0.3],
+      rake: { from: [wound.x, wound.z], strength: 0.85, jitter: 0.14 },
+      twoTone: true,
+    }),
+    shardGroups,
+  );
+
+  // The blanket's punctuation: rarer thrown slabs the mid-ground can read.
+  keep(
+    buildGroundLitter({
+      seed: SEED ^ FILL_SEEDS.ejectaSlabs,
+      palette: { base: 0xb2aea2, shade: 0x767086 },
+      area: craterArea,
+      gate: ejectaGate,
+      ground: seabedHeight,
+      count: 300,
+      shapeSet: "shard",
+      size: [0.38, 0.85],
+      rake: { from: [wound.x, wound.z], strength: 0.85, jitter: 0.12 },
+    }),
+    shardGroups,
+  );
+
+  // Thrown straw on the shoulders: the canopy the blast stripped,
+  // carried out on the surge and dropped where the banks rise.
+  const flankGate: GateFn = (x, z) => {
+    const { u, v } = spokeOf(x, z);
+    return (
+      flankReach(u, v) *
+      (1 - groveWeight(u, v)) *
+      (1 - woundWeight(u, v)) *
+      restFree(x, z) *
+      calamityWeight(x, z)
+    );
+  };
+  keep(
+    buildGroundLitter({
+      seed: SEED ^ FILL_SEEDS.flankStraw,
+      palette: { base: 0xb4ac96, shade: 0x807888 },
+      area: craterArea,
+      gate: flankGate,
+      ground: seabedHeight,
+      count: 300,
+      shapeSet: [strawStrap(1.5, 0.2, 0.05), strawStrap(1.05, 0.16, 0.08), strawStrap(2.0, 0.24, 0.04)],
+      size: [0.7, 1.15],
+      rake: { from: [wound.x, wound.z], strength: 0.9, jitter: 0.12 },
+    }),
+  );
+
+  // Dead scrub banded along the rim-facing shoulders — the flank band's
+  // things-that-stand, a step paler than the march's stubble.
+  keep(
+    buildBushBank({
+      seed: SEED ^ FILL_SEEDS.flankScrub,
+      palette: { base: 0x8b7885, tip: 0xa8969e, shade: 0x625570 },
+      area: craterArea,
+      gate: (x, z) => {
+        const { u, v } = spokeOf(x, z);
+        return (
+          flankGate(x, z) * (1 - forestWeight(u, v) * 0.6) * (1 - gardensWeight(u, v) * 0.5)
+        );
+      },
+      ground: seabedHeight,
+      count: 120,
+      lobes: 4,
+      scale: 0.75,
+    }),
+  );
+
+  // Bone-coral pioneers up the shoulders: the gardens' wrong-regrowth
+  // walking outward, knuckle by knuckle.
+  keep(
+    buildGroundLitter({
+      seed: SEED ^ FILL_SEEDS.flankKnuckles,
+      palette: { base: 0xc4bca8, shade: 0x8a8096 },
+      area: craterArea,
+      gate: flankGate,
+      ground: seabedHeight,
+      count: 46,
+      shapeSet: [knuckleGeometry(1), knuckleGeometry(-1)],
+      size: [0.9, 1.8],
     }),
   );
 

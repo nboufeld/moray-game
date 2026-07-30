@@ -75,6 +75,11 @@ export const FILL_SEEDS = {
   coldWisps: 0xf241,
   terraceSeams: 0xf242,
   skyCard: 0xf243,
+  ejectaCrumbs: 0xf251,
+  ejectaSlabs: 0xf252,
+  flankStraw: 0xf253,
+  flankScrub: 0xf254,
+  flankKnuckles: 0xf255,
 } as const;
 
 // ─── The registry gates ──────────────────────────────────────────────────────
@@ -130,6 +135,17 @@ export function regrowthReach(u: number, v: number): number {
   const gardens = 1 - smoothstep01((Math.hypot(u - SEEP_GARDENS.u, v - SEEP_GARDENS.v) - 14) / 25);
   const grove = 1 - smoothstep01((Math.hypot(u - LAST_GROVE.u, v - LAST_GROVE.v) - 16) / 25);
   return Math.max(gardens, grove);
+}
+
+/**
+ * The crater country's outer shoulders — MASTER's field note made
+ * spatial: rim-facing zones need flank bands, and the round-1 sweep put
+ * nine of twelve poses out here (|v| ≥ 60, u 548–819) over bare felt.
+ * 0 on the spine, rising past |v| 46, full by |v| ~64, held to the
+ * crater country (u ≥ 500 — the march has its own banks).
+ */
+export function flankReach(u: number, v: number): number {
+  return smoothstep01((u - 500) / 30) * smoothstep01((Math.abs(v) - 46) / 18);
 }
 
 /** How close a spoke point stands to the march channel's swim line, metres.

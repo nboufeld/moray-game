@@ -681,13 +681,22 @@ export function buildCalamityRubble(): CalamityRubbleBuild {
     mesh.castShadow = false;
     mesh.receiveShadow = false;
     for (let i = 0; i < count; i++) {
-      const u = 96 + i * 22.5 + fill.signed(5);
+      let u = 96 + i * 22.5 + fill.signed(5);
       const side = i % 2 === 0 ? -1 : 1;
-      const vc = marchChannelCenter(u);
-      const lateral = vc + side * fill.range(7.5, 12.5);
-      // The Gardener's ten metres stay bare (the registry's small clause).
-      const skip = Math.hypot(u - 252, lateral - 5.5) < 6;
-      const { x, z } = worldOf(u, skip ? lateral + 14 * side : lateral);
+      let vc = marchChannelCenter(u);
+      let lateral = vc + side * fill.range(7.5, 12.5);
+      // The Gardener's stage stays clear — not just the registry's bare
+      // ten metres but the POSE's whole frame: round 1's tooth at
+      // u ≈ 253 photobombed the statue like an unintended totem. Any
+      // tooth drawn inside the stage steps 34 m down-road, keeping its
+      // drawn bank offset (identical stream consumption either way).
+      if (Math.hypot(u - 252, lateral - 5.5) < 18) {
+        const offset = lateral - vc;
+        u += 34;
+        vc = marchChannelCenter(u);
+        lateral = vc + offset;
+      }
+      const { x, z } = worldOf(u, lateral);
       const y = seabedHeight(x, z);
       dummy.position.set(x, y, z);
       dummy.rotation.set(0, fill.range(0, Math.PI * 2), fill.signed(0.08));

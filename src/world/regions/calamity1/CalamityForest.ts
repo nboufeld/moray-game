@@ -362,8 +362,11 @@ export function buildCalamityForest(): CalamityForestBuild {
 
   // The grove grown 8 → 14 (plus the survivor), with the shrine's
   // approach kept clear: three more on each clump's outer shoulder.
+  // (Round 2: the second one moved off the shrine pose's lens — at
+  // u−10,v+8 it stood three metres from the camera, a diagonal trunk
+  // across the whole frame.)
   groveAt(-16, -3, 9.5);
-  groveAt(-10, 8, 8.5);
+  groveAt(-20, 10, 8.5);
   groveAt(-4, -11, 10.5);
   groveAt(12, 8, 9);
   groveAt(18, -6, 9.5);
@@ -373,6 +376,50 @@ export function buildCalamityForest(): CalamityForestBuild {
     const angle = random.range(0, Math.PI * 2);
     const r = random.range(13, 26);
     groveAt(Math.cos(angle) * r, Math.sin(angle) * r, random.range(3.2, 6));
+  }
+
+  // Round 2 — the bank snag stands: the sweep put nine poses on the
+  // crater's outer shoulders and the mid-ground had nothing that stands.
+  // The story already owns the answer: the forest didn't stop at the
+  // bench — its outliers died on the banks too. Mostly short snapped
+  // saplings with a few full ghosts, all raked off the Wound, all kept
+  // off the shoal routes' corridor (|v| ≤ 46 stays snag-free out here).
+  for (const spot of [
+    // The Shatterfield's east shoulder.
+    { u: 556, v: 66, h: 4.6, giant: false },
+    { u: 546, v: 78, h: 3.8, giant: false },
+    { u: 562, v: 74, h: 5.2, giant: false },
+    { u: 534, v: 96, h: 4.0, giant: false },
+    { u: 530, v: 92, h: 3.4, giant: false },
+    { u: 544, v: 88, h: 4.4, giant: false },
+    // The east bank between the forest and the gardens.
+    { u: 636, v: 110, h: 4.6, giant: false },
+    { u: 652, v: 116, h: 10.5, giant: true },
+    { u: 626, v: 121, h: 3.6, giant: false },
+    // The far east shoulder.
+    { u: 716, v: 150, h: 4.4, giant: false },
+    { u: 702, v: 144, h: 10, giant: true },
+    { u: 726, v: 138, h: 3.6, giant: false },
+    { u: 786, v: 132, h: 4.6, giant: false },
+    { u: 789, v: 119, h: 10, giant: true },
+    { u: 780, v: 145, h: 3.4, giant: false },
+    { u: 790, v: 110, h: 4.2, giant: false },
+    { u: 805, v: 115, h: 3.6, giant: false },
+    { u: 782, v: 97, h: 4.8, giant: false },
+    { u: 800, v: 88, h: 9.5, giant: true },
+    { u: 798, v: 76, h: 4.4, giant: false },
+    // The west shoulder, around the grove's far side.
+    { u: 728, v: -86, h: 4.6, giant: false },
+    { u: 717, v: -75, h: 3.8, giant: false },
+    { u: 706, v: -69, h: 4.4, giant: false },
+    { u: 726, v: -81, h: 3.4, giant: false },
+    { u: 738, v: -64, h: 4.6, giant: false },
+    { u: 588, v: -108, h: 4.4, giant: false },
+    { u: 574, v: -116, h: 10, giant: true },
+    { u: 598, v: -122, h: 3.6, giant: false },
+  ]) {
+    const chunk = spot.v < 0 ? chunks.forestWest! : chunks.forestEast!;
+    growGhost(chunk, spot.u, spot.v, spot.h, blastYaw(spot.u, spot.v), spot.giant ? "giant" : "snapped");
   }
 
   // ─── The meshes ──────────────────────────────────────────────────────────
