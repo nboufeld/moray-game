@@ -138,6 +138,25 @@ describe("registered regions", () => {
   });
 });
 
+describe("the verdant pass gate (depth-1 → depth-2)", () => {
+  it("parts the pilot's rim seal ring over the terraces' channel", async () => {
+    const { buildSeals } = await import("../src/world/regions/verdant1/Verdant1");
+    const seals = buildSeals();
+    // A diver swimming the spoke out of the Kelp Sea crosses the seal
+    // ring's radius near u ≈ 651; the channel must be sphere-free.
+    const azimuth = 1.35;
+    for (const u of [640, 651, 662]) {
+      const x = Math.cos(azimuth) * u;
+      const z = Math.sin(azimuth) * u;
+      for (const seal of seals) {
+        const clearance =
+          Math.hypot(seal.center.x - x, seal.center.z - z) - seal.radius;
+        expect(clearance, `seal blocks the pass at u=${u}`).toBeGreaterThan(0.6);
+      }
+    }
+  });
+});
+
 describe("dynamic collision volumes", () => {
   it("take priority over the box and clamp to their own floor and ceiling", () => {
     const field = new CollisionField([], {

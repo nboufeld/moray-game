@@ -72,6 +72,14 @@ function buildSeals(): SphereCollider[] {
     if (u < 310 && Math.abs(v - valeChannelCenter(uc)) < valeChannelHalf(uc) + 12) {
       continue;
     }
+    // R0.2 integration (the Emerald Terraces' flagged gate): the depth-2
+    // pass leaves this disc at the far pole (u ≈ 635–665 on the spoke), and
+    // now that the terraces exist to catch the diver on the other side, the
+    // ring parts over that channel too — the same cut the near gate takes,
+    // at the same margin discipline.
+    if (u > 620 && Math.abs(v) < 14) {
+      continue;
+    }
     seals.push({
       center: new Vector3(x, verdantTerrainTarget(x, z) + 1.5, z),
       radius: 9,
