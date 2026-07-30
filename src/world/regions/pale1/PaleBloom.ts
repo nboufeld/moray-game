@@ -701,26 +701,39 @@ function buildMother(random: Random): {
     // quarter — round 5 kept cream from half-radius out, and from the
     // grove pose's 25 m of milk the mother read grey-beige: the margins
     // are all the eye gets at that range, so the margins must carry rose.
-    const rose = new Color(0xd25a80);
-    const cream = new Color(0xf4ddc8);
-    const roseDeepRing = new Color(0x9c4260);
-    const plateShade = new Color();
-    paint(plate, (y, x, z) => {
-      const radial = Math.min(1, Math.hypot(x, z) / (tier.radius * 1.2));
-      plateShade.copy(rose).lerp(cream, smoothstep01((radial - 0.78) / 0.22));
-      // Fill round: growth-line bake on the undersides — radial rose-deep
-      // rings, because the mother-crown pose looks straight up and the
-      // audit found "no growth-line paint, the hero close-up is its
-      // flattest surface". Ridges stay at the base rose; ring troughs
-      // deepen (darker as a COLOUR, never black).
-      const under = smoothstep01((-y + 0.02) / 0.1);
-      if (under > 0) {
-        const ring = 0.5 + 0.5 * Math.sin(radial * Math.PI * 9);
-        plateShade.lerp(roseDeepRing, under * (1 - ring) * 0.6);
-        plateShade.multiplyScalar(1 - under * (1 - ring) * 0.12);
+    // Fill round, corrected in round 2: growth-line bake on the
+    // UNDERSIDES — radial rose-deep rings, because the mother-crown pose
+    // looks straight up and the audit found "no growth-line paint, the
+    // hero close-up is its flattest surface". Round 1 keyed "under" off
+    // the displaced y (the crown-lift pushed every centre vertex
+    // positive, so nothing qualified) and the uniform emissive drowned
+    // what little painted — round 2 keys off the vertex NORMAL and the
+    // material below wears its vertex colour in the emissive term.
+    {
+      const rose = new Color(0xd25a80);
+      const cream = new Color(0xf4ddc8);
+      const roseDeepRing = new Color(0x8f3a58);
+      const plateShade = new Color();
+      const platePosition = plate.attributes.position!;
+      const plateNormal = plate.attributes.normal!;
+      const plateColors = new Float32Array(platePosition.count * 3);
+      for (let i = 0; i < platePosition.count; i++) {
+        const x = platePosition.getX(i);
+        const z = platePosition.getZ(i);
+        const radial = Math.min(1, Math.hypot(x, z) / (tier.radius * 1.2));
+        plateShade.copy(rose).lerp(cream, smoothstep01((radial - 0.78) / 0.22));
+        const under = smoothstep01((-plateNormal.getY(i) - 0.15) / 0.5);
+        if (under > 0) {
+          const ring = 0.5 + 0.5 * Math.sin(radial * Math.PI * 9);
+          plateShade.lerp(roseDeepRing, under * (1 - ring) * 0.75);
+          plateShade.multiplyScalar(1 - under * (1 - ring) * 0.14);
+        }
+        plateColors[i * 3] = plateShade.r;
+        plateColors[i * 3 + 1] = plateShade.g;
+        plateColors[i * 3 + 2] = plateShade.b;
       }
-      return [plateShade.r, plateShade.g, plateShade.b];
-    });
+      plate.setAttribute("color", new BufferAttribute(plateColors, 3));
+    }
     const around = random.range(0, Math.PI * 2);
     plate.applyMatrix4(
       new Matrix4().compose(
@@ -788,12 +801,25 @@ function buildMother(random: Random): {
   }
 
   // The emissive holds the rose against thirty metres of milk — the
-  // mother is the one thing in the region allowed to truly glow.
-  const mesh = mergedMesh(
-    parts,
-    createToonMaterial({ vertexColors: true, emissive: 0x6b3040, emissiveIntensity: 1.0 }),
-    "pale-mother-coral",
-  );
+  // mother is the one thing in the region allowed to truly glow. Round 2:
+  // the glow wears the vertex paint (the kit glowColony's proven
+  // `emissivemap_fragment` chunk) — a uniform emissive was flattening the
+  // plates into poster magenta at the crown pose's range.
+  const motherMaterial = createToonMaterial({
+    vertexColors: true,
+    emissive: 0x6b3040,
+    emissiveIntensity: 1.0,
+  });
+  motherMaterial.onBeforeCompile = (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <emissivemap_fragment>",
+      `#include <emissivemap_fragment>
+totalEmissiveRadiance *= vColor;
+`,
+    );
+  };
+  motherMaterial.customProgramCacheKey = () => "pale-mother-emissive";
+  const mesh = mergedMesh(parts, motherMaterial, "pale-mother-coral");
   mesh.geometry.translate(at.x, foot, at.z);
   mesh.geometry.computeBoundingSphere();
 

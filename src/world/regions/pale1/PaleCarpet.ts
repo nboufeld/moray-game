@@ -178,19 +178,20 @@ const ossuaryGate =
     const k = recovery(u, v);
     const alive = 1 - smoothstep01((k - 0.18) / 0.12);
     // Root litter: the carpet crowds every tree's foot, so the thickets
-    // read grown, not placed (the audit's bone-forest miss).
+    // read grown, not placed (the audit's bone-forest miss). Round 2:
+    // reach and base floor both up — the r1 forest floor was too polite.
     let treeBoost = 0;
     for (const tree of treeSpots) {
       const d = Math.hypot(x - tree.x, z - tree.z);
-      if (d < tree.height * 0.55) {
-        treeBoost = Math.max(treeBoost, 1 - d / (tree.height * 0.55));
+      if (d < tree.height * 0.75) {
+        treeBoost = Math.max(treeBoost, 1 - d / (tree.height * 0.75));
       }
     }
     // The cathedral's ossuary floor: a 10 m vertebra carpet (plan ● 352).
     const cathedral = worldOf(352, -34);
-    const underCrown = 1 - smoothstep01((Math.hypot(x - cathedral.x, z - cathedral.z) - 4) / 7);
+    const underCrown = 1 - smoothstep01((Math.hypot(x - cathedral.x, z - cathedral.z) - 5) / 8);
     return (
-      forest * alive * Math.min(1, 0.3 + treeBoost * 0.7 + underCrown * 0.8) * t1Free(x, z)
+      forest * alive * Math.min(1, 0.45 + treeBoost * 0.55 + underCrown * 0.8) * t1Free(x, z)
     );
   };
 
@@ -310,13 +311,16 @@ function stumpGeometry(): BufferGeometry {
 /**
  * The bone stumps: the white half's standing layer. Region-owned
  * instancing (the kit litter lies its shapes down; a stump stands), one
- * draw, gated like the grit but thinning as the colour returns.
+ * draw, gated like the grit but thinning as the colour returns. Round 2:
+ * grown in count and height, and LEANED toward the disc's outer band —
+ * the r1 sweep's rim-facing poses (02/03) stared across ground where
+ * nothing stood in the first 35 m (verdant's F-R3, again).
  */
 function buildBoneStumps(): InstancedMesh {
   const random = new Random(SEED ^ FILL_SEEDS.stumps);
   const geometry = stumpGeometry();
   const material = createToonMaterial({ vertexColors: true });
-  const count = 360;
+  const count = 520;
   const mesh = new InstancedMesh(geometry, material, count);
   mesh.name = "pale-bone-stumps";
   mesh.castShadow = false;
@@ -327,6 +331,7 @@ function buildBoneStumps(): InstancedMesh {
   const dummy = new Object3D();
   const tint = new Color();
   const center = worldOf(430, 0);
+  const discCenter = worldOf(445, 0);
   let placed = 0;
   let attempts = 0;
   while (placed < count && attempts < count * 40) {
@@ -341,15 +346,18 @@ function buildBoneStumps(): InstancedMesh {
       continue;
     }
     const k = recovery(u, v);
+    const rc = Math.hypot(x - discCenter.x, z - discCenter.z);
+    const rimLean = 0.55 + 0.45 * smoothstep01((rc - 120) / 45);
     const keep =
       paleWeight(x, z) *
+      rimLean *
       (1 - smoothstep01((k - 0.3) / 0.35)) *
       (1 - groveWeight(u, v)) *
       t1Free(x, z);
     if (roll >= keep) {
       continue;
     }
-    const height = random.range(0.35, 0.95);
+    const height = random.range(0.45, 1.2);
     dummy.position.set(x, seabedHeight(x, z) - 0.04, z);
     dummy.rotation.set(random.signed(0.12), random.range(0, Math.PI * 2), random.signed(0.12));
     dummy.scale.set(height * random.range(0.8, 1.15), height, height * random.range(0.8, 1.15));
@@ -397,7 +405,7 @@ export function buildPaleCarpet(
       area: channelArea(56, 290, 11),
       gate: ravineGravelGate,
       ground: seabedHeight,
-      count: 1500,
+      count: 1400,
       shapeSet: "shard",
       size: [0.07, 0.2],
       twoTone: true,
@@ -413,7 +421,7 @@ export function buildPaleCarpet(
       area: channelArea(78, 262, 17),
       gate: shardDriftGate,
       ground: seabedHeight,
-      count: 620,
+      count: 560,
       shapeSet: "shard",
       size: [0.14, 0.32],
     }),
@@ -456,32 +464,38 @@ export function buildPaleCarpet(
   );
 
   // The base grit floor: the whole disc carries a deliberate cover state.
+  // Round 2: the r1 sweep's verdict — bone chips painted bone on bone
+  // ground VANISH (verdant's round-7 camouflage lesson, pre-paid here):
+  // the second tone family goes genuinely violet so half the run draws
+  // against the paper, and the chips grow a size.
   keep(
     buildGroundLitter({
       seed: SEED ^ FILL_SEEDS.gritDisc,
-      palette: { base: 0xf1e9d7, accent: 0xdfe1ee, shade: 0x8d78ab },
+      palette: { base: 0xf6efdd, accent: 0xb9a8cc, shade: 0x8d78ab },
       area: discAreaAt(445, 0, 205),
       gate: gritGate,
       ground: seabedHeight,
-      count: 2700,
+      count: 3000,
       shapeSet: "shard",
-      size: [0.07, 0.2],
+      size: [0.1, 0.26],
       twoTone: true,
     }),
   );
 
   // THE OSSUARY CARPET — the signature exclusive (MASTER R8): region
-  // shapes through the kit's litter door, two bone tones.
+  // shapes through the kit's litter door. Round 2: grown a size and the
+  // second tone family taken to violet-bone — the r1 carpet was there
+  // and INVISIBLE (bone on bone under the milk's flat light).
   keep(
     buildGroundLitter({
       seed: SEED ^ FILL_SEEDS.ossuary,
-      palette: { base: 0xf2ead8, accent: 0xe1e2ee, shade: 0x8d78ab },
+      palette: { base: 0xf6efdf, accent: 0xbdaed0, shade: 0x8d78ab },
       area: discAreaAt(BONE_FOREST.u, BONE_FOREST.v, 100),
       gate: ossuaryGate(treeSpots),
       ground: seabedHeight,
       count: 3200,
       shapeSet: [vertebraGeometry(), branchFragmentGeometry()],
-      size: [0.09, 0.24],
+      size: [0.13, 0.3],
       twoTone: true,
     }),
   );
@@ -498,9 +512,9 @@ export function buildPaleCarpet(
       area: blushArea(),
       gate: blushGravelGate,
       ground: seabedHeight,
-      count: 1500,
+      count: 1800,
       shapeSet: "shard",
-      size: [0.06, 0.18],
+      size: [0.09, 0.22],
       twoTone: true,
     }),
   );
@@ -515,7 +529,7 @@ export function buildPaleCarpet(
       ground: seabedHeight,
       count: 2000,
       profile: "tuft",
-      size: [0.25, 0.5],
+      size: [0.3, 0.58],
       swayAmp: 0.03,
     }),
   );
@@ -544,7 +558,7 @@ export function buildPaleCarpet(
       area: discAreaAt(BLOOM_SHELF.u, BLOOM_SHELF.v + 8, 70),
       gate: bedRubbleGate,
       ground: seabedHeight,
-      count: 280,
+      count: 240,
       shapeSet: "pebble",
       size: [0.06, 0.16],
       twoTone: true,

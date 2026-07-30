@@ -636,19 +636,22 @@ export function buildPaleBones(): PaleBonesBuild {
       const seatV = vc + station.side * (ravineChannelHalf(station.u) + 3.2);
       const seat = worldOf(station.u, seatV);
       const floor = seabedHeight(seat.x, seat.z);
-      let level = floor + 0.2;
+      // Round 2: the first plate sinks INTO the bank and the channel-ward
+      // step is short — r1's stack hovered off the bank edge and read as
+      // flying saucers, not strata.
+      let level = floor - 0.35;
       for (let p = 0; p < station.plates; p++) {
         const radius = ledgeRandom.range(2.0, 3.0) * (1 - p * 0.14);
         const height = radius * ledgeRandom.range(0.22, 0.3);
         const plate = slabGeometry({ seed: SEED ^ (0xfb00 + index * 8 + p), radius, height });
         // Each plate steps a little toward the channel as it climbs — the
         // overhang that turns a bank into architecture.
-        const reachV = seatV - station.side * (0.7 + p * 0.85);
+        const reachV = seatV - station.side * (0.3 + p * 0.45);
         const at = worldOf(station.u + ledgeRandom.signed(0.8), reachV);
         plate.applyMatrix4(new Matrix4().makeRotationY(ledgeRandom.range(0, Math.PI * 2)));
         plate.translate(at.x, level, at.z);
         ledgeParts.push(plate);
-        level += height * ledgeRandom.range(0.7, 0.95);
+        level += height * ledgeRandom.range(0.55, 0.75);
       }
       contacts.push({ x: seat.x, z: seat.z, radius: 2.8, strength: 0.4 });
       colliders.push({ center: new Vector3(seat.x, floor + 1.0, seat.z), radius: 2.4 });

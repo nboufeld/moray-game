@@ -185,6 +185,10 @@ function bakePalePaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
       value += (band - 0.5) * 0.14 * s;
       col.lerp(SHADOW_VIOLET_GROUND, inChannel * s * 0.5);
       value -= inChannel * 0.12 * s;
+      // Round 2: the walls lean cool-white as they rise — the audit's
+      // "walls read warm tan, not chalk" persisted through r1.
+      const rise = smoothstep01((y - ravineFloor(u) - 1.2) / 3);
+      col.lerp(PAPER_COOL, rise * s * 0.4);
       // Fill round: a baked top-light band on the benches' flats — paper
       // lit from above (plan §4). Slope from the pure target, ravine only.
       if (above > 1.0 && s > 0.05) {
