@@ -29,6 +29,7 @@ import {
   galleryWeight,
   groveWeight,
   ravineChannelCenter,
+  ravineChannelHalf,
   recovery,
   worldOf,
 } from "./PaleTerrain";
@@ -74,6 +75,13 @@ function chalkTexture(): DataTexture {
   return chalkMap;
 }
 
+/** A scree seat the fill's kit aprons fan from (kit `ScreeAnchor` shape). */
+export interface PaleScreeAnchor {
+  readonly pos: readonly [number, number];
+  readonly facing: number;
+  readonly spread: number;
+}
+
 export interface PaleBonesBuild {
   readonly meshes: Mesh[];
   readonly colliders: SphereCollider[];
@@ -82,6 +90,16 @@ export interface PaleBonesBuild {
   readonly archCrown: { x: number; y: number; z: number };
   /** Monument stations, for the light module's pale column. */
   readonly monuments: readonly { x: number; z: number; height: number }[];
+  /** Every bone tree as planted (world space) — the fill's percher and
+   *  root-litter anchors read these instead of re-rolling anything. */
+  readonly treeSpots: readonly { x: number; z: number; height: number }[];
+  /** Where the fill's scree aprons seat: the things that grow FROM
+   *  somewhere — stairs slabs, jambs, ledges, the arch, the cathedral.
+   *  (No monument anchors: the Quiet Gallery pan is registry stillness.) */
+  readonly screeAnchors: {
+    readonly ravine: readonly PaleScreeAnchor[];
+    readonly blush: readonly PaleScreeAnchor[];
+  };
 }
 
 // ─── One dead tree ───────────────────────────────────────────────────────────
@@ -202,7 +220,9 @@ function monumentGeometry(seed: number, cycles: number): BufferGeometry {
     const ridge = 0.5 + 0.5 * Math.sin((v * cycles + warp * 1.6 + u * 2.4) * Math.PI * 2);
     const cut = (1 - ridge) ** 2;
     const fade = smoothstep01((y / length - foot) / 0.45);
-    const scale = 1 - 0.09 * cut * fade;
+    // Fill round: 0.09 → 0.14 — the audit's "smooth balloons": the furrow
+    // geometry did not survive to the gallery pose's distance.
+    const scale = 1 - 0.14 * cut * fade;
     position.setXYZ(
       i,
       (x / length) * scale,
@@ -228,10 +248,12 @@ function monumentGeometry(seed: number, cycles: number): BufferGeometry {
     const warp = (fbm(u, v, { seed, period: 4, octaves: 2 }) - 0.5) * 2;
     const ridge = 0.5 + 0.5 * Math.sin((v * cycles + warp * 1.6 + u * 2.4) * Math.PI * 2);
     const cut = (1 - ridge) ** 2;
-    const value = 0.74 + ridge * 0.34;
-    colors[i * 3] = value * (1.0 - cut * 0.06);
-    colors[i * 3 + 1] = value * (1.0 - cut * 0.16);
-    colors[i * 3 + 2] = value * (1.0 - cut * 0.01);
+    // Fill round: ridge/furrow contrast up — the bake at 0.74–1.08 washed
+    // out under the milk's flat light and the monuments read as balloons.
+    const value = 0.66 + ridge * 0.46;
+    colors[i * 3] = value * (1.0 - cut * 0.1);
+    colors[i * 3 + 1] = value * (1.0 - cut * 0.26);
+    colors[i * 3 + 2] = value * (1.0 - cut * 0.02);
   }
   geometry.setAttribute("color", new BufferAttribute(colors, 3));
 
@@ -255,6 +277,17 @@ export function buildPaleBones(): PaleBonesBuild {
   const meshes: Mesh[] = [];
   const colliders: SphereCollider[] = [];
   const contacts: ContactPatch[] = [];
+  const treeWorld: { x: number; z: number; height: number }[] = [];
+  const ravineAnchors: PaleScreeAnchor[] = [];
+  const blushAnchors: PaleScreeAnchor[] = [];
+
+  /** Facing from a spoke point toward the channel's own centre — the
+   *  downslope a ravine apron spills along, in world atan2 terms. */
+  const towardChannel = (u: number, v: number): number => {
+    const from = worldOf(u, v);
+    const to = worldOf(u, ravineChannelCenter(u));
+    return Math.atan2(to.z - from.z, to.x - from.x);
+  };
 
   // ─── The Bone Forest's thickets ──────────────────────────────────────────
   // Three archetypes, instanced. Placement holds an aisle open along the
@@ -350,6 +383,7 @@ export function buildPaleBones(): PaleBonesBuild {
         .multiplyScalar(treeRandom.range(0.94, 1.08));
       mesh.setColorAt(i, tint);
 
+      treeWorld.push({ x, z, height: spot.height });
       contacts.push({ x, z, radius: Math.min(2.4, spot.height * 0.3), strength: 0.42 });
       colliders.push({ center: new Vector3(x, foot + spot.height * 0.22, z), radius: spot.height * 0.16 });
       if (spot.height > 6) {
@@ -508,6 +542,17 @@ export function buildPaleBones(): PaleBonesBuild {
     4.2,
     coolChalk,
   );
+  for (const [ju, jv] of [
+    [55, -7.2],
+    [57, 7.6],
+  ] as const) {
+    const jamb = worldOf(ju, jv);
+    ravineAnchors.push({
+      pos: [jamb.x, jamb.z],
+      facing: towardChannel(ju, jv),
+      spread: 2.6,
+    });
+  }
 
   // The Chalk Stairs: plate-slab ledges seated on alternating benches down
   // the ravine — with the lone skeletons below, the something that
@@ -527,6 +572,18 @@ export function buildPaleBones(): PaleBonesBuild {
       height,
       i % 3 === 1 ? coolChalk : chalk,
     );
+    // Every stairs slab OUTSIDE the hush seats a fill apron: the slab
+    // grew FROM the bench. Inside the Ravine Hush (u 130–210) the slabs
+    // stay bare — the rest wins over the cadence (MASTER R10); the dust
+    // bloom and the u-200 ledge carry that stretch.
+    if (u < 126 || u > 214) {
+      const slabWorld = worldOf(u, lateral);
+      ravineAnchors.push({
+        pos: [slabWorld.x, slabWorld.z],
+        facing: towardChannel(u, lateral),
+        spread: radius * 1.9,
+      });
+    }
   }
   // Three lone ravine skeletons between the stairs — small dead trees in
   // the hush, the first hint of what the disc will open onto.
@@ -558,6 +615,66 @@ export function buildPaleBones(): PaleBonesBuild {
     2.5,
     1.3,
   );
+  // (No apron at the overlook slab: it stands inside the saddle lip
+  // crest, a registered rest — its bareness is the composition.)
+
+  // ─── The strata ledges ───────────────────────────────────────────────────
+  // Fill plan §2 (● 200) and §3: the wall becomes architecture — three
+  // stacked-plate ledge stacks stepping out of the benches, one merged
+  // draw. Fresh stream (`FILL_SEEDS`-class constant), appended after all
+  // existing draws: the reroll fence holds.
+  {
+    const ledgeRandom = new Random(SEED ^ 0xfa21);
+    const ledgeParts: BufferGeometry[] = [];
+    const stations: readonly { u: number; side: number; plates: number }[] = [
+      { u: 96, side: 1, plates: 3 },
+      { u: 200, side: -1, plates: 4 },
+      { u: 232, side: 1, plates: 3 },
+    ];
+    for (const [index, station] of stations.entries()) {
+      const vc = ravineChannelCenter(station.u);
+      const seatV = vc + station.side * (ravineChannelHalf(station.u) + 3.2);
+      const seat = worldOf(station.u, seatV);
+      const floor = seabedHeight(seat.x, seat.z);
+      let level = floor + 0.2;
+      for (let p = 0; p < station.plates; p++) {
+        const radius = ledgeRandom.range(2.0, 3.0) * (1 - p * 0.14);
+        const height = radius * ledgeRandom.range(0.22, 0.3);
+        const plate = slabGeometry({ seed: SEED ^ (0xfb00 + index * 8 + p), radius, height });
+        // Each plate steps a little toward the channel as it climbs — the
+        // overhang that turns a bank into architecture.
+        const reachV = seatV - station.side * (0.7 + p * 0.85);
+        const at = worldOf(station.u + ledgeRandom.signed(0.8), reachV);
+        plate.applyMatrix4(new Matrix4().makeRotationY(ledgeRandom.range(0, Math.PI * 2)));
+        plate.translate(at.x, level, at.z);
+        ledgeParts.push(plate);
+        level += height * ledgeRandom.range(0.7, 0.95);
+      }
+      contacts.push({ x: seat.x, z: seat.z, radius: 2.8, strength: 0.4 });
+      colliders.push({ center: new Vector3(seat.x, floor + 1.0, seat.z), radius: 2.4 });
+      // The u-200 ledge stands inside the hush: its scree spills along
+      // the wall, never onto the protected channel floor (MASTER R10).
+      const ledgeInHush = station.u > 126 && station.u < 214;
+      ravineAnchors.push({
+        pos: [seat.x, seat.z],
+        facing: towardChannel(station.u, seatV) + (ledgeInHush ? Math.PI : 0),
+        spread: ledgeInHush ? 3.0 : 4.0,
+      });
+    }
+    const merged = mergeGeometries(ledgeParts, false);
+    for (const part of ledgeParts) {
+      part.dispose();
+    }
+    if (!merged) {
+      throw new Error("pale strata ledges could not be merged");
+    }
+    merged.computeBoundingSphere();
+    const ledgeMesh = new Mesh(merged, coolChalk);
+    ledgeMesh.name = "pale-strata-ledges";
+    ledgeMesh.castShadow = false;
+    ledgeMesh.receiveShadow = false;
+    meshes.push(ledgeMesh);
+  }
 
   // ─── The Blush Arch ──────────────────────────────────────────────────────
   // A bleached arch over the aisle at the First Blush's edge: the doorway
@@ -600,6 +717,72 @@ export function buildPaleBones(): PaleBonesBuild {
     });
   }
   const archCrown = { x: archWorld.x, y: archFoot + 5.2, z: archWorld.z };
+  for (const side of [-1, 1]) {
+    blushAnchors.push({
+      pos: [archWorld.x + side * legOffset.x, archWorld.z + side * legOffset.z],
+      facing: Math.atan2(side * legOffset.z, side * legOffset.x),
+      spread: 2.2,
+    });
+  }
+  // The cathedral's foot: two apron seats under the crown, feeding the
+  // ossuary-floor beat (fill plan §2, ● at u 352).
+  for (const facing of [0.9, 3.6]) {
+    blushAnchors.push({
+      pos: [cathedralAt.x, cathedralAt.z],
+      facing,
+      spread: 4.2,
+    });
+  }
+
+  // ─── The gallery loop's threshold path ───────────────────────────────────
+  // The Quiet Gallery is registry stillness: NO T1/T2 cover on the pan
+  // (the fix there is value and monument surface, not props — fill plan
+  // §1). The ONE sanctioned exception is the plan's own zone table: paired
+  // threshold plates marking the side loop (spine u 360 → pan → rejoin at
+  // 410), a marked path, not clutter. One merged draw, fresh stream.
+  {
+    const pathRandom = new Random(SEED ^ 0xfa22);
+    const pathParts: BufferGeometry[] = [];
+    const stations: readonly (readonly [number, number, number])[] = [
+      // Approach leg, then the exit leg — every ~14 m, heading given.
+      [358, 40, 0.85],
+      [368, 52, 0.85],
+      [377, 63, 0.85],
+      [393, 68, -0.6],
+      [401, 57, -0.6],
+      [409, 47, -0.6],
+    ];
+    for (const [index, [su, sv, heading]] of stations.entries()) {
+      for (const side of [-1, 1]) {
+        const across = 1.7 + pathRandom.range(0, 0.5);
+        const pu = su - Math.sin(heading) * side * across;
+        const pv = sv + Math.cos(heading) * side * across;
+        const radius = pathRandom.range(0.7, 1.05);
+        const plate = slabGeometry({
+          seed: SEED ^ (0xfc00 + index * 4 + (side + 1)),
+          radius,
+          height: radius * 0.34,
+        });
+        const at = worldOf(pu, pv);
+        plate.applyMatrix4(new Matrix4().makeRotationY(pathRandom.range(0, Math.PI * 2)));
+        plate.translate(at.x, seabedHeight(at.x, at.z) - 0.02, at.z);
+        pathParts.push(plate);
+      }
+    }
+    const merged = mergeGeometries(pathParts, false);
+    for (const part of pathParts) {
+      part.dispose();
+    }
+    if (!merged) {
+      throw new Error("pale gallery threshold plates could not be merged");
+    }
+    merged.computeBoundingSphere();
+    const pathMesh = new Mesh(merged, chalk);
+    pathMesh.name = "pale-gallery-thresholds";
+    pathMesh.castShadow = false;
+    pathMesh.receiveShadow = false;
+    meshes.push(pathMesh);
+  }
 
   // ─── The Gallery's approach stones ───────────────────────────────────────
   // Two low plates on the pan's rim: the threshold the gallery pose looks
@@ -622,5 +805,16 @@ export function buildPaleBones(): PaleBonesBuild {
     0.7,
   );
 
-  return { meshes, colliders, contacts, archCrown, monuments };
+  return {
+    meshes,
+    colliders,
+    contacts,
+    archCrown,
+    monuments,
+    treeSpots: treeWorld,
+    screeAnchors: {
+      ravine: ravineAnchors,
+      blush: blushAnchors,
+    },
+  };
 }

@@ -97,12 +97,16 @@ export interface PaleBloomBuild {
   update(dt: number, reducedMotion: boolean): void;
 }
 
+// Fill round: staghorn 0.10 → 0.06 and brain 0.08 → 0.06, branch takes
+// the difference — the densified gardens measured 12k over the triangle
+// cap and the staghorn is the costliest kind by far (990 tris against
+// the branch's 150); the beds keep their density, the bill drops.
 const KIND_WEIGHTS: readonly (readonly [CoralKind, number])[] = [
-  ["branch", 0.3],
+  ["branch", 0.36],
   ["tube", 0.18],
   ["plateStack", 0.16],
-  ["staghorn", 0.1],
-  ["brain", 0.08],
+  ["staghorn", 0.06],
+  ["brain", 0.06],
   ["fan", 0.18],
 ];
 
@@ -174,7 +178,11 @@ export function buildPaleBloom(archCrown: { x: number; y: number; z: number }): 
   // shelf, a full ring around the grove.
   let attempts = 0;
   let sites = 0;
-  while (sites < 30 && attempts < 600) {
+  // Fill round: 30 → 55 sites, pieces 3–9 → 4–9 — the audit's "density is
+  // a third of what the story needs". The garden stream reshuffles by
+  // design (densification is the plan's own order); the reroll fence
+  // guards the bones/monuments/gardener streams, which stay untouched.
+  while (sites < 55 && attempts < 1100) {
     attempts++;
     const u = gardenRandom.range(398, 620);
     const v = gardenRandom.signed(150);
@@ -190,7 +198,7 @@ export function buildPaleBloom(archCrown: { x: number; y: number; z: number }): 
       continue;
     }
     sites++;
-    const pieces = 3 + Math.floor(gardenRandom.next() * (3 + k * 4));
+    const pieces = 4 + Math.floor(gardenRandom.next() * (2 + k * 4));
     for (let p = 0; p < pieces; p++) {
       const du = gardenRandom.signed(3.2);
       const dv = gardenRandom.signed(3.2);
@@ -206,23 +214,48 @@ export function buildPaleBloom(archCrown: { x: number; y: number; z: number }): 
 
   // Authored garden beds framing the Blooming Shelf pose's view — the
   // shelf must read as *gardens* from its own canonical camera, so three
-  // dense beds stand exactly where it looks, and one at the Gardener's
-  // Round (the crab plants where it walks).
+  // dense beds stand exactly where it looks, one at the Gardener's Round
+  // (the crab plants where it walks), and — fill round — the pioneer bed
+  // at u 508 on the road itself (plan ● 508). Every bed is forced to
+  // carry at least two fans: lace is the read of life coming back, and
+  // the audit found "no fans legible" on the shelf.
   for (const [su, sv, pieces] of [
-    [518, -48, 12],
-    [532, -62, 10],
-    [545, -45, 10],
-    [509, -30, 7],
-    [494, 30, 5],
+    [518, -48, 14],
+    [532, -62, 12],
+    [545, -45, 12],
+    [509, -30, 8],
+    [508, -6, 7],
+    [494, 30, 6],
   ] as const) {
+    let fans = 0;
     for (let p = 0; p < pieces; p++) {
-      plant(
-        su + gardenRandom.signed(6),
-        sv + gardenRandom.signed(6),
-        drawKind(gardenRandom),
-        gardenRandom,
-        0.15,
-      );
+      let kind = drawKind(gardenRandom);
+      if (pieces - p <= 2 - fans) {
+        kind = "fan";
+      }
+      if (kind === "fan") {
+        fans++;
+      }
+      plant(su + gardenRandom.signed(6), sv + gardenRandom.signed(6), kind, gardenRandom, 0.15);
+    }
+  }
+
+  // The Gardener's sprig trail (plan §5): six planted juveniles along the
+  // outer edge of its circuit — its work made visible. Fresh stream.
+  {
+    const sprigRandom = new Random(SEED ^ 0xfa32);
+    for (let sprig = 0; sprig < 6; sprig++) {
+      const angle = (sprig / 6) * Math.PI * 2 + 0.4;
+      const kind: CoralKind = sprig % 2 === 0 ? "branch" : "fan";
+      const family = BLOOM_FAMILIES[sprig % 2 === 0 ? 3 : 1]!;
+      stands.push({
+        kind,
+        u: 492 + Math.cos(angle) * 4.6 + sprigRandom.signed(0.4),
+        v: 26 + Math.sin(angle) * 4.6 + sprigRandom.signed(0.4),
+        tint: family.clone().multiplyScalar(sprigRandom.range(1.05, 1.2)),
+        scale: KIND_SCALE[kind][0] * sprigRandom.range(0.5, 0.68),
+        yaw: sprigRandom.range(0, Math.PI * 2),
+      });
     }
   }
 
@@ -231,6 +264,8 @@ export function buildPaleBloom(archCrown: { x: number; y: number; z: number }): 
   // its bowl — *rows*, because someone (the Gardener) put them there.
   // Small, full-colour, evenly spaced: the most hopeful geometry in the
   // region is a tended garden.
+  // Fill round: 10 → 16 seats per line, jitter 0.35 → 0.2, scale floor
+  // +20% — the audit's "maybe 8 juveniles visible, unaligned to the eye".
   for (let row = 0; row < 6; row++) {
     const heading = (row / 6) * Math.PI * 2 + 0.35;
     // Paired lines per spoke: a single file of seats 2.6 m apart never
@@ -239,10 +274,10 @@ export function buildPaleBloom(archCrown: { x: number; y: number; z: number }): 
       const side = (line === 0 ? -1 : 1) * 1.1;
       const acrossU = -Math.sin(heading) * side;
       const acrossV = Math.cos(heading) * side;
-      for (let seat = 0; seat < 10; seat++) {
-        const d = 11 + seat * 2.2;
-        const u = SEED_GROVE.u + Math.cos(heading) * d + acrossU + nurseryRandom.signed(0.35);
-        const v = SEED_GROVE.v + Math.sin(heading) * d + acrossV + nurseryRandom.signed(0.35);
+      for (let seat = 0; seat < 16; seat++) {
+        const d = 10 + seat * 1.6;
+        const u = SEED_GROVE.u + Math.cos(heading) * d + acrossU + nurseryRandom.signed(0.2);
+        const v = SEED_GROVE.v + Math.sin(heading) * d + acrossV + nurseryRandom.signed(0.2);
         // Branch and fan alternating — the bright silhouettes; round 2's
         // tube juveniles read as dark specks on the bowl.
         const kind: CoralKind = seat % 2 === 0 ? "branch" : "fan";
@@ -258,9 +293,38 @@ export function buildPaleBloom(archCrown: { x: number; y: number; z: number }): 
           u,
           v,
           tint: family.clone().multiplyScalar(nurseryRandom.range(1.05, 1.25)),
-          scale: scaleMin * nurseryRandom.range(0.72, 0.95),
+          scale: scaleMin * nurseryRandom.range(0.86, 1.05),
           yaw: nurseryRandom.range(0, Math.PI * 2),
         });
+      }
+    }
+  }
+
+  // The rim gate hedges (plan ● 548): two short double-hedge ends framing
+  // the bowl's entry from the road, so the diver arrives through a gate
+  // the Gardener planted. Fresh stream — the fence holds.
+  {
+    const gateRandom = new Random(SEED ^ 0xfa33);
+    const entry = Math.atan2(28 - SEED_GROVE.v, 540 - SEED_GROVE.u);
+    for (const flank of [-1, 1]) {
+      const heading = entry + flank * 0.24;
+      for (let line = 0; line < 2; line++) {
+        const side = (line === 0 ? -1 : 1) * 1.0;
+        const acrossU = -Math.sin(heading) * side;
+        const acrossV = Math.cos(heading) * side;
+        for (let seat = 0; seat < 4; seat++) {
+          const d = 13.5 + seat * 1.7;
+          const kind: CoralKind = seat % 2 === 0 ? "branch" : "fan";
+          const family = BLOOM_FAMILIES[seat % 2 === 0 ? 3 : 1]!;
+          stands.push({
+            kind,
+            u: SEED_GROVE.u + Math.cos(heading) * d + acrossU + gateRandom.signed(0.2),
+            v: SEED_GROVE.v + Math.sin(heading) * d + acrossV + gateRandom.signed(0.2),
+            tint: family.clone().multiplyScalar(gateRandom.range(1.05, 1.25)),
+            scale: KIND_SCALE[kind][0] * gateRandom.range(0.8, 1.0),
+            yaw: gateRandom.range(0, Math.PI * 2),
+          });
+        }
       }
     }
   }
@@ -394,34 +458,114 @@ export function buildPaleBloom(archCrown: { x: number; y: number; z: number }): 
       budSpots.push({ x, y: seabedHeight(x, z) + 0.04, z, s: budRandom.range(0.6, 1.4) });
     }
   }
-  // The arch's crown, hugging the beam's own curve — round 1 scattered
-  // these in a loose box and they read as floating confetti.
-  for (let i = 0; i < 16; i++) {
-    const along = budRandom.signed(1.9);
-    budSpots.push({
-      x: archCrown.x + along * 0.42 + budRandom.signed(0.5),
-      y: archCrown.y - along * along * 0.42 - budRandom.range(0.1, 0.6),
-      z: archCrown.z - along * 0.9 + budRandom.signed(0.5),
-      s: budRandom.range(0.8, 1.5),
-    });
+  // THE BLUSH GARLANDS (fill plan §6b-3, replacing the loose-box spots):
+  // budding ropes — pink/gold buds strung on a pale cord — hugging the
+  // arch's crown curve and spiralling the two blush skeletons. The cord
+  // is the drawing; the buds are its beads. One merged cord draw.
+  const cordParts: BufferGeometry[] = [];
+  const cordUp = new Vector3(0, 1, 0);
+  const cordFrom = new Vector3();
+  const cordTo = new Vector3();
+  const stringCord = (points: readonly { x: number; y: number; z: number }[]): void => {
+    for (let i = 0; i + 1 < points.length; i++) {
+      cordFrom.set(points[i]!.x, points[i]!.y, points[i]!.z);
+      cordTo.set(points[i + 1]!.x, points[i + 1]!.y, points[i + 1]!.z);
+      const length = cordFrom.distanceTo(cordTo);
+      if (length < 1e-4) {
+        continue;
+      }
+      const segment = new CylinderGeometry(0.045, 0.045, length, 4, 1, true);
+      segment.applyMatrix4(
+        new Matrix4().compose(
+          cordFrom.clone().add(cordTo).multiplyScalar(0.5),
+          new Quaternion().setFromUnitVectors(
+            cordUp,
+            cordTo.clone().sub(cordFrom).normalize(),
+          ),
+          new Vector3(1, 1, 1),
+        ),
+      );
+      cordParts.push(segment);
+    }
+  };
+
+  // The arch garland: along the crown's own curve, beads either side.
+  {
+    const rope: { x: number; y: number; z: number }[] = [];
+    for (let step = 0; step <= 10; step++) {
+      const along = -2.1 + (step / 10) * 4.2;
+      rope.push({
+        x: archCrown.x + along * 0.42,
+        y: archCrown.y - along * along * 0.42 - 0.25,
+        z: archCrown.z - along * 0.9,
+      });
+    }
+    stringCord(rope);
+    for (let i = 0; i < 20; i++) {
+      const along = budRandom.signed(2.0);
+      budSpots.push({
+        x: archCrown.x + along * 0.42 + budRandom.signed(0.28),
+        y: archCrown.y - along * along * 0.42 - budRandom.range(0.1, 0.45),
+        z: archCrown.z - along * 0.9 + budRandom.signed(0.28),
+        s: budRandom.range(0.8, 1.5),
+      });
+    }
   }
-  // Climbing the two blush skeletons (authored in PaleBones at (448,−16)
-  // and (463, 2)).
-  for (const [su, sv, height] of [
-    [448, -16, 7.2],
-    [463, 2, 6.1],
+  // The skeleton garlands: a helix climbing each blush skeleton's reach
+  // (authored in PaleBones at (448,−16) and (463, 2)).
+  for (const [su, sv, height, phase] of [
+    [448, -16, 7.2, 0.6],
+    [463, 2, 6.1, 2.9],
   ] as const) {
     const { x, z } = worldOf(su, sv);
     const foot = seabedHeight(x, z);
-    for (let i = 0; i < 10; i++) {
-      const t = budRandom.range(0.25, 0.9);
-      budSpots.push({
-        x: x + budRandom.signed(1.2) * (1 - t * 0.6),
+    const rope: { x: number; y: number; z: number }[] = [];
+    for (let step = 0; step <= 14; step++) {
+      const t = 0.14 + (step / 14) * 0.72;
+      const angle = phase + t * Math.PI * 3.6;
+      const reach = 1.35 * (1 - t * 0.55);
+      rope.push({
+        x: x + Math.cos(angle) * reach,
         y: foot + height * t,
-        z: z + budRandom.signed(1.2) * (1 - t * 0.6),
+        z: z + Math.sin(angle) * reach,
+      });
+    }
+    stringCord(rope);
+    for (let i = 0; i < 12; i++) {
+      const t = budRandom.range(0.16, 0.86);
+      const angle = phase + t * Math.PI * 3.6 + budRandom.signed(0.25);
+      const reach = 1.35 * (1 - t * 0.55);
+      budSpots.push({
+        x: x + Math.cos(angle) * reach,
+        y: foot + height * t + budRandom.signed(0.15),
+        z: z + Math.sin(angle) * reach,
         s: budRandom.range(0.5, 1.1),
       });
     }
+  }
+  // The false spring's budded jamb (MASTER R6): a dying cluster on the
+  // gate jamb at u 55 — the last colour that followed the diver in.
+  {
+    const { x, z } = worldOf(55, -7.2);
+    const foot = seabedHeight(x, z);
+    for (let i = 0; i < 7; i++) {
+      const t = budRandom.range(0.55, 0.95);
+      budSpots.push({
+        x: x + budRandom.signed(0.8),
+        y: foot + 5.0 * t,
+        z: z + budRandom.signed(0.8),
+        s: budRandom.range(0.4, 0.8),
+      });
+    }
+  }
+
+  if (cordParts.length > 0) {
+    const cordMesh = mergedMesh(
+      cordParts,
+      createToonMaterial({ color: 0xd9ccd4 }),
+      "pale-garland-cords",
+    );
+    meshes.push(cordMesh);
   }
 
   const buds = new InstancedMesh(budGeometry, budMaterial, budSpots.length);
@@ -559,10 +703,22 @@ function buildMother(random: Random): {
     // are all the eye gets at that range, so the margins must carry rose.
     const rose = new Color(0xd25a80);
     const cream = new Color(0xf4ddc8);
+    const roseDeepRing = new Color(0x9c4260);
     const plateShade = new Color();
-    paint(plate, (_y, x, z) => {
+    paint(plate, (y, x, z) => {
       const radial = Math.min(1, Math.hypot(x, z) / (tier.radius * 1.2));
       plateShade.copy(rose).lerp(cream, smoothstep01((radial - 0.78) / 0.22));
+      // Fill round: growth-line bake on the undersides — radial rose-deep
+      // rings, because the mother-crown pose looks straight up and the
+      // audit found "no growth-line paint, the hero close-up is its
+      // flattest surface". Ridges stay at the base rose; ring troughs
+      // deepen (darker as a COLOUR, never black).
+      const under = smoothstep01((-y + 0.02) / 0.1);
+      if (under > 0) {
+        const ring = 0.5 + 0.5 * Math.sin(radial * Math.PI * 9);
+        plateShade.lerp(roseDeepRing, under * (1 - ring) * 0.6);
+        plateShade.multiplyScalar(1 - under * (1 - ring) * 0.12);
+      }
       return [plateShade.r, plateShade.g, plateShade.b];
     });
     const around = random.range(0, Math.PI * 2);

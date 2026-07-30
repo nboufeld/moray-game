@@ -13,6 +13,7 @@ import {
   boneForestWeight,
   galleryWeight,
   groveWeight,
+  paleTerrainTarget,
   ravineChannelCenter,
   ravineChannelHalf,
   ravineFloor,
@@ -134,7 +135,9 @@ function story(hex: number): Color {
 const PAPER_WARM = story(0xeee5d0);
 const PAPER_COOL = story(0xdde0ef);
 const SHADOW_VIOLET_GROUND = story(0x8d78ab);
-const GALLERY_WHITE = story(0xf8f4e9);
+// Fill round: pulled further from the wash mean (0xf8f4e9 →) — the
+// gallery pan measured warm beige at the pose, not GALLERY_WHITE.
+const GALLERY_WHITE = story(0xfbf8f1);
 const BLUSH_GROUND = story(0xe9b0c1);
 const TURF_GOLD = story(0xc0a95c);
 const BED_ROSE = story(0xdcab94);
@@ -182,6 +185,27 @@ function bakePalePaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
       value += (band - 0.5) * 0.14 * s;
       col.lerp(SHADOW_VIOLET_GROUND, inChannel * s * 0.5);
       value -= inChannel * 0.12 * s;
+      // Fill round: a baked top-light band on the benches' flats — paper
+      // lit from above (plan §4). Slope from the pure target, ravine only.
+      if (above > 1.0 && s > 0.05) {
+        const hx = paleTerrainTarget(x + 0.6, z) - paleTerrainTarget(x - 0.6, z);
+        const hz = paleTerrainTarget(x, z + 0.6) - paleTerrainTarget(x, z - 0.6);
+        const slope = Math.hypot(hx, hz) / 1.2;
+        value += 0.06 * (1 - smoothstep01((slope - 0.4) / 0.5)) * s;
+      }
+      // The false spring (MASTER R6): a dying freckle of blush in the
+      // mouth's first metres, gone by u 70 — the paint half of the beat
+      // the gravel trace carries.
+      if (u < 74) {
+        const trace = smoothstep01((u - 46) / 6) * (1 - smoothstep01((u - 58) / 12));
+        if (trace > 0) {
+          const springDot = smoothstep01(
+            (fbm(x * 0.14, z * 0.14, { seed: SEED ^ 0xb1d6, period: 23, octaves: 2 }) - 0.58) /
+              0.12,
+          );
+          col.lerp(BLUSH_GROUND, trace * springDot * 0.5);
+        }
+      }
     }
 
     // The Bone Forest floor: violet thicket shade drifting through the
@@ -200,17 +224,24 @@ function bakePalePaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
     const gallery = galleryWeight(u, v);
     if (gallery > 0) {
       col.lerp(GALLERY_WHITE, gallery);
-      value += gallery * 0.06;
+      // Fill round: 0.06 → 0.12 — the pan is the region's high white
+      // table and must measure as one.
+      value += gallery * 0.12;
     }
 
-    // The recovery: blush freckles first, then turf. Both are patchy
-    // drawings gated by the story's own gradient.
+    // The recovery: blush freckles first, then turf. Fill round: the
+    // freckles redrawn at two SEPARATED scales — a soft metre-scale
+    // stain and a hard hand-scale dot — because the single drawing
+    // landed as one muddy smear (the audit's blush-arch read).
     const k = recovery(u, v);
     if (k > 0) {
-      const freckle = smoothstep01(
-        (fbm(x * 0.05, z * 0.05, { seed: SEED ^ 0xb1d5, period: 13, octaves: 3 }) - 0.56) / 0.16,
+      const stain = smoothstep01(
+        (fbm(x * 0.026, z * 0.026, { seed: SEED ^ 0xb1d5, period: 9, octaves: 2 }) - 0.5) / 0.22,
       );
-      col.lerp(BLUSH_GROUND, Math.min(1, k * 2.2) * freckle * 0.7);
+      const dot = smoothstep01(
+        (fbm(x * 0.13, z * 0.13, { seed: SEED ^ 0xb1d6, period: 21, octaves: 2 }) - 0.58) / 0.1,
+      );
+      col.lerp(BLUSH_GROUND, Math.min(1, k * 2.2) * (stain * 0.3 + dot * stain * 0.6));
 
       const turfPatch = smoothstep01(
         (fbm(x * 0.021, z * 0.021, { seed: SEED ^ 0x70af, period: 8, octaves: 3 }) - 0.44) / 0.24,
@@ -256,8 +287,12 @@ function bakePalePaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
     // marks survive as grain and the colour on screen is the one above.
     // The 1.16 rides over the milk's flat light — measured, not guessed:
     // round 4's first pass hit (167, 143, 127) on the gallery pan where
-    // paper wants ~(210, 200, 190).
-    const total = value * (0.72 + shade * 0.28) * 1.16;
+    // paper wants ~(210, 200, 190). Fill round: keyed up a step further
+    // where recovery < 0.15 — the audit's global finding was a warm-beige
+    // NEAR field in every white-half pose; the chalk story must survive
+    // inside 8 m, not only in the fog band.
+    const nearWhite = 0.08 * (1 - smoothstep01(k / 0.15));
+    const total = value * (0.72 + shade * 0.28) * (1.16 + nearWhite);
     colors[i * 3] = Math.max(0.2, Math.min(3.2, (col.r / WASH_MEAN.r) * total));
     colors[i * 3 + 1] = Math.max(0.2, Math.min(3.2, (col.g / WASH_MEAN.g) * total));
     colors[i * 3 + 2] = Math.max(0.2, Math.min(3.2, (col.b / WASH_MEAN.b) * total));
