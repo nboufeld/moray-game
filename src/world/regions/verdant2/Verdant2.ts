@@ -1,6 +1,8 @@
 import { Group, Vector3 } from "three";
 import type { SphereCollider } from "../../CollisionField";
 import type { RegionBuild, RegionCapturePose, RegionDef } from "../RegionTypes";
+import { buildVerdant2Carpets } from "./Verdant2Carpets";
+import { buildVerdant2Colonies } from "./Verdant2Colonies";
 import { buildVerdant2Distance } from "./Verdant2Distance";
 import { buildVerdant2Gardens } from "./Verdant2Gardens";
 import { buildVerdant2Ground } from "./Verdant2Ground";
@@ -226,6 +228,10 @@ export const VERDANT_2: RegionDef = {
     const light = buildVerdant2Light();
     const mistfall = buildMistfall();
     const distance = buildVerdant2Distance();
+    // The Phase 3 fill: kit-built ground cover and colonies (fresh
+    // substreams, appended after every module above — the reroll fence).
+    const carpets = buildVerdant2Carpets();
+    const colonies = buildVerdant2Colonies();
     const ground = buildVerdant2Ground([...stone.contacts, ...gardens.contacts]);
 
     for (const mesh of [
@@ -237,6 +243,8 @@ export const VERDANT_2: RegionDef = {
       ...light.meshes,
       ...mistfall.meshes,
       ...distance.meshes,
+      ...carpets.groups,
+      ...colonies.groups,
     ]) {
       group.add(mesh);
     }
@@ -252,6 +260,12 @@ export const VERDANT_2: RegionDef = {
         life.update(dt, ctx.time, ctx.reducedMotion);
         warden.update(ctx.time, ctx.reducedMotion);
         mistfall.update(dt, ctx.reducedMotion);
+        // Kit motion is closed-form off simulated seconds (capture-safe);
+        // reduced motion slows the clock the same way the region's own
+        // systems do.
+        const kitTime = ctx.time * (ctx.reducedMotion ? 0.45 : 1);
+        carpets.update(kitTime);
+        colonies.update(kitTime);
       },
     };
   },

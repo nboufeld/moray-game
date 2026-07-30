@@ -395,6 +395,121 @@ export function buildVerdant2Stone(): Verdant2StoneBuild {
     );
   }
 
+  // ─── The fill stone (fresh substream, appended after every pre-fill
+  // draw — the reroll fence holds the landmarks above byte-identical) ──────
+  const fillRandom = new Random(SEED ^ 0xf420);
+
+  // Two more worn stacks on the threshold (692, +8 / 718, −9): with the
+  // sentinel and the waymark boulders the 100 m road now carries a mark
+  // every ~25 m. These two take the standard collider pair (the only new
+  // colliders in the fill — everything else is scenery by construction).
+  for (const [i, [u, v]] of ([[692, 8], [718, -9]] as const).entries()) {
+    stand(
+      jade,
+      stackGeometry(
+        [
+          { radius: 1.2 - i * 0.15, rise: 0.6, stretch: 1.8, lean: fillRandom.signed(0.4) },
+          { radius: 0.8 - i * 0.1, rise: 2.6 + i * 0.5, stretch: 1.6, lean: fillRandom.signed(0.9) },
+        ],
+        { seed: SEED ^ (0xf421 + i) },
+      ),
+      u,
+      stairChannelCenter(u) + v,
+      fillRandom.range(0, Math.PI * 2),
+      1.2,
+      3.8 + i * 0.5,
+    );
+  }
+
+  // Three waymark stone pairs between the stacks — scenery, no colliders.
+  const scenery = (
+    bucket: BufferGeometry[],
+    geometry: BufferGeometry,
+    u: number,
+    v: number,
+    yaw: number,
+    radius: number,
+  ): void => {
+    const { x, z } = worldOf(u, v);
+    const y = seabedHeight(x, z);
+    geometry.applyMatrix4(new Matrix4().makeRotationY(yaw));
+    geometry.translate(x, y, z);
+    bucket.push(geometry);
+    contacts.push({ x, z, radius: radius * 1.3, strength: 0.35 });
+  };
+  for (const [i, u] of [660, 684, 730].entries()) {
+    for (const side of [-1, 1]) {
+      const radius = fillRandom.range(0.7, 1.2);
+      scenery(
+        moss,
+        boulderGeometry({
+          seed: SEED ^ (0xf430 + i * 2 + (side + 1) / 2),
+          radius,
+          height: radius * fillRandom.range(0.8, 1.2),
+        }),
+        u + fillRandom.signed(2),
+        stairChannelCenter(u) + side * fillRandom.range(4.5, 6.5),
+        fillRandom.range(0, Math.PI * 2),
+        radius,
+      );
+    }
+  }
+
+  // A fourth vault pillar, off the ring of three — the asymmetry that
+  // keeps the vault from reading as a built rotunda. Scenery: it stands
+  // against the shelf's edge, outside the swim line.
+  {
+    const pillar = stackGeometry(
+      [
+        { radius: 1.0, rise: 0.6, stretch: 2.1, lean: 0.2 },
+        { radius: 0.8, rise: 4.4, stretch: 2.3, lean: -0.15 },
+      ],
+      { seed: SEED ^ 0xf440 },
+    );
+    pillar.scale(1, 1.6, 1);
+    scenery(deep, pillar, FERN_VAULT.u - 14, FERN_VAULT.v + 11, fillRandom.range(0, Math.PI * 2), 1.0);
+  }
+
+  // Two dead fern spars on the Mistfall's lip shoulder — bare leaning
+  // masts where the living curtains end, the lip's own memento mori.
+  for (const [i, [du, dv]] of ([[-4, -26], [2, 30]] as const).entries()) {
+    const spar = stackGeometry(
+      [
+        { radius: 0.34, rise: 0.3, stretch: 2.6, lean: fillRandom.signed(0.5) },
+        { radius: 0.2, rise: 4.6 + i, stretch: 2.8, lean: fillRandom.range(0.8, 1.6) },
+      ],
+      { seed: SEED ^ (0xf450 + i) },
+    );
+    const v = MISTFALL.v + dv;
+    scenery(deep, spar, mistfallLipU(v) - 1.5 + du * 0.2, v, fillRandom.range(0, Math.PI * 2), 0.4);
+  }
+
+  // Six more garden field stones — fallen terrace stone gathering where
+  // the treads meet their risers. Scenery.
+  for (let i = 0; i < 6; i++) {
+    const u = 842 + fillRandom.range(0, 130);
+    const v = -58 + fillRandom.range(0, 116);
+    if (Math.hypot(u - CISTERN.u, v - CISTERN.v) < 46) {
+      continue;
+    }
+    if (Math.hypot(u - FERN_VAULT.u, v - FERN_VAULT.v) < 44) {
+      continue;
+    }
+    const radius = fillRandom.range(0.8, 1.8);
+    scenery(
+      moss,
+      boulderGeometry({
+        seed: SEED ^ (0xf460 + i),
+        radius,
+        height: radius * fillRandom.range(0.7, 1.1),
+      }),
+      u,
+      v,
+      fillRandom.range(0, Math.PI * 2),
+      radius,
+    );
+  }
+
   const meshes = [
     mergedMesh(moss, createRockMaterial(0x6d7a62), "verdant2-stone-moss"),
     mergedMesh(jade, createRockMaterial(0x94a289), "verdant2-stone-jade"),

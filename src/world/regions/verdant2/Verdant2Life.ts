@@ -556,7 +556,11 @@ function buildCushionStars(): InstancedMesh {
   geometry.setAttribute("color", new BufferAttribute(colors, 3));
 
   const material = createToonMaterial({ vertexColors: true });
-  const count = 24;
+  // Fill round: 24 → 40. The first 24 draw exactly as before (the reroll
+  // fence); the growth spreads down the gardens and along the threshold
+  // road from a fresh substream. Six of the sixteen new stars mark the
+  // threshold — small fauna for the road in (plan §3, threshold T4).
+  const count = 40;
   const mesh = new InstancedMesh(geometry, material, count);
   mesh.name = "verdant2-cushion-stars";
   mesh.castShadow = false;
@@ -565,7 +569,7 @@ function buildCushionStars(): InstancedMesh {
   const palette = [0x9e5f8a, 0x2e8a6a, 0xc07a5a];
   const dummy = new Object3D();
   const tint = new Color();
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < 24; i++) {
     const nearCistern = random.next() < 0.4;
     const u = nearCistern ? CISTERN.u + random.signed(30) : 840 + random.next() * 120;
     const v = nearCistern ? CISTERN.v + random.signed(30) : -60 + random.next() * 100;
@@ -576,6 +580,20 @@ function buildCushionStars(): InstancedMesh {
     dummy.updateMatrix();
     mesh.setMatrixAt(i, dummy.matrix);
     tint.setHex(palette[i % palette.length]!).multiplyScalar(random.range(0.85, 1.15));
+    mesh.setColorAt(i, tint);
+  }
+  const growth = new Random(SEED ^ 0xf520);
+  for (let i = 24; i < count; i++) {
+    const onThreshold = i < 30;
+    const u = onThreshold ? 650 + growth.next() * 95 : 840 + growth.next() * 130;
+    const v = onThreshold ? growth.signed(9) : -65 + growth.next() * 110;
+    const { x, z } = worldOf(u, v);
+    dummy.position.set(x, seabedHeight(x, z) + 0.02, z);
+    dummy.rotation.set(0, growth.range(0, Math.PI * 2), 0);
+    dummy.scale.setScalar(growth.range(0.7, 1.4));
+    dummy.updateMatrix();
+    mesh.setMatrixAt(i, dummy.matrix);
+    tint.setHex(palette[i % palette.length]!).multiplyScalar(growth.range(0.85, 1.15));
     mesh.setColorAt(i, tint);
   }
   mesh.instanceMatrix.needsUpdate = true;

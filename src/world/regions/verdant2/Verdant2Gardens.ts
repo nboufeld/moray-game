@@ -1,5 +1,6 @@
 import {
   BufferAttribute,
+  CircleGeometry,
   Color,
   DoubleSide,
   InstancedMesh,
@@ -29,6 +30,7 @@ import {
   type SwayUniforms,
 } from "./Verdant2Shared";
 import {
+  BALCONY,
   CISTERN,
   FERN_VAULT,
   MISTFALL,
@@ -63,6 +65,17 @@ import {
  * Curtain and fern geometry is merged per area chunk for frustum
  * culling; turf is one instanced draw. Streams: anchors `SEED ^ 0x1e11`,
  * ribbons `^ 0x51ac`, ferns `^ 0xca9f`, turf `^ 0x9eae/^ 0x9e38`.
+ *
+ * The Phase 3 fill (fill plan §6b.1, §6c) adds a fourth idiom — the
+ * region's signature EXCLUSIVE, the **riser-face garden strips**: dense
+ * rows of short hanging turf and moss pads grown ON the vertical riser
+ * faces themselves (the surface every pose actually looks at, where
+ * nothing grew), along the stair steps and the garden contours. The kit
+ * `wallDrapeBank` (Verdant2Carpets) is the base layer on the same
+ * lines; the strips are the layer only this region wears. Densification
+ * reuses the existing loops with new constants (curtain anchors ×~2,
+ * strands 3–5, lengths +30%); every NEW section draws from a fresh
+ * `SEED ^ 0xf4xx` substream appended after the pre-fill draws.
  */
 
 const SEED = SEEDS.regionVerdant2;
@@ -90,16 +103,20 @@ export function buildVerdant2Gardens(): Verdant2GardensBuild {
     west: { parts: [] },
     east: { parts: [] },
     deep: { parts: [] },
+    "strip-pass": { parts: [] },
+    "strip-west": { parts: [] },
+    "strip-east": { parts: [] },
   };
 
   // ─── The stair's ledge curtains ──────────────────────────────────────────
   // Every riser crest grows a run of ribbons across the channel: the
   // gardens deepen step by step, so the runs thicken and lengthen as the
-  // stair descends.
+  // stair descends. Fill round: anchors ×1.6 and lengths +30% — the old
+  // runs were too sparse to draw the lip lines (`stair-descent` audit).
   for (let step = 0; step < 8; step++) {
     const lipU = stepFootU(step) - 3.1;
     const lush = step / 7;
-    const count = Math.round(7 + lush * 11);
+    const count = Math.round((7 + lush * 11) * 1.6);
     for (let i = 0; i < count; i++) {
       const v =
         stairChannelCenter(lipU) +
@@ -109,24 +126,26 @@ export function buildVerdant2Gardens(): Verdant2GardensBuild {
         ribbonRandom,
         lipU + anchorRandom.signed(1.0),
         v,
-        anchorRandom.range(3.0, 4.6 + lush * 1.8),
+        anchorRandom.range(3.9, 6.0 + lush * 2.3),
         CURTAIN_TONES,
       );
     }
   }
   // The gate jambs' drapes (the jambs moved to u 747/749 in round 4).
+  // Fill round: 4 → 9 per jamb, full length — the audit read them as "a
+  // few dark sticks" on monumental stone.
   for (const side of [-1, 1]) {
     const u = 748 + side;
     const v = stairChannelCenter(u) + side * (stairChannelHalf(u) - 3);
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 9; i++) {
       growCurtain(
         chunks.pass!,
         ribbonRandom,
-        u + anchorRandom.signed(0.8),
-        v + anchorRandom.signed(1.2),
-        anchorRandom.range(2.4, 4.2),
+        u + anchorRandom.signed(1.0),
+        v + anchorRandom.signed(1.4),
+        anchorRandom.range(3.1, 5.5),
         VIRIDIAN_TONES,
-        4.6,
+        4.6 + anchorRandom.signed(1.6),
       );
     }
   }
@@ -136,9 +155,11 @@ export function buildVerdant2Gardens(): Verdant2GardensBuild {
   // contours, found by walking each contour line laterally.
   // Round 2: the runs thickened (spacing 4.6 → 3.1) and the ribbons
   // doubled in length — 3–5 m sticks did not read as hanging gardens.
+  // Fill round: density ×2 (anchors 50 → 96 per contour, spacing 1.6)
+  // and +30% length — at vista range the old runs were dark dots.
   for (const [t, edge] of [10, 44, 82].entries()) {
-    for (let k = 0; k < 50; k++) {
-      const v = -78 + k * 3.1 + anchorRandom.signed(1.4);
+    for (let k = 0; k < 96; k++) {
+      const v = -78 + k * 1.62 + anchorRandom.signed(0.8);
       const u = contourU(edge, v);
       if (u === null) {
         continue;
@@ -157,7 +178,7 @@ export function buildVerdant2Gardens(): Verdant2GardensBuild {
         ribbonRandom,
         u - 1.2,
         v,
-        anchorRandom.range(4.5, 7.5),
+        anchorRandom.range(5.8, 9.8),
         t % 2 === 0 ? CURTAIN_TONES : VIRIDIAN_TONES,
       );
     }
@@ -165,9 +186,11 @@ export function buildVerdant2Gardens(): Verdant2GardensBuild {
 
   // ─── The grotto's green curtain ──────────────────────────────────────────
   // The landmark drape: a dense fall of long ribbons over the grotto's
-  // mouth at (893, 26), parted just enough to swim through.
-  for (let i = 0; i < 12; i++) {
-    const v = 26 + (i - 5.5) * 0.9;
+  // mouth at (893, 26), parted just enough to swim through. Fill round:
+  // 12 → 20 anchors — "~8 visible ribbons is a bead curtain, not a green
+  // wall". The Warden's part at v ≈ 24.4 is kept by construction.
+  for (let i = 0; i < 20; i++) {
+    const v = 26 + (i - 9.5) * 0.58;
     if (Math.abs(v - 24.4) < 1.1) {
       continue; // the part the Warden swims through
     }
@@ -176,7 +199,7 @@ export function buildVerdant2Gardens(): Verdant2GardensBuild {
       ribbonRandom,
       891.4 + anchorRandom.signed(0.5),
       v,
-      anchorRandom.range(4.0, 5.6),
+      anchorRandom.range(4.4, 6.2),
       CURTAIN_TONES,
       4.4,
     );
@@ -239,6 +262,110 @@ export function buildVerdant2Gardens(): Verdant2GardensBuild {
   growFern(chunks.deep!, fernRandom, 1046, 34, 2.8, FERN_TONES, contacts);
   growFern(chunks.deep!, fernRandom, 1049, 52, 2.4, FERN_TONES, contacts);
 
+  // ─── The fill growth (fresh substreams, appended after every pre-fill
+  // draw — the reroll fence) ───────────────────────────────────────────────
+
+  // Eight more long curtains on the Mistfall's south lip (§3): the
+  // living green thickens on the quiet side of the pour.
+  const lipRandom = new Random(SEED ^ 0xf418);
+  for (let i = 0; i < 8; i++) {
+    const v = MISTFALL.v - 12 - i * 2.6 + lipRandom.signed(1.0);
+    growCurtain(
+      chunks.deep!,
+      lipRandom,
+      mistfallLipU(v) - 1.0,
+      v,
+      lipRandom.range(7.5, 11.5),
+      CURTAIN_TONES,
+    );
+  }
+
+  // The vault grows: four more giants (18 total) and sixteen low fronds
+  // so the half-light floor carries its own understory.
+  const fillFernRandom = new Random(SEED ^ 0xf416);
+  for (let i = 0; i < 4; i++) {
+    const theta = fillFernRandom.range(0, Math.PI * 2);
+    const d = 6 + Math.sqrt(fillFernRandom.next()) * 11;
+    growFern(
+      chunks.west!,
+      fillFernRandom,
+      FERN_VAULT.u + Math.cos(theta) * d,
+      FERN_VAULT.v + Math.sin(theta) * d * 0.9,
+      fillFernRandom.range(5.6, 8.4),
+      FERN_TONES,
+      contacts,
+    );
+  }
+  for (let i = 0; i < 16; i++) {
+    const theta = fillFernRandom.range(0, Math.PI * 2);
+    const d = 4 + Math.sqrt(fillFernRandom.next()) * 16;
+    growFern(
+      chunks.west!,
+      fillFernRandom,
+      FERN_VAULT.u + Math.cos(theta) * d,
+      FERN_VAULT.v + Math.sin(theta) * d,
+      fillFernRandom.range(1.1, 1.9),
+      FERN_TONES,
+      contacts,
+    );
+  }
+  // The balcony dresses: four ferns inside the balustrade arc and six
+  // short curtains hung from the worked slabs themselves.
+  for (let i = 0; i < 4; i++) {
+    growFern(
+      chunks.deep!,
+      fillFernRandom,
+      BALCONY.u + fillFernRandom.signed(7),
+      BALCONY.v + fillFernRandom.signed(8),
+      fillFernRandom.range(1.8, 2.8),
+      FERN_TONES,
+      contacts,
+    );
+  }
+  const balustradeRandom = new Random(SEED ^ 0xf417);
+  for (let i = 0; i < 6; i++) {
+    const theta = -0.7 + i * 0.29 + balustradeRandom.signed(0.06);
+    growCurtain(
+      chunks.deep!,
+      balustradeRandom,
+      BALCONY.u + Math.cos(theta) * 11,
+      BALCONY.v + Math.sin(theta) * 11,
+      balustradeRandom.range(1.6, 2.6),
+      VIRIDIAN_TONES,
+      1.1,
+    );
+  }
+
+  // ─── The riser-face garden strips — the region's signature EXCLUSIVE ────
+  // Growth on the vertical faces every pose actually looks at: dense rows
+  // of short hanging turf and moss pads ON the stair risers and the
+  // garden contour walls (kit wallDrapeBank lays the base on the same
+  // lines from Verdant2Carpets; this layer is the one only this region
+  // wears). Own chunks, so the tests can hold their determinism.
+  const stripRandom = new Random(SEED ^ 0xf413);
+  for (let step = 0; step < 8; step++) {
+    const lipU = stepFootU(step) - 2.6;
+    const half = stairChannelHalf(lipU) + 1;
+    for (let v = stairChannelCenter(lipU) - half; v <= stairChannelCenter(lipU) + half; v += 1.1) {
+      growRiserStrip(chunks["strip-pass"]!, stripRandom, lipU, v + stripRandom.signed(0.4));
+    }
+  }
+  const stripGardenRandom = new Random(SEED ^ 0xf414);
+  for (const edge of [10, 44, 82]) {
+    for (let k = 0; k < 110; k++) {
+      const v = -78 + k * 1.42 + stripGardenRandom.signed(0.5);
+      const u = contourU(edge, v);
+      if (u === null) {
+        continue;
+      }
+      if (cisternWeight(u, v) > 0.35 || vaultWeight(u, v) > 0.4 || mistfallDrop(u - 4, v) > 0.1) {
+        continue;
+      }
+      const chunk = v < -10 ? chunks["strip-west"]! : chunks["strip-east"]!;
+      growRiserStrip(chunk, stripGardenRandom, u - 0.4, v);
+    }
+  }
+
   // ─── The meshes ──────────────────────────────────────────────────────────
   const meshes: (Mesh | InstancedMesh)[] = [];
   const sunView = createSunViewUniform();
@@ -268,9 +395,10 @@ export function buildVerdant2Gardens(): Verdant2GardensBuild {
 /**
  * Solves the garden terrace contour `tc = edge` for `u` at a lateral
  * `v` — two fixed-point steps on the terrain module's own expression.
- * Returns null outside the gardens' band.
+ * Returns null outside the gardens' band. Exported for the fill's other
+ * consumers (the drape base in Verdant2Carpets walks the same lines).
  */
-function contourU(edge: number, v: number): number | null {
+export function contourU(edge: number, v: number): number | null {
   let u = 830 + edge / 0.92;
   for (let i = 0; i < 3; i++) {
     u = 830 + (edge - v * 0.22 - 13 * Math.sin(v * 0.024 + 1.4) - 6 * Math.sin(u * 0.017)) / 0.92;
@@ -370,6 +498,126 @@ function ribbonGeometry(
 
   position.needsUpdate = true;
   geometry.computeVertexNormals();
+  geometry.setAttribute("color", new BufferAttribute(colors, 3));
+  return geometry;
+}
+
+// ─── One riser strip (the signature exclusive) ───────────────────────────────
+
+/** The world direction the riser faces look toward (downhill, +u). */
+const DOWNHILL = ((): { x: number; z: number; yaw: number } => {
+  const a = worldOf(0, 0);
+  const b = worldOf(1, 0);
+  const x = b.x - a.x;
+  const z = b.z - a.z;
+  return { x, z, yaw: Math.atan2(x, z) };
+})();
+
+/**
+ * One strip anchor: 2–3 short hanging turf ribbons off the lip crest and
+ * 1–2 moss pads seated on the face below them. Everything is drawn in
+ * the curtain palette so the strips and the big curtains read as one
+ * growth; the short blades are 8-tri planes (a riser wears hundreds).
+ */
+function growRiserStrip(chunk: Chunk, random: Random, u: number, v: number): void {
+  const crest = worldOf(u, v);
+  const top = seabedHeight(crest.x, crest.z) + 0.12;
+  const below = worldOf(u + 2.6, v);
+  const drop = Math.max(0.4, top - seabedHeight(below.x, below.z));
+  const phase = random.range(0, Math.PI * 2);
+
+  const blades = 2 + Math.floor(random.next() * 2);
+  for (let i = 0; i < blades; i++) {
+    const tones = random.next() < 0.5 ? VIRIDIAN_TONES : CURTAIN_TONES;
+    const ribbon = shortRibbonGeometry(
+      Math.min(drop * random.range(0.35, 0.75), random.range(0.7, 1.6)),
+      random.range(0.13, 0.24),
+      tones[Math.floor(random.next() * tones.length)]!,
+      random,
+    );
+    ribbon.rotateY(random.range(0, Math.PI * 2));
+    ribbon.translate(crest.x + random.signed(0.4), top, crest.z + random.signed(0.4));
+    bakeSwayAttributes(ribbon, phase + i, 0.08, (y) => Math.min(1, Math.max(0, (top - y) / 1.2)));
+    chunk.parts.push(ribbon);
+  }
+
+  const pads = 1 + Math.floor(random.next() * 2);
+  const slope = Math.atan2(drop, 2.6);
+  for (let i = 0; i < pads; i++) {
+    const along = random.range(0.3, 1.5);
+    const t = along / 2.6;
+    const pad = mossPadGeometry(random.range(0.14, 0.3), random);
+    pad.rotateX(slope * random.range(0.8, 1.1));
+    pad.rotateY(DOWNHILL.yaw + random.signed(0.3));
+    const at = worldOf(u + along, v + random.signed(0.5));
+    pad.translate(at.x, top - drop * t + 0.06, at.z);
+    bakeSwayAttributes(pad, phase, 0, () => 0);
+    chunk.parts.push(pad);
+  }
+}
+
+/** A short hanging blade: 1×4 plane, 8 tris, tip-lit to violet hem. */
+function shortRibbonGeometry(
+  length: number,
+  width: number,
+  tone: number,
+  random: Random,
+): BufferGeometry {
+  const geometry = new PlaneGeometry(1, 1, 1, 4);
+  const position = geometry.attributes.position!;
+  const belly = random.range(0.1, 0.3) * length;
+  const twist = random.signed(0.6);
+
+  const tint = new Color(tone).multiplyScalar(random.range(0.85, 1.1));
+  const lit = tint.clone().lerp(TIP_GOLD, 0.4).multiplyScalar(1.18);
+  const hem = tint.clone().lerp(SHADOW_VIOLET, 0.38);
+  const shade = new Color();
+  const colors = new Float32Array(position.count * 3);
+  for (let i = 0; i < position.count; i++) {
+    const t = 0.5 - position.getY(i);
+    const edge = position.getX(i) * 2;
+    const half = Math.sin(Math.PI * Math.min(1, 0.15 + t * 0.9)) ** 0.6;
+    const across = edge * half * 0.5 * width;
+    const spin = twist * t;
+    const bellyOut = Math.sin(Math.PI * Math.min(1, t / 0.7) * 0.5) * belly;
+    position.setXYZ(
+      i,
+      across * Math.cos(spin) + bellyOut * 0.55,
+      -t * length,
+      across * Math.sin(spin) + bellyOut * 0.35,
+    );
+    shade
+      .copy(lit)
+      .lerp(tint, smoothstep01(t / 0.3))
+      .lerp(hem, smoothstep01((t - 0.5) / 0.45));
+    colors[i * 3] = shade.r;
+    colors[i * 3 + 1] = shade.g;
+    colors[i * 3 + 2] = shade.b;
+  }
+  position.needsUpdate = true;
+  geometry.computeVertexNormals();
+  geometry.setAttribute("color", new BufferAttribute(colors, 3));
+  return geometry;
+}
+
+/** A moss pad: a 6-wedge disc, dark centre, tip-lit rim — 6 tris. */
+function mossPadGeometry(radius: number, random: Random): BufferGeometry {
+  const geometry = new CircleGeometry(radius, 6);
+  geometry.rotateX(-Math.PI / 2);
+  const position = geometry.attributes.position!;
+  const tint = new Color(CURTAIN_TONES[Math.floor(random.next() * CURTAIN_TONES.length)]!)
+    .multiplyScalar(random.range(0.8, 1.05));
+  const centre = tint.clone().lerp(SHADOW_VIOLET, 0.5);
+  const rim = tint.clone().lerp(TIP_GOLD, 0.25).multiplyScalar(1.1);
+  const shade = new Color();
+  const colors = new Float32Array(position.count * 3);
+  for (let i = 0; i < position.count; i++) {
+    const r = Math.hypot(position.getX(i), position.getZ(i)) / radius;
+    shade.copy(centre).lerp(rim, smoothstep01((r - 0.2) / 0.7));
+    colors[i * 3] = shade.r;
+    colors[i * 3 + 1] = shade.g;
+    colors[i * 3 + 2] = shade.b;
+  }
   geometry.setAttribute("color", new BufferAttribute(colors, 3));
   return geometry;
 }
@@ -510,7 +758,9 @@ function buildTurf(
   };
   material.customProgramCacheKey = () => "verdant2-turf";
 
-  const capacity = 1900;
+  // Fill round: room for the threshold's turf islands and the grown rim
+  // lawn (the new sections draw from fresh substreams, appended last).
+  const capacity = 2400;
   const mesh = new InstancedMesh(bladeGeometry(), material, capacity);
   mesh.name = "verdant2-turf";
   mesh.castShadow = false;
@@ -618,6 +868,39 @@ function buildTurf(
   for (let i = 0; i < 180; i++) {
     const theta = random.range(0, Math.PI * 2);
     const d = random.range(26, 34);
+    plant(
+      CISTERN.u + Math.cos(theta) * d,
+      CISTERN.v + Math.sin(theta) * d,
+      TURF_FAMILIES[2]!,
+      0.9,
+    );
+  }
+
+  // The threshold's turf islands (fill plan §3): six green marks every
+  // ~16 m down the emptiest road in the province, milky-pale near the
+  // kelp sea and deepening toward the gate — the waymark rhythm, grown.
+  const fillRandom = new Random(SEED ^ 0xf415);
+  for (let island = 0; island < 6; island++) {
+    const islandU = 650 + island * 16.5 + fillRandom.signed(3);
+    const islandV = stairChannelCenter(islandU) + fillRandom.signed(5);
+    const family = TURF_FAMILIES[island < 3 ? 2 : 1]!;
+    for (let blade = 0; blade < 20; blade++) {
+      const spread = 2.6 * Math.sqrt(fillRandom.next());
+      const angle = fillRandom.range(0, Math.PI * 2);
+      plant(
+        islandU + Math.cos(angle) * spread,
+        islandV + Math.sin(angle) * spread,
+        family,
+        0.85,
+      );
+    }
+  }
+
+  // The Cistern's rim lawn grows ×1.6 (180 → 290): the oldest gardens
+  // thicken on their built ring. The bowl inside stays the mirror rest.
+  for (let i = 0; i < 110; i++) {
+    const theta = fillRandom.range(0, Math.PI * 2);
+    const d = fillRandom.range(26, 34);
     plant(
       CISTERN.u + Math.cos(theta) * d,
       CISTERN.v + Math.sin(theta) * d,

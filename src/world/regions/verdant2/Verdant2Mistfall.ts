@@ -10,31 +10,39 @@ import {
   PlaneGeometry,
   Points,
   PointsMaterial,
-  RepeatWrapping,
+  Vector3,
+  type Camera,
   type DataTexture,
 } from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { buildColorTexture, fbm } from "../../../rendering/ProceduralTexture";
 import { Random, SEEDS } from "../../../util/Random";
 import { seabedHeight } from "../../Seabed";
+import { buildFallSheets, buildFallStreakTexture, type FallSheetSpec } from "../kit/FallStreak";
 import { smoothstep01 } from "./Verdant2Shared";
 import { MISTFALL, mistfallLipU, worldOf } from "./Verdant2Terrain";
 
 /**
- * THE MISTFALL — the region's landmark: a slow waterfall of silt pouring
- * over the great terrace lip and down the whole cliff face into the
- * basin's green depth.
+ * THE MISTFALL — the region's landmark and its second light peak (fill
+ * plan §4): a slow waterfall of silt pouring over the great terrace lip
+ * into the basin, REBUILT as a light event.
  *
- * Three marks, all deterministic:
+ * Four marks, all deterministic:
  *
- * - **The fall**: two overlapped curtain sheets from the lip's crest to
- *   the basin floor, wearing a streaked milk texture whose offset scrolls
- *   slowly downward each frame (time-based — no randomness is ever spent
- *   after build). Normal blending with fog on: the fall is a *thing* in
- *   the water, not a light.
- * - **The grains**: a column of falling silt motes (one additive Points
- *   draw) recycling over the fall's height on the same clock.
- * - **The billow**: soft milk sprites where the fall lands, and a slow
- *   breathing scale on them — the foot of the fall never holds still.
+ * - **The milk** (kit `fallStreak`): overlapping soft-edged tapered
+ *   sheets wearing the kit's tiling column texture — per-column width
+ *   and phase jitter, alpha-dissolved tops AND feet, a slow closed-form
+ *   scroll. This replaces the old pair of hard-topped quad curtains
+ *   whose rectangular heads the audit called out in `mistfall-above`.
+ *   The sheets are `fog:false` additive, so the region adds the fourth
+ *   light-discipline part the kit leaves to the caller: a camera-range
+ *   fade (full to 100 m, dead by 180 — longer than ordinary marks
+ *   because this is a named light peak, plan §4).
+ * - **The grains**: the falling silt motes, grown ×1.5 (320 → 480).
+ * - **The billows**: the soft milk clouds where the fall lands, kept.
+ * - **THE BILLOW GLOW FAN** (exclusive, §6b.2): an additive fan of
+ *   ground-faded light blades leaning out of the pour's foot — the
+ *   wet-light of the falls, the event the audit found missing below.
  */
 
 const SEED = SEEDS.regionVerdant2;
@@ -51,6 +59,10 @@ const FOOT_Y = -45.2;
  */
 const LIP_BASE_U = mistfallLipU(MISTFALL.v);
 
+/** The milk's range fade: a light peak carries further than ordinary marks. */
+const MILK_FADE_FROM = 100;
+const MILK_FADE_TO = 180;
+
 export interface MistfallBuild {
   readonly meshes: (Mesh | Points)[];
   update(dt: number, reducedMotion: boolean): void;
@@ -60,66 +72,51 @@ export function buildMistfall(): MistfallBuild {
   const random = new Random(SEED ^ 0x30a8);
   const meshes: (Mesh | Points)[] = [];
 
-  // ─── The fall's curtains ─────────────────────────────────────────────────
-  const curtains: { material: MeshBasicMaterial; rate: number }[] = [];
-  for (const [i, spec] of [
-    { width: FALL_HALF_WIDTH * 2, lean: 1.6, opacity: 0.5, rate: 0.026 },
-    { width: FALL_HALF_WIDTH * 1.5, lean: 2.6, opacity: 0.36, rate: 0.041 },
-  ].entries()) {
-    const height = LIP_Y - FOOT_Y + 2;
-    const geometry = new PlaneGeometry(spec.width, height, 6, 12);
-    const position = geometry.attributes.position!;
-    const colors = new Float32Array(position.count * 3);
-    for (let k = 0; k < position.count; k++) {
-      // 0 lip → 1 foot; clamped, because a float hair below zero turns
-      // Math.pow(ty, 1.6) into NaN and the bounding sphere with it.
-      const ty = Math.min(1, Math.max(0, 0.5 - position.getY(k) / height));
-      const tx = position.getX(k) / spec.width;
-      // The curtain bellies outward as it falls, like poured cream.
-      position.setZ(k, spec.lean * Math.pow(ty, 1.6) + Math.sin(tx * Math.PI * 2 + i) * 0.4 * ty);
-      // Round 5: the fades moved into the alpha map — fading the vertex
-      // *colour* darkened the sheet's rim to a black line against the
-      // fog instead of dissolving it. The colour now carries only a
-      // gentle value drop toward the foot.
-      const value = 1 - ty * 0.18;
-      colors[k * 3] = value;
-      colors[k * 3 + 1] = value;
-      colors[k * 3 + 2] = value;
-    }
-    geometry.setAttribute("color", new BufferAttribute(colors, 3));
-    position.needsUpdate = true;
-    geometry.computeVertexNormals();
-
-    const map = fallTexture();
-    const material = new MeshBasicMaterial({
-      map,
-      color: new Color(0xd9ecd2),
-      transparent: true,
-      opacity: spec.opacity,
-      depthWrite: false,
-      side: DoubleSide,
-      vertexColors: true,
-      alphaMap: fallAlphaTexture(),
+  // ─── The milk (kit fallStreak) ───────────────────────────────────────────
+  // Seven overlapping sheets across the fall's width, staggered down the
+  // lip's own meander, widths and heights jittered so no two share an
+  // edge. One merged draw, one shared texture.
+  const milkTexture = buildFallStreakTexture({ seed: SEED ^ 0xf902, columns: 6, softness: 0.6 });
+  const spineA = worldOf(0, 0);
+  const spineB = worldOf(1, 0);
+  const downhillYaw = Math.atan2(spineB.x - spineA.x, spineB.z - spineA.z);
+  const sheetRandom = new Random(SEED ^ 0xf901);
+  const sheets: FallSheetSpec[] = [];
+  for (let i = 0; i < 7; i++) {
+    const v = MISTFALL.v + (i - 3) * 3.4 + sheetRandom.signed(1.2);
+    const belly = 0.8 + sheetRandom.range(0, 2.6);
+    const { x, z } = worldOf(mistfallLipU(v) + belly, v);
+    sheets.push({
+      pos: [x, FOOT_Y - 0.6, z],
+      width: sheetRandom.range(5.5, 8.5),
+      height: LIP_Y - FOOT_Y + sheetRandom.range(1.0, 2.6),
+      phase: sheetRandom.next(),
+      facing: downhillYaw,
     });
-    // Each curtain scrolls its own copy of the texture (the alpha map
-    // stays still — the edge fade must not scroll with the milk).
-    material.map = map.clone();
-    material.map.wrapS = RepeatWrapping;
-    material.map.wrapT = RepeatWrapping;
-    curtains.push({ material, rate: spec.rate });
-
-    const at = worldOf(LIP_BASE_U + 0.5 + i * 2.2, MISTFALL.v + (i === 0 ? 0 : 1.5));
-    geometry.rotateY(-1.35 - Math.PI / 2 + random.signed(0.05));
-    geometry.translate(at.x, (LIP_Y + FOOT_Y) / 2 + 1, at.z);
-    geometry.computeBoundingSphere();
-    const mesh = new Mesh(geometry, material);
-    mesh.name = `verdant2-mistfall-curtain-${i}`;
-    mesh.renderOrder = 3;
-    meshes.push(mesh);
   }
+  const milk = buildFallSheets({
+    seed: SEED ^ 0xf903,
+    texture: milkTexture,
+    tint: 0xd9ecd2,
+    sheets,
+    opacity: 0.19,
+  });
+  const milkMesh = milk.group.getObjectByName("kit-fall-sheets") as Mesh;
+  const milkMaterial = milkMesh.material as MeshBasicMaterial;
+  const milkBaseOpacity = milkMaterial.opacity;
+  const milkCentre = (() => {
+    const { x, z } = worldOf(LIP_BASE_U + 2, MISTFALL.v);
+    return new Vector3(x, (LIP_Y + FOOT_Y) / 2, z);
+  })();
+  milkMesh.onBeforeRender = (_renderer, _scene, camera: Camera) => {
+    const distance = milkCentre.distanceTo(camera.position);
+    milkMaterial.opacity =
+      milkBaseOpacity * (1 - smoothstep01((distance - MILK_FADE_FROM) / (MILK_FADE_TO - MILK_FADE_FROM)));
+  };
+  meshes.push(milkMesh);
 
   // ─── The grains ──────────────────────────────────────────────────────────
-  const count = 320;
+  const count = 480;
   const base = new Float32Array(count * 3);
   const live = new Float32Array(count * 3);
   const phases = new Float32Array(count);
@@ -160,7 +157,7 @@ export function buildMistfall(): MistfallBuild {
   grains.frustumCulled = false;
   meshes.push(grains);
 
-  // ─── The billow ──────────────────────────────────────────────────────────
+  // ─── The billows ─────────────────────────────────────────────────────────
   const billows: Mesh[] = [];
   for (let i = 0; i < 3; i++) {
     const geometry = new PlaneGeometry(13 + i * 5, 6 + i * 1.8, 1, 1);
@@ -184,15 +181,22 @@ export function buildMistfall(): MistfallBuild {
     meshes.push(mesh);
   }
 
+  // ─── The billow glow fan (exclusive) ─────────────────────────────────────
+  // The wet-light of the falls: five additive blades fanned out of the
+  // pour's foot, brightest at the ground and dissolving upward — the
+  // fall's landing becomes a light event (light peak #2, plan §4). The
+  // fan carries the full four-part discipline: `fog:false`, a baked
+  // ground fade, an edge-forgiving radial sprite, and a range fade.
+  const fan = buildBillowGlowFan(new Random(SEED ^ 0xf904));
+  meshes.push(fan);
+
   let clock = 0;
   const height = LIP_Y - FOOT_Y;
   return {
     meshes,
     update(dt: number, reducedMotion: boolean): void {
       clock += dt * (reducedMotion ? 0.4 : 1);
-      for (const curtain of curtains) {
-        curtain.material.map!.offset.y = (clock * curtain.rate) % 1;
-      }
+      milk.update(clock);
       for (let i = 0; i < count; i++) {
         const t = (phases[i]! + clock * (speeds[i]! / height)) % 1;
         live[i * 3] = base[i * 3]! + Math.sin(clock * 0.4 + i) * 0.3 * t;
@@ -204,39 +208,68 @@ export function buildMistfall(): MistfallBuild {
         const breathe = 1 + Math.sin(clock * 0.22 + i * 2.1) * 0.08;
         billow.scale.set(breathe, 1, breathe);
       }
+      fan.scale.setScalar(1 + Math.sin(clock * 0.18) * 0.05);
     },
   };
 }
 
-/**
- * The curtain's alpha: a bell across the sheet, a dissolve at the head
- * (the lip's spill starts thin) and a soft foot into the billow. Plane
- * UVs put v = 1 at the lip.
- */
-let fallAlphaMap: DataTexture | undefined;
-function fallAlphaTexture(): DataTexture {
-  fallAlphaMap ??= buildColorTexture(64, (u, v) => {
-    const bell = 1 - smoothstep01((Math.abs(u - 0.5) - 0.28) / 0.2);
-    const head = smoothstep01((1 - v) / 0.14);
-    const foot = smoothstep01(v / 0.1);
-    const a = bell * head * foot;
-    return [a, a, a];
-  });
-  return fallAlphaMap;
-}
+/** The exclusive foot-glow: a radial fan of ground-lit additive blades. */
+function buildBillowGlowFan(random: Random): Mesh {
+  const parts: BufferGeometry[] = [];
+  const footAt = worldOf(LIP_BASE_U + 6.5, MISTFALL.v);
+  const footY = seabedHeight(footAt.x, footAt.z);
+  for (let i = 0; i < 5; i++) {
+    const blade = new PlaneGeometry(random.range(4.5, 7), random.range(3.4, 5.2), 1, 6);
+    const position = blade.attributes.position!;
+    const colors = new Float32Array(position.count * 3);
+    const height = 4.2;
+    for (let k = 0; k < position.count; k++) {
+      // Bright at the foot, dead by the head — the glow hugs the landing.
+      const t = position.getY(k) / height + 0.5;
+      const value = Math.pow(Math.max(0, 1 - t), 1.6);
+      colors[k * 3] = value;
+      colors[k * 3 + 1] = value;
+      colors[k * 3 + 2] = value * 0.94;
+    }
+    blade.setAttribute("color", new BufferAttribute(colors, 3));
+    // Fanned: leaning outward from the foot, spread across the fall.
+    blade.rotateX(random.signed(0.35));
+    blade.rotateY((i - 2) * 0.55 + random.signed(0.2));
+    const dv = (i - 2) * 4.2 + random.signed(1.5);
+    const at = worldOf(LIP_BASE_U + 6 + Math.abs(i - 2) * 1.2, MISTFALL.v + dv);
+    blade.translate(at.x, seabedHeight(at.x, at.z) + 1.6, at.z);
+    parts.push(blade);
+  }
+  const merged = mergeGeometries(parts, false);
+  for (const part of parts) {
+    part.dispose();
+  }
+  if (!merged) {
+    throw new Error("verdant2 billow glow fan could not be merged");
+  }
+  merged.computeBoundingSphere();
 
-/** Vertical milk streaks, tileable along the fall. */
-let fallMap: DataTexture | undefined;
-function fallTexture(): DataTexture {
-  fallMap ??= buildColorTexture(128, (u, v) => {
-    const streaks =
-      0.45 +
-      fbm(u * 6, v * 1.2, { seed: SEED ^ 0x30a9, period: 8, octaves: 3 }) * 0.7 +
-      Math.sin(u * Math.PI * 26) * 0.06;
-    const value = Math.max(0, Math.min(1, streaks));
-    return [value, value, value * 0.98];
+  const material = new MeshBasicMaterial({
+    map: glowFanTexture(),
+    color: new Color(0xe6f4d0),
+    transparent: true,
+    opacity: 0.15,
+    blending: AdditiveBlending,
+    depthWrite: false,
+    side: DoubleSide,
+    vertexColors: true,
+    fog: false,
   });
-  return fallMap;
+  const mesh = new Mesh(merged, material);
+  mesh.name = "verdant2-mistfall-glow-fan";
+  mesh.renderOrder = 3;
+  const centre = new Vector3(footAt.x, footY + 2, footAt.z);
+  const baseOpacity = material.opacity;
+  mesh.onBeforeRender = (_renderer, _scene, camera: Camera) => {
+    const distance = centre.distanceTo(camera.position);
+    material.opacity = baseOpacity * (1 - smoothstep01((distance - 70) / 50));
+  };
+  return mesh;
 }
 
 let grainMap: DataTexture | undefined;
@@ -258,4 +291,16 @@ function billowTexture(): DataTexture {
     return [halo, halo, halo * 0.96];
   });
   return billowMap;
+}
+
+let glowFanMap: DataTexture | undefined;
+function glowFanTexture(): DataTexture {
+  glowFanMap ??= buildColorTexture(64, (u, v) => {
+    const wobble = fbm(u, v, { seed: SEED ^ 0xf905, period: 3, octaves: 2 });
+    const bell = Math.pow(Math.max(0, Math.cos((u - 0.5) * Math.PI)), 1.6);
+    const rise = Math.pow(Math.max(0, 1 - v), 1.4) * (0.8 + wobble * 0.4);
+    const value = Math.min(1, bell * rise);
+    return [value, value, value * 0.95];
+  });
+  return glowFanMap;
 }
