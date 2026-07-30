@@ -3,6 +3,7 @@ import {
   GATE_U,
   LAST_GROVE,
   SEEP_GARDENS,
+  WOUND,
   marchChannelCenter,
   marchChannelHalf,
   spokeOf,
@@ -80,6 +81,9 @@ export const FILL_SEEDS = {
   flankStraw: 0xf253,
   flankScrub: 0xf254,
   flankKnuckles: 0xf255,
+  rayCrumbs: 0xf256,
+  raySlabs: 0xf257,
+  rayStraw: 0xf258,
 } as const;
 
 // ─── The registry gates ──────────────────────────────────────────────────────
@@ -146,6 +150,43 @@ export function regrowthReach(u: number, v: number): number {
  */
 export function flankReach(u: number, v: number): number {
   return smoothstep01((u - 500) / 30) * smoothstep01((Math.abs(v) - 46) / 18);
+}
+
+/**
+ * The five ejecta rays' azimuths in the spoke frame (0° points down-spine,
+ * +v is +90°). Craters do not blanket evenly — they throw debris in RAYS —
+ * and round 3 proved a uniform blanket cannot buy a foreground read over
+ * ~145,000 m² of crater country at any honest budget. The azimuths are
+ * aimed the way the bank snags were: the sweep pose stream is
+ * deterministic, so the rays lie along the failing and lean view lines
+ * (poses 10, 05, 07, 06 and 09 in ray order).
+ */
+const RAY_AZIMUTHS = [51, 83, 119, 149.4, 225].map((deg) => (deg * Math.PI) / 180);
+
+/**
+ * Where an ejecta ray owns a spoke point, in [0, 1]: full within ~9 m of
+ * a ray's spine, dead past ~20 m, running craterD 62 → 178 with soft
+ * ends (inside 62 the blanket and the bowl's own scorch take over).
+ */
+export function ejectaRayReach(u: number, v: number): number {
+  const du = u - WOUND.u;
+  const dv = v - WOUND.v;
+  const d = Math.hypot(du, dv);
+  if (d < 55 || d > 215) {
+    return 0;
+  }
+  const angle = Math.atan2(dv, du);
+  let across = 0;
+  for (const azimuth of RAY_AZIMUTHS) {
+    let delta = Math.abs(angle - azimuth);
+    if (delta > Math.PI) {
+      delta = Math.PI * 2 - delta;
+    }
+    const lateral = delta * d;
+    across = Math.max(across, 1 - smoothstep01((lateral - 9) / 11));
+  }
+  const along = smoothstep01((d - 62) / 18) * (1 - smoothstep01((d - 178) / 30));
+  return across * along;
 }
 
 /** How close a spoke point stands to the march channel's swim line, metres.

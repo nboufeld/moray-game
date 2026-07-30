@@ -18,6 +18,7 @@ import { smoothstep01 } from "./CalamityShared";
 import {
   FILL_SEEDS,
   channelDistance,
+  ejectaRayReach,
   flankReach,
   mileThin,
   mileWeight,
@@ -614,6 +615,78 @@ export function buildCalamityLitter(): CalamityLitterBuild {
       count: 70,
       shapeSet: [knuckleGeometry(1), knuckleGeometry(-1)],
       size: [0.9, 1.8],
+    }),
+  );
+
+  // ═══ ROUND 4 — the ejecta RAYS. Round 3 proved the uniform blanket
+  // cannot buy a foreground read over ~145,000 m² of crater country at
+  // any honest budget (one crumb per ~45 m²). The story answer: craters
+  // throw debris in rays. Five rays radiate from the Wound along the
+  // sweep's own failing and lean view lines (the azimuths live in
+  // CalamityFillShared with the reasoning), and inside them the ground
+  // finally carries the density the story promised — dense crumb,
+  // thrown slab, stripped straw, all raked off the Wound. ═══
+
+  const rayGate: GateFn = (x, z) => {
+    const { u, v } = spokeOf(x, z);
+    const ray = ejectaRayReach(u, v);
+    if (ray <= 0) {
+      return 0;
+    }
+    if (channelDistance(u, v) < 1.8) {
+      return 0;
+    }
+    return (
+      ray *
+      (1 - groveWeight(u, v)) *
+      (1 - woundWeight(u, v)) *
+      restFree(x, z) *
+      calamityWeight(x, z)
+    );
+  };
+
+  keep(
+    buildGroundLitter({
+      seed: SEED ^ FILL_SEEDS.rayCrumbs,
+      palette: { base: 0xa6a39b, accent: 0x9296a6, shade: 0x6f6a80 },
+      area: craterArea,
+      gate: rayGate,
+      ground: seabedHeight,
+      count: 1800,
+      shapeSet: "shard",
+      size: [0.14, 0.4],
+      rake: { from: [wound.x, wound.z], strength: 0.85, jitter: 0.14 },
+      twoTone: true,
+    }),
+    shardGroups,
+  );
+
+  keep(
+    buildGroundLitter({
+      seed: SEED ^ FILL_SEEDS.raySlabs,
+      palette: { base: 0xb2aea2, shade: 0x767086 },
+      area: craterArea,
+      gate: rayGate,
+      ground: seabedHeight,
+      count: 240,
+      shapeSet: "shard",
+      size: [0.45, 1.0],
+      rake: { from: [wound.x, wound.z], strength: 0.85, jitter: 0.12 },
+    }),
+    shardGroups,
+  );
+
+  keep(
+    buildGroundLitter({
+      seed: SEED ^ FILL_SEEDS.rayStraw,
+      palette: { base: 0xb4ac96, shade: 0x807888 },
+      area: craterArea,
+      gate: rayGate,
+      ground: seabedHeight,
+      count: 320,
+      shapeSet: [strawStrap(1.5, 0.2, 0.05), strawStrap(1.05, 0.16, 0.08), strawStrap(2.0, 0.24, 0.04)],
+      size: [0.7, 1.15],
+      rake: { from: [wound.x, wound.z], strength: 0.9, jitter: 0.12 },
     }),
   );
 

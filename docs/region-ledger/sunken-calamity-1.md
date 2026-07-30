@@ -390,3 +390,40 @@ it stands in the `_verify` baseline identically (a pilot west-clump
 plant 1.5 m off the camera corridor, accepted in the pilot's round-5
 full-set review). The plant stays (pilot content is fenced); the POSE
 gets a two-metre camera slide off its shoulder instead.
+
+### Round 3 (`ca-fill-r3`) — the blanket thickened; two poses still read felt
+
+The rework: the blanket densified per round-2 orders (crumbs 1500 →
+3200 and a step larger 0.12–0.34 m, slabs 300 → 560 at 0.42–0.95 m,
+flank straw 300 → 460, flank scrub 120 → 200, knuckles 46 → 70), the
+shrine pose's two-metre slide committed. Measured after: 116 draws /
+421,456 tris. All 21 region tests green.
+
+**Sweep verdict: 10/12.** Clear: 01, 03, 04, 08, 09, 11, 12 (01's
+near carpet is now dense shard-fall; 09's west flank carries streaked
+ash, shards and its arching ghost; 11 has its gleam-crab, bubble
+thread and snag rank). Passing but lean: 02, 07, 10. **Still failing:
+05 (u 733, v 143) and 06 (u 548, v 90)** — both on full-weight ground
+(1.00 and 0.95 measured), neither a registered rest, and both still
+read the first ten metres as bare felt with a good mid (snags) and far
+(ridge) layer. Diagnosis, honestly: a UNIFORM blanket over the crater
+country's ~145,000 m² cannot buy a foreground read at any honest
+budget — 3200 crumbs is still only one stone per ~45 m². Densifying
+again would burst the triangle cap before it fixed the read.
+
+Authored set (all 18 read): everything from round 2 holds; the-shrine
+is CLEAN after the slide (pile and Curator centre-frame, no trunk on
+the lens); the-reveal's crest rains raked bone shards down the bank;
+wound-gate's shoulders carry their flank scrub and thrown straw;
+suffocated-mile and quiet-rim stay registry-still.
+
+Round-4 orders — the story answer, not brute force: craters do not
+blanket evenly, they throw debris in **RAYS**. Five ejecta rays
+radiate from the Wound at azimuths 51°, 83°, 119°, 149.4° and 225°
+(spoke frame, 0° down-spine) — chosen to lie along the failing and
+lean view lines (10, 05, 07, 06, 09 respectively) the way the bank
+snags were placed: the pose stream is deterministic, so the rays are
+aimed where the region is actually seen. Dense crumb/slab/straw fill
+inside the rays only (~10–20 m half-width, craterD 62–178), raked off
+the Wound like all ejecta, swim line and rests held, fresh seeds
+appended (0xf256–0xf258).
