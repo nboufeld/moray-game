@@ -165,6 +165,10 @@ stays clean — motes and plankton reject inside its bowl.)
 - Draft 1: **95 draws / 678,474 tris / 468 colliders** (caps 260 /
   1.35M — R12). Headroom held for the critique rounds.
 - Round 2: re-measured after the density/value pass (below).
+- Round 4: **100 draws / 1,315,408 tris / 471 colliders** — the first
+  r4 density draft measured 1,495,888 and was trimmed back under the
+  cap (fronds 10,500 → 8,200 etc.) before ever being captured; the
+  drift-floor raise, not raw count, carries the close-pose fix.
 
 ## Seeds
 
@@ -375,6 +379,54 @@ meadow's drift-low bands still read mustard at sweep height — one more
 green step on the base sward + raise the drift floor; (3) kill the
 split-stone ring arcs (scatter them as clusters, not rings); (4) bark
 micro-band paint for touch range (frame 05).
+
+The close-pose recapture (the ten poses the crash had eaten) landed
+after the sweep and sharpened the orders: `close-shade-floor` FAILS
+(four rosettes on khaki-olive — the drift gap AND the sand wash);
+`close-road-moss` FAILS HARD (the front door is raw pale sand with one
+blade line — the road gate rides `min(1, w × 1.4)` and the threshold's
+authored whisper-weight starves it exactly where it matters);
+`close-garden-skirt` PASSES again; `close-wellspring-rim` marginal
+(bubbles ✓, khaki bowl slope, near-bare rim). `fallen-causeway`: the
+log is STILL a pale tarp, now with pink runnel blotches — third
+strike. `provinces-end`: the crowns finally break the sky but the
+sector cluster's waists cross the fog gap between rampart and rings as
+hanging rectangles; the two ring-radius card bands (tops −8…+14 vs
+ring crests 13–27) turn out never to have been visible at all.
+`hollow-mesa` captured SOLID STONE — the round-3 mouth dressing put a
+flank boulder on the round-3 pose spot. Diagnosis: the arcs in sweep
+04 are not the split stones — they are the Last Rampart's height-keyed
+ledge `sin` bands drawing contour arcs on the near-flat rim skirt.
+
+### Round 4 (`v3-r4`) — the front door dressed; the roof painted
+
+The moves (all landed in one pass, committed before capture):
+
+- **The threshold road**: `roadGate` runs on tongue PRESENCE
+  (`min(1, w × 3.4)`), not ownership; band 12 → 16 m; road blades
+  2,200 (+ size up), pebbles 700, scrub 18; the handover milk GREENED
+  (0.98/1.02/0.92 → 0.84/1.04/0.94) and pulled back to fade by
+  u ≈ 1222 — the terraces hand over their LIGHT, not their bare sand.
+- **The floor**: drift floor 0.45 → 0.55 (gaps stay planted), fronds
+  8,200 / blades 3,200 / tall stands 520, sward red 0.40 → 0.37,
+  descent moss 1,000, wellspring rim sward 360 (sized up).
+- **The roof**: pad undersides lifted a full value and leaf-clump
+  mottled (0.46/0.52/0.58 ± fbm) — the dark is now detail, not base;
+  bark grain frequency doubled at amplitude 0.3 for touch range.
+- **The log**: moss bands 0.9 + 0.18 floor + streaks 1.2; runnel
+  violet damped ×0.3 on the log only (the pink blotches).
+- **The bowls**: wellspring pale widened to the true lip and cooled
+  (0.88/1.06/1.04).
+- **The rampart**: ledge bands gated by `smoothstep01((rim−0.45)/0.3)`
+  — contour arcs off the flat skirt.
+- **The painting**: all three card bands behind ring 1 (252–292),
+  heights 68–100 so the crowns break the ring crests from the balcony
+  and every foot stays under every ring's own foot — no waist can
+  cross the fog gap again.
+- **The pose**: `hollow-mesa` backed out to 9 m on the mouth axis.
+
+Budget after trim: 100 draws / 1,315,408 tris / 471 colliders; 24
+region tests + 145 neighbour/kit tests green. Captures below.
 
 ## Flags
 
