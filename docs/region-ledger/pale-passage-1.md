@@ -348,10 +348,12 @@ Full 14 authored + 12 sweep captured and READ.
   its petal eddies, and the two rests (`quiet-gallery`, `ravine-hush`)
   hold their registered stillness.
 - Sweep: **9/12** — 05/07/08/10/11 clean, 01/02/06 soft passes on the
-  bank shards and stump line, 12 (deep bone forest, u 358) scored from
-  a frame that landed after the r4 edits began — its zone changed only
-  by an ossuary trim, and r2 already read the pose as a pass-side
-  frame; the r4 sweep re-captures the identical pose for the record. Still missing: **03** u 357 v 174,
+  bank shards and stump line. Pose 12's frame is INVALID — it landed
+  after the r4 edits began and the dev server's hot-reload broke the
+  camera teleport mid-capture (the PNG shows the world spawn, not the
+  bone forest at u 358). Not scored; the final sweep re-captures the
+  identical pose. Counting 12 as unknown the round stands at 9 of 11
+  readable frames, misses 03/04/09 — none registered rests. Still missing: **03** u 357 v 174,
   **04** u 497 v −159, **09** u 556 k 1.0. The r3 thesis (gate holes)
   was only half right: the gates now COVER those flanks, but what they
   deliver is ankle-height chips — 950 petals over a radius-130 disc is
