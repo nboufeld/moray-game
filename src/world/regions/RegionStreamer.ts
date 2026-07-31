@@ -24,8 +24,20 @@ import type { RegionBuild, RegionDef } from "./RegionTypes";
 
 /** Metres beyond a region's nearest edge at which it is built + attached. */
 const BUILD_MARGIN = 130;
-/** Extra metres of hysteresis before an attached region detaches. */
-const HYSTERESIS = 45;
+/**
+ * Extra metres of hysteresis before an attached region detaches.
+ *
+ * 65 rather than the original 45 because of a measured capture-harness
+ * race: the spawn at (0, 2, 14) sits 236.7 m from `great-blue-1`'s edge
+ * (its spoke runs spawn-away, unlike the pilot's, whose edge is 216.6 m
+ * out), so at 45 the region force-attached by the QA door detached again
+ * on the first update tick — and a capture pose teleported into it was
+ * collision-clamped back to the bowl before the streamer could re-attach,
+ * leaving every fresh-page screenshot shot from the wrong water. The
+ * wider band only makes detach *more* conservative; attach distances are
+ * untouched, and builds were already cached across the boundary.
+ */
+const HYSTERESIS = 65;
 
 interface Entry {
   readonly def: RegionDef;

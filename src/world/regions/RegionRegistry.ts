@@ -1,5 +1,6 @@
 import type { RegionDef } from "./RegionTypes";
 import { CALAMITY_1 } from "./calamity1/Calamity1";
+import { BLUE_1 } from "./blue1/Blue1";
 import { VERDANT_1 } from "./verdant1/Verdant1";
 import { SMOKING_1 } from "./smoking1/Smoking1";
 import { PALE_1 } from "./pale1/Pale1";
@@ -20,6 +21,7 @@ export const REGIONS: readonly RegionDef[] = [
   CALAMITY_1,
   VERDANT_2,
   GOLDEN_1,
+  BLUE_1,
 ];
 
 const BY_SLOT = new Map(REGIONS.map((region) => [region.slotId, region]));
