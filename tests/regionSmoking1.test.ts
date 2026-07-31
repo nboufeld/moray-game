@@ -247,34 +247,44 @@ describe("smoking-marches-1 build", () => {
     let sampled = 0;
     for (const name of kitNames) {
       for (const node of named.get(name) ?? []) {
-        const mesh = node as InstancedMesh;
-        // The kit's quality pass (R12) rebuilt some pieces as single merged
-        // meshes — scree-apron among them — so only true instanced nodes
-        // carry a matrix table. Merged pieces keep their containment under
-        // the kit's own §5 contract; here we sample their geometry instead.
-        if (!mesh.isInstancedMesh) {
-          const position = mesh.geometry.getAttribute("position");
-          for (let i = 0; i < position.count; i += 60) {
-            const x = position.getX(i);
-            const z = position.getZ(i);
-            expect(
-              smokingWeight(x, z),
-              `${name} vertex[${i}] at ${x.toFixed(1)},${z.toFixed(1)}`,
-            ).toBeGreaterThan(0);
+        // The kit's quality pass (R12) reshapes pieces freely: some are
+        // single merged meshes, some are named GROUPS whose children carry
+        // the geometry. Walk down to the real meshes before sampling.
+        const meshes: InstancedMesh[] = [];
+        node.traverse((child) => {
+          if ((child as InstancedMesh).isMesh) {
+            meshes.push(child as InstancedMesh);
+          }
+        });
+        node.updateMatrixWorld(true);
+        for (const mesh of meshes) {
+          // Merged pieces keep their containment under the kit's own §5
+          // contract; here we sample their geometry (in world space, since
+          // group children may carry their own transforms).
+          if (!mesh.isInstancedMesh) {
+            const position = mesh.geometry.getAttribute("position");
+            const v = new Vector3();
+            for (let i = 0; i < position.count; i += 60) {
+              v.fromBufferAttribute(position, i).applyMatrix4(mesh.matrixWorld);
+              expect(
+                smokingWeight(v.x, v.z),
+                `${name} vertex[${i}] at ${v.x.toFixed(1)},${v.z.toFixed(1)}`,
+              ).toBeGreaterThan(0);
+              sampled++;
+            }
+            continue;
+          }
+          for (let i = 0; i < mesh.count; i += 5) {
+            mesh.getMatrixAt(i, m);
+            if (m.elements[13]! < -100) {
+              continue; // parked below the world
+            }
+            m.premultiply(mesh.matrixWorld);
+            const x = m.elements[12]!;
+            const z = m.elements[14]!;
+            expect(smokingWeight(x, z), `${name}[${i}] at ${x.toFixed(1)},${z.toFixed(1)}`).toBeGreaterThan(0);
             sampled++;
           }
-          continue;
-        }
-        for (let i = 0; i < mesh.count; i += 5) {
-          mesh.getMatrixAt(i, m);
-          const x = m.elements[12]!;
-          const y = m.elements[13]!;
-          const z = m.elements[14]!;
-          if (y < -100) {
-            continue; // parked
-          }
-          expect(smokingWeight(x, z), `${name}[${i}] at ${x.toFixed(1)},${z.toFixed(1)}`).toBeGreaterThan(0);
-          sampled++;
         }
       }
     }
