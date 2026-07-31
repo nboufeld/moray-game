@@ -673,3 +673,41 @@ off-sward) — no square metre of the meadows may read mustard at
 swimming distance; (2) turf 4,200 → 4,800 and a touch taller; (3) the
 silt gate's ridge baseline 0.3 → 0.45 (a maze floor is never bare,
 just thinner uphill), silt 1,300 → 1,450, split stones 200 → 260.
+
+## Round 3 (`rp-r3`) — critique
+
+Measured **116 draws / 1,281,990 tris**. The loaded machine (three
+sibling reworks capturing in parallel, load ~25–30) kept killing the
+capture harness, so this round's close poses were judged from ad-hoc
+browser captures at the same code (the authored `rp-r3` prefix sets
+cover the first eleven poses).
+
+- **THE PERF GATE, measured this round on real hardware**:
+  `SHOT_HEADED=1` at the densest pose (the forest aisle, u 414 —
+  canopy + trunks + turf/litter/fern/stand carpets in one cone):
+  **301 frames | median 16.7 ms (59.9 fps) | p95 18.6 ms | scale
+  1.00** — under the 16.9 ms bar, measured while the machine ran
+  three sibling builds.
+- **`close-vale-road`**: PASS — green mossy lane, rosettes near and
+  mid, stands on the banks, graded pebble drifts.
+- **`close-forest-floor`**: PASS (marginal) — litter curls + ferns +
+  wayside blades; the mid band can still open bare.
+- **`close-meadow-sward`**: STILL FAILS the composition (the blades
+  read as plants; the floor stays mustard) — the round-3 red cut
+  helped the flanks but the meadow band needs the vale's own floor
+  (~0.55 red), and the space between sward crests can go twenty
+  metres without one of the region's tall grass drifts.
+- **`close-maze-floor`**: marginal — ridge rosettes arrived (the
+  0.45 baseline reads), split stones still vanish into the paint.
+
+**Round-4 orders**: (1) base red 0.66 → 0.60 (b 0.58 → 0.60); (2)
++14 tall meadow-grass drifts from a fresh appended `^ 0xf215` stream
+in `VerdantMeadow` — the region's own 1.7 m blades OWN the meadow
+floor, the kit turf only textures it; (3) litter 2×1,050, ferns 900,
+silt 1,600, split stones a value up (they matched the maze paint so
+exactly they vanished).
+
+## Round 4 (`rp-r4`) — the content close
+
+Measured **116 draws / 1,315,710 tris** (caps 130 / 1.34M, R12 room
+1.35M). Round-4 orders all landed.

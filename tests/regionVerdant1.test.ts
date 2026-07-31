@@ -152,7 +152,7 @@ describe("verdant-line-1 build", () => {
     // here are set to what the R12.3 re-pass MEASURED plus working
     // margin, not to the doctrine maximum: honest caps catch regressions.
     expect(draws).toBeLessThanOrEqual(130);
-    expect(triangles).toBeLessThanOrEqual(1_300_000);
+    expect(triangles).toBeLessThanOrEqual(1_340_000);
     // Honest floors as well as caps: an empty region passes no bar, and a
     // FILLED region must actually be filled — after the R12.3 profile
     // upgrades the region cannot legitimately shrink below these.

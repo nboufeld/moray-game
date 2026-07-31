@@ -141,13 +141,14 @@ function bakeVerdantPaint(geometry: PlaneGeometry, contacts: readonly ContactPat
     // stood on it), so round 3 greens the base and lets the sward patches
     // deepen from an already-green floor. No square metre of owned disc
     // may read as bare sand by default.
-    // R12.3 round 3: another red cut off the base — the re-pass's close
-    // poses proved the inter-sward floor still reads mustard at swimming
-    // distance under the warm wash, and no instance count can out-paint
-    // the paint (the fill-r3 lesson, taken one step further).
-    let r = 0.66 - sward * 0.26;
+    // R12.3 rounds 3–4: two more red cuts off the base — the re-pass's
+    // close poses proved the inter-sward floor still read mustard at
+    // swimming distance under the warm wash (round 3's 0.66 moved it a
+    // step; the vale reads green at ~0.45–0.55 red, and the meadows
+    // deserve the same floor). No instance count can out-paint the paint.
+    let r = 0.6 - sward * 0.24;
     let g = 0.99 - sward * 0.05;
-    let b = 0.58 - sward * 0.08;
+    let b = 0.6 - sward * 0.08;
 
     if (u < VALE_TO) {
       // The vale: mossy green walls banded by height, and a violet-leaning

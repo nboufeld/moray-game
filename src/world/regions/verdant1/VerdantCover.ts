@@ -423,7 +423,7 @@ export function buildVerdantCover(giants: readonly KelpFoot[]): VerdantCoverBuil
       area: discAreaAt(450, -10, 118),
       gate: litterGate,
       ground: seabedHeight,
-      count: 950,
+      count: 1050,
       profile: "frond",
       size: [0.18, 0.36],
     }),
@@ -435,7 +435,7 @@ export function buildVerdantCover(giants: readonly KelpFoot[]): VerdantCoverBuil
       area: discAreaAt(450, -10, 118),
       gate: litterGate,
       ground: seabedHeight,
-      count: 950,
+      count: 1050,
       profile: "frond",
       size: [0.18, 0.36],
     }),
@@ -457,7 +457,7 @@ export function buildVerdantCover(giants: readonly KelpFoot[]): VerdantCoverBuil
       area: discAreaAt(495, -82, 60),
       gate: siltGate,
       ground: seabedHeight,
-      count: 1450,
+      count: 1600,
       profile: "frond",
       size: [0.2, 0.4],
       swayAmp: 0.02,
@@ -634,7 +634,7 @@ export function buildVerdantCover(giants: readonly KelpFoot[]): VerdantCoverBuil
       area: discAreaAt(450, -10, 118),
       gate: litterGate,
       ground: seabedHeight,
-      count: 800,
+      count: 900,
       profile: "frond",
       size: [0.3, 0.55],
       swayAmp: 0.03,
@@ -719,7 +719,9 @@ export function buildVerdantCover(giants: readonly KelpFoot[]): VerdantCoverBuil
   keep(
     buildGroundLitter({
       seed: SEED ^ FILL_SEEDS.mazeSplitStones,
-      palette: { base: 0x9a8fa8, shade: 0x6b6080 },
+      // Round 4: a value up — r3's stones matched the maze paint so
+      // exactly they vanished; a formed stone must be findable.
+      palette: { base: 0xa89dbb, shade: 0x7a7090 },
       area: discAreaAt(495, -82, 58),
       gate: siltGate,
       ground: seabedHeight,
