@@ -93,13 +93,21 @@ function droopEdgeRim(geometry: PlaneGeometry): void {
     const x = position.getX(i);
     const z = position.getZ(i);
     const { u, v } = spokeOf(x, z);
-    if (!(u - 445 > DROP_LIP_S + 26 && Math.abs(v) < 118)) {
-      continue;
-    }
     const rc = Math.hypot(x - CENTER_X, z - CENTER_Z);
-    const k = smoothstep01((rc - 166) / 10);
-    if (k > 0) {
-      position.setY(i, position.getY(i) - k * (position.getY(i) + 52));
+    if (u - 445 > DROP_LIP_S + 26 && Math.abs(v) < 118) {
+      const k = smoothstep01((rc - 166) / 10);
+      if (k > 0) {
+        position.setY(i, position.getY(i) - k * (position.getY(i) + 52));
+      }
+    } else {
+      // The prairie sectors' own rim: round 7's raycasts found the trim
+      // cut at rc 225 standing proud of the rim's rise wherever a pose
+      // looks across the disc — a fogged vertical wall with a ruled edge.
+      // The last metres pour under the ring feet (−20) instead.
+      const k = smoothstep01((rc - 214) / 9);
+      if (k > 0) {
+        position.setY(i, position.getY(i) - k * (position.getY(i) + 24));
+      }
     }
   }
   position.needsUpdate = true;

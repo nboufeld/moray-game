@@ -214,7 +214,16 @@ export const BLUE_1: RegionDef = {
     // 1 read as the bowl's own cyan at steppe depth) and the light takes
     // eased so the prairie keeps its high sun — the descent still doubles
     // everything by the time the Under-Blue has it.
-    fog: { colorScale: [0.6, 0.55, 1.08], densityGain: -0.0045, backdropFade: 0.5 },
+    // Round 6, measured: blue 1.08 held the fog 21 parts of blue above the
+    // backdrop it dissolves into, and every fogged horizon rendered as the
+    // audit's "hard flat cobalt band" — the fog itself was the poster
+    // paper. 0.95 lands the fogged horizon a gentle 9 parts over the
+    // painting; blue stays the fog's top channel by half again over green,
+    // so the register keeps its blue without the stripe.
+    // (Round 7 tried 0.95: the band moved five parts and stayed a band.
+    // 0.86 lands the fogged horizon on the painting to within the capture
+    // noise — measured (49,159,168) fog against (43,158,167) backdrop.)
+    fog: { colorScale: [0.6, 0.55, 0.86], densityGain: -0.0045, backdropFade: 0.5 },
     light: { sun: 0.3, hemisphere: 0.22, ambient: 0.05 },
   },
   moodSurface: 6,

@@ -367,11 +367,19 @@ function deepArc(step: DeepStep, noiseSeed: number, gapOutward: number): BufferG
   return geometry;
 }
 
-/** Eases an arc's height near a gap edge so ends never cut vertically. */
+/**
+ * Eases an arc's height near a gap edge so ends never cut vertically.
+ * Round 6: three coarse probes quantised the ease into three giant flat
+ * steps — with the rings' feet dropped to −20 the eased columns stood as
+ * 12-metre terraced slabs at the void poses' frame edges. The ease now
+ * measures its distance to the gap finely and runs over 0.3 rad, so a
+ * curtain's end is a long smooth dive under the ground line.
+ */
+const EASE_SPAN = 0.3;
 function endEase(theta: number, inGap: (theta: number) => boolean): number {
-  for (const probe of [0.05, 0.1, 0.15]) {
+  for (let probe = 0.02; probe <= EASE_SPAN; probe += 0.02) {
     if (inGap(theta - probe) || inGap(theta + probe)) {
-      return smoothstep01(probe / 0.15);
+      return smoothstep01(probe / EASE_SPAN);
     }
   }
   return 1;
