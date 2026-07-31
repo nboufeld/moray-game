@@ -548,3 +548,98 @@ and walked back before any capture).
   can face out of the region and see mostly unowned seabed; the
   three-layer answer must live in the first ~35 m. Worth a MASTER
   note for other regions' fills.
+
+---
+
+# R12.3 QUALITY RE-PASS — the fill made worth looking at
+# (`repass/verdant-line-1`, MASTER R12 + kit/quality-pass)
+
+The verdict this answers, verbatim: *"it still feels super
+underwhelmingly empty, or at least what's been added is not so great —
+some kind of half-cut grass everywhere, doesn't seem like an added value
+at all."* The kit re-authoring (docs/region-ledger/kit-quality-pass.md)
+provides the craft; this pass consumes it. Budgets are R12's
+≤260 / ≤1.35M, gated by the headed frame measure (median ≤16.9 ms at
+scale 1.00 at the densest pose).
+
+## The reroll fence, restated
+
+Profile swaps and richness opt-ins re-roll THOSE FAMILIES' own buffers —
+expected and honest, the swap is the point. Everything else (landmarks,
+kelp, weaver, all pilot systems, all other fill streams) is
+byte-unchanged: every new draw is `SEEDS.regionVerdant1 ^` a fresh
+`0xf21x`/`0xf22x` constant appended after all existing draws, and the
+test pins (first/last giants, the weaver's haunt, to nine decimals)
+still hold.
+
+## What changed (round 1)
+
+1. **Profile swaps** — turf / sward / tussocks / saddle stand / ring rim
+   → `"blade"` (48-tri S-bend clumps); vale moss / forest litter ×2 /
+   maze silt → `"frond"` (60-tri cupped rosettes; the litter's drooped
+   straps read as curled shed leaves). The Falling Edge shells KEEP
+   `"card"` deliberately: they draw chips, not plants — a flat bent quad
+   at 0.16–0.32 m is a shell's own silhouette. (No farGrassCards in this
+   region, so no nearFade case exists to guard.)
+2. **`sunGlow`** on the sunlit families (moss, turf, tussock, saddle,
+   sward, ring rim, and the new stands); withheld from the maze silt
+   (half-light register) and the litter (dead leaves don't glow).
+3. **`looseShare`** raised on the sweep-critical broad-disc families
+   (turf 0.55, tussocks 0.5, sward 0.4 — the F-R2 field note); the
+   saddle-mouth stand keeps its default: concentration was its fix.
+4. **Bush richness** — all six banks opt into `fronds`/`accents` on
+   their own accent inks (spring berries, olive-gold buds, wine thorn
+   knots, pale buds, Sunwell gold); wine takes the sparsest fronds
+   (dead scrub is thorny, not leafy).
+5. **Litter upgrades** — `grade` on the vale/meadow pebble runs (0.55 /
+   0.5) and maze rubble (0.65); a NEW maze `"split"`-stone run (160,
+   graded 0.6) for formed foreground rock.
+6. **Headroom spend (new families, fresh streams)** — holdfast
+   skirt-grass collars (380 blades ringing every giant's foot), forest
+   ferns (650 fronds between the trunks), vale road-edge stands
+   (300 thigh-high blades lining the channel), aisle wayside stands
+   (260, the swim line's shoulders); the holdfast skirt itself deepened
+   to nine fingers + five inner knuckles (~340 tris, was ~208).
+7. **Four new close poses** (`close-vale-road`, `close-meadow-sward`,
+   `close-forest-floor`, `close-maze-floor`) — camera ~1.4–1.5 m up,
+   pitched down, judging the fill at the distance the owner judged it.
+8. **Test caps updated honestly**: measured **116 draws / 1,141,270
+   tris** (fill close was 111 / 449,912) → caps 130 / 1.25M, floors
+   100 / 900k.
+
+## Round 1 (`rp-r1`) — critique, close poses judged hardest
+
+16/17 poses captured on the loaded machine (close-maze-floor timed out;
+retaken in round 2 — the seeded poses recur, the verdict is honest).
+
+- **The profile swap works**: everywhere a blade clump or frond rosette
+  is close enough to read, it reads as a PLANT — S-bends, cupped
+  straps, tip taper. `falling-edge`'s turf blades and the aisle/wayside
+  stands in `forest-eaves`/`forest-aisle` are the proof; `sunwell`
+  passes outright (meadow + ring-rim blades, lush bowl).
+- **`close-vale-road`**: moss rosettes + graded pink pebble drifts read;
+  road-edge stands line the banks. FAILS on coverage: the road is still
+  mostly bare green paint between rosettes — 1,780 fronds over a 200 m
+  road is a rumour, not moss.
+- **`close-meadow-sward`**: the pose's own floor is nearly EMPTY — the
+  sward hugs its crests and the turf's raised looseShare (0.55) spread
+  the clumps so thin locally that nothing owns the near metre. The few
+  blades in frame read beautifully; there are not enough of them.
+- **`close-forest-floor`**: wayside stands pass; litter fronds read as
+  dark specks (value), ferns nearly invisible against the floor paint
+  (value + count).
+- **`root-maze` / `weaver-grotto`**: the violet silt fronds sit almost
+  exactly at the ground paint's own value — the bloom vanishes; the
+  split stones can't carry a bare frame alone.
+- **Value, the old lesson again**: the kit families were re-judged on
+  the kit's bright demo stage; under this region's dim sun (0.12) every
+  small frond/blade drops toward silhouette. The families that read are
+  the BIG ones (stands, skirt grass) — size is value here.
+
+**Round-2 orders**: (1) value pass — lift silt/moss/litter/fern
+bases+shades a step, brighten turf/sward roots off dark olive; (2)
+density where the close poses stand — moss 1,780→2,200, turf
+3,600→4,200 with looseShare back to 0.45, sward 2,400→2,750, ferns
+650→800, silt 1,100→1,300 and sized up, stands 300/260→380/320, skirt
+grass 380→430, split stones 160→200; (3) grow silt size to [0.2,0.4] so
+the maze bloom stands off its own floor.

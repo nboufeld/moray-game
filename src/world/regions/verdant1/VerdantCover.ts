@@ -278,14 +278,18 @@ export function buildVerdantCover(giants: readonly KelpFoot[]): VerdantCoverBuil
   // the road is the one floor the diver stares at for 200 m, so it moved
   // to the "frond" rosette — low cupped growth instead of card wedges —
   // with the sun glow, since the vale's beams land on it.
+  // Re-pass round 2: 1,780 → 2,200 (a 200 m road needs more than a
+  // rumour of moss) and the whole ramp a value up — the rosettes show
+  // mostly base/root from a swimming eye, and r1's read was dark-olive
+  // silhouettes on bright paint.
   keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.carpetMoss,
-      palette: { base: 0x74a95e, tip: 0xa4d276, shade: 0x6b7c5a },
+      palette: { base: 0x81b468, tip: 0xaed87e, shade: 0x788a62 },
       area: valeChannelArea(54, 252, 15),
       gate: mossGate,
       ground: seabedHeight,
-      count: 1780,
+      count: 2200,
       profile: "frond",
       size: [0.2, 0.4],
       swayAmp: 0.03,
@@ -299,18 +303,23 @@ export function buildVerdantCover(giants: readonly KelpFoot[]): VerdantCoverBuil
   // wedges — so it carries the heaviest upgrade: the 48-tri "blade"
   // S-bend clumps, the sun-through-leaf glow, and a raised looseShare
   // (F-R2) so any random view cone owns loose singles between clumps.
+  // Re-pass round 2: r1's looseShare 0.55 spread the clumps so thin the
+  // close-meadow pose owned nothing — back to 0.45 (singles still
+  // guaranteed, hearts visible again), count 3,600 → 4,200, and the
+  // root shade off dark olive (the lower two-thirds of a small blade is
+  // root-to-base colour; that is what the eye actually gets).
   keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.carpetTurf,
-      palette: { base: 0x9cb968, tip: 0xcfe084, shade: 0x616e48 },
+      palette: { base: 0x9cb968, tip: 0xcfe084, shade: 0x74814f },
       area: discAreaAt(350, 0, 320),
       gate: turfGate,
       ground: seabedHeight,
-      count: 3600,
+      count: 4200,
       profile: "blade",
       size: [0.3, 0.62],
       swayAmp: 0.035,
-      looseShare: 0.55,
+      looseShare: 0.45,
       sunGlow: true,
     }),
   );
@@ -379,11 +388,13 @@ export function buildVerdantCover(giants: readonly KelpFoot[]): VerdantCoverBuil
   keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.carpetSward,
-      palette: { base: 0x82c46e, tip: 0xb2e884, shade: 0x5f8a5f },
+      // Round 2: root shade a value up; 2,400 → 2,750 so the crests'
+      // green carries down their own shoulders toward the close pose.
+      palette: { base: 0x82c46e, tip: 0xb2e884, shade: 0x6f9a66 },
       area: meadowArea(),
       gate: swardGate,
       ground: seabedHeight,
-      count: 2400,
+      count: 2750,
       profile: "blade",
       size: [0.26, 0.55],
       swayAmp: 0.045,
@@ -401,7 +412,9 @@ export function buildVerdantCover(giants: readonly KelpFoot[]): VerdantCoverBuil
   keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.carpetLitterA,
-      palette: { base: 0xbca768, tip: 0xdecb74, shade: 0x94836a },
+      // Round 2: whole ramp a half-step up — r1's drifts read as dark
+      // specks on the forest floor's own paint.
+      palette: { base: 0xc7b273, tip: 0xe6d47e, shade: 0xa39176 },
       area: discAreaAt(450, -10, 118),
       gate: litterGate,
       ground: seabedHeight,
@@ -413,7 +426,7 @@ export function buildVerdantCover(giants: readonly KelpFoot[]): VerdantCoverBuil
   keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.carpetLitterB,
-      palette: { base: 0x9c985e, tip: 0xc0bc70, shade: 0x7e7a5c },
+      palette: { base: 0xaaa668, tip: 0xccc878, shade: 0x8c8866 },
       area: discAreaAt(450, -10, 118),
       gate: litterGate,
       ground: seabedHeight,
@@ -428,16 +441,20 @@ export function buildVerdantCover(giants: readonly KelpFoot[]): VerdantCoverBuil
   // "bloom" finally looks like one — frond rosettes instead of chips. No
   // sun glow: the maze is the half-light quarter, and its growth carrying
   // the sun's note would argue with the register.
+  // Round 2: the r1 fronds sat at the maze paint's own value and
+  // vanished — the whole ramp steps up (red still above green), the
+  // rosettes grow to [0.2, 0.4], and 1,100 → 1,300 so the bloom is a
+  // bloom. Still no sunGlow: the half-light register holds.
   keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.carpetSilt,
-      palette: { base: 0x9080ae, tip: 0xab94c6, shade: 0x6f6288 },
+      palette: { base: 0xa393c0, tip: 0xc2abd8, shade: 0x877a9c },
       area: discAreaAt(495, -82, 60),
       gate: siltGate,
       ground: seabedHeight,
-      count: 1100,
+      count: 1300,
       profile: "frond",
-      size: [0.16, 0.34],
+      size: [0.2, 0.4],
       swayAmp: 0.02,
     }),
   );
@@ -591,7 +608,7 @@ export function buildVerdantCover(giants: readonly KelpFoot[]): VerdantCoverBuil
         );
       },
       ground: seabedHeight,
-      count: 380,
+      count: 430,
       profile: "blade",
       size: [0.4, 0.8],
       swayAmp: 0.04,
@@ -606,11 +623,13 @@ export function buildVerdantCover(giants: readonly KelpFoot[]): VerdantCoverBuil
   keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.carpetFerns,
-      palette: { base: 0x6da05c, tip: 0x9ed077, shade: 0x4d7048 },
+      // Round 2: a value up (r1's ferns melted into the floor paint) and
+      // 650 → 800 — the understory should be findable in any eave frame.
+      palette: { base: 0x79ad66, tip: 0xa8da80, shade: 0x5b7e52 },
       area: discAreaAt(450, -10, 118),
       gate: litterGate,
       ground: seabedHeight,
-      count: 650,
+      count: 800,
       profile: "frond",
       size: [0.3, 0.55],
       swayAmp: 0.03,
@@ -641,7 +660,7 @@ export function buildVerdantCover(giants: readonly KelpFoot[]): VerdantCoverBuil
         return band * beforeCrest * restFree(x, z);
       },
       ground: seabedHeight,
-      count: 300,
+      count: 380,
       profile: "blade",
       size: [0.8, 1.45],
       swayAmp: 0.06,
@@ -680,7 +699,7 @@ export function buildVerdantCover(giants: readonly KelpFoot[]): VerdantCoverBuil
         );
       },
       ground: seabedHeight,
-      count: 260,
+      count: 320,
       profile: "blade",
       size: [0.7, 1.3],
       swayAmp: 0.05,
@@ -699,7 +718,7 @@ export function buildVerdantCover(giants: readonly KelpFoot[]): VerdantCoverBuil
       area: discAreaAt(495, -82, 58),
       gate: siltGate,
       ground: seabedHeight,
-      count: 160,
+      count: 200,
       shapeSet: "split",
       size: [0.14, 0.34],
       grade: 0.6,
