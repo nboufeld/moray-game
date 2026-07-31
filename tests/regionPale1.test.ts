@@ -532,9 +532,9 @@ describe("pale-passage-1 carpet determinism", () => {
     };
     const first = collect(PALE_1.build(new Scene()));
     const second = collect(PALE_1.build(new Scene()));
-    // The shelf's rose-gold turf, the grove's rim turf, and the deep
-    // flanks' pioneer sprigs (round 4).
-    expect(first.length).toBe(3);
+    // The shelf's rose-gold turf, the grove's rim turf, the deep flanks'
+    // pioneer sprigs (round 4) and their south-flank patch (round 5).
+    expect(first.length).toBe(4);
     expect(second.length).toBe(first.length);
     for (const [index, mesh] of first.entries()) {
       const twin = second[index]!;

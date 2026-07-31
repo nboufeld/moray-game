@@ -553,7 +553,8 @@ export function buildPaleCarpet(
       ground: seabedHeight,
       // Round 4: 3000 → 2400 — the grit's near-field job is done by the
       // ossuary and stumps now; the trim part-funds the pioneer sprigs.
-      count: 2400,
+      // Round 5: 2400 → 2050, funding the south-flank sprig patch.
+      count: 2050,
       shapeSet: "shard",
       size: [0.1, 0.26],
       twoTone: true,
@@ -645,7 +646,8 @@ export function buildPaleCarpet(
       area: discAreaAt(SEED_GROVE.u - 42, SEED_GROVE.v, 130),
       gate: petalFallGate,
       ground: seabedHeight,
-      count: 1100,
+      // Round 5: 1100 → 1050, the last sliver of south-patch funding.
+      count: 1050,
       shapeSet: "shard",
       size: [0.1, 0.22],
       twoTone: true,
@@ -663,6 +665,25 @@ export function buildPaleCarpet(
       gate: sprigGate,
       ground: seabedHeight,
       count: 1250,
+      profile: "tuft",
+      size: [0.3, 0.55],
+      swayAmp: 0.04,
+    }),
+  );
+
+  // The south-flank sprig patch (round 5): the pa-filled sweep's last
+  // miss (04, u 497 v −159, k 0.72) stood 198 m from the main sprig
+  // disc's centre — the GATE was hot, the AREA never sampled there. The
+  // deep-recovery band is a crescent no single disc covers without
+  // thinning everything; a dedicated patch holds the south flank.
+  keep(
+    buildCarpetField({
+      seed: SEED ^ FILL_SEEDS.sprigsSouth,
+      palette: { base: 0xe8a090, tip: 0xf6c9a8, shade: 0x96688c },
+      area: discAreaAt(SEED_GROVE.u - 55, SEED_GROVE.v - 178, 78),
+      gate: sprigGate,
+      ground: seabedHeight,
+      count: 300,
       profile: "tuft",
       size: [0.3, 0.55],
       swayAmp: 0.04,
