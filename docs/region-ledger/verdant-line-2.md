@@ -751,6 +751,56 @@ reads as cover; loose singles vanish — v1's close-meadow lesson,
 pre-paid); paid for by base cover 3400 → 2900, sector 1000 → 900,
 lip 800 → 700.
 
+### Round 2 (`v2rp-r2`) — the hex lift is not enough; the mood wants its own light
+
+All 17 authored + 12 sweep frames captured against the verified
+port-5201 server and looked at.
+
+- **The twelve originals: 12/12 hold.** `fern-vault` is the region's
+  best frame (giant canopy + knee-high storey + rosette floor);
+  `pass-threshold` proves the blade families read as painted plants in
+  honest light; the Cistern's mirror bright, its bowl empty; both
+  Mistfall poses additive and quiet; turtle-terraces now carries frond
+  rosettes in its mid-field.
+- **Close poses: 1 pass / 1 marginal / 3 down.** `close-vault-floor`
+  PASS (the canopy overhead, the storey, the rosettes).
+  `close-stair-tread` MARGINAL — the centre blades are beautiful, the
+  floor between them thin, the riser face at right still bare wash.
+  `close-garden-tread` MARGINAL-FAIL — rosettes legible but rendering
+  BLUE-VIOLET on the warm olive tread, near floor broad and bare.
+  `close-threshold-road` FAIL — metre-spaced sprigs on naked sand, the
+  milky blades camouflaged against the milky shelf AND rendered a
+  value dark. `close-basin-silt` FAIL — a naked violet slope, one rose
+  bush, dark specks.
+- **Sweep: 11 dressed / 1 licensed (06, the Cistern rest)** — the
+  standard's shape holds, but frames 02/05/10 pass on composition
+  while their deep-country sprigs read as DARK SPECKS, the same value
+  failure the close poses fail on.
+- **The r2 lesson, sharpened**: lifting the palette hexes one step
+  (r2's whole value pass) moved the deep country barely half the
+  distance — the mood light multiplies every albedo down faster than
+  keys can climb. This region already solved this once: its curtain
+  materials carry an emissive floor because "in this water the shadow
+  side needs its own light" (fill r4). The kit builds need the same
+  cure, applied consumer-side.
+
+**Round-3 orders**: (1) the DUSK LIFT — an emissive floor under every
+deep-country kit build, region-side material tweak only (traverse the
+build group, set `emissive`/`emissiveIntensity` on each mesh's own
+toon material — `createToonMaterial` mints per-build materials, so
+nothing leaks): green families 0x223a2a at 0.4–0.5, bush banks 0.3,
+the basin's silt-violet families 0x2c3440 at 0.45; the bright shallow
+threshold families stay unlit. (2) Near-field floors under the failing
+close poses — the gardens tread and celadon gates take drift FLOORS
+(0.35 + 0.65·drift, 0.3 + 0.7·drift: the drift may gather, it may no
+longer zero), the basin flank gate the same; a dedicated 200-frond
+patch bed (`^ 0xf114`, disc(1057, −68, 10), gate 0.9) directly on
+`close-basin-silt`'s look ray (the fill's frame-07/10 lesson: place a
+tight disc ON the ray). (3) The milky/celadon road blades sized up
+(0.2–0.4 → 0.22–0.44, 0.2–0.42 → 0.22–0.46) so the road reads at
+swim height. Paid for by base cover 2800 → 2700, sector 900 → 850,
+lip 700 → 650.
+
 ## Flags
 
 - **Verdant-1's far-rim seal ring crosses the pass corridor.** The

@@ -1,4 +1,11 @@
-import { BoxGeometry, TorusGeometry, type BufferGeometry, type Group } from "three";
+import {
+  BoxGeometry,
+  Mesh,
+  TorusGeometry,
+  type BufferGeometry,
+  type Group,
+  type MeshToonMaterial,
+} from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { fbm } from "../../../rendering/ProceduralTexture";
 import { SEEDS } from "../../../util/Random";
@@ -101,6 +108,34 @@ function onFallFace(u: number, v: number): boolean {
   return d > 0.1 && d < 0.9 && Math.abs(v - MISTFALL.v) < 18;
 }
 
+/**
+ * The dusk lift (re-pass round 3): the deep country dims the mood light
+ * to the point where the kit's painted values render near-silhouette —
+ * the same failure the region's own curtains hit in its round 4 ("the
+ * hems kept reading black through three rounds of tone lifts — in this
+ * water the shadow side needs its own light, a colour, never a black").
+ * The curtains' cure, applied consumer-side to the kit builds: an
+ * emissive floor under the toon shade. Region-side material tweak only;
+ * the kit, its buffers and its streams are untouched.
+ */
+function duskLift<T extends KitBuild>(build: T, hex: number, intensity: number): T {
+  build.group.traverse((node) => {
+    if (node instanceof Mesh) {
+      const material = node.material as MeshToonMaterial;
+      if ("emissive" in material) {
+        material.emissive.setHex(hex);
+        material.emissiveIntensity = intensity;
+      }
+    }
+  });
+  return build;
+}
+
+/** The deep green families' floor (the curtain material's own family). */
+const DUSK_GREEN = 0x223a2a;
+/** The basin's silt-violet families: cooler, a step quieter. */
+const DUSK_SILT = 0x2c3440;
+
 function spokeGate(fn: (u: number, v: number) => number): GateFn {
   return (x, z) => {
     if (verdant2Weight(x, z) <= 0) {
@@ -152,7 +187,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
   // captures proved the swapped families render a full value darker
   // than their hexes under this mood (the v1 re-pass lesson, pre-paid).
   builds.push(
-    buildCarpetField({
+    duskLift(buildCarpetField({
       seed: SEED ^ 0xf10a,
       palette: { base: 0x7cbe8c, tip: 0xa4d492, shade: 0x639a72 },
       area: { center: [heart.x, heart.z], radius: 200 },
@@ -163,12 +198,12 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
         return 0.85 * drift(u, v);
       }),
       ground: seabedHeight,
-      count: 2800,
+      count: 2700,
       profile: "blade",
       size: [0.3, 0.6],
       sunGlow: true,
       looseShare: 0.45,
-    }),
+    }), DUSK_GREEN, 0.5),
   );
   builds.push(
     buildGroundLitter({
@@ -191,7 +226,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
   // R12.3: tuft → blade, grown to knee-thigh — the stands the open
   // country reads at swimming distance.
   builds.push(
-    buildCarpetField({
+    duskLift(buildCarpetField({
       seed: SEED ^ 0xf10c,
       palette: { base: 0x70be84, tip: 0xa4d492, shade: 0x588c6a },
       area: { center: [heart.x, heart.z], radius: 200 },
@@ -208,10 +243,10 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       size: [0.4, 0.8],
       swayAmp: 0.06,
       sunGlow: true,
-    }),
+    }), DUSK_GREEN, 0.5),
   );
   builds.push(
-    buildBushBank({
+    duskLift(buildBushBank({
       seed: SEED ^ 0xf306,
       palette: { base: 0x6fae5f, tip: 0x9ac96f, shade: 0x44703f, accent: 0xc4788a },
       area: { center: [heart.x, heart.z], radius: 200 },
@@ -228,7 +263,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       scale: 0.9,
       fronds: 8,
       accents: 4,
-    }),
+    }), DUSK_GREEN, 0.3),
   );
 
   // ─── The threshold: the 40 m handover lerp, lived on the ground ──────────
@@ -250,7 +285,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       ground: seabedHeight,
       count: 950,
       profile: "blade",
-      size: [0.2, 0.4],
+      size: [0.22, 0.44],
       swayAmp: 0.05,
       sunGlow: true,
     }),
@@ -264,7 +299,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       ground: seabedHeight,
       count: 750,
       profile: "blade",
-      size: [0.2, 0.42],
+      size: [0.22, 0.46],
       swayAmp: 0.05,
       sunGlow: true,
     }),
@@ -312,7 +347,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
   // close pose both stand (r2: count restored to 1800 and the key
   // lifted; concentration over looseShare, the treads read as clumps).
   builds.push(
-    buildCarpetField({
+    duskLift(buildCarpetField({
       seed: SEED ^ 0xf103,
       palette: { base: 0x70c688, tip: 0xaeda82, shade: 0x568a66 },
       area: spineRoad(742, 850, 34),
@@ -326,7 +361,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       size: [0.24, 0.48],
       swayAmp: 0.05,
       sunGlow: true,
-    }),
+    }), DUSK_GREEN, 0.5),
   );
   // Wine lip-corner scrub: thorny, not leafy — sparse fronds, more knots.
   builds.push(
@@ -368,12 +403,15 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
   // celadon layer (the hanging gardens are exactly where frond rosettes
   // belong), berries on the garden bushes.
   builds.push(
-    buildCarpetField({
+    duskLift(buildCarpetField({
       seed: SEED ^ 0xf104,
       palette: { base: 0x74ce94, tip: 0xaeda82, shade: 0x529068 },
       area: disc(910, -8, 92),
       gate: spokeGate(
-        (u, v) => gardensGate(u, v) * (0.5 + 0.5 * (1 - gardenTerraces(u, v).riser)) * drift(u, v),
+        (u, v) =>
+          gardensGate(u, v) *
+          (0.5 + 0.5 * (1 - gardenTerraces(u, v).riser)) *
+          (0.35 + 0.65 * drift(u, v)),
       ),
       ground: seabedHeight,
       count: 2300,
@@ -381,21 +419,21 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       size: [0.24, 0.5],
       swayAmp: 0.05,
       sunGlow: true,
-    }),
+    }), DUSK_GREEN, 0.5),
   );
   builds.push(
-    buildCarpetField({
+    duskLift(buildCarpetField({
       seed: SEED ^ 0xf105,
       palette: { base: 0x92dcb8, tip: 0xb9edd0, shade: 0x6dac8e },
       area: disc(890, 20, 86),
-      gate: spokeGate((u, v) => gardensGate(u, v) * 0.8 * drift(u + 200, v)),
+      gate: spokeGate((u, v) => gardensGate(u, v) * 0.8 * (0.3 + 0.7 * drift(u + 200, v))),
       ground: seabedHeight,
       count: 1200,
       profile: "frond",
       size: [0.24, 0.46],
       swayAmp: 0.06,
       sunGlow: true,
-    }),
+    }), DUSK_GREEN, 0.5),
   );
   // Round 2: moss-toned and smaller — the round-1 drift read as pale
   // confetti scattered over every garden frame instead of fallen stone.
@@ -413,7 +451,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
     }),
   );
   builds.push(
-    buildBushBank({
+    duskLift(buildBushBank({
       seed: SEED ^ 0xf303,
       palette: { base: 0x6fae5f, tip: 0x9ac96f, shade: 0x44703f, accent: 0xc4788a },
       area: disc(905, -10, 92),
@@ -423,7 +461,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       scale: 0.9,
       fronds: 10,
       accents: 6,
-    }),
+    }), DUSK_GREEN, 0.3),
   );
 
   // ─── The Fern Vault: deep celadon floor + fern litter ────────────────────
@@ -434,7 +472,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
   // palette (v1 re-pass r1: under a dim sun small fronds drop toward
   // silhouette, so the base and tip both step up).
   builds.push(
-    buildCarpetField({
+    duskLift(buildCarpetField({
       seed: SEED ^ 0xf106,
       palette: { base: 0x68ac7c, tip: 0x92d49a, shade: 0x51446a },
       area: disc(FERN_VAULT.u, FERN_VAULT.v, 26),
@@ -443,7 +481,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       count: 1050,
       profile: "frond",
       size: [0.22, 0.44],
-    }),
+    }), DUSK_GREEN, 0.45),
   );
   builds.push(
     buildGroundLitter({
@@ -461,7 +499,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
 
   // ─── The Mistfall lip shoulder + the basin's silt blooms ─────────────────
   builds.push(
-    buildCarpetField({
+    duskLift(buildCarpetField({
       seed: SEED ^ 0xf107,
       palette: { base: 0x7cca8c, tip: 0xaeda82, shade: 0x5a8a6c },
       area: disc(996, 8, 34),
@@ -471,31 +509,31 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
         return beforeLip * (0.3 + 0.7 * offFall) * smoothstep01((u - 975) / 8);
       }),
       ground: seabedHeight,
-      count: 700,
+      count: 650,
       profile: "blade",
       size: [0.2, 0.4],
       swayAmp: 0.05,
       sunGlow: true,
-    }),
+    }), DUSK_GREEN, 0.5),
   );
   // R12.3: the basin silt blooms go frond (rosettes standing off the
   // violet floor), count 1900 → 1400 against the profile bill, and the
   // key lifts a half step — the deep families sat a value too close to
   // their own ground under the misty light.
   builds.push(
-    buildCarpetField({
+    duskLift(buildCarpetField({
       seed: SEED ^ 0xf108,
       palette: { base: 0x699a7c, tip: 0x8cbb96, shade: 0x5e5480 },
       area: disc(1046, 8, 52),
-      gate: spokeGate((u, v) => mistfallDrop(u, v) * (u > 1008 ? 1 : 0) * drift(u, v)),
+      gate: spokeGate((u, v) => mistfallDrop(u, v) * (u > 1008 ? 1 : 0) * (0.3 + 0.7 * drift(u, v))),
       ground: seabedHeight,
       count: 1400,
       profile: "frond",
       size: [0.24, 0.46],
-    }),
+    }), DUSK_SILT, 0.45),
   );
   builds.push(
-    buildBushBank({
+    duskLift(buildBushBank({
       seed: SEED ^ 0xf304,
       palette: { base: 0x84525f, tip: 0xa8707a, shade: 0x4f3a52, accent: 0xc27a88 },
       area: disc(1046, 6, 46),
@@ -505,7 +543,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       scale: 0.85,
       fronds: 4,
       accents: 5,
-    }),
+    }), DUSK_SILT, 0.3),
   );
 
   // ─── The pillar-sector bed (round 3) ─────────────────────────────────────
@@ -522,17 +560,17 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
     return 0.85 * drift(u, v);
   });
   builds.push(
-    buildCarpetField({
+    duskLift(buildCarpetField({
       seed: SEED ^ 0xf10b,
       palette: { base: 0x699a7c, tip: 0x8cbb96, shade: 0x5e5480 },
       area: disc(1082, 42, 52),
       gate: sectorGate,
       ground: seabedHeight,
-      count: 900,
+      count: 850,
       profile: "frond",
       size: [0.24, 0.46],
       looseShare: 0.4,
-    }),
+    }), DUSK_SILT, 0.45),
   );
   builds.push(
     buildGroundLitter({
@@ -548,7 +586,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
     }),
   );
   builds.push(
-    buildBushBank({
+    duskLift(buildBushBank({
       seed: SEED ^ 0xf305,
       palette: { base: 0x84525f, tip: 0xa8707a, shade: 0x4f3a52, accent: 0xc27a88 },
       area: disc(1082, 44, 44),
@@ -558,7 +596,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       scale: 0.85,
       fronds: 4,
       accents: 5,
-    }),
+    }), DUSK_SILT, 0.3),
   );
 
   // ─── The basin's south flank (round 5) ───────────────────────────────────
@@ -577,7 +615,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
     return mistfallDrop(u, v) * (0.45 + 0.55 * drift(u, v));
   });
   builds.push(
-    buildCarpetField({
+    duskLift(buildCarpetField({
       seed: SEED ^ 0xf10d,
       palette: { base: 0x699a7c, tip: 0x8cbb96, shade: 0x5e5480 },
       area: disc(1060, -80, 55),
@@ -589,10 +627,10 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       profile: "blade",
       size: [0.24, 0.48],
       looseShare: 0.5,
-    }),
+    }), DUSK_SILT, 0.45),
   );
   builds.push(
-    buildCarpetField({
+    duskLift(buildCarpetField({
       seed: SEED ^ 0xf10e,
       palette: { base: 0x70be84, tip: 0xa4d492, shade: 0x588c6a },
       area: disc(1060, -80, 55),
@@ -606,7 +644,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       // the thigh-high band keeps its envelope on the blade profile.
       size: [0.42, 0.8],
       swayAmp: 0.06,
-    }),
+    }), DUSK_GREEN, 0.5),
   );
   builds.push(
     buildGroundLitter({
@@ -676,7 +714,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
     return 0.45 + 0.55 * drift(u, v);
   });
   builds.push(
-    buildCarpetField({
+    duskLift(buildCarpetField({
       seed: SEED ^ 0xf10f,
       palette: { base: 0x7cbe8c, tip: 0xa4d492, shade: 0x639a72 },
       area: disc(820, -100, 55),
@@ -688,10 +726,10 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       size: [0.28, 0.55],
       sunGlow: true,
       looseShare: 0.5,
-    }),
+    }), DUSK_GREEN, 0.5),
   );
   builds.push(
-    buildCarpetField({
+    duskLift(buildCarpetField({
       seed: SEED ^ 0xf110,
       palette: { base: 0x70be84, tip: 0xa4d492, shade: 0x588c6a },
       area: disc(820, -100, 55),
@@ -702,7 +740,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       size: [0.36, 0.7],
       swayAmp: 0.06,
       sunGlow: true,
-    }),
+    }), DUSK_GREEN, 0.5),
   );
   // Round 9: the last marginal sweep frame (07) hangs 8 m over this slope
   // at (814, −68) looking at (826, −60) — its only mid-scale layer was the
@@ -717,7 +755,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
   // read-wrong. The r7 flank lesson verbatim (size + value, not place):
   // scale 1.35, key a warm value step off the teal shelf. Zero triangles.
   builds.push(
-    buildBushBank({
+    duskLift(buildBushBank({
       seed: SEED ^ 0xf309,
       palette: { base: 0x93c161, tip: 0xc8dd85, shade: 0x567a41, accent: 0xd8c874 },
       area: disc(832, -56, 12),
@@ -728,14 +766,14 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       scale: 1.35,
       fronds: 6,
       accents: 4,
-    }),
+    }), DUSK_GREEN, 0.3),
   );
 
   // ─── The Far Balcony: the deck's moss-joint carpet ───────────────────────
   // R12.3: card → frond at moss scale — small rosettes growing out of the
   // worked joints instead of loose chips lying on them.
   builds.push(
-    buildCarpetField({
+    duskLift(buildCarpetField({
       seed: SEED ^ 0xf109,
       palette: { base: 0x8fae83, tip: 0xb9c9a2, shade: 0x6a7a62 },
       area: disc(BALCONY.u, BALCONY.v, 16),
@@ -744,7 +782,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       count: 500,
       profile: "frond",
       size: [0.14, 0.28],
-    }),
+    }), DUSK_GREEN, 0.4),
   );
 
   // ─── The worked-stone shard set (exclusive shapes, kit scatterer) ────────
@@ -829,14 +867,14 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
   } as const;
   // Round 2: strands longer and one more per holdfast — from on the
   // stair the round-1 bank was too fine to draw the riser lines.
-  const stairBank = buildWallDrapeBank({
+  const stairBank = duskLift(buildWallDrapeBank({
     seed: SEED ^ 0xf401,
     palette: drapePalette,
     anchors: stairAnchors,
     strandsPerAnchor: 5,
     length: 2.0,
     swayAmp: 0.08,
-  });
+  }), DUSK_GREEN, 0.4);
   builds.push(stairBank);
   updaters.push((t) => stairBank.update(t));
 
@@ -856,14 +894,14 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       gardenAnchors.push({ pos: [x, y, z], normal: downhill });
     }
   }
-  const gardenBank = buildWallDrapeBank({
+  const gardenBank = duskLift(buildWallDrapeBank({
     seed: SEED ^ 0xf402,
     palette: drapePalette,
     anchors: gardenAnchors,
     strandsPerAnchor: 5,
     length: 1.9,
     swayAmp: 0.09,
-  });
+  }), DUSK_GREEN, 0.4);
   builds.push(gardenBank);
   updaters.push((t) => gardenBank.update(t));
 
@@ -874,7 +912,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
   // shoulders of the swim line get waist-high grass the diver passes
   // THROUGH, not specks passed over.
   builds.push(
-    buildCarpetField({
+    duskLift(buildCarpetField({
       seed: SEED ^ 0xf111,
       palette: { base: 0x7cca8c, tip: 0xaeda82, shade: 0x5a8a6c },
       area: spineRoad(650, 848, 36),
@@ -890,10 +928,10 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       swayAmp: 0.06,
       sunGlow: true,
       looseShare: 0.5,
-    }),
+    }), DUSK_GREEN, 0.5),
   );
   builds.push(
-    buildCarpetField({
+    duskLift(buildCarpetField({
       seed: SEED ^ 0xf112,
       palette: { base: 0x74ce94, tip: 0xaeda82, shade: 0x529068 },
       area: spineRoad(850, 995, 32),
@@ -911,13 +949,13 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       swayAmp: 0.06,
       sunGlow: true,
       looseShare: 0.5,
-    }),
+    }), DUSK_GREEN, 0.5),
   );
   // The Fern Vault's deeper understory: a second frond layer gathered
   // toward the mouth, taller than the floor carpet — the half-light
   // gains a knee-high storey between the floor rosettes and the giants.
   builds.push(
-    buildCarpetField({
+    duskLift(buildCarpetField({
       seed: SEED ^ 0xf113,
       palette: { base: 0x68ac7c, tip: 0x92d49a, shade: 0x51446a },
       area: disc(FERN_VAULT.u, FERN_VAULT.v, 26),
@@ -926,7 +964,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       count: 400,
       profile: "frond",
       size: [0.34, 0.62],
-    }),
+    }), DUSK_GREEN, 0.45),
   );
   // Split-stone runs (the kit's R12 "split" shape + grade): formed,
   // fracture-faced foreground rock for the two most-walked floors of a
@@ -960,6 +998,22 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       size: [0.12, 0.28],
       grade: 0.6,
     }),
+  );
+  // The basin close pose's own bed (re-pass round 3): the flank bed's
+  // 55 m disc leaves any given near field to the clump lottery — the
+  // fill's frame-07/frame-10 lesson says place a tight disc ON the look
+  // ray. 200 fronds under `close-basin-silt`'s camera wedge.
+  builds.push(
+    duskLift(buildCarpetField({
+      seed: SEED ^ 0xf114,
+      palette: { base: 0x699a7c, tip: 0x8cbb96, shade: 0x5e5480 },
+      area: disc(1057, -68, 10),
+      gate: spokeGate(() => 0.9),
+      ground: seabedHeight,
+      count: 200,
+      profile: "frond",
+      size: [0.24, 0.46],
+    }), DUSK_SILT, 0.45),
   );
 
   let draws = 0;
