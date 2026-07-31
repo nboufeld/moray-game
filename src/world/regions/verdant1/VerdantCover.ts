@@ -713,28 +713,33 @@ export function buildVerdantCover(giants: readonly KelpFoot[]): VerdantCoverBuil
     }),
   );
 
-  // The forest-shoulder stand (round 5): sweep pose 10 stands on the
+  // The forest-shoulder stand (rounds 5–6): sweep pose 10 stands on the
   // shoulder between the forest basin and the maze rim (u 458, v −80 —
   // NOT a registered rest) and its near cone owned nothing after the
   // profile swaps re-rolled the global carpets' placements. Same lesson
-  // as the saddle mouth (F-R2): a sweep-critical band gets its own
-  // concentrated drift of the tussock growth, clumped on purpose.
+  // as the saddle mouth (F-R2) — but round 5's 170 tufts over an r 40
+  // disc made only ~6 clump sites (perClump 26), half behind the pose
+  // and more gated out down the gullies: invisible. Round 6 tightens
+  // the disc AHEAD of the pose (it faces +u), triples the sites, and
+  // takes a loose share so the near metres get singles between clumps.
   keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.carpetShoulderStand,
       palette: { base: 0x7fa25e, tip: 0xa8c873, shade: 0x647550 },
-      area: discAreaAt(458, -80, 40),
+      area: discAreaAt(462, -80, 30),
       gate: (x, z) => {
-        // Stay on the shoulder ground: the gully floors below −12 belong
-        // to the silt bloom and the split stones.
-        const aboveGullies = smoothstep01((seabedHeight(x, z) + 12) / 2);
+        // Stay on the shoulder ground: the true gully floors (−20) belong
+        // to the silt bloom and the split stones, but the shoulder's own
+        // dips (to ~−13) are exactly where the pose's near metres lie.
+        const aboveGullies = smoothstep01((seabedHeight(x, z) + 14) / 2);
         return verdantWeight(x, z) * aboveGullies * restFree(x, z);
       },
       ground: seabedHeight,
-      count: 170,
+      count: 360,
       profile: "blade",
-      size: [0.55, 1.05],
+      size: [0.5, 1.0],
       swayAmp: 0.05,
+      looseShare: 0.35,
       sunGlow: true,
     }),
   );

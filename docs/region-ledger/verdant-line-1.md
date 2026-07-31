@@ -744,8 +744,26 @@ stream. The close-pose set for round 4 was lost to a capture-harness
 crash (a mid-capture HMR reload); rounds 4 and 5 share the `rp-r5`
 close verdict below.
 
-## Round 5 (`rp-r5`) — the shoulder answered
+## Rounds 5–6 — the shoulder answered, then answered LOUD ENOUGH
 
-Measured **117 draws / 1,323,870 tris** (caps 130 / 1.34M). The
-shoulder stand is the only code change; every other stream is
-byte-identical to round 4.
+Round 5 planted the stand (170 tufts, disc (458, −80) r 40) and the
+retake showed almost nothing: **the F-R2 arithmetic** — carpetField
+gathers instances into ~26-per-clump sites, so 170 tufts is ~6 sites
+over 5,000 m², half behind the pose, more gated out where the
+shoulder dips (the −12 floor cut exactly the near metres, which lie
+in the shoulder's own dip to ~−13). Round 6: disc tightened AHEAD of
+the pose ((462, −80) r 30 — it faces +u), 360 tufts (~14 sites),
+`looseShare 0.35` for singles between clumps, gate floor −12 → −14
+(still far above the true gully floors at −20, whose silt bloom and
+split stones keep their register).
+
+Ad-hoc retake at pose 10's exact coordinates: **PASS, honest** —
+standing blade tufts through the near band, the ridge row and the
+trunk mid, the kelp wall far. Lesson for the kit ledger: a
+concentrated-stand fix is sized in CLUMP SITES, not instances;
+divide by 26 before believing a count.
+
+Measured after round 6: **117 draws / 1,332,990 tris** (cap 1.34M,
+R12 room 1.35M). Typecheck + region suite green each round.
+
+## The finals (`v1-repassed`) — all four sets on the final code
