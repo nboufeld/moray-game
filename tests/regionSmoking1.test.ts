@@ -167,6 +167,7 @@ describe("smoking-marches-1 build", () => {
         }
       }
     });
+    console.info(`[measure] smoking1 budgets: ${draws} draws / ${Math.round(triangles)} tris`);
     // The doctrine's caps (MASTER R1): ≤160 draws, ≤450k triangles.
     expect(draws).toBeLessThanOrEqual(160);
     expect(triangles).toBeLessThanOrEqual(450_000);
