@@ -801,6 +801,60 @@ tight disc ON the ray). (3) The milky/celadon road blades sized up
 swim height. Paid for by base cover 2800 → 2700, sector 900 → 850,
 lip 700 → 650.
 
+### Round 3 (`v2rp-r3`) — the dusk lift works; the patch bed is the cure for a failing pose
+
+All 17 authored + 12 sweep frames captured against the verified
+port-5201 server and looked at. Measured 113 draws / 1,331,188 tris.
+Perf gate (headed, `fern-vault`, the densest pose): **median 16.7 ms
+at settled scale 1.00** (301 frames, p95 18.4 ms) — inside the
+16.9 ms bar with little to spare; round 4's net +11k tris must
+re-verify.
+
+- **The dusk lift is the round's proof.** Everywhere it was applied
+  the deep country now reads as PLANTS IN COLOUR: sweep 05's floor
+  under the pillars carries bright-green rosettes where r2 had dark
+  specks; sweep 08's blades stand vivid among the standing stones;
+  sweep 10's basin silt shows teal-green sprigs and the rose scrub in
+  its own wine key. The value failure that survived r2's hex lift is
+  cured.
+- **Close poses: 2 pass / 2 marginal / 1 down.**
+  `close-basin-silt` **PASS** — the `^ 0xf114` patch bed fills the
+  camera wedge with legible rosettes; the pose that failed hardest in
+  r2 is now the proof of the tight-disc-on-the-ray method.
+  `close-vault-floor` **PASS** holds. `close-stair-tread` MARGINAL —
+  the tall centre blades are now lit and beautiful, but the floor
+  between them stays thin and the riser face at right is still bare.
+  `close-garden-tread` MARGINAL — the rosettes render in their own
+  green now (the blue-violet read is gone), but the near strip under
+  the camera is bare tread. `close-threshold-road` **FAIL** — visually
+  the r2 frame: metre-spaced grey-lavender sprigs on naked sand. The
+  10 % size bump was noise, and the family was left out of the dusk
+  lift as "bright shallow" — but the milky palette itself reads grey
+  under the teal water column.
+- **Sweep: 11 dressed / 1 licensed (06, the Cistern rest)** — the
+  standard holds, and this round the dressed frames pass on their
+  PLANTS, not just their composition. 01 is the thinnest pass (the
+  high saddle, a scatter of sprigs on an honest bare ridge — the
+  approach band's register, accepted).
+- **The twelve originals: 12/12 hold**, `fern-vault` still the
+  region's best frame; the dusk lift did not blow out any of the
+  bright shallow poses (the threshold family stayed unlit as ordered).
+
+**Round-4 orders** (the last quality round — the method is proven,
+apply it to the three remaining poses): (1) `close-threshold-road`
+gets its own patch bed (`^ 0xf115`, disc(705, 5, 9), 180 blades,
+0.3–0.62) in a SATURATED celadon-green key with sunGlow and a gentle
+0.25 dusk floor — the milky key camouflages, so the patch wears the
+region's own green instead. (2) `close-stair-tread` gets a tread bed
+(`^ 0xf116`, disc(801, −4, 8), 150 blades, 0.28–0.62, stair key,
+full dusk lift) to carry the floor between the tall centre blades.
+(3) `close-garden-tread` gets a rosette bed (`^ 0xf117`,
+disc(902, −38, 9), 140 fronds, 0.26–0.5, celadon frond key, full
+dusk lift) under the camera's near ray. Paid for by base cover
+2700 → 2550, basin blooms 1400 → 1350, sector 850 → 800
+(−13,200 tris against +24,240; estimated ≈ 1,342k, inside the
+R12 1.35M ceiling).
+
 ## Flags
 
 - **Verdant-1's far-rim seal ring crosses the pass corridor.** The

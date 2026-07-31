@@ -198,7 +198,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
         return 0.85 * drift(u, v);
       }),
       ground: seabedHeight,
-      count: 2700,
+      count: 2550,
       profile: "blade",
       size: [0.3, 0.6],
       sunGlow: true,
@@ -527,7 +527,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       area: disc(1046, 8, 52),
       gate: spokeGate((u, v) => mistfallDrop(u, v) * (u > 1008 ? 1 : 0) * (0.3 + 0.7 * drift(u, v))),
       ground: seabedHeight,
-      count: 1400,
+      count: 1350,
       profile: "frond",
       size: [0.24, 0.46],
     }), DUSK_SILT, 0.45),
@@ -566,7 +566,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       area: disc(1082, 42, 52),
       gate: sectorGate,
       ground: seabedHeight,
-      count: 850,
+      count: 800,
       profile: "frond",
       size: [0.24, 0.46],
       looseShare: 0.4,
@@ -1014,6 +1014,56 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       profile: "frond",
       size: [0.24, 0.46],
     }), DUSK_SILT, 0.45),
+  );
+  // Round 4: the basin bed's method applied to the three remaining
+  // close poses — a tight disc on each look ray. The threshold pose's
+  // bed abandons the milky key entirely (r3: milky blades camouflage
+  // against the milky shelf AND grey out under the teal column); it
+  // wears the region's own saturated celadon-green with a gentle dusk
+  // floor so the road's near field finally reads at swim height.
+  builds.push(
+    duskLift(buildCarpetField({
+      seed: SEED ^ 0xf115,
+      palette: { base: 0x86cc96, tip: 0xb6e2a4, shade: 0x649c78 },
+      area: disc(705, 5, 9),
+      gate: spokeGate(() => 0.9),
+      ground: seabedHeight,
+      count: 180,
+      profile: "blade",
+      size: [0.3, 0.62],
+      swayAmp: 0.05,
+      sunGlow: true,
+    }), DUSK_GREEN, 0.25),
+  );
+  // The stair tread bed: the floor between the tall centre blades.
+  builds.push(
+    duskLift(buildCarpetField({
+      seed: SEED ^ 0xf116,
+      palette: { base: 0x70c688, tip: 0xaeda82, shade: 0x568a66 },
+      area: disc(801, -4, 8),
+      gate: spokeGate(() => 0.9),
+      ground: seabedHeight,
+      count: 150,
+      profile: "blade",
+      size: [0.28, 0.62],
+      swayAmp: 0.05,
+      sunGlow: true,
+    }), DUSK_GREEN, 0.5),
+  );
+  // The garden tread bed: rosettes under the camera's bare near strip.
+  builds.push(
+    duskLift(buildCarpetField({
+      seed: SEED ^ 0xf117,
+      palette: { base: 0x92dcb8, tip: 0xb9edd0, shade: 0x6dac8e },
+      area: disc(902, -38, 9),
+      gate: spokeGate(() => 0.9),
+      ground: seabedHeight,
+      count: 140,
+      profile: "frond",
+      size: [0.26, 0.5],
+      swayAmp: 0.06,
+      sunGlow: true,
+    }), DUSK_GREEN, 0.5),
   );
 
   let draws = 0;

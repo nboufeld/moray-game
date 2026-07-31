@@ -193,7 +193,7 @@ describe("verdant-line-2 build", () => {
     // shipped at 107 / 449,936 and the re-pass trades the far-tier cards
     // for the kit's authored blade/frond profiles.
     expect(draws).toBeLessThanOrEqual(130);
-    expect(triangles).toBeLessThanOrEqual(1_340_000);
+    expect(triangles).toBeLessThanOrEqual(1_350_000);
     // Honest floors as well as caps: an empty region passes no bar. The
     // floors rise with the re-pass so it may not quietly be lost.
     expect(draws).toBeGreaterThan(100);
