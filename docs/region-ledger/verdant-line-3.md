@@ -493,3 +493,147 @@ percher instance seen square-on; only visible in that one cone).
 - The Hollow Mesa's interior is DoubleSide-lit backfaces of its own
   lathe; its room reads through its licensed glow + beam, not through
   sun.
+
+## Close-out (`v3-final`, `v3-final-noassets`) — the finished region
+
+Round 4's tree was CLEAN; the close-out worker's job was verification,
+and verification found nothing to change: **zero code edits** to the
+region across the whole close-out. Every capture below was taken against
+the round-4 build (commit `b2a2e01`, prebuilt bundle on port 5213 per
+the round-4 field note; the no-assets set against a dev server on 5214,
+because a preview bundle's own JS lives under `/assets/` and
+`blockAssets`' glob would abort the app itself — see the harness note
+below).
+
+### Authored set (`v3-final`) — 16/16 captured, 16/16 pass
+
+Every pose read at 1600×900. The six round-4 partials hold their PASS
+verbatim (`pass-threshold`'s traveller shoal is out of frame this
+session — wall-clock phase, the documented capture noise for moving
+life; the world content matches the r4 frame stroke for stroke). The
+ten poses round 4 never saw:
+
+- `sunfall-well` / `wellsprings` / `kingpillar` — PASS: the shaft
+  falls full height with a ray crossing it; bubble columns readable
+  over pale pools with planted rims; the tallest crown holds its
+  portrait with the wheel passing.
+- `hollow-mesa` — PASS: the 9 m backed-out pose finally reads the
+  room — flank boulders, lintel, seven-strand curtain, the glow
+  inside — and the ELDERLEAF CROSSED THE CURTAIN'S PART mid-settle
+  and fired its own discovery (the "Added to the Codex" toast rides
+  the HUD of this frame; the DiscoveryTarget doing exactly its job).
+- `fallen-causeway` — MARGINAL-PASS: the pink runnel blotches are
+  gone and the log wears its green wash; the moss banding reads
+  subtle at pose range. The tarp read is broken; fourth strike not
+  taken, noted rather than chased (35k tris of headroom is no room
+  for a re-dress).
+- `provinces-end` — PASS: the black teeth and hanging card waists
+  are gone; the Mother's crown breaks the ring crest and the horizon
+  layers rampart → rings → cards → sky.
+- `close-shade-floor` — MARGINAL-PASS: the r4 value/density push
+  landed (olive-green sward, lichen mottle, painted gold-tipped
+  rosettes where r3 had four on khaki); the nearest band still reads
+  quiet. Registered here as the region's one standing close-range
+  softness; the budget cap licenses no further density.
+- `close-road-moss` — PASS (the r3 FAIL HARD answered at the owner's
+  distance): the pass sheet reads green, celadon S-bend blades hold
+  the foreground, shell pebbles pace the road, a boulder anchors.
+- `close-garden-skirt` — PASS (third round in a row).
+- `close-wellspring-rim` — PASS: bubbles readable, pale bowl cooled
+  and widened to the true lip, rim sward and lip stones at the
+  crest, the r2 tire-track rings gone; the bowl interior's bareness
+  is the authored "pale clean floors" design.
+
+### Sweep (`v3-final`) — 12/12 captured: 10 pass / 2 marginal, both registered
+
+The full twelve, including 10–12 which round 4's load wall ate. 01–09
+hold round 4's grades (the rampart arcs stay gone, the hem holds, the
+floors read planted from midwater). The marginals are exactly the two
+registered known-graze cones: **03** (pad underside at fog range) and
+**08** (pad edge-on over the Boughfall Shadow's licensed dark —
+geometry, not paint). The three new frames: **10** PASS (rampart sward,
+violet runnels, wellspring glow), **11** PASS (the region shot — and
+the Elderleaf crossed it this session), **12** PASS (midwater over the
+meadow, floor olive and alive). Meets the ≥11/12 standard with misses
+only in registered licences. Sweep 01's one-cone percher cube and the
+grazing-angle trim hairlines carry as documented.
+
+### No-assets pass (`v3-final-noassets`) — the region's first
+
+(Verdict recorded below once the set lands — the region is built
+entirely from kit/procedural geometry and vertex paint, so the
+fallback risk surface is the base game's washes and GLBs, not ours.)
+
+### Budgets and the frame gate (the R12 numbers, final build)
+
+- **100 draws / 1,315,408 tris / 471 colliders** (caps 260 / 1.35M) —
+  re-measured at close-out by the budget test's own traversal,
+  byte-identical to the round-4 entry.
+- **Headed frame gate — PASS**: `SHOT_HEADED=1 SHOT_REGION=verdant-line-3
+  SHOT_AT=... measure-frames.mjs` on the real GPU, at the two densest
+  poses: twin-court **median 16.7 ms (59.9 fps, vsync-locked), p95
+  18.6 ms, settled scale 1.00**; deep-vista the same 16.7 / 18.6 /
+  1.00. Both runs taken with the box at 1-min load ≈ 25 (two sibling
+  workers live) — the pass is conservative: contention can only
+  inflate the number, and it still sat under the 16.9 ms gate.
+
+### Gates
+
+- `npm run typecheck` — clean.
+- `npx eslint . --max-warnings 0` — clean.
+- `npm test` — 790/791 on first run; the one failure was
+  `tests/regionSmoking1.test.ts` (a SIBLING region's containment test,
+  stale against the R12 kit's merged pieces — its repair already
+  exists on the mainline as `0aa67de`, which this branch predates).
+  Cherry-picked that exact commit (verbatim, no conflict possible at
+  merge) and the file passes 20/20; final full-suite re-run recorded
+  below.
+
+### The canonical capture roster
+
+- `v3-final` authored 16: `20260731-2325_seed1_hi_REGION-verdant-line-3-*_v3-final.png`
+- `v3-final` sweep 12: `20260801-0009_SWEEP-verdant-line-3-01..12_v3-final.png`
+- `v3-final-noassets` authored 16 (the fallback build).
+- Prior rounds: `v3-r1` (14), `v3-r2` (16 + 12 sweep), `v3-r3`
+  (6 + 12 sweep + 16), `v3-r4` (6 + 9 sweep — the load wall's
+  partial).
+
+### Capture-infrastructure notes (for the next depth-3 worker)
+
+- The round-4 workaround (build + `vite preview` + wait for quiet)
+  is necessary but NOT sufficient: even a prebuilt bundle blew the
+  180 s nav ceiling at 1-min load 25, and the box never went quiet in
+  ~1 h of watching two live siblings. The harness now takes
+  `SHOT_NAV_TIMEOUT` (nav ceiling) and `SHOT_COMPILE_WAIT` (the
+  flat-violet shader-compile wait) as env overrides — this close-out
+  ran at 900 000 / 5 000. Defaults unchanged.
+- **`region-sweep.mjs`'s pose draw is dev-server-only**: it imports
+  `/src/...` TypeScript in the page, which a preview bundle cannot
+  serve — this, not only the load, is why round 4's sweep 10–12 never
+  landed. `SHOT_POSES_FILE` now hands the same seeded stream in as
+  JSON (drawn offline by the identical arithmetic, verified: frame 01
+  reproduces round 4's frame 01 exactly).
+- **`SHOT_NO_ASSETS=1` cannot run against a preview bundle at all**:
+  `blockAssets` aborts `**/assets/**`, and the built app's own
+  `index-*.js` lives under `/assets/` — the game never boots. Run
+  no-assets passes against a dev server.
+- The HUD objective count flips between 18 and 19 across session
+  boots (visible across the r4 and final sets alike) — pre-existing
+  harness/session noise, not a region change; left alone.
+
+### Standing flags, carried forward (the orchestrator's list)
+
+1. **Cut a gate in verdant-2's rim seal ring** (its rc 198 = our
+   u ≈ 1138) over this pass tongue's width when the depth-3
+   connection goes live — MASTER R4's precedent.
+2. **Part verdant-2's far-side distance-ring sector** over the same
+   corridor (its opaque `fog:false` curtains cross at u ≈ 1186–1228).
+3. The **depth-boundary reject circle** (`RegionField`, radius+40)
+   truncates our terrain/mood below u ≈ 1200 — authored around
+   (threshold whisper-weight, dune-level target), documented in
+   `Verdant3Terrain`, asserted in tests.
+4. The **pass-shoulder seals** are invisible walls over open shelf —
+   the standing trade at every rim.
+5. The **Hollow Mesa's interior** is DoubleSide-lit backfaces of its
+   own lathe; its room reads through its licensed glow + beam, not
+   through sun.
