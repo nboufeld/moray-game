@@ -462,3 +462,32 @@ looks; suffocated-mile stays registry-still (four pot clusters, one
 bubble thread, eighth-density snow, the Gardener's ten metres bare);
 quiet-rim stays the registered rest. Round 4 closes the loop at the
 standard: ≥ 11/12 met at 12/12 with zero rest exemptions needed.
+
+### Final (`ca-filled`) — the record sets
+
+Captured against the round-4 build (no code changes after r4), server
+restarted fresh before each set on port 5196, every frame read:
+
+- **Sweep `ca-filled`** — 12/12, identical reads to the r4 sweep
+  (same deterministic pose stream). No pass leans on a registered
+  rest; the Mile and quiet-rim never enter the stream this seed.
+- **Authored `ca-filled`** — all 18 poses; everything from the r4
+  authored review holds. Suffocated-mile registry-still, quiet-rim
+  the registered rest, the-shrine's lens clean after its r3 slide,
+  the Gardener's stage clear.
+- **Noassets `ca-filled-noassets`** — all 18 poses on the procedural
+  fallback build: the fill is procedural so it ALL survives — shard
+  carpets, straw, flank bands, ejecta rays, meadow, ash snow at its
+  eighth, the four pot clusters, the Wound's rise-into-light column.
+  No missing-asset holes, no black.
+
+Budgets, measured (tmp vite-node scene walk, instance-aware):
+**before fill 78 draws / 210,609 tris → after 120 draws / 440,976
+tris** — inside the honest caps of 160 / 450k held by the test.
+Gates at close: typecheck clean, eslint clean (`--max-warnings 0`),
+targeted vitest green (regions, regionCalamity1, kitGround, kitLife),
+one full `npm test` green. Reroll fence proven throughout: landmark
+pins byte-identical to the pre-fill build.
+
+Flag for the orchestrator: triangle headroom is ~9k of 450k — the
+region is full; any future addition must trade something out.
