@@ -347,8 +347,11 @@ Full 14 authored + 12 sweep captured and READ.
   u-96 ledge stack sits inside the bank silhouette, `blush-arch` gets
   its petal eddies, and the two rests (`quiet-gallery`, `ravine-hush`)
   hold their registered stillness.
-- Sweep: **9/12** — 05/07/08/10/11/12 clean, 01/02/06 soft passes on
-  the bank shards and stump line. Still missing: **03** u 357 v 174,
+- Sweep: **9/12** — 05/07/08/10/11 clean, 01/02/06 soft passes on the
+  bank shards and stump line, 12 (deep bone forest, u 358) scored from
+  a frame that landed after the r4 edits began — its zone changed only
+  by an ossuary trim, and r2 already read the pose as a pass-side
+  frame; the r4 sweep re-captures the identical pose for the record. Still missing: **03** u 357 v 174,
   **04** u 497 v −159, **09** u 556 k 1.0. The r3 thesis (gate holes)
   was only half right: the gates now COVER those flanks, but what they
   deliver is ankle-height chips — 950 petals over a radius-130 disc is
