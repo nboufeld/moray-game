@@ -456,6 +456,32 @@ export function buildGoldenCover(finSpots: readonly FinSpot[]): GoldenCoverBuild
     0.6,
   );
 
+  // The crest stand: the close-wire pose's OWN authored drift of the
+  // same growth. Round 4 — two rounds of gate arithmetic on the global
+  // scatter proved the lily-bench lesson again from the other side: a
+  // 1,700-clump scatter over a 225 m disc averages ~0.3 clumps in a
+  // 4 m circle, and no gate boost can raise a density the count never
+  // supplied. The lens gets its subject as its own kit call.
+  warmMaterials(
+    keep(
+    buildCarpetField({
+      seed: SEED ^ FILL_SEEDS.crestStand,
+      palette: { base: 0xdcc87a, tip: 0xf6eaaa, shade: 0xa8946a },
+      area: discAreaAt(crestLensU, 14, 4.5),
+      gate: (x, z) => restFree(x, z) * lensFree(x, z),
+      ground: seabedHeight,
+      count: 54,
+      profile: "blade",
+      size: [0.5, 0.9],
+      swayAmp: 0.05,
+      sunGlow: true,
+      looseShare: 0.6,
+    }),
+  ),
+    0xa08a48,
+    0.6,
+  );
+
   // The saddle's own wire-grass on the dune shoulders.
   warmMaterials(
     keep(

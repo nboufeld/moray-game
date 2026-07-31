@@ -566,3 +566,38 @@ random stations is a fair read of this build.
 **Round-3 orders**: the second (final) value step on standing cover;
 dapple to a whisper; dune-face near layer; lee/crest/apron densities;
 palm-foot aim. Nothing structural — the bones have held two rounds.
+
+## Rework round 3 (`go-fill-r3`/`r3c`) — critique
+
+The box ran three sibling regions' captures all round (load ~20) and
+full 20-pose runs died on page-load timeouts; the set landed as r3
+(10 poses) + r3c (the missing 10, captured through a TEMPORARY pose
+filter in the def, reverted the moment the run ended). All 20 READ.
+
+- **The value step landed**: gilded-shore's and saddle-reveal's tufts
+  read as lit golden grass, the lee pockets read as gardens
+  (close-lee-garden is a garden now — fronds, blades, wrack, grit),
+  the oasis understory is rich and warm, singing stones sit ochre. No
+  fill element reads sooty anywhere in the set.
+- **The dapple stopped stamping**: saddle-reveal/drift-line show soft
+  oval caustic light that reads as intentional water-light, not
+  leopard; the grazing-angle dashes are gone at 12 m tiles.
+- **glass-reach's aprons finally read** (580 at 0.12–0.34 m), the
+  sand-roses star cleanly at the close lens; slip-face carries the
+  traveller shoal draped along the dune's back with crest tufts on the
+  skyline; dune-ocean's near floor anchors on wrack + drift-marks.
+- **THE ONE FAIL: close-wire-crest** — r2 and r3 read compared side by
+  side prove the lily-bench lesson from the other side: a 1,700-clump
+  scatter over the 225 m disc averages ~0.3 clumps in a 4 m circle;
+  the crestStand gate boost raised acceptance, but no gate can raise a
+  density the global count never supplied. The lens's near field is
+  bare in both rounds.
+- close-palm-foot reads as understory now (trunk off-axis, bushes and
+  blades behind); empty-quarter stays composed bareness; the horizon
+  slab flag stands (pre-fill distance geometry, the region owner's).
+
+**Round-4 order (one item)**: the crest gets its OWN authored stand —
+kit carpetField, fresh seed `crestStand` appended, 54 blades in a
+4.5 m disc at the scanned crest, dune-wire palette, `restFree ×
+lensFree` gated — exactly the lily-bench move that made
+close-salt-lily work in round 1.

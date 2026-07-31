@@ -56,6 +56,7 @@ export const FILL_SEEDS = {
   shoreTufts: 0xf610,
   sandRoses: 0xf611,
   lilyBench: 0xf612,
+  crestStand: 0xf613,
   // Life & light.
   eelColonies: 0xf621,
   pilotFish: 0xf622,
