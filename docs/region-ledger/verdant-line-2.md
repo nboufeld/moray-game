@@ -855,6 +855,35 @@ dusk lift) under the camera's near ray. Paid for by base cover
 (−13,200 tris against +24,240; estimated ≈ 1,342k, inside the
 R12 1.35M ceiling).
 
+### Round 4 (first `v2-repassed` attempt) — two more poses cured; the heart still airy
+
+Measured 116 draws / 1,342,228 tris. The final chain was launched on
+this build; its 17 authored + close frames were captured and looked
+at before the sweep finished, and the verdict stopped the chain:
+
+- **The twelve originals: 12/12 hold.** `pass-threshold` is the
+  region's new welcome — waist-high painted blades either side of the
+  road. The Cistern's mirror bright, its bowl empty; the Fern Vault
+  still the best frame.
+- **Close poses: 4 pass / 1 short.** `close-threshold-road` **PASS**
+  — the saturated celadon bed reads at swim height, the road's own
+  bare line honest trodden ground. `close-stair-tread` **PASS** — the
+  tread floor carries blade clumps between the tall centre blades.
+  `close-vault-floor` and `close-basin-silt` hold their r3 passes.
+  `close-garden-tread` **SHORT** — better than r3, but the r4 bed's
+  celadon key cooled to blue-grey specks under the dusk lift and the
+  0.26–0.5 rosettes stay sub-knee at 3 m: the region's HEART reads as
+  the thinnest of the five, and the heart is judged hardest.
+
+**Round-5 orders** (one family, one bed — the last): the `^ 0xf117`
+garden bed re-keyed warm green (0x7cc08c/0xa8d894/0x5c9070 — the
+celadon cools under the lift; the garden blades' own register does
+not), 140 → 200 fronds, sized 0.3–0.58 to be SEEN at three metres.
+Paid for by base cover 2550 → 2500. Measured 116 draws /
+1,343,428 tris. The stale first-attempt captures were deleted and the
+full final chain relaunched from this build so the shipped set is one
+build's truth.
+
 ## Flags
 
 - **Verdant-1's far-rim seal ring crosses the pass corridor.** The
@@ -882,3 +911,11 @@ R12 1.35M ceiling).
   level out there; documented in `Verdant2Terrain`.
 - The threshold's flank seals are invisible walls over open shelf (the
   pilot's same trade at his rim).
+- **Pre-existing full-suite failure, not ours**: `tests/regionSmoking1.test.ts`
+  › "keeps the fill's instances inside the domain" throws
+  `mesh.geometry` undefined — verified failing IDENTICALLY at this
+  branch's base merge point (208221e), before any re-pass commit. The
+  Smoulder worker's R12 containment repair (5f39c0c) samples geometry
+  on merged pieces and meets a mesh without one at this merge state.
+  Their file, their region — outside this branch's allowed set; the
+  orchestrator should route it to the Smoulder worker.

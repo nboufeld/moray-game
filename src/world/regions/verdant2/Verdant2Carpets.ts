@@ -198,7 +198,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
         return 0.85 * drift(u, v);
       }),
       ground: seabedHeight,
-      count: 2550,
+      count: 2500,
       profile: "blade",
       size: [0.3, 0.6],
       sunGlow: true,
@@ -1051,16 +1051,19 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
     }), DUSK_GREEN, 0.5),
   );
   // The garden tread bed: rosettes under the camera's bare near strip.
+  // Round 5: the r4 bed read as sparse teal specks — the celadon key
+  // cooled to blue-grey under the dusk lift and 0.26–0.5 rosettes stay
+  // sub-knee at 3 m. Warmer green key, 200 fronds, sized to be SEEN.
   builds.push(
     duskLift(buildCarpetField({
       seed: SEED ^ 0xf117,
-      palette: { base: 0x92dcb8, tip: 0xb9edd0, shade: 0x6dac8e },
+      palette: { base: 0x7cc08c, tip: 0xa8d894, shade: 0x5c9070 },
       area: disc(902, -38, 9),
       gate: spokeGate(() => 0.9),
       ground: seabedHeight,
-      count: 140,
+      count: 200,
       profile: "frond",
-      size: [0.26, 0.5],
+      size: [0.3, 0.58],
       swayAmp: 0.06,
       sunGlow: true,
     }), DUSK_GREEN, 0.5),
