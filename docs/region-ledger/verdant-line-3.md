@@ -428,6 +428,45 @@ The moves (all landed in one pass, committed before capture):
 Budget after trim: 100 draws / 1,315,408 tris / 471 colliders; 24
 region tests + 145 neighbour/kit tests green. Captures below.
 
+**Capture-infrastructure note** (for MASTER's field notes): with four
+sibling region workers on one machine (load averages 21–29), dev-server
+page loads exceeded the capture scripts' hardcoded 180 s ceiling — a
+measured 342 s to the `load` event, so every run died on `page.goto`
+regardless of retries or `SHOT_PER_LAUNCH`. The workaround that held:
+`npm run build` + `npx vite preview --port 5213` (a prebuilt bundle
+takes the dev-transform cost off the starved CPU) plus a load-average
+watcher that fires the capture chain when the box quiets. Depth-3
+workers after me: budget real hours for captures under sibling load.
+
+**Round-4 partial critique** (six authored + nine sweep frames landed
+before the load wall; the full sets recapture via the watcher):
+
+- `pass-threshold` — **the front door is ANSWERED**: celadon blades
+  run the road to the horizon, shell pebbles pace it, a mossy boulder
+  group anchors the right, the traveller shoal arrives mid-frame, the
+  waymark holds the line. The remaining warm band is the terraces' own
+  shelf beyond our tongue — the honest handover. PASS.
+- `doorwarden` — near floor planted; the portrait keeps. PASS.
+- `eaves-gate` — the sward is now a FIELD (blades in three bands,
+  mottled boulder); thin sheet-edge hairlines visible at grazing
+  angles, noted below. PASS.
+- `boughfall` — banks dense with gold-accent tufts, channel a composed
+  dark, travellers crossing. PASS.
+- `deep-vista` / `twin-court` — hold from r3, floors greener. PASS.
+- Sweep 01–09: **7 pass / 2 marginal** — the rampart contour ARCS ARE
+  GONE (04 passes), the hem holds (07), floors read planted from
+  midwater (06/09). Still marginal: 03 (pad underside at fog range —
+  the mottle helps near, fog flattens far; acceptable), 08 (the same
+  extreme grazing cone: pad seen edge-on over the Boughfall Shadow's
+  licensed dark — geometry, not paint; registered as a known-graze
+  cone).
+
+Known small artifacts, carried: ground-sheet trim hairlines at grazing
+angles (the 2×2 disc grid and pass-sheet edges — sunk 7 cm already;
+next step would be skirt strips, deferred as sub-pixel at play speed);
+one small dark cube silhouette in sweep 01's upper water (a distant
+percher instance seen square-on; only visible in that one cone).
+
 ## Flags
 
 - **Verdant-2's far-rim seal ring crosses this pass corridor** (its
