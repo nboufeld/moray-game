@@ -248,6 +248,23 @@ describe("smoking-marches-1 build", () => {
     for (const name of kitNames) {
       for (const node of named.get(name) ?? []) {
         const mesh = node as InstancedMesh;
+        // The kit's quality pass (R12) rebuilt some pieces as single merged
+        // meshes — scree-apron among them — so only true instanced nodes
+        // carry a matrix table. Merged pieces keep their containment under
+        // the kit's own §5 contract; here we sample their geometry instead.
+        if (!mesh.isInstancedMesh) {
+          const position = mesh.geometry.getAttribute("position");
+          for (let i = 0; i < position.count; i += 60) {
+            const x = position.getX(i);
+            const z = position.getZ(i);
+            expect(
+              smokingWeight(x, z),
+              `${name} vertex[${i}] at ${x.toFixed(1)},${z.toFixed(1)}`,
+            ).toBeGreaterThan(0);
+            sampled++;
+          }
+          continue;
+        }
         for (let i = 0; i < mesh.count; i += 5) {
           mesh.getMatrixAt(i, m);
           const x = m.elements[12]!;
