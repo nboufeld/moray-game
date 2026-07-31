@@ -205,8 +205,10 @@ function palmGeometry(): BufferGeometry {
   return merged;
 }
 
-/** The palms' authored seats, in spoke coordinates: hollows A and B. */
-const PALM_SEATS: readonly { u: number; v: number; s: number }[] = [
+/** The palms' authored seats, in spoke coordinates: hollows A and B.
+ *  Exported for the fill: fallen fronds and cushion bushes place against
+ *  the trunks without consuming this module's stream. */
+export const PALM_SEATS: readonly { u: number; v: number; s: number }[] = [
   { u: 512, v: -68, s: 1.15 },
   { u: 519, v: -59, s: 0.95 },
   { u: 524, v: -70, s: 1.3 },

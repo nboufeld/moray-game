@@ -383,3 +383,297 @@ spires, palms, stones and caravan all present, nothing missing and no
 horizon artefacts. Budgets measured at close: 47 draws, 136,326
 triangles, 231 colliders. Gates: typecheck clean, eslint clean at
 --max-warnings 0, targeted suites and the full `npm test` green.
+
+# PHASE 3 REWORK — the fill (`rework/golden-waste-1`, plan `docs/fill-plans/golden-waste-1.md`)
+
+Executed under FILL-DOCTRINE (R12 budgets: ≤260 draws / ≤1.35M tris,
+bound by the headed frame gate) + MASTER (R9 rebase-first, R10 stillness
+beats cadence, §1.2 registry inviolable), at the R12 quality tier from
+the start — the first fill to skip the wedge era: everything green wears
+the kit's `"blade"`/`"frond"` profiles, litter is graded, and the 4-tri
+card tier is not consumed at all.
+
+## The rebase audit (R9 — the plan was written against round 4)
+
+The plan's audit re-read against the CURRENT code (round-8 close, merge
+01b028f) and the final `hourglass-final` captures, all 13 LOOKED at:
+
+- **Plan checklist §7.7 (distance swell variance) is CLOSED**: rounds
+  7–8 rebuilt the skyline with the slope-relaxation pass and the
+  camera-distance dissolve; `ray-crossing`/`oasis` finals show low dune
+  swells thinning into the water, no mesa block, no fortress. No edit.
+- **The Keeper's belly was re-authored** (r7 `BELLY_DUSK`) — the plan's
+  "keeper satellites" land on the final body, not the r4 blob.
+- **Fog closed at 0.0085 / backdrop 0.66** (the plan quoted r4's
+  in-flight 0.0085 — confirmed final; the §8 wing handshake numbers
+  still hold as written).
+- **Budgets rebased**: the plan's arithmetic was over 46 draws/131.7k
+  (r1); the final is 47/136,326 — the fill budget below re-measures
+  against that, under the REVISED R12 caps, not the plan's 160/450k.
+- **Everything else in the §1 audit stands exactly**: the final frames
+  are the r4 frames with a cleaner horizon — T3/T5 land, T1/T2
+  near-absent everywhere, no dapple, roads bare. The checklist executes
+  as written, quality-tier upgraded per R12.
+
+## What landed (by checklist item, rebased)
+
+1. **GoldenGround T1 paint** — crest shell-lines (keyed to the rank
+   function, wavelength 46 m), Glass Reach fracture seams (~9 m bands on
+   ~55 m spacing — the grid-honesty floor respected; fine fracture lives
+   in the shard-apron instances), terrace-tread fringes (same spatial
+   key as the shipped rim paint), and THE EMPTY QUARTER's composed
+   ripple stripes (~11.5 m wavelength, paint only).
+2. **GoldenCover.ts** (new) — every T1/T2 kit consumer: ripple-grit
+   (5,200 two-tone, graded), shell-drift (2,600, dune lees + shore),
+   saddle pebble runs (680), dune-crest wire-grass (1,400 kit BLADE
+   clumps at the desert palette — the R12 tier, never wedges; flank
+   band boosted past rc 125 per MASTER F-R3), saddle wire (380),
+   lee-garden fronds (560 kit FROND rosettes in 14 authored pockets —
+   the journey map's 20–40 m beats), wrack drift-lines (3 authored
+   lines + pocket wrack), terrace salt-lilies (250 + a 42-frond
+   authored bench for the close pose), oasis cushion bushes (40, R12's
+   opt-in fronds+berry accents), fallen palm fronds (60), shard aprons
+   (460, fanned from the exported fin spots), singing stones (90 split
+   stones ringing the monoliths), and the Gilded Shore decrescendo
+   (800 pebbles + 110 wrack + 300 blade tufts).
+3. **GoldenLife** — eel colonies 4 → 7 (oasis fringe 30, shore outpost
+   30, the saddle outpost of 20 at u 176 — the plan's u ~175 road
+   taste), all APPENDED from a fresh stream with the original 148 eels'
+   placement AND tints byte-identical; a colony-wide sway wave (derived,
+   zero draws) so a distant field ripples; 42 pilot-fish riding the
+   caravan's slipstream (one instanced draw, same path arithmetic); the
+   traveller shoal (kit `shoalRunner`, 46 gold fusiliers + glint,
+   doorway ↔ saddle ↔ first crescent, ~5 min loop); one sand veil
+   routed down the saddle (appended, the nine originals hold).
+4. **GoldenKeeper** — two remoras trailing the shell-glow on authored
+   offsets (zero randomness, the patrol's own arithmetic; licensed
+   inside the Drain's Eye as the Keeper's own circle).
+5. **GoldenLight** — the gold dapple (kit `dappleSheet`, honey 0xffca6e
+   over-mixed per the sRGB-on-sand lesson: saddle channel + oasis bowls
+   + flats), two road beams with pools (drift-line u 131, shore
+   stacks), three faint secondary blades between the Hourglass falls,
+   the Drain's Eye cool pool (the column lands on something), the
+   glass-glint breathing swarm (kit `particulateField`, 110 motes over
+   the fused field) and the u ~205 glint tease over the saddle's west
+   wall.
+6. **GoldenRocks** — the monolith warm rim-band (vertex paint against
+   the painted shadows' own sun direction; zero stream draws).
+7. **GoldenGlass** — fin spots exported for the aprons; the SAND-ROSES
+   (the one new exclusive the plan allows): 60 fused-glass rosettes on
+   the groove crests, four authored at (390, −64) for the close pose.
+8. **Golden1** — cover/light wiring; 7 new poses: `empty-quarter` (the
+   registered rest, framed as composed bareness), `drift-line` (the
+   u ~130 road beat) and FIVE close poses at 2–4 m (`close-lee-garden`,
+   `close-salt-lily`, `close-sand-rose`, `close-palm-foot`,
+   `close-wire-crest` — the last resolved onto the same scanned crest
+   as the slip-face pose).
+9. **tests/regionGolden1.test.ts** — caps to the R12 260/1.35M with
+   honest floors (60/300k), the reroll fence (six pilot pins to nine
+   decimals: boulder, monolith, fin, eel, palm, Keeper, plus veil count
+   10 with seat 0 pinned), stillness exclusion (every cover instance
+   and debris vertex swept against both rests, >5k points), and the
+   close-lens clearance (no carpet instance within 0.9 m of a close
+   pose's camera).
+
+Budgets: **before 47 draws / 136,326 tris → r1 89 / 448,262** (measured
+by the region test's own walk). Reroll fence proven: all six pins
+byte-identical against the pre-fill scratch walk.
+
+## Rework round 1 (`go-fill-r1`) — critique, silhouette → value → colour → detail
+
+All 20 authored+close poses captured on :5202 (verified) and READ; the
+sweep died at 4/12 on a self-inflicted Vite full-reload (round-2 edits
+made while the capture ran — the standing shared-tree hazard, one
+worker, one tree, same lesson; never again). The four frames read.
+
+- **The bones compose everywhere**: the saddle is a road now (gardens,
+  stones, drift-line + beam, veil, tease sparks); the oasis is dense
+  (palms + grass + bushes + dapple); ray-crossing carries the file WITH
+  its pilot outriders; singing-flats has eels + stones + caravan; the
+  glass reach has roses and (faintly) aprons; the shore has standing
+  tufts and its beam between the stacks.
+- **FAILS on value, exactly verdant r1**: the wire-grass, fronds,
+  bushes and shore tufts all read as near-black thorns/spiders under
+  the region's 0.26 sun — painted for the kit demo's light. The
+  singing stones read PLUM (violet shade under violet ambient — the
+  pilot's own stone-warming lesson, re-learned on litter).
+- **The dapple is leopard spots**: 0.2/0.22 additive over warm sand at
+  8 m tiles owns the whole channel floor — a dapple is a whisper, not a
+  pattern the ground wears.
+- **Grit read as floating grey dice** at the close lens (violet-grey
+  shade + hard grade); a remora rendered NEON ORANGE at the salt-lily
+  terrace (fog-free emissive 0.5 — the caravan's r5 lesson, one size
+  down).
+- **close-lee-garden sparse; close-wire-crest missed its subject** (the
+  crest scatter is honest but thin at the lens); dune-ocean's near
+  floor still bare (wind-gate base too low).
+- Working already: salt-lilies read pale and true; sand-roses read as
+  glass stars; the Keeper's near-arc luck degraded both hourglass poses
+  this session (documented noisy pose — the patrol phase is wall-clock;
+  not a fill regression).
+
+**Round-2 orders** (all landed in commit `go-fill-r2`): one value pass
+over every fill palette + the pilot's own small-emissive move applied
+region-side (the kit stays palette-pure); dapple halved and spread
+(0.1/0.11/0.08 at 10 m tiles); wire 980 → 1,400 with base 0.42 and an
+authored crest stand at the close pose; fronds 430 → 560; shards 340 →
+460 and grown; stones warmed off plum; grit smaller/warmer/calmer;
+remoras to 0.26 on a duller ink.
+
+## Rework round 2 (`go-fill-r2`) — critique
+
+All 20 authored+close poses captured and READ; the sweep landed 9/12
+before Chromium died under the box's load (three sibling capture jobs
+running); the per-launch retry (`r2b`) proved the stations deterministic
+(frame 01 byte-similar) but ran at ~3 min/shot, so it was stopped rather
+than hold the round — the final build gets its full 12. Nine distinct
+random stations is a fair read of this build.
+
+- **The value pass HALF-landed**: the r1 soot is gone — first-crescent's
+  entrance tufts, the lee pockets (sweep 03) and the salt-lilies (sweep
+  02) all read as planted growth in the honey light. But the wire-tufts
+  at range still sit a half-step dark (gilded-shore's flats, sweep 05's
+  crest line read as dark stick clusters against lit sand) and the
+  singing stones hold a violet cast (sweep 07). One more step, not
+  three: emissive lift on wire/fronds/bushes/shore-tufts, stones' shade
+  swapped warm.
+- **The dapple still stamps**: saddle-reveal's floor wears distinct
+  ellipse spots; sweep 01/r2b-01 show the sheet as repeated dashes on
+  the dune face at grazing angle. Opacity down (0.10/0.11/0.08 →
+  0.07/0.09/0.06) and the tile up 10 → 12 m so the period stops
+  registering as a pattern.
+- **The sweep's recurring miss is the bare dune face**: 04 and 09 put a
+  featureless slip face across the whole lower half (three-layer fail);
+  05/06/08 pass only on faint paint. The wind-gate keeps faces bare by
+  design, but the doctrine's near-layer answer must live in the first
+  ~35 m: wire base 0.42 → 0.52, count 1,400 → 1,700, grit 5,200 →
+  5,900 so the fine grain reads past 10 m.
+- **close-lee-garden is still thin** at the lens (a pocket heart, not a
+  garden): fronds 560 → 720. **close-wire-crest** found its subject but
+  the stand is loose: the authored crest stand widened ((d−2)/5 →
+  (d−3)/6). **close-palm-foot** centres the trunk like a mugshot: aim
+  nudged off-axis (camera holds, lens registry unchanged).
+- **glass-reach's aprons still whisper** at pose range: 460 → 580,
+  grown to 0.12–0.34 m.
+- Working and locked: oasis composition (bushes + dapple + fallen
+  fronds), ray-crossing's pilot outriders, singing-flats' eel field +
+  caravan, the drift-line beat under its beam, sand-roses, the remoras
+  off neon, both rests still composed bareness (empty-quarter pose +
+  sweep misses only there). The pale slab at the empty-quarter horizon
+  persists — it is the distant falls stack seen edge-on, pre-fill
+  geometry, logged as a flag for the region owner, not a fill defect.
+
+**Round-3 orders**: the second (final) value step on standing cover;
+dapple to a whisper; dune-face near layer; lee/crest/apron densities;
+palm-foot aim. Nothing structural — the bones have held two rounds.
+
+## Rework round 3 (`go-fill-r3`/`r3c`) — critique
+
+The box ran three sibling regions' captures all round (load ~20) and
+full 20-pose runs died on page-load timeouts; the set landed as r3
+(10 poses) + r3c (the missing 10, captured through a TEMPORARY pose
+filter in the def, reverted the moment the run ended). All 20 READ.
+
+- **The value step landed**: gilded-shore's and saddle-reveal's tufts
+  read as lit golden grass, the lee pockets read as gardens
+  (close-lee-garden is a garden now — fronds, blades, wrack, grit),
+  the oasis understory is rich and warm, singing stones sit ochre. No
+  fill element reads sooty anywhere in the set.
+- **The dapple stopped stamping**: saddle-reveal/drift-line show soft
+  oval caustic light that reads as intentional water-light, not
+  leopard; the grazing-angle dashes are gone at 12 m tiles.
+- **glass-reach's aprons finally read** (580 at 0.12–0.34 m), the
+  sand-roses star cleanly at the close lens; slip-face carries the
+  traveller shoal draped along the dune's back with crest tufts on the
+  skyline; dune-ocean's near floor anchors on wrack + drift-marks.
+- **THE ONE FAIL: close-wire-crest** — r2 and r3 read compared side by
+  side prove the lily-bench lesson from the other side: a 1,700-clump
+  scatter over the 225 m disc averages ~0.3 clumps in a 4 m circle;
+  the crestStand gate boost raised acceptance, but no gate can raise a
+  density the global count never supplied. The lens's near field is
+  bare in both rounds.
+- close-palm-foot reads as understory now (trunk off-axis, bushes and
+  blades behind); empty-quarter stays composed bareness; the horizon
+  slab flag stands (pre-fill distance geometry, the region owner's).
+
+**Round-4 order (one item)**: the crest gets its OWN authored stand —
+kit carpetField, fresh seed `crestStand` appended, 54 blades in a
+4.5 m disc at the scanned crest, dune-wire palette, `restFree ×
+lensFree` gated — exactly the lily-bench move that made
+close-salt-lily work in round 1.
+
+## Rework round 4 (`go-filled`) — the final read
+
+The crest stand is the round's only code change; the set is the
+canonical `go-filled` roster (authored 20/20 + sweep 12/12, all
+captured per-launch under sustained sibling load ~20 and ALL READ).
+
+**Authored + close: 20/20 pass.**
+
+- **close-wire-crest RESOLVED**: the authored stand fills the near
+  field with lit golden wire at 2–4 m, the crest line silhouettes
+  behind it and the road beams hold the distance — the frame that
+  failed three rounds is the set's best argument for the lily-bench
+  rule (author the close subject; never ask a global scatter to land
+  one).
+- The other four close poses hold their round-3 reads: lee-garden a
+  garden, salt-lily a pale bench under the pool glow, sand-rose glass
+  stars over fracture seams, palm-foot an understory with the trunk
+  off-axis.
+- The touring poses hold: saddle a road with gardens/stones/beam/veil,
+  oasis dense and warm, singing-flats' eels + caravan over shell
+  drift, slip-face's shoal on the dune's back, glass-reach's roses +
+  aprons + fins, gilded-shore's beam between the stacks over standing
+  tufts, drift-line's beat under its beam, dune-ocean anchored on
+  wrack + drift-marks, ray-crossing's file with pilot outriders,
+  hourglass/keeper poses framing the patrol, empty-quarter composed
+  bareness (the pale horizon slab flag stands — pre-fill distance
+  geometry, the region owner's).
+
+**Sweep: 11/12 three-layer, the miss inside a registered rest —
+STANDARD MET.** 01 dune face under glints against the glass rim; 02
+Glass Reach roses + seams + fin ranks; 03 a lee garden under dune
+walls; 05 the shore edge; 06 crest wire on the skyline over drift
+trails; 07 the monolith avenue over pebble drift; 08 tuft-scattered
+dune ocean; 10 the lee vale; 12 a sand-rose anchoring the reach — all
+carry near instances + mid dune + distance landmark. 04/09 are the
+thin cases (big dune walls with sparse near tufts) but both hold three
+honest layers past the r3 wire/grit boost. 11 looks into the Hourglass
+bowl floor — the Drain's Eye rest, bare by design with the pool glow
+and terrace treads composing it.
+
+**Budgets at close: 90 draws / 510,334 tris** (before the fill: 47 /
+136,326; caps 260 / 1.35M — the quality-first licence spent on blade
+profiles and paint, not raw count). **Headed frame gate: median
+16.7 ms (59.9 fps), p95 18.6 ms, settled scale 1.00** at BOTH probe
+poses (`oasis` 504.5,−0.6,3.8 — the densest interior — and
+`saddle-reveal` 250.6,5.0,26.9), measured on the shared box at load
+~20 with a sibling capture running; 16.7 ms is the 60 Hz vsync
+cadence, i.e. the region holds refresh at full scale. Gate ≤16.9 ms:
+**PASS**.
+
+## Fill close-out — gates and the canonical roster
+
+- **Gates**: `tsc --noEmit` clean; `eslint src/world/regions
+  tests/regionGolden1.test.ts --max-warnings 0` clean; targeted vitest
+  (regions + regionGolden1 + kitGround + kitLife) 119/119 green; full
+  `npm test` 769/770 — the ONE failure is
+  `tests/regionSmoking1.test.ts` (Smoulder containment, a cross-branch
+  merge artefact between that region's code and its repaired test;
+  nothing on this branch touches either — EXTERNAL FLAG for the
+  orchestrator, it failed identically before this fill's first
+  commit).
+- **No-assets fallback (20/20 read)**: the fill is procedural end to
+  end, so every composition survives asset blocking byte-for-byte —
+  same gardens, stands, roses, dapple, beams, eels, shoal, remoras.
+  close-wire-crest's fallback frame even catches the traveller shoal
+  cresting the dune behind the authored stand.
+- **Canonical capture roster** (all under `visual-qa/`, all READ):
+  authored+close `20260731-1432_*_go-filled.png` (20), sweep
+  `20260731-1543_SWEEP-*_go-filled.png` (12), fallback
+  `20260731-1619_*_go-filled-noassets.png` (20).
+- **Standing flags**: (1) the pale horizon slab at the empty-quarter
+  horizon — pre-fill distance geometry, the region owner's; (2) the
+  Keeper's wall-clock patrol phase makes hourglass/keeper poses
+  noisy between capture sessions — documented, not a regression;
+  (3) the smoking-marches test failure above — external.

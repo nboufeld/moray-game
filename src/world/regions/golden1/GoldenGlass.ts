@@ -3,16 +3,19 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
+  DoubleSide,
   InstancedMesh,
   LatheGeometry,
   Mesh,
   Object3D,
+  PlaneGeometry,
   Points,
   PointsMaterial,
   Vector2,
   Vector3,
   type DataTexture,
 } from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { buildColorTexture, fbm } from "../../../rendering/ProceduralTexture";
 import { smoothNormals } from "../../../rendering/SmoothNormals";
 import { createToonMaterial } from "../../../rendering/ToonShading";
@@ -20,6 +23,7 @@ import { Random, SEEDS } from "../../../util/Random";
 import type { SphereCollider } from "../../CollisionField";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
 import { GLASS_PALE, applyVeinGlow, smoothstep01 } from "./GoldenShared";
+import { FILL_SEEDS } from "./GoldenFillShared";
 import { GLASS, worldOf } from "./GoldenTerrain";
 
 /**
@@ -41,10 +45,19 @@ const SEED = SEEDS.regionGolden1;
 const GLASS_DEEP = new Color(0x4e8a72);
 const GLASS_CREST = new Color(0xeefcf0);
 
+/** Where a fin stands (spoke coordinates + scale) — the fill's shard
+ *  aprons fan out from these, so the fins no longer spring from nothing. */
+export interface FinSpot {
+  readonly u: number;
+  readonly v: number;
+  readonly s: number;
+}
+
 export interface GoldenGlassBuild {
   readonly meshes: (Mesh | InstancedMesh | Points)[];
   readonly colliders: SphereCollider[];
   readonly contacts: ContactPatch[];
+  readonly finSpots: readonly FinSpot[];
 }
 
 /** One smooth fused blade: a tall narrow lathe flattened into a fin. */
@@ -102,7 +115,7 @@ export function buildGoldenGlass(): GoldenGlassBuild {
 
   const dummy = new Object3D();
   const tint = new Color();
-  const finSpots: { u: number; v: number; s: number }[] = [];
+  const finSpots: FinSpot[] = [];
   let placed = 0;
   let guard = 0;
   while (placed < count && guard++ < 300) {
@@ -203,7 +216,131 @@ export function buildGoldenGlass(): GoldenGlassBuild {
   glintPoints.name = "hourglass-glass-glints";
   meshes.push(glintPoints);
 
-  return { meshes, colliders, contacts };
+  // ─── The sand-roses (Phase 3 fill — the one NEW exclusive the plan
+  // allows: fused-glass rosettes, the T2 jewel of the Reach). Drawn from
+  // a fresh substream appended after every pilot draw — the reroll fence.
+  meshes.push(buildSandRoses(finSpots));
+
+  return { meshes, colliders, contacts, finSpots };
+}
+
+/** One sand-rose: a rosette of fused-glass petals over an amber heart. */
+function sandRoseGeometry(random: Random): BufferGeometry {
+  const parts: BufferGeometry[] = [];
+  const heart = new Color(0xd8b06e);
+  const petals = 7;
+  const baseYaw = random.range(0, Math.PI * 2);
+  for (let p = 0; p < petals; p++) {
+    const length = random.range(0.34, 0.5);
+    const petal = new PlaneGeometry(0.2, length, 1, 3);
+    const position = petal.attributes.position!;
+    const colors = new Float32Array(position.count * 3);
+    const shade = new Color();
+    const scoop = random.range(0.5, 0.9);
+    for (let i = 0; i < position.count; i++) {
+      const t = position.getY(i) / length + 0.5;
+      // A shallow upturned scoop, tapering to a soft glass point.
+      const taper = Math.max(0.12, 1 - t * 0.75);
+      position.setXYZ(
+        i,
+        position.getX(i) * taper,
+        Math.sin(t * scoop) * length + Math.abs(position.getX(i)) * 0.3,
+        t * length * Math.cos(scoop * 0.7),
+      );
+      shade.copy(heart).lerp(GLASS_CREST, smoothstep01((t - 0.12) / 0.7));
+      shade.lerp(GLASS_DEEP, (1 - t) * 0.25);
+      colors[i * 3] = shade.r;
+      colors[i * 3 + 1] = shade.g;
+      colors[i * 3 + 2] = shade.b;
+    }
+    position.needsUpdate = true;
+    petal.setAttribute("color", new BufferAttribute(colors, 3));
+    petal.computeVertexNormals();
+    petal.rotateY(baseYaw + (p / petals) * Math.PI * 2 + random.signed(0.3));
+    parts.push(petal);
+  }
+  const merged = mergeGeometries(parts, false);
+  for (const part of parts) {
+    part.dispose();
+  }
+  if (!merged) {
+    throw new Error("hourglass sand-rose petals could not be merged");
+  }
+  return merged;
+}
+
+/** Sixty fused-glass rosettes seeded along the groove crests. */
+function buildSandRoses(finSpots: readonly FinSpot[]): InstancedMesh {
+  const random = new Random(SEED ^ FILL_SEEDS.sandRoses);
+  const material = createToonMaterial({
+    vertexColors: true,
+    side: DoubleSide,
+    emissive: 0xcfe8d8,
+    emissiveIntensity: 0.14,
+  });
+  const count = 60;
+  const mesh = new InstancedMesh(sandRoseGeometry(random), material, count);
+  mesh.name = "hourglass-sand-roses";
+  mesh.castShadow = false;
+  mesh.receiveShadow = false;
+
+  const dummy = new Object3D();
+  const tint = new Color();
+  let placed = 0;
+
+  const seat = (u: number, v: number): void => {
+    const { x, z } = worldOf(u, v);
+    const s = random.range(0.6, 1.25);
+    dummy.position.set(x, seabedHeight(x, z) - 0.03, z);
+    dummy.rotation.set(random.signed(0.1), random.range(0, Math.PI * 2), random.signed(0.1));
+    dummy.scale.setScalar(s);
+    dummy.updateMatrix();
+    mesh.setMatrixAt(placed, dummy.matrix);
+    tint.setScalar(random.range(0.85, 1.08));
+    mesh.setColorAt(placed, tint);
+    placed++;
+  };
+
+  // The rose garden: four AUTHORED roses on the groove crest at
+  // (390, −64) — the close pose's guaranteed subject; the scatter joins
+  // them.
+  seat(390, -64);
+  seat(391.5, -62.8);
+  seat(388.8, -62.2);
+  seat(390.6, -65.6);
+
+  let guard = 0;
+  while (placed < count && guard++ < 600) {
+    const angle = random.range(0, Math.PI * 2);
+    const spread = Math.sqrt(random.next()) * (GLASS.radius * 0.85);
+    const u = GLASS.u + Math.cos(angle) * spread;
+    const v = GLASS.v + Math.sin(angle) * spread;
+    // Roses grow on the groove crests, like the fins they attend — and a
+    // few nestle at fin feet so the jewels read beside their parents.
+    if (Math.sin((u * 0.42 + v * 0.91) * 0.34 + 1.1) < -0.05) {
+      continue;
+    }
+    // Keep the arch's swim-through corridor clear.
+    if (Math.hypot(u - (GLASS.u + 4), v - (GLASS.v - 2)) < 6.5) {
+      continue;
+    }
+    let nearFin = 0;
+    for (const fin of finSpots) {
+      nearFin = Math.max(nearFin, 1 - Math.min(1, Math.hypot(u - fin.u, v - fin.v) / 4));
+    }
+    // Bias toward fin company without demanding it.
+    if (random.next() > 0.35 + nearFin * 0.65) {
+      continue;
+    }
+    seat(u, v);
+  }
+  mesh.count = placed;
+  mesh.instanceMatrix.needsUpdate = true;
+  if (mesh.instanceColor) {
+    mesh.instanceColor.needsUpdate = true;
+  }
+  mesh.computeBoundingSphere();
+  return mesh;
 }
 
 /** The arch: a bent tube of glass, stations swept over a half-ellipse. */

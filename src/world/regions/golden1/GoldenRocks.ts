@@ -1,4 +1,4 @@
-import { Matrix4, Mesh, Vector3, type BufferGeometry } from "three";
+import { BufferAttribute, Matrix4, Mesh, Vector3, type BufferGeometry } from "three";
 import { Random, SEEDS } from "../../../util/Random";
 import type { SphereCollider } from "../../CollisionField";
 import { createRockMaterial } from "../../RockMaterial";
@@ -148,6 +148,7 @@ export function buildGoldenRocks(): GoldenRocksBuild {
   // Lone standing stones on the ripple flats — the emptiness's witnesses.
   // Tall single-segment stacks with a slight lean, violet-warm stone; the
   // ground bakes each one's long violet shadow.
+  const monolithFrom = meshes.length;
   for (const [i, m] of MONOLITHS.entries()) {
     stand(
       stackGeometry(
@@ -169,6 +170,53 @@ export function buildGoldenRocks(): GoldenRocksBuild {
       m.height,
       monolithStone,
     );
+  }
+
+  // Phase 3 fill (plan §4): each monolith wears a warm rim-band on its
+  // sun side, so stone and painted shadow read as ONE lighting statement
+  // at capture distance — the shadow says where the light comes from and
+  // the stone now agrees. Painted against the ground's own low-sun
+  // direction (the shadows run along spoke (−0.6, 0.8), so the sun
+  // stands opposite at (0.6, −0.8)). Vertex paint on already-built
+  // geometry: zero stream draws, the reroll fence untouched.
+  {
+    const sun = worldOf(0.6, -0.8);
+    const sunLength = Math.hypot(sun.x, sun.z);
+    const sunX = sun.x / sunLength;
+    const sunZ = sun.z / sunLength;
+    for (const mesh of meshes.slice(monolithFrom)) {
+      const geometry = mesh.geometry;
+      const position = geometry.attributes.position!;
+      const normal = geometry.attributes.normal!;
+      const colors = geometry.attributes.color as BufferAttribute | undefined;
+      if (!colors) {
+        continue;
+      }
+      let minY = Infinity;
+      let maxY = -Infinity;
+      for (let i = 0; i < position.count; i++) {
+        const y = position.getY(i);
+        minY = Math.min(minY, y);
+        maxY = Math.max(maxY, y);
+      }
+      const span = Math.max(1e-3, maxY - minY);
+      for (let i = 0; i < position.count; i++) {
+        const facing = normal.getX(i) * sunX + normal.getZ(i) * sunZ;
+        if (facing <= 0.2) {
+          continue;
+        }
+        const rise = (position.getY(i) - minY) / span;
+        const band =
+          Math.min(1, (facing - 0.2) / 0.5) * Math.min(1, Math.max(0, (rise - 0.15) / 0.4));
+        colors.setXYZ(
+          i,
+          colors.getX(i) * (1 + 0.16 * band),
+          colors.getY(i) * (1 + 0.07 * band),
+          colors.getZ(i) * (1 - 0.14 * band),
+        );
+      }
+      colors.needsUpdate = true;
+    }
   }
 
   // ─── The Gilded Shore pair ───────────────────────────────────────────────

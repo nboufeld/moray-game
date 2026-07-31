@@ -2,14 +2,17 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
+  InstancedMesh,
   LatheGeometry,
   Mesh,
+  Object3D,
   PlaneGeometry,
   Quaternion,
   Vector2,
   Vector3,
 } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { createFishGeometry } from "../../../creatures/fish/FishGeometry";
 import { fbm } from "../../../rendering/ProceduralTexture";
 import { smoothNormals } from "../../../rendering/SmoothNormals";
 import { createToonMaterial } from "../../../rendering/ToonShading";
@@ -45,10 +48,23 @@ const LOOP_SECONDS = 72;
 const PATROL_R = 23;
 
 export interface KeeperBuild {
-  readonly meshes: Mesh[];
+  readonly meshes: (Mesh | InstancedMesh)[];
   readonly target: DiscoveryTarget;
   update(time: number, reducedMotion: boolean): void;
 }
+
+/**
+ * The remoras (Phase 3 fill — doctrine satellites): two pale followers
+ * trailing the Keeper's shell-glow around the drain. Authored offsets,
+ * zero randomness, posed from the SAME patrol arithmetic as the spirit
+ * itself so they can never drift off its wake. They live inside the
+ * Drain's Eye's licence: "the Keeper's circle the only motion" — the
+ * remoras ARE that circle's outriders.
+ */
+const REMORA_SEATS: readonly { behind: number; side: number; lift: number }[] = [
+  { behind: 0.016, side: 1.6, lift: -0.6 },
+  { behind: 0.028, side: -1.3, lift: 0.9 },
+] as const;
 
 export function buildKeeper(): KeeperBuild {
   const random = new Random(SEED ^ 0x0ee9);
@@ -94,13 +110,47 @@ export function buildKeeper(): KeeperBuild {
     return out;
   };
 
+  // The remoras: two pale followers on the wake (see REMORA_SEATS).
+  const remoraGeometry = createFishGeometry({
+    width: 0.8,
+    height: 0.9,
+    length: 1.3,
+    tailTaper: 0.5,
+    dorsal: 0.35,
+    pectoral: 0.7,
+    tail: { reach: 1.4, lobe: 0.55, notch: 1.0 },
+  });
+  // Round 2: at 0.5 a fog-free remora rendered as a neon-orange fish at
+  // the salt-lily terrace — the caravan's own r5 lesson, one size down.
+  const remoraMaterial = createToonMaterial({
+    vertexColors: true,
+    emissive: 0x8a7a50,
+    emissiveIntensity: 0.26,
+  });
+  remoraMaterial.fog = false; // they share the lantern's water
+  const remoras = new InstancedMesh(remoraGeometry, remoraMaterial, REMORA_SEATS.length);
+  remoras.name = "hourglass-keeper-remoras";
+  remoras.castShadow = false;
+  remoras.receiveShadow = false;
+  remoras.frustumCulled = false;
+  const remoraTint = new Color(0xe8dcc0);
+  for (let i = 0; i < REMORA_SEATS.length; i++) {
+    remoras.setColorAt(i, remoraTint);
+  }
+  if (remoras.instanceColor) {
+    remoras.instanceColor.needsUpdate = true;
+  }
+
   const at = new Vector3();
   const ahead = new Vector3();
   const forward = new Vector3();
+  const sideways = new Vector3();
   const bank = new Quaternion();
   const face = new Quaternion();
   const zAxis = new Vector3(0, 0, 1);
   const roll = new Vector3(0, 0, 1);
+  const up = new Vector3(0, 1, 0);
+  const dummy = new Object3D();
 
   const pose = (time: number): void => {
     const t = (time / LOOP_SECONDS) % 1;
@@ -113,6 +163,23 @@ export function buildKeeper(): KeeperBuild {
     // A gentle inward bank — the old glide of a circling animal.
     bank.setFromAxisAngle(roll, 0.22 + Math.sin(time * 0.3) * 0.06);
     mesh.quaternion.copy(face).multiply(bank);
+
+    for (const [i, seat] of REMORA_SEATS.entries()) {
+      const tr = (((t - seat.behind) % 1) + 1) % 1;
+      pathAt(tr, at);
+      pathAt((tr + 0.004) % 1, ahead);
+      forward.subVectors(ahead, at).normalize();
+      sideways.crossVectors(forward, up).normalize();
+      dummy.position
+        .copy(at)
+        .addScaledVector(sideways, seat.side + Math.sin(time * 0.7 + i * 2.4) * 0.3);
+      dummy.position.y += seat.lift + Math.sin(time * 0.5 + i * 1.7) * 0.25;
+      dummy.rotation.set(0, Math.atan2(forward.x, forward.z), 0);
+      dummy.scale.setScalar(0.55);
+      dummy.updateMatrix();
+      remoras.setMatrixAt(i, dummy.matrix);
+    }
+    remoras.instanceMatrix.needsUpdate = true;
   };
 
   pose(0);
@@ -120,7 +187,7 @@ export function buildKeeper(): KeeperBuild {
   let slowTime = 0;
   let last = 0;
   return {
-    meshes: [mesh],
+    meshes: [mesh, remoras],
     target,
     update(time: number, reducedMotion: boolean): void {
       const dt = Math.max(0, time - last);

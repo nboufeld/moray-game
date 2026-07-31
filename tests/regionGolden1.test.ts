@@ -1,4 +1,4 @@
-import { InstancedMesh, Mesh, Points, Scene, Vector3, type Object3D } from "three";
+import { InstancedMesh, Matrix4, Mesh, Points, Scene, Vector3, type Object3D } from "three";
 import { beforeAll, describe, expect, it } from "vitest";
 // Import order is load-bearing: `Seabed` pulls `RegionField` →
 // `RegionRegistry` → the def, and that chain tolerates the cycle (every
@@ -7,6 +7,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 // reads `GOLDEN_1` before its module finishes evaluating.
 import { seabedHeight } from "../src/world/Seabed";
 import { GOLDEN_1, buildSeals } from "../src/world/regions/golden1/Golden1";
+import { insideRest } from "../src/world/regions/golden1/GoldenFillShared";
 import {
   CENTER_X,
   CENTER_Z,
@@ -157,11 +158,14 @@ describe("golden-waste-1 build", () => {
         }
       }
     });
-    expect(draws).toBeLessThanOrEqual(120);
-    expect(triangles).toBeLessThanOrEqual(250_000);
-    // Honest floors as well as caps: an empty region passes no bar.
-    expect(draws).toBeGreaterThan(20);
-    expect(triangles).toBeGreaterThan(90_000);
+    // MASTER R12 budgets (the binding gate is the headed frame measure,
+    // recorded in the ledger; these caps are the honest envelope).
+    expect(draws).toBeLessThanOrEqual(260);
+    expect(triangles).toBeLessThanOrEqual(1_350_000);
+    // Honest floors as well as caps: an empty region passes no bar — and
+    // a region whose fill silently vanished fails loudly.
+    expect(draws).toBeGreaterThan(60);
+    expect(triangles).toBeGreaterThan(300_000);
   });
 
   it("keeps every collider inside the domain", () => {
@@ -181,6 +185,111 @@ describe("golden-waste-1 build", () => {
     expect(target.speciesId).toBe("hourglass-keeper");
     expect(goldenWeight(target.position.x, target.position.z)).toBeGreaterThan(0.5);
     expect(GOLDEN_1.codexEntries?.some((entry) => entry.id === target.speciesId)).toBe(true);
+  });
+
+  it("holds the reroll fence: pilot placements byte-identical to the pre-fill build", () => {
+    // Values read off the pre-fill tree (commit 01b028f) by a scratch
+    // scene walk. Every fill stream is `SEEDS.regionGolden1 ^
+    // FILL_SEEDS.*`, appended after all pilot draws — so a fill retune
+    // that shifts ANY of these has consumed from a pilot stream and
+    // broken the fence.
+    const named: Record<string, Object3D[]> = {};
+    (build.group as Object3D).traverse((node) => {
+      (named[node.name] ??= []).push(node);
+    });
+    const m = new Matrix4();
+
+    const rocks = (named["hourglass-rock"] ?? []) as Mesh[];
+    const boulder = rocks[2]!.geometry.boundingSphere!.center;
+    expect(boulder.x).toBeCloseTo(83.49681854248047, 9);
+    expect(boulder.y).toBeCloseTo(-4.689630508422852, 9);
+    expect(boulder.z).toBeCloseTo(1.53416408598423, 9);
+    const monolith = rocks[12]!.geometry.boundingSphere!.center;
+    expect(monolith.x).toBeCloseTo(495.18067932128906, 9);
+    expect(monolith.z).toBeCloseTo(118.99128723144531, 9);
+
+    const fins = named["hourglass-glass-fins"]![0] as InstancedMesh;
+    fins.getMatrixAt(0, m);
+    expect(m.elements[12]).toBeCloseTo(446.5163879394531, 9);
+    expect(m.elements[14]).toBeCloseTo(-54.69419479370117, 9);
+
+    const eels = named["hourglass-garden-eels"]![0] as InstancedMesh;
+    eels.getMatrixAt(0, m);
+    expect(m.elements[12]).toBeCloseTo(497.3562927246094, 9);
+    expect(m.elements[14]).toBeCloseTo(141.784210205078, 9);
+
+    const palms = named["hourglass-sea-palms"]![0] as InstancedMesh;
+    palms.getMatrixAt(0, m);
+    expect(m.elements[12]).toBeCloseTo(516.33154296875, 9);
+    expect(m.elements[14]).toBeCloseTo(-13.027262687683105, 9);
+
+    const keeper = named["hourglass-keeper"]![0] as Mesh;
+    expect(keeper.position.x).toBeCloseTo(463.5802078078077, 9);
+    expect(keeper.position.z).toBeCloseTo(63.522568623359625, 9);
+
+    // The appended sand veil must not have moved the original nine.
+    const veils = named["hourglass-sand-veils"]![0] as InstancedMesh;
+    veils.getMatrixAt(0, m);
+    expect(m.elements[12]).toBeCloseTo(378.476806640625, 9);
+    expect(m.elements[14]).toBeCloseTo(63.95013427734375, 9);
+    expect(veils.count).toBe(10);
+  });
+
+  it("keeps every fill instance out of the two registered rests", () => {
+    // MASTER §1.2: The Empty Quarter and The Drain's Eye stay composed
+    // bareness. Every kit cover instance, sand-rose and merged debris
+    // vertex must stand outside both.
+    const coverNames = new Set([
+      "kit-carpet-field",
+      "kit-ground-litter-0",
+      "kit-ground-litter-1",
+      "kit-bush-bank",
+      "hourglass-sand-roses",
+    ]);
+    const m = new Matrix4();
+    let checked = 0;
+    (build.group as Object3D).traverse((node) => {
+      if (node instanceof InstancedMesh && coverNames.has(node.name)) {
+        for (let i = 0; i < node.count; i++) {
+          node.getMatrixAt(i, m);
+          const { u, v } = spokeOf(m.elements[12]!, m.elements[14]!);
+          expect(insideRest(u, v), `${node.name}[${i}] at u=${u.toFixed(0)} v=${v.toFixed(0)}`).toBe(
+            false,
+          );
+          checked++;
+        }
+      } else if (node instanceof Mesh && node.name === "kit-drift-debris") {
+        const position = node.geometry.attributes.position!;
+        for (let i = 0; i < position.count; i += 7) {
+          const { u, v } = spokeOf(position.getX(i), position.getZ(i));
+          expect(insideRest(u, v), `debris vertex at u=${u.toFixed(0)} v=${v.toFixed(0)}`).toBe(
+            false,
+          );
+          checked++;
+        }
+      }
+    });
+    expect(checked).toBeGreaterThan(5_000);
+  });
+
+  it("keeps standing cover off the close poses' lenses", () => {
+    const closes = GOLDEN_1.capturePoses.filter((pose) => pose.name.startsWith("close-"));
+    expect(closes.length).toBeGreaterThanOrEqual(4);
+    const m = new Matrix4();
+    (build.group as Object3D).traverse((node) => {
+      if (node instanceof InstancedMesh && node.name === "kit-carpet-field") {
+        for (let i = 0; i < node.count; i++) {
+          node.getMatrixAt(i, m);
+          for (const pose of closes) {
+            const d = Math.hypot(
+              m.elements[12]! - pose.position[0],
+              m.elements[14]! - pose.position[2],
+            );
+            expect(d, `carpet instance on ${pose.name}'s lens`).toBeGreaterThan(0.9);
+          }
+        }
+      }
+    });
   });
 
   it("survives a minute of updates without spending randomness", () => {
