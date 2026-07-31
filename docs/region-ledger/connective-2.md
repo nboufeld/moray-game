@@ -136,3 +136,103 @@ Captures per round: `visual-qa/*_conn2-r{n}.png`, before set
   whole mid-ground, blush fronds appear exactly where the recovery
   lives, pale drapes read on the right wall, and the near-gate ground
   stays bone. → r2: modest density bump only (rubble 620, turf 110).
+
+### r2 (looked at)
+
+- **kelp-cathedral** — the turf turns true spring green-gold and dense
+  enough to read as a floor; the aisle stays a clean swim lane (the
+  composed rest it is). The walls STILL read bare — eight drape
+  holdfasts across eleven radial metres vanish between the columns.
+- **vent-springs** — the ember fringe now reads on both flanks ("amber
+  held in the gloom", finally as smallwork, not only chimneys), scoria
+  runs up the right bank. Wall lower bands still flat on the left.
+- **ghost-reef** — bleached drape straps over the right boulder are the
+  frame's best new mark; rubble + blush + porcelain stars all read.
+  Done at this pose; no r3 change.
+
+### r3 (looked at)
+
+- **kelp-cathedral** — twelve holdfasts land the walls: hanging emerald
+  banks read at three depths on the left wall and mid-right, a near
+  bundle gives the pose its < 8 m foreground layer. Three-layer law
+  answered in-frame: turf+bank foreground, columns/shafts middle, veil
+  distance. VERDICT: done.
+- **vent-springs** — the right bank carries scoria, polyps and a strap
+  in one composed climb; the left keeps its fringe. The corridor stays
+  visibly open water. VERDICT: done.
+- **ghost-reef** — unchanged from r2, verified again healthy. VERDICT:
+  done. (The door-side cooled stands sit behind the pearl arch at this
+  pose; R6's visual proof at the seam rides the measured tint table in
+  `[conn2-r6]` — the capture pose cannot frame it without a new pose,
+  which is a capture-script change and out of lane.)
+
+## Close-out
+
+### Budgets, measured (`[conn2-budget]`, vitest prints them each run)
+
+R2's ≤ +10 draws / ≤ 35k tris ceiling, read as the wing's WHOLE Phase 3
+uplift (Batch 1 veil + Batch 2 density), counted from the meshes
+actually created:
+
+| Wing | Whole uplift (veil incl.) | of which Batch 2 | R2 ceiling |
+|---|---|---|---|
+| kelp-cathedral | **+10 draws / +30,212 tris** | +5 / +28,596 | ≤ +10 / ≤ 35k |
+| vent-springs | **+10 draws / +20,196 tris** | +5 / +18,580 | ≤ +10 / ≤ 35k |
+| ghost-reef | **+10 draws / +23,400 tris** | +5 / +21,784 | ≤ +10 / ≤ 35k |
+
+Whole-program wing uplift after this batch: connective-1's +31 draws /
++10.3k tris + Batch 2's +15 draws / +68.9k tris = **+46 draws / +79.2k
+tris resident** against the ≤ +120 / ≤ 380k envelope. No
+`frustumCulled = false`, no castShadow, no new contacts, no new
+per-frame hooks (kit sways ride the standing `WingFlora.update`
+forwarding on closed-form simulated seconds); every uplift mesh's
+honest sphere stands past r = 27 inside the wing's cone (the
+connective-2 frustum-guard suite holds it on every run).
+
+### Final per-wing verdicts (`*_conn2-final.png`, all three looked at)
+
+| Wing | Before (conn2-before) | After (conn2-final) |
+|---|---|---|
+| kelp-cathedral | bare tan floor between the rows, naked wedge walls | spring green-gold blade+frond turf down both flanks (sun-through-leaf glow), hanging emerald banks at three depths on the walls, cushion stars at the column feet, the aisle kept as the composed swim lane. The W1 god-shaft flag verified fixed (atelier sprite repaint) — soft light, no rectangles |
+| vent-springs | walls' lower bands unbroken mauve, floor band naked, no warm smallwork | graded scoria drift climbing the banks, the ember polyp fringe glowing warm-and-rising beside the chimneys (the register rule kept), heat-cured straps on the strata walls; the den and gate corridors read as open water and the tests prove them vertex by vertex |
+| ghost-reef | bare mauve-tan mid-ground, colour arriving early with no ground story | ossuary bone rubble through the wedge floor, blush frond turf exactly where the recovery lives, bleached straps over the boulders, porcelain brittle-stars at the stand feet — and R6's false spring: colour peaks just shy of the seam and dies to a trace at the door |
+
+### The R6 handshake, as measured
+
+`falseSpringDying`: 1 through the garden, cooling from r 44.9 over
+1.6 m, floor 0.22 at the seam. Built tints (linear-space channel
+spread, deterministic): bone mean 0.089; garden peak band (44.9–45.4)
++0.249 over bone; door band (≥ 45.9) +0.115 over bone — colour HALVES
+into the doorway and hands pale-passage-1's ravine-mouth beat (plan §8:
+blush dying over u 48–68, hush by u 70) a trace, not a wall. Stands'
+positions unchanged (palette only); the pale-1 fill had not merged at
+close, so the handshake is honoured against its plan.
+
+### Captures (all looked at)
+
+- `visual-qa/20260731-0636_*_WING-{kelp-cathedral,vent-springs,ghost-reef}_conn2-before.png`
+- `visual-qa/20260731-0717_*_conn2-r1.png` (three wings)
+- `visual-qa/20260731-0736_*_conn2-r2.png` (three wings)
+- `visual-qa/20260731-0746_*_conn2-r3.png` (three wings)
+- `visual-qa/*_conn2-final.png` (three wings)
+
+Port discipline held throughout: `npx vite --port 5200 --strictPort`,
+`SHOT_URL=http://localhost:5200`, server verified before every run.
+
+### Flags
+
+- **Pre-existing test failure, NOT this lane's**:
+  `tests/regionSmoking1.test.ts` › "keeps the fill's instances inside
+  the domain" fails with `mesh.getMatrixAt is not a function` (an
+  unguarded `node as InstancedMesh` cast hitting a plain merged mesh).
+  Verified failing at this branch's base commit 95c99d9 BEFORE any
+  connective-2 change (checked out and re-run). Region tests are out of
+  this lane (MASTER R3); the smoking lane or the orchestrator owns the
+  one-line guard. Everything else in the full run is green: 748/749.
+- **Wing capture poses cannot frame the ghost-reef doorway stands**
+  (the pearl arch blocks the seam band at the canonical pose); R6's
+  proof is the measured tint table until a vale-side pose exists
+  (pale-1's rework inherits the seam view from its side).
+- The wave-8 capture cadence on this QA machine runs ~2–5 minutes per
+  wing pose under load; runs were retried/awaited rather than touching
+  the capture scripts (not this lane's files).
