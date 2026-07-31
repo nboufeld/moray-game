@@ -641,6 +641,249 @@ server and *looked at*, every frame:
 Budgets, before the rework → after: **40 draws / 189,862 tris →
 107 draws / 449,936 tris** (caps 160/450k).
 
+## R12.3 QUALITY RE-PASS — the fill made worth looking at
+## (`repass/verdant-line-2`, MASTER R12 + kit/quality-pass)
+
+The verdict this answers, verbatim: *"some kind of half-cut grass
+everywhere — doesn't seem like an added value at all."* The kit
+re-authoring (docs/region-ledger/kit-quality-pass.md) provides the
+craft; this pass consumes it. Budgets are R12's ≤260 / ≤1.35M, gated by
+the headed frame measure (median ≤16.9 ms at scale 1.00 at the densest
+pose). The sibling Kelp Sea re-pass had NOT merged when this pass began
+(its commits live only on `repass/verdant-line-1`); its ledger was read
+across branches as guidance, not contract.
+
+### The reroll fence, restated
+
+Profile swaps and richness opt-ins re-roll THOSE FAMILIES' own buffers —
+expected and honest, the swap is the point. Everything else (landmark
+stone, the Warden's beat, all pre-fill systems, all other fill streams)
+is byte-unchanged: every new draw is `SEEDS.regionVerdant2 ^` a fresh
+`0xf11x/0xf20b–0xf20c/0xf419–0xf41e` constant appended after all
+existing draws, and the test pins (Rim Sentinel, mistfall horn, gate
+jamb, Cistern ring stone, the Warden's target, to full float precision)
+still hold — 25/25 green on the swapped build.
+
+### What changed (round 1)
+
+1. **Profile swaps** — every swimmable carpet family leaves the far
+   tier: base cover 4000 card → 3400 `"blade"`; country understory
+   tufts → knee-thigh blades; milky + celadon handover carpets → blades;
+   stair tread 1800 card → 1500 blade; gardens tread 2300 card → 2000
+   blade; gardens celadon tuft → `"frond"` (the hanging gardens are
+   where rosettes belong); Fern Vault card → frond (value-lifted key,
+   half-light keeps sunGlow off); Mistfall lip → blade; basin silt 1900
+   card → 1400 frond (key lifted a half step off the violet floor);
+   pillar-sector 1300 card → 1000 frond; south flank card/tuft →
+   blade/thigh-blade; approach card/tuft → blade; balcony moss → small
+   fronds. NO carpetField family keeps `"card"` — none of them is true
+   far-field (the mesa-city distance cards are the region's own
+   exclusive, not carpetField). No farGrassCards in this region, so no
+   `nearFade` case exists to guard (verified by search).
+2. **`sunGlow`** on the sunlit families (base, understory, both
+   handover carpets, stair, gardens, lip, approach, road stands);
+   withheld from the vault (half-light), the basin silts and the sector
+   (deep register).
+3. **`looseShare`** raised on the sweep-critical broad fields (base
+   0.45, south flank/approach/stands 0.5, sector 0.4).
+4. **Bush richness** — all ten banks opt into `fronds`/`accents` on
+   their own inks: spring banks take rose berries (8/4, gardens 10/6),
+   pale waymarks pale buds (5/3), wine scrub thorn-sparse (3–4 fronds,
+   5 knots), rose flank banks bright buds (6/5), approach olive gold
+   (6/4).
+5. **Litter upgrades** — `grade` on every pebble/shard run (0.5–0.6);
+   two NEW `"split"`-stone runs (`^ 0xf20b` gardens terrace feet 140,
+   `^ 0xf20c` stair shoulders 100, both graded 0.6) — formed foreground
+   rock for the country that remembers being built.
+6. **Headroom spend (new families, fresh streams)** — road-edge blade
+   stands `^ 0xf111` (360, waist-high, threshold+stair shoulders) and
+   `^ 0xf112` (300, stair foot → Mistfall lip); vault understory second
+   frond storey `^ 0xf113` (400 at 0.34–0.62); denser riser strips
+   (`^ 0xf419/0xf41a` interleaved second rows on stair + contours);
+   richer curtain layering (`^ 0xf41c` second contour run ×48/contour
+   band, `^ 0xf41d` grotto outer veil, `^ 0xf41e` low-stair runs);
+   eight more low vault ferns `^ 0xf41b`.
+7. **Five new close poses** (`close-threshold-road`, `close-stair-tread`,
+   `close-garden-tread`, `close-vault-floor`, `close-basin-silt`) —
+   camera ~1.4–1.6 m up, subject 3–5 m out, judged hardest.
+8. **Test caps updated honestly**: measured **112 draws / 1,290,388
+   tris** (fill close was 107 / 449,936) → caps 130 / 1.34M, floors
+   100 / 1.0M; the budget test now prints its measurement.
+
+### Round 1 (`v2rp-r1`) — critique, close poses judged hardest
+
+All 17 authored frames + 12 sweep frames captured against the verified
+port-5201 server and looked at.
+
+- **The profile swap works**: everywhere a blade clump or frond rosette
+  is close enough to read, it reads as a PLANT — S-bend leaders, cupped
+  straps, tip taper. `pass-threshold` (bright shallow light) is the
+  proof; `fern-vault` and `close-vault-floor` are transformed (rosette
+  floor + knee-high storey + giants — the best frames the region has).
+- **The twelve original authored poses all hold** their v2-filled
+  compositions (gate, stair, gardens, slab, turtles, grotto, cistern
+  mirror bright + bowl empty, both mistfalls, balcony, threshold).
+- **`close-vault-floor`: PASS.** `close-stair-tread`: MARGINAL — the
+  blades in frame read beautifully, the riser face at right is bare
+  wash, density thin. `close-garden-tread`: MARGINAL-FAIL — rosettes
+  legible but the near field is broad bare olive with metre-spaced
+  plants. `close-threshold-road`: FAIL — the road's near metres nearly
+  empty; the milky blades camouflage against the milky shelf.
+  `close-basin-silt`: FAIL — naked violet slope, one rose bush, thin
+  dark sprigs.
+- **Value, the v1 lesson confirmed**: in the deep country (thicker
+  mood, dimmer sun) the swapped families render a full value DARKER
+  than their hexes — gate-foot blades and gardens fronds read
+  blue-violet against warm treads; basin silt fronds read as dark
+  specks on their own violet ground. The bright-shallow threshold shows
+  the same families reading perfectly — the palettes were keyed for the
+  kit demo stage's light, not this mood (the fill-r2 lesson, one tier
+  up).
+
+**Round-2 orders**: (1) value pass — lift base/tip/shade a step on
+every deep-country family (base cover, understory, stair, gardens
+blades + fronds, vault, silts, sector, flank, approach, stands); (2)
+density where the close poses stand — stair 1500 → 1800, gardens
+2000 → 2400, gardens fronds 1000 → 1200, vault floor 900 → 1050,
+milky 800 → 950, celadon 600 → 750, south flank 500 → 800; (3)
+looseShare on the tread families back to the default (concentration
+reads as cover; loose singles vanish — v1's close-meadow lesson,
+pre-paid); paid for by base cover 3400 → 2900, sector 1000 → 900,
+lip 800 → 700.
+
+### Round 2 (`v2rp-r2`) — the hex lift is not enough; the mood wants its own light
+
+All 17 authored + 12 sweep frames captured against the verified
+port-5201 server and looked at.
+
+- **The twelve originals: 12/12 hold.** `fern-vault` is the region's
+  best frame (giant canopy + knee-high storey + rosette floor);
+  `pass-threshold` proves the blade families read as painted plants in
+  honest light; the Cistern's mirror bright, its bowl empty; both
+  Mistfall poses additive and quiet; turtle-terraces now carries frond
+  rosettes in its mid-field.
+- **Close poses: 1 pass / 1 marginal / 3 down.** `close-vault-floor`
+  PASS (the canopy overhead, the storey, the rosettes).
+  `close-stair-tread` MARGINAL — the centre blades are beautiful, the
+  floor between them thin, the riser face at right still bare wash.
+  `close-garden-tread` MARGINAL-FAIL — rosettes legible but rendering
+  BLUE-VIOLET on the warm olive tread, near floor broad and bare.
+  `close-threshold-road` FAIL — metre-spaced sprigs on naked sand, the
+  milky blades camouflaged against the milky shelf AND rendered a
+  value dark. `close-basin-silt` FAIL — a naked violet slope, one rose
+  bush, dark specks.
+- **Sweep: 11 dressed / 1 licensed (06, the Cistern rest)** — the
+  standard's shape holds, but frames 02/05/10 pass on composition
+  while their deep-country sprigs read as DARK SPECKS, the same value
+  failure the close poses fail on.
+- **The r2 lesson, sharpened**: lifting the palette hexes one step
+  (r2's whole value pass) moved the deep country barely half the
+  distance — the mood light multiplies every albedo down faster than
+  keys can climb. This region already solved this once: its curtain
+  materials carry an emissive floor because "in this water the shadow
+  side needs its own light" (fill r4). The kit builds need the same
+  cure, applied consumer-side.
+
+**Round-3 orders**: (1) the DUSK LIFT — an emissive floor under every
+deep-country kit build, region-side material tweak only (traverse the
+build group, set `emissive`/`emissiveIntensity` on each mesh's own
+toon material — `createToonMaterial` mints per-build materials, so
+nothing leaks): green families 0x223a2a at 0.4–0.5, bush banks 0.3,
+the basin's silt-violet families 0x2c3440 at 0.45; the bright shallow
+threshold families stay unlit. (2) Near-field floors under the failing
+close poses — the gardens tread and celadon gates take drift FLOORS
+(0.35 + 0.65·drift, 0.3 + 0.7·drift: the drift may gather, it may no
+longer zero), the basin flank gate the same; a dedicated 200-frond
+patch bed (`^ 0xf114`, disc(1057, −68, 10), gate 0.9) directly on
+`close-basin-silt`'s look ray (the fill's frame-07/10 lesson: place a
+tight disc ON the ray). (3) The milky/celadon road blades sized up
+(0.2–0.4 → 0.22–0.44, 0.2–0.42 → 0.22–0.46) so the road reads at
+swim height. Paid for by base cover 2800 → 2700, sector 900 → 850,
+lip 700 → 650.
+
+### Round 3 (`v2rp-r3`) — the dusk lift works; the patch bed is the cure for a failing pose
+
+All 17 authored + 12 sweep frames captured against the verified
+port-5201 server and looked at. Measured 113 draws / 1,331,188 tris.
+Perf gate (headed, `fern-vault`, the densest pose): **median 16.7 ms
+at settled scale 1.00** (301 frames, p95 18.4 ms) — inside the
+16.9 ms bar with little to spare; round 4's net +11k tris must
+re-verify.
+
+- **The dusk lift is the round's proof.** Everywhere it was applied
+  the deep country now reads as PLANTS IN COLOUR: sweep 05's floor
+  under the pillars carries bright-green rosettes where r2 had dark
+  specks; sweep 08's blades stand vivid among the standing stones;
+  sweep 10's basin silt shows teal-green sprigs and the rose scrub in
+  its own wine key. The value failure that survived r2's hex lift is
+  cured.
+- **Close poses: 2 pass / 2 marginal / 1 down.**
+  `close-basin-silt` **PASS** — the `^ 0xf114` patch bed fills the
+  camera wedge with legible rosettes; the pose that failed hardest in
+  r2 is now the proof of the tight-disc-on-the-ray method.
+  `close-vault-floor` **PASS** holds. `close-stair-tread` MARGINAL —
+  the tall centre blades are now lit and beautiful, but the floor
+  between them stays thin and the riser face at right is still bare.
+  `close-garden-tread` MARGINAL — the rosettes render in their own
+  green now (the blue-violet read is gone), but the near strip under
+  the camera is bare tread. `close-threshold-road` **FAIL** — visually
+  the r2 frame: metre-spaced grey-lavender sprigs on naked sand. The
+  10 % size bump was noise, and the family was left out of the dusk
+  lift as "bright shallow" — but the milky palette itself reads grey
+  under the teal water column.
+- **Sweep: 11 dressed / 1 licensed (06, the Cistern rest)** — the
+  standard holds, and this round the dressed frames pass on their
+  PLANTS, not just their composition. 01 is the thinnest pass (the
+  high saddle, a scatter of sprigs on an honest bare ridge — the
+  approach band's register, accepted).
+- **The twelve originals: 12/12 hold**, `fern-vault` still the
+  region's best frame; the dusk lift did not blow out any of the
+  bright shallow poses (the threshold family stayed unlit as ordered).
+
+**Round-4 orders** (the last quality round — the method is proven,
+apply it to the three remaining poses): (1) `close-threshold-road`
+gets its own patch bed (`^ 0xf115`, disc(705, 5, 9), 180 blades,
+0.3–0.62) in a SATURATED celadon-green key with sunGlow and a gentle
+0.25 dusk floor — the milky key camouflages, so the patch wears the
+region's own green instead. (2) `close-stair-tread` gets a tread bed
+(`^ 0xf116`, disc(801, −4, 8), 150 blades, 0.28–0.62, stair key,
+full dusk lift) to carry the floor between the tall centre blades.
+(3) `close-garden-tread` gets a rosette bed (`^ 0xf117`,
+disc(902, −38, 9), 140 fronds, 0.26–0.5, celadon frond key, full
+dusk lift) under the camera's near ray. Paid for by base cover
+2700 → 2550, basin blooms 1400 → 1350, sector 850 → 800
+(−13,200 tris against +24,240; estimated ≈ 1,342k, inside the
+R12 1.35M ceiling).
+
+### Round 4 (first `v2-repassed` attempt) — two more poses cured; the heart still airy
+
+Measured 116 draws / 1,342,228 tris. The final chain was launched on
+this build; its 17 authored + close frames were captured and looked
+at before the sweep finished, and the verdict stopped the chain:
+
+- **The twelve originals: 12/12 hold.** `pass-threshold` is the
+  region's new welcome — waist-high painted blades either side of the
+  road. The Cistern's mirror bright, its bowl empty; the Fern Vault
+  still the best frame.
+- **Close poses: 4 pass / 1 short.** `close-threshold-road` **PASS**
+  — the saturated celadon bed reads at swim height, the road's own
+  bare line honest trodden ground. `close-stair-tread` **PASS** — the
+  tread floor carries blade clumps between the tall centre blades.
+  `close-vault-floor` and `close-basin-silt` hold their r3 passes.
+  `close-garden-tread` **SHORT** — better than r3, but the r4 bed's
+  celadon key cooled to blue-grey specks under the dusk lift and the
+  0.26–0.5 rosettes stay sub-knee at 3 m: the region's HEART reads as
+  the thinnest of the five, and the heart is judged hardest.
+
+**Round-5 orders** (one family, one bed — the last): the `^ 0xf117`
+garden bed re-keyed warm green (0x7cc08c/0xa8d894/0x5c9070 — the
+celadon cools under the lift; the garden blades' own register does
+not), 140 → 200 fronds, sized 0.3–0.58 to be SEEN at three metres.
+Paid for by base cover 2550 → 2500. Measured 116 draws /
+1,343,428 tris. The stale first-attempt captures were deleted and the
+full final chain relaunched from this build so the shipped set is one
+build's truth.
+
 ## Flags
 
 - **Verdant-1's far-rim seal ring crosses the pass corridor.** The
@@ -668,3 +911,11 @@ Budgets, before the rework → after: **40 draws / 189,862 tris →
   level out there; documented in `Verdant2Terrain`.
 - The threshold's flank seals are invisible walls over open shelf (the
   pilot's same trade at his rim).
+- **Pre-existing full-suite failure, not ours**: `tests/regionSmoking1.test.ts`
+  › "keeps the fill's instances inside the domain" throws
+  `mesh.geometry` undefined — verified failing IDENTICALLY at this
+  branch's base merge point (208221e), before any re-pass commit. The
+  Smoulder worker's R12 containment repair (5f39c0c) samples geometry
+  on merged pieces and meets a mesh without one at this merge state.
+  Their file, their region — outside this branch's allowed set; the
+  orchestrator should route it to the Smoulder worker.

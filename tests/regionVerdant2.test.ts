@@ -184,16 +184,20 @@ describe("verdant-line-2 build", () => {
         }
       }
     });
-    // The doctrine's Phase 3 ceilings (FILL-DOCTRINE budgets, MASTER R1):
-    // 160 draws / 450k tris, superseding the old 120/250k caps the region
-    // shipped under.
-    expect(draws).toBeLessThanOrEqual(160);
-    expect(triangles).toBeLessThanOrEqual(450_000);
+    // Print the measurement so the number is re-checkable on every run
+    // (the Smoulder ledger's practice, adopted).
+    console.info(`verdant-line-2 budget: ${draws} draws / ${triangles} triangles`);
+    // MASTER R12 ceilings (≤260 draws / ≤1.35M tris; the binding gate is
+    // the headed frame measure, recorded in the region ledger). Caps are
+    // set honestly just above the R12.3 re-pass measurement — the fill
+    // shipped at 107 / 449,936 and the re-pass trades the far-tier cards
+    // for the kit's authored blade/frond profiles.
+    expect(draws).toBeLessThanOrEqual(130);
+    expect(triangles).toBeLessThanOrEqual(1_350_000);
     // Honest floors as well as caps: an empty region passes no bar. The
-    // pre-fill build measured 40 draws / 189,862 tris; the floors rise
-    // with the fill so it may not quietly be lost.
-    expect(draws).toBeGreaterThan(20);
-    expect(triangles).toBeGreaterThan(100_000);
+    // floors rise with the re-pass so it may not quietly be lost.
+    expect(draws).toBeGreaterThan(100);
+    expect(triangles).toBeGreaterThan(1_000_000);
   });
 
   it("keeps existing landmark stone byte-identical (the reroll fence)", () => {
