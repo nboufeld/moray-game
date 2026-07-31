@@ -4,7 +4,6 @@ import {
   DoubleSide,
   Mesh,
   MeshBasicMaterial,
-  MultiplyBlending,
   PlaneGeometry,
   RepeatWrapping,
   RingGeometry,
@@ -180,13 +179,16 @@ function buildCloudShadows(): {
     geometry.translate(CENTER_X, 0, CENTER_Z);
     drapeOverPrairie(geometry, spec.lift);
     geometry.computeBoundingSphere();
+    // Round-1 probe: a MultiplyBlending sheet white-outed every prairie
+    // frame on this render chain — the prototype's second try is a plain
+    // translucent shadow-violet sheet whose alpha carries the blotches
+    // (fog ON, so the shadow dissolves with the ground it lies on).
     const material = new MeshBasicMaterial({
-      map,
+      color: 0x2a3252,
+      alphaMap: map,
       transparent: true,
-      blending: MultiplyBlending,
+      opacity: 0.16,
       depthWrite: false,
-      fog: false,
-      toneMapped: false,
     });
     map.repeat.set(spec.repeat, spec.repeat);
     const mesh = new Mesh(geometry, material);
@@ -225,19 +227,19 @@ function drapeOverPrairie(geometry: PlaneGeometry, lift: number): void {
   position.needsUpdate = true;
 }
 
-/** Soft cloud blotches around a neutral 1 — the multiply's whole story. */
+/** Soft cloud blotches as ALPHA: zero almost everywhere, islands of
+ *  shadow — so most of the sheet draws nothing at all. */
 const cloudMaps = new Map<number, DataTexture>();
 function cloudTexture(seed: number): DataTexture {
   let map = cloudMaps.get(seed);
   if (!map) {
     map = buildColorTexture(128, (u, v) => {
-      // Tileable by fbm period; smoothstepped so most of the sheet is
-      // exactly neutral and the shadows are islands, not a global dim.
+      // Tileable by fbm period; smoothstepped so the shadows are islands,
+      // not a global dim. An alphaMap reads the GREEN channel.
       const blotch = smoothstep01(
         (fbm(u * 3, v * 3, { seed, period: 3, octaves: 3 }) - 0.56) / 0.2,
       );
-      const value = 1 - blotch * 0.07;
-      return [value, value, value * 1.01];
+      return [blotch, blotch, blotch];
     });
     map.wrapS = RepeatWrapping;
     map.wrapT = RepeatWrapping;

@@ -80,6 +80,10 @@ export interface Blue1FillBuild {
 
 /** Tip owns the hue (the kit ceiling rule): pale wind-silver over green. */
 const GRASS_PALETTE = { base: 0x66bda2, tip: 0xcfeadb, shade: 0x2f6e5c } as const;
+/** The mid tier keeps GREEN tips: with the silver tip ink its 12-tri
+ *  tufts rendered as pale wedges at close range (round-1 probe) — the
+ *  near blades own the silver note. */
+const GRASS_MID_PALETTE = { base: 0x58a486, tip: 0x9fd6b6, shade: 0x2f6e5c } as const;
 const CREST_PALETTE = { base: 0x74c9ac, tip: 0xdcf2e2, shade: 0x35755f } as const;
 
 // ─── The shared gate arithmetic ──────────────────────────────────────────────
@@ -186,9 +190,9 @@ export function buildBlue1Fill(sites: readonly Blue1StoneSite[]): Blue1FillBuild
       seed: SEED ^ FILL_SEEDS.grassNear,
       palette: GRASS_PALETTE,
       area: discArea(205),
-      gate: grassGate(sites, 0.3, 0.65),
+      gate: grassGate(sites, 0.38, 0.6),
       ground: seabedHeight,
-      count: 6000,
+      count: 7500,
       profile: "blade",
       size: [0.5, 1.05],
       swayAmp: 0.05,
@@ -200,7 +204,7 @@ export function buildBlue1Fill(sites: readonly Blue1StoneSite[]): Blue1FillBuild
   keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.grassMid,
-      palette: GRASS_PALETTE,
+      palette: GRASS_MID_PALETTE,
       area: discArea(212),
       gate: grassGate(sites, 0.22, 0.55),
       ground: seabedHeight,
@@ -379,7 +383,9 @@ export function buildBlue1Fill(sites: readonly Blue1StoneSite[]): Blue1FillBuild
       fish: { scale: 1.35, color: 0xe2f2f6, emissive: 0x4a7a92, profile: "fusilier" },
       phaseSpeed: 0.02,
       braid: { lateral: 0.8, vertical: 0.4 },
-      glint: { count: 80, size: 0.3 },
+      // No glint: on a loop this tight the static thread rendered as one
+      // hot white ribbon on the shoulder (round-1 slope-glide) — the fish
+      // themselves carry the crossing at the glide's range.
     }),
     "blue1-fill-outriders",
   );

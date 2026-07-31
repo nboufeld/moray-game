@@ -160,13 +160,17 @@ function story(hex: number): Color {
 }
 
 // The palette the bake composes with — absolute paint, not multipliers.
-const SAND_STEPPE = story(0xafb9b2);
-const SAND_WARM = story(0xc9ae86);
-const TURF = story(0x4f9c80);
-const TURF_CREST = story(0x7cbc96);
-const DEPTH_VIOLET = story(0x625a96);
-const SILT_PALE = story(0x9d97c0);
-const MILKY_RIM = story(0xbdd2d4);
+// Round-1 probe: the first stories were authored for neutral light and the
+// mood's blue register pushed the floor to grey-blue (measured (81,89,108)
+// where turf was meant). These are warmed to counter it — the calamity
+// ledger's lesson: fill palettes are painted for THIS region's light.
+const SAND_STEPPE = story(0xc6c6ac);
+const SAND_WARM = story(0xd4b488);
+const TURF = story(0x5da45e);
+const TURF_CREST = story(0x8cc878);
+const DEPTH_VIOLET = story(0x6b5c94);
+const SILT_PALE = story(0xa89cc2);
+const MILKY_RIM = story(0xc2d4cf);
 
 /**
  * The region's ground paint: the steppe drawn as a green prairie under a
