@@ -168,7 +168,9 @@ function trunkGeometry(seed: number, height: number, footR: number): BufferGeome
  * toward violet so the roof reads as shaded foliage, not fog.
  */
 function padGeometry(random: Random): BufferGeometry {
-  const geometry = new IcosahedronGeometry(1, 1);
+  // Round 3: subdivision 1 → 2 — the torn detail-1 pads read as jagged
+  // angular plates at pose range; the lobes need real curvature.
+  const geometry = new IcosahedronGeometry(1, 2);
   const noiseSeed = Math.floor(random.range(1, 1 << 20));
   const squash = random.range(0.24, 0.42);
   geometry.scale(random.range(0.85, 1.3), squash, random.range(0.85, 1.3));

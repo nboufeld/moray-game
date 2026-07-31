@@ -95,8 +95,8 @@ export function buildVerdant3Gardens(
       seed: SEED ^ 0x2a41,
       palette: { base: 0x549a64, tip: 0x8cc27a, shade: 0x4a4468 },
       anchors,
-      strandsPerAnchor: 6,
-      length: 3.6,
+      strandsPerAnchor: 7,
+      length: 3.4,
       swayAmp: 0.6,
     });
     builds.push(curtain);

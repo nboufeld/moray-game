@@ -127,13 +127,16 @@ export function buildVerdant3Distance(): { meshes: (Mesh | InstancedMesh)[] } {
     // the sightline from inside the bowl).
     { rFrom: 240, rTo: 258, count: 18, fade: 0.26, hMin: 40, hMax: 56 },
     { rFrom: 262, rTo: 286, count: 14, fade: 0.45, hMin: 44, hMax: 62 },
+    // Round 3: the near cluster taller and MILKIER — at fade 0.3 the r2
+    // heads read as black teeth floating on the crest line; distance
+    // goes milky-bright, never dark (the value key, held).
     {
       rFrom: 168,
       rTo: 196,
       count: 8,
-      fade: 0.3,
-      hMin: 40,
-      hMax: 52,
+      fade: 0.48,
+      hMin: 54,
+      hMax: 68,
       sector: { at: VERDANT3_SLOT.azimuth, half: 0.55 },
     },
   ];
@@ -204,7 +207,7 @@ export function buildVerdant3Distance(): { meshes: (Mesh | InstancedMesh)[] } {
       side: DoubleSide,
       toneMapped: true,
     });
-    cardMaterials.push({ material, fade: 0.3 });
+    cardMaterials.push({ material, fade: 0.44 });
     const geometry = motherMesaGeometry();
     const mesh = new Mesh(geometry, material);
     mesh.name = "verdant3-distance-mother";
@@ -212,10 +215,11 @@ export function buildVerdant3Distance(): { meshes: (Mesh | InstancedMesh)[] } {
     mesh.receiveShadow = false;
     const theta = VERDANT3_SLOT.azimuth;
     // Round 2: the Mother's foot lifted from the curtain floor — at
-    // FOOT+2 her whole 57 m stood below the rampart sightline.
+    // FOOT+2 her whole 57 m stood below the rampart sightline. Round 3:
+    // −18 → −10 so her plateau and grove ride WELL above the crest.
     mesh.position.set(
       CENTER_X + Math.cos(theta) * 252,
-      -18,
+      -10,
       CENTER_Z + Math.sin(theta) * 252,
     );
     mesh.rotation.y = -theta + Math.PI / 2;

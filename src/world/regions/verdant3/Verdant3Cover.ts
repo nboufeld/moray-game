@@ -100,7 +100,7 @@ function roadGate(x: number, z: number): number {
   if (u > 1320) {
     return 0;
   }
-  const across = 1 - smoothstep01((Math.abs(v - channelCenter(u)) - 10) / 8);
+  const across = 1 - smoothstep01((Math.abs(v - channelCenter(u)) - 12) / 8);
   return g * across * (0.55 + 0.45 * drift(x, z));
 }
 
@@ -131,14 +131,16 @@ export function buildVerdant3Cover(): Verdant3CoverBuild {
   // Round 2: 3,400 → 6,000 and a value step UP (r1's close pose: 1/40 m²
   // is a rumour, and the r1 palette dropped to navy silhouettes under
   // this water — the verdant-1 re-pass lesson, applied harder).
+  // Round 3: another density and value notch (r2's close pose still
+  // read dark rosettes on khaki — value first, then count).
   addCarpet(
     buildCarpetField({
       seed: SEED ^ 0x3001,
-      palette: { base: 0x5f9e6a, tip: 0xa6d68c, shade: 0x565080 },
+      palette: { base: 0x6cae76, tip: 0xbce09a, shade: 0x6a6292 },
       area: discArea,
       gate: meadowGate,
       ground: seabedHeight,
-      count: 6000,
+      count: 7400,
       profile: "frond",
       size: [0.36, 0.65],
       looseShare: 0.4,
@@ -150,11 +152,11 @@ export function buildVerdant3Cover(): Verdant3CoverBuild {
   addCarpet(
     buildCarpetField({
       seed: SEED ^ 0x3002,
-      palette: { base: 0x5aa878, tip: 0xaad488, shade: 0x514a70 },
+      palette: { base: 0x66b284, tip: 0xb6dc94, shade: 0x655c86 },
       area: discArea,
       gate: meadowGate,
       ground: seabedHeight,
-      count: 2000,
+      count: 2600,
       profile: "blade",
       size: [0.45, 0.85],
       looseShare: 0.42,
@@ -172,7 +174,7 @@ export function buildVerdant3Cover(): Verdant3CoverBuild {
       area: discArea,
       gate: meadowGate,
       ground: seabedHeight,
-      count: 340,
+      count: 420,
       profile: "blade",
       size: [1.05, 1.7],
       looseShare: 0.3,
@@ -192,7 +194,7 @@ export function buildVerdant3Cover(): Verdant3CoverBuild {
       area: roadArea,
       gate: roadGate,
       ground: seabedHeight,
-      count: 1200,
+      count: 1500,
       profile: "blade",
       size: [0.3, 0.62],
       looseShare: 0.45,
@@ -207,7 +209,7 @@ export function buildVerdant3Cover(): Verdant3CoverBuild {
       area: roadArea,
       gate: roadGate,
       ground: seabedHeight,
-      count: 320,
+      count: 450,
       shapeSet: "pebble",
       twoTone: true,
     }),
@@ -217,7 +219,7 @@ export function buildVerdant3Cover(): Verdant3CoverBuild {
   addCarpet(
     buildCarpetField({
       seed: SEED ^ 0x3004,
-      palette: { base: 0x5ca06a, tip: 0xa8d488, shade: 0x514a70 },
+      palette: { base: 0x6cb076, tip: 0xb8e094, shade: 0x655c86 },
       area: { polyline: descentLine(), width: 26 },
       gate: roadGate,
       ground: seabedHeight,
@@ -277,12 +279,12 @@ export function buildVerdant3Cover(): Verdant3CoverBuild {
           const { u, v } = spokeOf(gx, gz);
           const d = Math.hypot(u - spring.u, v - spring.v);
           const ring =
-            smoothstep01((d - spring.radius * 0.95) / 2) *
-            (1 - smoothstep01((d - spring.radius * 1.7) / 3));
+            smoothstep01((d - spring.radius * 0.8) / 2) *
+            (1 - smoothstep01((d - spring.radius * 1.6) / 3));
           return g * ring;
         },
         ground: seabedHeight,
-        count: 190,
+        count: 260,
         profile: "blade",
         size: [0.34, 0.56],
         looseShare: 0.4,
@@ -410,7 +412,7 @@ export function buildVerdant3Cover(): Verdant3CoverBuild {
   add(
     buildBushBank({
       seed: SEED ^ 0x3051,
-      palette: { base: 0x8a5f7a, tip: 0xc08e9a, shade: 0x544672, accent: 0xd8a0a8 },
+      palette: { base: 0x966a86, tip: 0xcc9aa6, shade: 0x5c5080, accent: 0xdcaab2 },
       area: discArea,
       gate: meadowGate,
       ground: seabedHeight,

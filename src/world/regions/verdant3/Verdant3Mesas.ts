@@ -152,14 +152,27 @@ function mesaGeometry(spec: MesaSpec, mouthAngle: number, log = false): BufferGe
           0.4) /
           0.24,
       );
+      // Round 3: violet runnels — vertical shadow runs between the moss
+      // streaks, so a close flank carries a drawing, not a wash.
+      const runnel = smoothstep01(
+        (fbm(nx * 2.7 + 4, nz * 2.7 - t * 0.9, { seed: noiseSeed ^ 0x55, period: 7, octaves: 2 }) -
+          0.56) /
+          0.18,
+      );
       let cr = 0.58 - strata * 0.12 + grain;
       let cg = 0.62 - strata * 0.09 + grain;
       let cb = 0.56 - strata * 0.05 + grain * 0.8;
+      cr += (0.46 - cr) * runnel * 0.8;
+      cg += (0.44 - cg) * runnel * 0.8;
+      cb += (0.56 - cb) * runnel * 0.8;
       // Moss streaks climb the shaded runnels; the foot is thick with it.
-      const moss = Math.min(1, streak * 0.95 + (1 - smoothstep01(t / 0.16)) * 0.7);
-      cr += (0.38 - cr) * moss;
-      cg += (0.68 - cg) * moss;
-      cb += (0.42 - cb) * moss;
+      // Round 3: the moss key brightened (log included) — the r2 fallen
+      // pillar read as a pale tarp; a mossy bole is DRAWN by its moss.
+      const bands = log ? Math.max(0, Math.sin(t * 34 + noiseSeed % 9)) ** 2 * 0.55 : 0;
+      const moss = Math.min(1, streak * 0.95 + (1 - smoothstep01(t / 0.16)) * 0.7 + bands);
+      cr += (0.4 - cr) * moss;
+      cg += (0.74 - cg) * moss;
+      cb += (0.44 - cb) * moss;
       // Violet under the crown flare — the overhang's shadow is a colour.
       const under = log
         ? 0
@@ -337,6 +350,37 @@ export function buildVerdant3Mesas(): Verdant3MesasBuild {
         radius: spec.footR * 0.85 + 0.6,
       });
     }
+  }
+
+  // ─── The Hollow Mesa's mouth dressing ──────────────────────────────────────
+  // Round 3: the raw lathe cut read as razor diagonals — the doorway
+  // takes two flank boulders and a leaning lintel slab, so the secret's
+  // mouth is a grown thing, not a boolean.
+  {
+    const across = mouth.facing + Math.PI / 2;
+    for (const [i, side] of [-1, 1].entries()) {
+      const bx = mouth.x + Math.cos(across) * side * 3.4 - Math.cos(mouth.facing) * 0.8;
+      const bz = mouth.z + Math.sin(across) * side * 3.4 - Math.sin(mouth.facing) * 0.8;
+      const boulder = boulderGeometry({
+        seed: SEED ^ (0x0ab8 + i),
+        radius: 1.6 - i * 0.25,
+        height: 2.6 - i * 0.4,
+      });
+      const by = seabedHeight(bx, bz);
+      boulder.applyMatrix4(new Matrix4().makeRotationY(random.range(0, Math.PI * 2)));
+      boulder.translate(bx, by, bz);
+      moss.push(boulder);
+      contacts.push({ x: bx, z: bz, radius: 2.0, strength: 0.4 });
+      colliders.push({ center: new Vector3(bx, by + 1.0, bz), radius: 1.3 });
+    }
+    const lintel = slabGeometry({ seed: SEED ^ 0x0aba, radius: 2.8, height: 1.2 });
+    lintel.applyMatrix4(new Matrix4().makeRotationZ(0.12));
+    lintel.applyMatrix4(new Matrix4().makeRotationY(mouth.facing));
+    const lx = mouth.x - Math.cos(mouth.facing) * 1.6;
+    const lz = mouth.z - Math.sin(mouth.facing) * 1.6;
+    lintel.translate(lx, mouth.y + 4.6, lz);
+    moss.push(lintel);
+    colliders.push({ center: new Vector3(lx, mouth.y + 5.4, lz), radius: 1.9 });
   }
 
   // ─── The Fallen Mesa ───────────────────────────────────────────────────────

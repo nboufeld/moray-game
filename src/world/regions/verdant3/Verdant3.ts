@@ -126,7 +126,10 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // On the Boughfall itself, close and steep (the verdant-2 stair
   // lesson: from the flank the treads live beyond the fog's value-merge
   // distance — get ON the road, subject inside 30 m).
-  { name: "boughfall", u: 1272, v: -4, lift: 3.6, atU: 1292, atV: 2, pitch: -0.3 },
+  // Round 3: moved up-channel — the r2 frame's mid was the Boughfall
+  // Shadow rest itself; the pose keeps dressed treads in its near band
+  // and reads the shadow as the composed dark beyond them.
+  { name: "boughfall", u: 1263, v: -4, lift: 3.6, atU: 1284, atV: 2, pitch: -0.28 },
   // The descent's foot: the Canopy Deep opening in one breath.
   { name: "deep-vista", u: 1322, v: -4, lift: 6.0, atU: 1380, atV: -10, pitch: -0.12 },
   // The Doorwarden: the first pillar portrait, crown and drapes.

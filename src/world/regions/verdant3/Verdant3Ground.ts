@@ -12,6 +12,7 @@ import {
   SUNFALL,
   WELLSPRINGS,
   WORLDS_END,
+  channelCenter,
   descentDrop,
   mesaMound,
   passGate,
@@ -118,7 +119,7 @@ function bakeDeepPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
     // have fed the floor for a thousand years — the deep meadow's
     // second drawing, coarser than the sward.
     const lichen = smoothstep01(
-      (fbm(x * 0.009, z * 0.009, { seed: SEED ^ 0x70b3, period: 5, octaves: 2 }) - 0.55) / 0.2,
+      (fbm(x * 0.009, z * 0.009, { seed: SEED ^ 0x70b3, period: 5, octaves: 2 }) - 0.5) / 0.2,
     );
 
     // The base key: deep-shade moss, the green leaning toward blue-dark
@@ -126,13 +127,16 @@ function bakeDeepPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
     // Round 2: red 0.52 → 0.44 and the sward cut deepened — the r1
     // close pose read the open floor as warm mustard under the sand
     // wash (the pilot's lesson, relearned in the dark register).
-    let r = 0.44 - sward * 0.18;
-    let g = 0.94 - sward * 0.06;
-    let b = 0.68 - sward * 0.04;
+    // Round 3: red 0.44 → 0.40 and the lichen patches widened — the r2
+    // close poses still read the open floor as khaki, and instances
+    // cannot out-paint the paint (the pilot's fill-r3 lesson).
+    let r = 0.4 - sward * 0.16;
+    let g = 0.96 - sward * 0.05;
+    let b = 0.7 - sward * 0.04;
     if (lichen > 0) {
       r += (0.68 - r) * lichen * 0.7;
-      g += (1.0 - g) * lichen * 0.7;
-      b += (0.82 - b) * lichen * 0.7;
+      g += (1.02 - g) * lichen * 0.7;
+      b += (0.84 - b) * lichen * 0.7;
       value += lichen * 0.08;
     }
 
@@ -146,6 +150,20 @@ function bakeDeepPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
       g += (1.02 - g) * milk;
       b += (0.92 - b) * milk;
       value += milk * 0.06;
+    }
+
+    // The Boughfall Shadow: the registered rest is a COMPOSED dark —
+    // a cool shadow wash over the channel band, so its licensed
+    // bareness reads as the descent's held breath, not as missing fill.
+    if (u > 1270 && u < 1304) {
+      const inShadow =
+        smoothstep01((u - 1270) / 6) * (1 - smoothstep01((u - 1296) / 8));
+      const nearChannel = 1 - smoothstep01((Math.abs(v - channelCenter(u)) - 12) / 8);
+      const shadowMix = inShadow * nearChannel;
+      r += (0.4 - r) * shadowMix * 0.5;
+      g += (0.62 - g) * shadowMix * 0.5;
+      b += (0.72 - b) * shadowMix * 0.5;
+      value -= shadowMix * 0.12;
     }
 
     // The Boughfall's risers: a value step down, violet-leaning, with
@@ -207,16 +225,18 @@ function bakeDeepPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
     }
 
     // The Wellsprings: the cleanest, palest floors in the region — cool
-    // clear pockets, faint concentric stillness rings.
+    // clear pockets, faint concentric stillness rings. Round 3: the
+    // rings' frequency halved and amplitude softened — at r2 close
+    // range they read as tire tracks across the bowl.
     for (const spring of WELLSPRINGS) {
       const d = Math.hypot(u - spring.u, v - spring.v);
       if (d < spring.radius * 2) {
         const pool = 1 - smoothstep01((d - spring.radius * 0.7) / (spring.radius * 0.7));
-        const rings = 0.5 + 0.5 * Math.sin(d * 1.1);
-        r += (0.94 - r) * pool;
+        const rings = 0.5 + 0.5 * Math.sin(d * 0.55);
+        r += (0.92 - r) * pool;
         g += (1.04 - g) * pool;
-        b += (0.98 - b) * pool;
-        value += pool * (0.1 + rings * 0.03);
+        b += (1.0 - b) * pool;
+        value += pool * (0.1 + rings * 0.015);
       }
     }
 
@@ -292,8 +312,10 @@ export function buildVerdant3Ground(contacts: readonly ContactPatch[]): Mesh[] {
 
   // The pass sheet: covers the Boughfall and the threshold back over
   // the terraces' rim, overlapping both grids and sunk 4 cm.
+  // Round 3: sunk 4 → 7 cm — the r2 close-road frames caught the
+  // overlap edge as a thin dark line at grazing angles.
   const passMid = worldOf(1222, 0);
-  const passGeometry = createSeabedGeometryAt(passMid.x, passMid.z, 170, PASS_SEGMENTS, -0.04);
+  const passGeometry = createSeabedGeometryAt(passMid.x, passMid.z, 170, PASS_SEGMENTS, -0.07);
   trimSheet(passGeometry, (x, z) => {
     const { u, v } = spokeOf(x, z);
     return u >= 1146 && u <= 1308 && Math.abs(v) <= passHalfWidth(Math.min(u, 1300)) + 12;
