@@ -286,7 +286,7 @@ export function buildVentSpringsFlora(def: WingDef): WingFlora {
     },
     gate: scoriaGate,
     ground: seabedHeight,
-    count: 520,
+    count: 640,
     shapeSet: "gravel",
     grade: 0.55,
   });
@@ -296,7 +296,7 @@ export function buildVentSpringsFlora(def: WingDef): WingFlora {
   // scatter's 0.45 m, wall less a metre — so no bud can leave either law.
   const fringeRandom = new Random(SEEDS.wingVentSprings ^ 0x2c2b);
   const fringeAnchors: (readonly [number, number, number])[] = [];
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 12; i++) {
     const r = fringeRandom.range(36, 46);
     const side = i % 2 === 0 ? 1 : -1;
     const low = UPLIFT_FENCE_RAD * r + 0.5;
@@ -309,8 +309,8 @@ export function buildVentSpringsFlora(def: WingDef): WingFlora {
     seed: (SEEDS.wingVentSprings ^ 0x2c2b) >>> 0,
     tint: POLYP_TINT,
     anchors: fringeAnchors,
-    budsPerAnchor: 4,
-    glow: 0.3,
+    budsPerAnchor: 5,
+    glow: 0.33,
   });
   uplift.add(polyps.group);
 
@@ -319,7 +319,7 @@ export function buildVentSpringsFlora(def: WingDef): WingFlora {
   for (let i = 0; i < 8; i++) {
     const r = 36 + i * 1.3 + drapeRandom.signed(0.4);
     const side = i % 2 === 0 ? -1 : 1;
-    const lift = drapeRandom.range(1.0, 2.2);
+    const lift = drapeRandom.range(1.3, 2.7);
     drapeAnchors.push(ventWallAnchor(def, r, side, lift));
   }
   const drapes = buildWallDrapeBank({

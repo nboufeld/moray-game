@@ -408,7 +408,7 @@ export function buildGhostReefFlora(def: WingDef): WingFlora {
     area: flankRoad,
     gate: (x, z) => insideUpliftBand(x, z, 33.6, 46.3),
     ground: seabedHeight,
-    count: 540,
+    count: 620,
     shapeSet: "gravel",
     grade: 0.5,
   });
@@ -430,7 +430,7 @@ export function buildGhostReefFlora(def: WingDef): WingFlora {
     area: flankRoad,
     gate: blushGate,
     ground: seabedHeight,
-    count: 90,
+    count: 110,
     profile: "frond",
     swayAmp: 0.025,
     looseShare: 0.4,

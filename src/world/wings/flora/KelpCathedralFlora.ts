@@ -149,12 +149,14 @@ const TURF_AISLE_FENCE = 1.78;
 const TURF_R_MIN = 34.2;
 const TURF_R_MAX = 47.2;
 
-/** The turf palettes: the nave's own leaf tones under the TIP_GOLD kin. */
-const TURF_BLADE = { base: 0x4e7d44, tip: 0x8fae56, shade: 0x2f4a2c } as const;
-const TURF_FROND = { base: 0x3d6338, tip: 0x6d9c56, shade: 0x2c4228 } as const;
+/** The turf palettes: the nave's own leaf tones under the TIP_GOLD kin.
+ *  r2: a value step brighter across the board — under the emerald mood's
+ *  light share the r1 turf read as near-black stubble at pose range. */
+const TURF_BLADE = { base: 0x5d924f, tip: 0xa8c463, shade: 0x35522f } as const;
+const TURF_FROND = { base: 0x4a7a42, tip: 0x7fae5c, shade: 0x2f4a30 } as const;
 
 /** The drape bank on the wedge walls: deep emerald, gold at the tips. */
-const DRAPE_PALETTE = { base: 0x4a6e3e, tip: 0x9cb45e, shade: 0x2c4030, accent: 0x54724a } as const;
+const DRAPE_PALETTE = { base: 0x557a48, tip: 0x9cb45e, shade: 0x2c4030, accent: 0x5f7f52 } as const;
 
 /** The cushion stars at the column feet: leaf-green bodies, gilt arms. */
 const STAR_PALETTE = { base: 0x5f7d3f, tip: 0xc9b968 } as const;
@@ -321,8 +323,9 @@ export function buildKelpCathedralFlora(def: WingDef): WingFlora {
     area: flankRoad,
     gate: turfGate,
     ground: seabedHeight,
-    count: 240,
+    count: 380,
     profile: "blade",
+    size: [0.38, 0.78],
     swayAmp: 0.045,
     sunGlow: true,
     looseShare: 0.45,
@@ -349,15 +352,17 @@ export function buildKelpCathedralFlora(def: WingDef): WingFlora {
   for (let i = 0; i < 8; i++) {
     const r = 35.2 + i * 1.5 + drapeRandom.signed(0.45);
     const side = i % 2 === 0 ? 1 : -1;
-    const lift = drapeRandom.range(1.1, 2.5);
+    // r2: holdfasts a full body's height and more up the wall — at r1's
+    // 1.1–2.5 m the banks hid behind the columns' own feet.
+    const lift = drapeRandom.range(1.8, 3.4);
     drapeAnchors.push(wallAnchor(def, r, side, lift));
   }
   const drapes = buildWallDrapeBank({
     seed: (SEEDS.wingKelpCathedral ^ 0x2b3c) >>> 0,
     palette: DRAPE_PALETTE,
     anchors: drapeAnchors,
-    strandsPerAnchor: 5,
-    length: 1.4,
+    strandsPerAnchor: 6,
+    length: 1.8,
     swayAmp: 0.05,
   });
   uplift.add(drapes.group);
@@ -429,7 +434,7 @@ function wallAnchor(def: WingDef, r: number, side: number, lift: number): DrapeA
   // The angular window: never nearer the axis than the aisle plus a full
   // strand's reach (a holdfast may hang nothing over the nave's heart),
   // never nearer the wedge edge than a pad's slip.
-  let lo = Math.max(def.wedge.floorHalf, 3.15 / r);
+  let lo = Math.max(def.wedge.floorHalf, 3.6 / r);
   let hi = wedgeHalfAt(def, r) - 0.015;
   for (let i = 0; i < 14; i++) {
     const mid = (lo + hi) / 2;

@@ -53,11 +53,42 @@ branch), so the handshake is honoured against its plan §8 numbers.
 
 ## Per-wing uplift (what was added, and on which streams)
 
-(Filled in as rounds close — see the rounds and the close-out table.)
+Every piece rides a fresh `SEEDS.<wing> ^ <constant>` substream fed to a
+kit-PRIVATE Random (KIT-SPEC law 1), appended after every existing draw,
+under one named group `wing-uplift-conn2` mounted before the veil — so
+connective-1's "last child is the veil" pin keeps holding and the wave-8
+draw caps keep pinning the original flora.
+
+| Wing | T1 | T2 | T4 life | Light | Streams (`^`) |
+|---|---|---|---|---|---|
+| kelp-cathedral | blade turf ×240 (48-tri R12 profile, sun-through-leaf glow, sway) + frond turf ×110 down both nave flanks, aisle ≥ 1.78 m held | emerald drape bank, 8 holdfasts on the wedge walls | cushion-star colonies at 7 column feet (seated) | existing god shafts + pools verified (W1 flag; atelier's sprite repaint) | 0x2b1a, 0x2b2b, 0x2b3c, 0x2b4d |
+| vent-springs | scoria drift ×520 (gravel, `grade` 0.55, charcoal over warm under-shade) | heat-cured drape bank, 8 holdfasts | — (budget spent on the polyps; bubbles remain the wing's motion) | **ember polyp fringe**: 10 glow-colony anchors along the chimney banks, warm-and-rising per the register rule, emissive 0.30 ≤ 0.36 cap | 0x2c1a, 0x2c2b, 0x2c3c |
+| ghost-reef | ossuary bone rubble ×540 (violet under-shade) + blush frond turf ×90 gated to the recovery envelope (R6 cooling included — the ground's colour dies at the door beside the stands) | pale drape bank, 8 holdfasts | porcelain brittle-stars at 10 stand feet (seated) | none added — the milk argues with focused light; the veil's pearl column stays the wing's one radiance | 0x2d1a, 0x2d2b, 0x2d3c, 0x2d4d |
+
+Corridor fences kept by construction: vent-springs — nothing under
+r 34.4, everything ≥ 0.06 rad off the axis through r 30–46 (the den
+law reads every vertex, drape strand reach budgeted into the anchor
+window); ghost-reef — den approach ≥ 0.06 rad (T1 fenced at 0.085 rad);
+kelp-cathedral — the aisle's 1.65 m heart (turf fenced at 1.78 m,
+drape holdfasts ≥ 3.15 m so no strand hangs over the nave's heart).
+Seated colonies only — no `frustumCulled = false`, no castShadow, no
+new contacts (the W1 contact-count pin stays at 16).
 
 ## Test-collector amendments (stated, not hidden — connective-1's precedent)
 
-(Filled in with the exact edits when they land.)
+- `tests/wingsW1Flora.test.ts` — `insideGateVeil` became
+  `insidePhase3Uplift`, excluding `wing-uplift-conn2` beside the veil
+  from `drawStats` ONLY; determinism, confinement and the aisle checks
+  still read every uplift vertex and instance.
+- `tests/wingsW2Flora.test.ts` — the budget case filters the uplift
+  subtree (`insideConn2Uplift`); the den-corridor, wedge-confinement
+  and determinism cases still read everything, uplift included — the
+  corridor law is proved against the new content on every run.
+- `tests/wingsW3Flora.test.ts` — the recovery test's far band moves
+  from `r ≥ 44` to `44.9 ≤ r ≤ 45.6` with R6 cited in place: the old
+  band's strongest members are exactly the stands R6 now cools, so the
+  3× colour bar is asserted where the design PUTS the colour, and the
+  cooled door handover is asserted in `tests/wingsConnective2.test.ts`.
 
 ## Critique rounds
 
@@ -67,4 +98,20 @@ Captures per round: `visual-qa/*_conn2-r{n}.png`, before set
 
 ### before (looked at)
 
-(Pending.)
+- **kelp-cathedral** — the columns and canopy frame beautifully and the
+  Batch 1 veil ends the axis on a green promise, but the floor between
+  the rows is bare tan with a scatter of dark moss dots, and the wedge
+  walls read as naked dune slope. The wave-8 audit's "bare tan floor"
+  stands. The god shafts read as SOFT vertical light — no hard-edged
+  rectangles visible at the pose range; the atelier's sprite repaint
+  appears to have landed (verify again at r1 range).
+- **vent-springs** — bubble rings and amber chimneys carry the frame;
+  the def's charcoal/amber paint reads on the floor mound, but the
+  walls' lower bands are unbroken mauve and the floor band between the
+  chimney banks carries zero cover state. No warm smallwork anywhere —
+  the "amber held in the gloom" is all large-form.
+- **ghost-reef** — the pearl arch composes; crystal clusters right.
+  Mid-ground: an empty mauve-tan sweep between camera and arch (the
+  audit's "still bare mid-ground"). Colour: pastel sprigs visible at
+  the left wall stands well before the far end — the early-colour flag
+  in the flesh; nothing on the ground tells the bone story.
