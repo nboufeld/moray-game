@@ -72,14 +72,16 @@ interface DeepStep {
 // Round 5 re-derived the inks against the measured frame: the arcs render
 // as fog × ink, and even with red held high the old fade-lerp back toward
 // the fog re-supplied the blue it had just cut (bands measured blue 190
-// against water at 151). Authored per arc, no fade: the nearest arc is the
-// darkest violet, each further arc a step paler and warmer until the last
-// all but dissolves into the water — red above green in every ink.
+// against water at 151). Round 8's raycasts then caught the overcorrection:
+// from Terrace-Stairs the same arcs rendered as maroon paper — red held
+// TWICE as high as green survives any fog. The inks are now near-neutral
+// violets (red a nose above green, level with blue), so the steps stay
+// cool from every pose; nearest darkest, each further arc a step paler.
 const DEEP_STEPS: readonly DeepStep[] = [
-  { radius: 174, top: -38, vary: 0.7, ink: new Color(0.92, 0.4, 0.44) },
-  { radius: 190, top: -32.5, vary: 1.1, ink: new Color(0.94, 0.46, 0.5) },
-  { radius: 208, top: -27.5, vary: 1.5, ink: new Color(0.96, 0.54, 0.58) },
-  { radius: 224, top: -23.5, vary: 1.9, ink: new Color(1.0, 0.64, 0.68) },
+  { radius: 174, top: -38, vary: 0.7, ink: new Color(0.68, 0.52, 0.72) },
+  { radius: 190, top: -32.5, vary: 1.1, ink: new Color(0.76, 0.6, 0.78) },
+  { radius: 208, top: -27.5, vary: 1.5, ink: new Color(0.84, 0.68, 0.84) },
+  { radius: 224, top: -23.5, vary: 1.9, ink: new Color(0.92, 0.78, 0.9) },
 ];
 const DEEP_FOOT = -50;
 
@@ -92,8 +94,12 @@ const CARD_INKS: readonly Color[] = [new Color(0.9, 0.8, 0.78), new Color(0.94, 
 // lesson): a curtain seen from below fills the upper frame, and one flat
 // value reads as paper. Feet sink toward the shadow violet, crowns pale
 // toward the light. Baked as vertex colours; the materials multiply.
-const DEEP_FOOT_TINT: readonly [number, number, number] = [0.58, 0.56, 0.66];
-const DEEP_CROWN_TINT: readonly [number, number, number] = [1.1, 1.05, 1.0];
+// Round 8: from Under-Blue the nearest curtain fills half the frame and the
+// old grade (0.58 → 1.1) still compressed to one value through the fog —
+// the foot now falls much further into shadow and the crown lifts, so the
+// wall reads as a lit ridge over a dark base even at 70 m.
+const DEEP_FOOT_TINT: readonly [number, number, number] = [0.36, 0.36, 0.52];
+const DEEP_CROWN_TINT: readonly [number, number, number] = [1.22, 1.16, 1.06];
 const PRAIRIE_FOOT_TINT: readonly [number, number, number] = [0.72, 0.72, 0.78];
 const PRAIRIE_CROWN_TINT: readonly [number, number, number] = [1.06, 1.04, 1.0];
 

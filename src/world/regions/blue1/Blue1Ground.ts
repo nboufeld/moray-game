@@ -94,20 +94,23 @@ function droopEdgeRim(geometry: PlaneGeometry): void {
     const z = position.getZ(i);
     const { u, v } = spokeOf(x, z);
     const rc = Math.hypot(x - CENTER_X, z - CENTER_Z);
-    if (u - 445 > DROP_LIP_S + 26 && Math.abs(v) < 118) {
-      const k = smoothstep01((rc - 166) / 10);
-      if (k > 0) {
-        position.setY(i, position.getY(i) - k * (position.getY(i) + 52));
-      }
-    } else {
-      // The prairie sectors' own rim: round 7's raycasts found the trim
-      // cut at rc 225 standing proud of the rim's rise wherever a pose
-      // looks across the disc — a fogged vertical wall with a ruled edge.
-      // The last metres pour under the ring feet (−20) instead.
-      const k = smoothstep01((rc - 214) / 9);
-      if (k > 0) {
-        position.setY(i, position.getY(i) - k * (position.getY(i) + 24));
-      }
+    // Round 8's raycasts found the LAST hard edge: the droop switched
+    // between its two regimes at exactly |v| = 118, and the prairie rim
+    // standing out to rc 214 right beside the edge sector's fall at 166
+    // silhouetted as a razor-edged wall in Under-Blue's right frame. The
+    // sector's reach now blends over |v| 118 → 140 (all inside the prairie
+    // trim at 225, so no cut is ever exposed): start radius, pour depth
+    // and span all interpolate, and the rim ends in a rounded shoulder.
+    let edge = 0;
+    if (u - 445 > DROP_LIP_S + 26) {
+      edge = 1 - smoothstep01((Math.abs(v) - 118) / 22);
+    }
+    const startR = 166 + (214 - 166) * (1 - edge);
+    const span = 10 - (10 - 9) * (1 - edge);
+    const floor = -24 - 28 * edge;
+    const k = smoothstep01((rc - startR) / span);
+    if (k > 0) {
+      position.setY(i, position.getY(i) - k * (position.getY(i) - floor));
     }
   }
   position.needsUpdate = true;
