@@ -651,3 +651,29 @@ poses (`oasis` 504.5,−0.6,3.8 — the densest interior — and
 ~20 with a sibling capture running; 16.7 ms is the 60 Hz vsync
 cadence, i.e. the region holds refresh at full scale. Gate ≤16.9 ms:
 **PASS**.
+
+## Fill close-out — gates and the canonical roster
+
+- **Gates**: `tsc --noEmit` clean; `eslint src/world/regions
+  tests/regionGolden1.test.ts --max-warnings 0` clean; targeted vitest
+  (regions + regionGolden1 + kitGround + kitLife) 119/119 green; full
+  `npm test` 769/770 — the ONE failure is
+  `tests/regionSmoking1.test.ts` (Smoulder containment, a cross-branch
+  merge artefact between that region's code and its repaired test;
+  nothing on this branch touches either — EXTERNAL FLAG for the
+  orchestrator, it failed identically before this fill's first
+  commit).
+- **No-assets fallback (20/20 read)**: the fill is procedural end to
+  end, so every composition survives asset blocking byte-for-byte —
+  same gardens, stands, roses, dapple, beams, eels, shoal, remoras.
+  close-wire-crest's fallback frame even catches the traveller shoal
+  cresting the dune behind the authored stand.
+- **Canonical capture roster** (all under `visual-qa/`, all READ):
+  authored+close `20260731-1432_*_go-filled.png` (20), sweep
+  `20260731-1543_SWEEP-*_go-filled.png` (12), fallback
+  `20260731-1619_*_go-filled-noassets.png` (20).
+- **Standing flags**: (1) the pale horizon slab at the empty-quarter
+  horizon — pre-fill distance geometry, the region owner's; (2) the
+  Keeper's wall-clock patrol phase makes hourglass/keeper poses
+  noisy between capture sessions — documented, not a regression;
+  (3) the smoking-marches test failure above — external.
