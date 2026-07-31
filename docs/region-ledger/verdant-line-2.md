@@ -884,6 +884,57 @@ Paid for by base cover 2550 → 2500. Measured 116 draws /
 full final chain relaunched from this build so the shipped set is one
 build's truth.
 
+### Round 5 (`v2-repassed`, the shipped set) — CLOSE-OUT
+
+All 46 frames (17 authored + close, 12 sweep, 17 noassets) captured
+against the verified port-5201 server on the round-5 build (8b3b44b)
+and looked at. Mid-chain the orchestrator removed this worktree
+(post-merge cleanup); it was recreated from the same branch tip and
+the chain resumed — every shipped frame is the same commit's truth
+(the sweep stream is seeded per-region, so frames stitched across the
+interruption are the same twelve places).
+
+- **Budget: 116 draws / 1,343,428 tris** (fill close was 107 /
+  449,936 — the ×3 headroom spent). Caps 130 / 1.35M, floors
+  100 / 1.0M, test prints its measurement.
+- **Perf gate: median 16.7 ms (59.9 fps), p95 18.5 ms, settled scale
+  1.00** — 300 headed frames at `fern-vault`, the densest pose.
+  Inside the 16.9 ms bar.
+- **The twelve originals: 12/12 hold.** `fern-vault` the region's
+  best frame; `pass-threshold` the new welcome; the Cistern's mirror
+  bright and its bowl empty; both Mistfalls additive and quiet.
+- **Close poses: 5/5 PASS, judged hardest.** `close-threshold-road` —
+  the saturated celadon bed reads at swim height, the road's own bare
+  line honest trodden ground. `close-stair-tread` — the tread floor
+  carries blade clumps between the tall lit centre blades.
+  `close-garden-tread` — CURED by the r5 warm re-key: the rosettes
+  reach the camera's feet with warm green-gold lit leaves (verified
+  in a near-field crop), the open lane at right reading as trodden
+  garden path, not neglect. `close-vault-floor` — the canopy, the
+  knee-high storey, the rosette floor. `close-basin-silt` — the
+  `^ 0xf114` bed's rosettes fill the wedge, the rose scrub in its
+  wine key.
+- **Sweep: 11 dressed / 1 licensed (06, the Cistern rest)** — meets
+  the ≥11/12 standard, and the dressed frames pass on their PLANTS:
+  08's vivid blades among the standing stones, 05's bright rosette
+  sprigs under the pillars, 10's teal-green sprigs + wine scrub on
+  the basin silt, 12's distance pillars with percher and gold fan.
+  01 stays the thinnest pass (the high saddle's honest bare ridge,
+  the approach band's register).
+- **Noassets: 17/17 render the fill.** The procedural fill has no
+  asset dependency. One harness note: `curtain-grotto`'s pose faces
+  the moray den and auto-focuses its moray; the codex fullscreen
+  fade caught mid-transition rendered two attempts as flat violet —
+  a LONGER SETTLE (8 s) before the screenshot lets the fade pass and
+  the frame renders fully (den, veils, blades, the moray emerging).
+  Capture-timing artifact, not a render failure; noted for future
+  noassets runs on this pose.
+- **Gates on the final build**: typecheck clean; eslint zero
+  warnings; `tests/regions.test.ts` + `regionVerdant2` +
+  `regionVerdant1` + `kitGround` + `kitLife` — 145/145 green; full
+  `npm test` green except the PRE-EXISTING `regionSmoking1` failure
+  (verified failing identically at the merge base, flagged below).
+
 ## Flags
 
 - **Verdant-1's far-rim seal ring crosses the pass corridor.** The
