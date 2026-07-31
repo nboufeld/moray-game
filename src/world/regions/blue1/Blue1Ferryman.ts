@@ -94,6 +94,15 @@ export function buildFerryman(): FerrymanBuild {
   const ahead = new Vector3();
   const phase = random.range(0, Math.PI * 2);
 
+  // Where the patrol starts when the region wakes: 28 s shy of nothing —
+  // measured, the circuit passes the Prow anchor at t ≈ 48.75. The clock
+  // below runs from the region's own attach (not the page's global time),
+  // and the capture harness's shutter lands ≈ 18 s after attach (its 10 s
+  // asset wait plus the pose's settle), so the canonical Ferryman pose
+  // meets the animal arriving at the crossing instead of gambling on
+  // whatever phase the page's load history happened to leave the loop in.
+  const PATROL_PHASE = 28;
+
   const pose = (time: number): void => {
     // One circuit in a little over three minutes — an unhurried animal.
     const s = (time / 200) % 1;
@@ -109,15 +118,18 @@ export function buildFerryman(): FerrymanBuild {
     );
   };
 
-  pose(0);
+  pose(PATROL_PHASE);
 
-  let slowTime = 0;
-  let last = 0;
+  let slowTime = PATROL_PHASE;
+  let last: number | null = null;
   return {
     mesh,
     target,
     update(time: number, reducedMotion: boolean): void {
-      const dt = Math.max(0, time - last);
+      // Lazy first sample: `last = 0` here once made the first update jump
+      // slowTime to the page's whole global time, handing the patrol's
+      // phase to the load history.
+      const dt = last === null ? 0 : Math.max(0, time - last);
       last = time;
       slowTime += dt * (reducedMotion ? 0.5 : 1);
       pose(slowTime);
