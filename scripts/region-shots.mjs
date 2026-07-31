@@ -21,6 +21,25 @@ const SEED = "seed1";
 const QUALITY = "hi";
 const VIEWPORT = { width: 1600, height: 900 };
 const NAV_TIMEOUT_MS = 180_000;
+/**
+ * `SHOT_PER_LAUNCH=1` relaunches Chromium for every pose. Long runs on a
+ * loaded machine crash the browser reliably (the Calamity fill's finding);
+ * a fresh process per pose is slower and never dies.
+ */
+const perLaunch = process.env.SHOT_PER_LAUNCH === "1";
+
+async function openPage() {
+  const browser = await chromium.launch();
+  const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1 });
+  const page = await context.newPage();
+  page.setDefaultNavigationTimeout(NAV_TIMEOUT_MS);
+  page.setDefaultTimeout(NAV_TIMEOUT_MS);
+  page.on("pageerror", (error) => console.error(`  page error: ${error.message}`));
+  if (noAssets) {
+    await blockAssets(page);
+  }
+  return { browser, page };
+}
 
 const slotId = process.argv[2];
 const tag = process.argv[3];
@@ -37,17 +56,10 @@ function stamp() {
 
 await mkdir(OUT_DIR, { recursive: true });
 
-const browser = await chromium.launch();
-const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1 });
-const page = await context.newPage();
-page.setDefaultNavigationTimeout(NAV_TIMEOUT_MS);
-page.setDefaultTimeout(NAV_TIMEOUT_MS);
-page.on("pageerror", (error) => console.error(`  page error: ${error.message}`));
-
 if (noAssets) {
   console.info("SHOT_NO_ASSETS=1 — capturing the procedural fallback build");
-  await blockAssets(page);
 }
+let { browser, page } = await openPage();
 
 await page.goto(`${BASE_URL}/?reset=1`, { waitUntil: "load" });
 await page.waitForFunction(() => "__reef" in window);
@@ -68,6 +80,10 @@ const poses = await page.evaluate((slot) => {
 
 const prefix = stamp();
 for (const pose of poses) {
+  if (perLaunch) {
+    await browser.close();
+    ({ browser, page } = await openPage());
+  }
   await page.goto(`${BASE_URL}/?reset=1`, { waitUntil: "load" });
   await page.waitForFunction(() => "__reef" in window);
   await waitForAssets(page);

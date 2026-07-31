@@ -40,16 +40,23 @@ function stamp() {
 
 await mkdir(OUT_DIR, { recursive: true });
 
-const browser = await chromium.launch();
-const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1 });
-const page = await context.newPage();
-page.setDefaultNavigationTimeout(NAV_TIMEOUT_MS);
-page.setDefaultTimeout(NAV_TIMEOUT_MS);
-page.on("pageerror", (error) => console.error(`  page error: ${error.message}`));
+/** `SHOT_PER_LAUNCH=1`: fresh Chromium per pose — slower, never crashes. */
+const perLaunch = process.env.SHOT_PER_LAUNCH === "1";
 
-if (noAssets) {
-  await blockAssets(page);
+async function openPage() {
+  const browser = await chromium.launch();
+  const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1 });
+  const page = await context.newPage();
+  page.setDefaultNavigationTimeout(NAV_TIMEOUT_MS);
+  page.setDefaultTimeout(NAV_TIMEOUT_MS);
+  page.on("pageerror", (error) => console.error(`  page error: ${error.message}`));
+  if (noAssets) {
+    await blockAssets(page);
+  }
+  return { browser, page };
 }
+
+let { browser, page } = await openPage();
 
 await page.goto(`${BASE_URL}/?reset=1`, { waitUntil: "load" });
 await page.waitForFunction(() => "__reef" in window);
@@ -111,6 +118,10 @@ if (poses.length < POSES) {
 
 const prefix = stamp();
 for (const [index, pose] of poses.entries()) {
+  if (perLaunch) {
+    await browser.close();
+    ({ browser, page } = await openPage());
+  }
   await page.goto(`${BASE_URL}/?reset=1`, { waitUntil: "load" });
   await page.waitForFunction(() => "__reef" in window);
   await waitForAssets(page);
