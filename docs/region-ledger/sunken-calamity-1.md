@@ -427,3 +427,38 @@ aimed where the region is actually seen. Dense crumb/slab/straw fill
 inside the rays only (~10–20 m half-width, craterD 62–178), raked off
 the Wound like all ejecta, swim line and rests held, fresh seeds
 appended (0xf256–0xf258).
+
+### Round 4 (`ca-fill-r4`) — the rays land; the sweep reads
+
+The rework: the five ejecta rays exactly per round-3 orders — 1,800
+ray crumbs (0.14–0.4 m), 240 ray slabs (0.45–1.0 m), 320 ray straw
+straps, all inside `ejectaRayReach` (half-width 9–20 m, craterD
+62–178, angular falloff per ray), gated off the grove, the Wound
+mouth, the swim line (< 1.8 m) and every registered rest, raked off
+the Wound at strength 0.85–0.9. Seeds 0xf256–0xf258 appended after
+all existing draws; the fence pins stay byte-identical. Paid for by
+a trim of the general blanket (crumbs 3200 → 3000). Measured after:
+120 draws / 440,976 tris — inside 160 / 450k with headroom gone,
+honestly: the region is FULL. All 21 region tests green.
+
+**Sweep verdict: 12/12.** The two round-3 failures now read:
+**05 (u 733, v 143)** — the 83° ray crosses its first ten metres as
+raked shard-fall and streaked drag-marks, its snag pair and frond
+arch hold the mid, ridge far. **06 (u 548, v 90)** — the 149.4° ray
+scatters crumb and slab around its menhir pair down to the lens,
+teeth-spiked ridge far. The three lean passes hardened: 02's shard
+flecks sit in its streak field under the ghost-frond rank, 07's
+first metres carry thrown flakes and pink slab corners under the
+boulder pair, 10's crest rains shards toward the down-slope. 01, 03,
+04, 08, 09, 11 (gleam-crab, bubble thread, snag rank), 12 all hold
+as in round 3. No pose leans on a registered rest for its pass; the
+Mile and quiet-rim never entered the pose stream this seed.
+
+Authored set (all 18 read, captured pose-per-launch after repeated
+Chromium crashes in long runs — one crash now costs one frame):
+everything from round 3 holds; no ray crosses an authored lens
+wrongly — the rays live on the outer banks where only the sweep
+looks; suffocated-mile stays registry-still (four pot clusters, one
+bubble thread, eighth-density snow, the Gardener's ten metres bare);
+quiet-rim stays the registered rest. Round 4 closes the loop at the
+standard: ≥ 11/12 met at 12/12 with zero rest exemptions needed.
