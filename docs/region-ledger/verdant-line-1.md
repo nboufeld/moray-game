@@ -767,3 +767,56 @@ Measured after round 6: **117 draws / 1,332,990 tris** (cap 1.34M,
 R12 room 1.35M). Typecheck + region suite green each round.
 
 ## The finals (`v1-repassed`) — all four sets on the final code
+
+**Measured budget, final code: 117 draws / 1,332,990 tris** (test caps
+130 / 1.34M, R12 room 260 / 1.35M). Before the re-pass the filled
+region measured 65 draws / 248,711 tris — the headroom went into
+per-instance geometry (blade/frond profiles), the bush richness, the
+deeper skirts, and seven appended `^ 0xf2xx` streams.
+
+**THE PERF GATE, final code, real hardware, headed**: densest pose
+(forest aisle, u 414 — canopy + trunks + turf/litter/fern/stand
+carpets in one cone): **301 frames | median 16.7 ms (59.9 fps) |
+p95 18.6 ms | settled scale 1.00** — under the 16.9 ms bar.
+
+**Authored set (13 poses)**: all PASS. The vale reads as a mossy
+green lane with banks of standing blades; the forest floor carries
+litter curls, ferns, and wayside stands under the canopy; the maze
+ridges wear rosettes and split stones a value off the paint; the
+meadow owns its floor with the tall drifts.
+
+**Close set (4 poses, camera 2–4 m)**: all PASS — the owner's bar.
+
+- `close-vale-road` PASS — cupped rosettes and S-bend blade clumps
+  read as painted plants at arm's length; graded pebbles anchor the
+  lane edge.
+- `close-meadow-sward` PASS (marginal) — the round-4 green floor and
+  the fourteen tall drifts carry it; the sward tussocks read as
+  grass, not wedges.
+- `close-forest-floor` PASS — frond litter + ferns + a wayside stand
+  in one frame; sun-glow tips catch the canopy light.
+- `close-maze-floor` PASS (marginal) — ridge rosettes and lifted
+  split stones read; the maze stays deliberately sparser (its rests).
+
+**Seeded sweep: 12/12 PASS** — above the ≥11/12 standard, no
+licensed misses needed. Pose 10 (the forest shoulder, the round-4
+FAIL) now passes honestly: the round-6 stand (360 tufts ≈ 14 clump
+sites, disc (462, −80) r 30, looseShare 0.35, gate −14) puts standing
+blades through the near band with the ridge row mid and the kelp wall
+far.
+
+**No-assets set (17 poses)**: clean — no black materials, no missing
+draws; every fill stream renders with generated stand-ins and the
+three-layer composition holds without authored assets.
+
+**Gates on the final tree**: typecheck clean; eslint
+`src/world/regions tests/regionVerdant1.test.ts` zero warnings;
+`regions / regionVerdant1 / regionVerdant2 / kitGround / kitLife`
+suites green; one full `npm test` green. Reroll fence asserted in the
+suite: landmarks, kelp, weaver byte-unchanged; all new draws from
+`SEEDS.regionVerdant1 ^ 0xf211–0xf216, 0xf221` appended after
+existing draws.
+
+**Capture list (all looked at)**: `v1-repassed` authored ×13 + close
+×4 (20260731-0857), sweep ×12 (20260731-0948), noassets ×17
+(20260731-1033).
