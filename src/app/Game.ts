@@ -520,6 +520,18 @@ export class Game {
     this.streamer.force(slotId);
   }
 
+  /**
+   * Connective-3 QA door: pins the traveller-shoal clock so the named
+   * route's file sits at `phase` of its loop when the frame is held. The
+   * traveller clock is wall time off page boot, which on a loaded capture
+   * box varies by more than a whole route period — without the pin every
+   * route pose is a phase lottery. Called in the same evaluate as
+   * `capture`, so the only drift left is the pose's own settle.
+   */
+  pinTravellerPhase(routeId: string, phase: number): void {
+    this.reef.pinTravellerPhase(routeId, phase);
+  }
+
   /** R0: which regions are attached, for probes and captures. */
   get activeRegions(): readonly string[] {
     return this.streamer.active;

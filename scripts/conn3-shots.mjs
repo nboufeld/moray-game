@@ -66,8 +66,9 @@ function wingPoses() {
     // The doorway pose: standing over the uplift bed, reading the door.
     // r2: the ruins camera slides to the west flank — at (42.2, +1.4) it
     // stood against the half-buried round doorway's torus.
-    // r3: another metre west so the raked litter fills the near field.
-    const doorSpot = id === "ruins-terrace" ? [40.2, -3.4] : [42.2, 1.4];
+    // r3 tried a metre further west and put the colonnade in the lens;
+    // the r2 stand is the canonical door pose.
+    const doorSpot = id === "ruins-terrace" ? [40.5, -2.6] : [42.2, 1.4];
     const [dx, dz] = polar(azimuth, doorSpot[0], doorSpot[1]);
     poses.push({
       name: `WING-${id}-door`,
@@ -105,20 +106,33 @@ function routePoses() {
       yaw: yawToward(gbx - bx, gbz - bz),
       pitch: -0.19,
       settle: 6,
+      // r4: the traveller clock is pinned per pose (Game.pinTravellerPhase
+      // — the QA door added after calamity's 16-fish file spent both r2
+      // and r3 hidden in the bowl loop). Head just past the gate notch,
+      // file trailing through the rim loop.
+      pin: { id, phase: 0.16 },
     });
     // r3: from INSIDE the swim corridor beside the doorway, looking back
     // down the lane toward the gate — the corridor is the one lane every
     // wing law keeps open, and the route's out-and-back legs pass either
     // side of the camera, so most of the loop is in frame.
-    const floorY = { verdant: -2.6, golden: -2.4, pale: -1.6, smoking: -4.6, calamity: -3.8 }[id];
+    // r4: smoking raised — vent-springs' corridor floor is the deepest
+    // (-7.3 m at the stand) under a +1.1 m gate sill, and the r3 camera
+    // 2.7 m off the floor sat behind the r38-42 rise reading an 8-metre
+    // wall. Pitch eased down to hold the corridor floor from the higher
+    // stand.
+    const floorY = { verdant: -2.6, golden: -2.4, pale: -1.6, smoking: -1.6, calamity: -3.8 }[id];
     const [wx, wz] = polar(azimuth, 44.2, -1.2);
     const [gx, gz] = polar(azimuth, 30.5);
     poses.push({
       name: `ROUTE-${id}-wing`,
       position: [wx, floorY, wz],
       yaw: yawToward(gx - wx, gz - wz),
-      pitch: -0.04,
+      pitch: id === "smoking" ? -0.12 : -0.04,
       settle: 6,
+      // Head mid-corridor on the out shoulder (s≈0.36 of the loop),
+      // trailing back toward the gate — in-frame for every span.
+      pin: { id, phase: 0.36 },
     });
   }
   return poses;
@@ -169,7 +183,14 @@ async function freshPage() {
 }
 
 async function shoot(name, pose) {
-  await page.evaluate((p) => window.__reef.capture(p), pose);
+  // The pin and the capture share one evaluate, so the only clock drift
+  // left between them is the pose's own settle (≤ 6 s ≈ 2% of a period).
+  await page.evaluate((p) => {
+    if (p.pin) {
+      window.__reef.pinTravellerPhase(p.pin.id, p.pin.phase);
+    }
+    window.__reef.capture(p);
+  }, pose);
   await page.waitForTimeout(900);
   const file = path.join(OUT_DIR, `${prefix}_${SEED}_${QUALITY}_${name}_${tag}.png`);
   await page.screenshot({ path: file });

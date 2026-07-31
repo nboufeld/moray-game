@@ -202,3 +202,134 @@ further edits during capture runs.
    whole-uplift, still ≤ 35k.
 3. Verdant fish 0.88 scale, lighter green.
 4. Route/door poses per the reads above.
+
+### r2 (looked at — four wing poses, ten route poses, two pass poses)
+
+- **sandfall-dunes (interior)** — the register fix mostly lands: both
+  falls carry visible streak columns, and the GOLD TRAVELLER FILE
+  descends the corridor mid-frame with its glint thread — bed, falls,
+  motes, veil and commute in one look. Three-layer: PASS. One blocky
+  remnant survives where the r-42 curtain tops out against the dune
+  lip beside the pale stones. → r3: the lip dissolves earlier (top
+  fade 0.88 → 0.78, cap 0.42).
+- **sandfall-dunes (door)** — SHIPS: the file pours toward the bowl on
+  the left, the bed thickens to the sill, gold motes ride against the
+  veil's honey column, and the Hourglass country's own boulders stand
+  past the door. The golden handshake reads as one gradient.
+- **ruins-terrace (interior)** — SHIPS: the calamity grey file crosses
+  upper-right between the arches (its violet-grey leans mauve under
+  the gold-green water — accepted: the register rule constrains LIGHT
+  families, and the file carries no glow), litter and moss carry both
+  flanks, corridor and meadow stay open, the veil parting holds the
+  distance.
+- **ruins-terrace (door)** — the west-flank stand reads the raked
+  litter up the left bank with the standing column as repoussoir and
+  the veil's cold recession in the doorway; the near-right quadrant is
+  the meadow/corridor's lawful bareness. → r3: one more metre west so
+  litter owns the near field. Observation, region-owned: with
+  sunken-calamity-1 attached (the depth-1 build margin), the doorway's
+  horizon shows the march country's own skyline behind the veil — the
+  door is a place now, not a poster.
+- **routes** — golden both PASS (the wing frame now shows the falls as
+  soft columns — the register verdict in the same frame); smoking both
+  PASS (the bowl frame catches the ember file banking over the gate
+  chimney, warm bellies flashing); verdant both PASS after the fish
+  step (bowl: the file threads the saddle; wing: the file streams the
+  nave, though the camera stands against a column — r3 moves route
+  wing-cameras INTO the swim corridors, the one lane every wing law
+  keeps open); pale-bowl PASS, pale-wing MISS (arch country, no file
+  this phase); calamity MISS at both (three consecutive phase misses
+  on a tenth-of-loop file). → r3: corridor-centre wing poses + bowl
+  poses raised over the sill (majority-of-loop coverage both ends),
+  retakes until the sparse files are caught.
+
+### r3 orders (landed before the r3 captures)
+
+1. Curtain lip: top fade 0.88 → 0.78, cap 0.45 → 0.42 — the last blocky
+   remnant lived where the r-42 curtain met the dune lip at full alpha.
+2. Route wing poses move INTO the swim corridors (r 44.2, lateral −1.2,
+   looking back at the gate); bowl poses raised to y 6 over the sill.
+3. Ruins door pose a metre further west (tried and REVERTED — see r3).
+
+### r3 (looked at — four wing poses, ten route poses)
+
+- **sandfall-dunes (interior)** — the falls repaint is DONE: soft
+  streaked veils, clean vertical columns on the left fall, a softer
+  cluster on the right, no blocky remnant at the lip. Three-layer holds
+  with the gold file crossing. Final verdict on item 1's fall-marks.
+- **sandfall-dunes (door)** — consistent with r2's SHIP; no regression
+  from the curtain change.
+- **ruins-terrace (interior)** — SHIPS as at r2: raked litter and moss
+  on both flanks, the grey file crossing mid-frame, doorway haze open.
+- **ruins-terrace (door)** — the r3 metre-west stand puts the colonnade
+  drum in the lens (a third of the frame). REVERTED in the script: the
+  r2 west-flank stand is the canonical door pose and its r2 frame is
+  the record.
+- **routes** — verdant both PASS (the wing frame is the set's best:
+  near fish left, the file mid-lane, far fish against the doorway
+  blue); golden both PASS (file over the saddle; file at the doorway
+  notch over the mote field); pale both PASS (bowl: the file crosses
+  the gate by the mossy arch; wing: the pale file threads the grass
+  corridor); smoking-bowl PASS (two silver files over the smoker),
+  smoking-wing FAIL — the stand is buried: vent-springs' corridor
+  floor is the deepest of the five (−7.3 m under a +1.1 m gate sill,
+  probed), and a camera 2.7 m off THAT floor reads the r38–42 rise as
+  an eight-metre wall; calamity-bowl MARGINAL (a few grey fish on the
+  crest — countable, not alive), calamity-wing FAIL (corridor open and
+  lawful, zero fish — the fourth phase miss on the 16-fish file).
+
+### r4 orders (the phase lottery ends)
+
+The root cause, named: the traveller clock is wall time off page boot,
+and on this box (load avg ~25, boots measured past 300 s) boot variance
+EXCEEDS every route period — no pose short of framing the whole loop
+can guarantee a file, and calamity's file spans a tenth of its loop.
+Three misses were not bad poses; they were a lottery.
+
+1. **QA door**: `Game.pinTravellerPhase(routeId, phase)` → `Reef` →
+   `TravellerShoals.pinPhase` — pins the shared traveller clock so the
+   named route sits at `phase`; everything downstream is a closed form
+   of the pinned time (the kit's own determinism law), so the pin is
+   exact, and the pin+capture share one `page.evaluate` so the only
+   drift is the pose's settle (6 s ≈ 2% of a period). Asserted in
+   `travellerShoals.test.ts`: pinPhase ≡ update-walking to the same
+   simulated second, byte-equal matrices.
+2. Every route pose pins: bowl at phase 0.16 (head just past the gate
+   notch, file trailing the rim loop), wing at 0.36 (head mid-corridor
+   on the out shoulder, trailing toward the gate — in frame for every
+   span from calamity's 0.10 to verdant's 0.224).
+3. smoking-wing stand raised −4.6 → −1.6, pitch −0.12 (the probe row).
+4. r4 recaptures the full route set under pins — the passing r3 frames
+   were unpinned luck; the pinned set is the record.
+
+### r4 (looked at — ten route poses, pinned)
+
+_(pending capture)_
+
+## The verdant pass (MASTER R4 / connective §4.4) — VERIFIED
+
+Both regions forced and attached together, both sides captured and
+looked at (`PASS-*_conn3-r2.png`):
+
+- **From the Great Kelp Sea** (verdant-1 `falling-edge`): the corridor
+  opens between the pass jambs, the horizon dips through the ring line
+  as soft milky hills, no opaque curtain — verdant-1's rework cut
+  (`PASS_GAP_HALF = 0.2`, rings AND trunk cards) reads on screen
+  exactly as its test asserts it.
+- **From the Emerald Terraces** (verdant-2 `pass-threshold`): the
+  milky→celadon carpet road runs to the sentinel through turf islands
+  and waymark stones; the distance stays open down the corridor —
+  verdant-2's own ring gap (`Verdant2Distance` far-pole gap) and its
+  "pass channel swimmable u 636–810" / threshold-runner contracts hold
+  it from this side.
+- **The §4.4 pattern, item by item**: (1) threshold reveal — authored
+  poses on both rims; (2) palette lerp — the milky-crest → celadon
+  carpet handover at u < 700–740, region-owned and shipped; (3) life
+  handover — verdant-2's threshold runner commutes the pass road
+  (u 645–760, both directions), asserted in its region suite;
+  (4) distance rings gated over the corridor on BOTH sides, asserted
+  in both region suites and now verified visually from both sides;
+  (5) double-rowed seals + 20–40 m rhythm — region-owned, shipped with
+  the two reworks. Nothing remains assigned to connective on this
+  pass; the pattern stands written in connective-tissue.md §4 for the
+  reserved golden/smoking/pale passes.

@@ -225,4 +225,23 @@ export class TravellerShoals {
       route.build.update(this.time);
     }
   }
+
+  /**
+   * QA door (capture harness only): pins the shared traveller clock so the
+   * named route sits at `phase` of its loop. The clock is wall-time off page
+   * boot, which on a loaded capture box varies by MINUTES — more than any
+   * route's whole period — so a pose that frames less than the entire loop
+   * is a phase lottery without this. Everything downstream is a closed form
+   * of the pinned time (the kit's determinism law), so the pin is exact.
+   */
+  pinPhase(routeId: string, phase: number): void {
+    const route = this.routes.find((candidate) => candidate.spec.id === routeId);
+    if (!route) {
+      throw new Error(`no traveller route '${routeId}'`);
+    }
+    this.time = phase / route.phaseSpeed;
+    for (const each of this.routes) {
+      each.build.update(this.time);
+    }
+  }
 }

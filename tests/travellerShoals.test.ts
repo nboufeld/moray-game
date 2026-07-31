@@ -200,4 +200,18 @@ describe("determinism and the split-timetable contract", () => {
       shoals.update(1.5, false);
     }).not.toThrow();
   });
+
+  it("pins the QA clock exactly: pinPhase equals reaching that second by update", () => {
+    // The capture harness's door (Game.pinTravellerPhase → here): pinning a
+    // route to a phase must land the same matrices as accumulating to the
+    // same simulated second — the pin is a closed-form seek, not a variant.
+    const pinned = new TravellerShoals();
+    const walked = new TravellerShoals();
+    const index = TRAVELLER_ROUTES.findIndex((route) => route.id === "calamity");
+    const phase = 0.36;
+    pinned.pinPhase("calamity", phase);
+    walked.update(phase / walked.routes[index]!.phaseSpeed, false);
+    expect(fishMatrices(pinned, index)).toEqual(fishMatrices(walked, index));
+    expect(() => pinned.pinPhase("no-such-route", 0.5)).toThrow(/no traveller route/);
+  });
 });

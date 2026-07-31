@@ -1424,6 +1424,11 @@ export class Reef {
     this.group.add(this.travellerShoals.group);
   }
 
+  /** QA door: pins the traveller clock for the capture harness. */
+  pinTravellerPhase(routeId: string, phase: number): void {
+    this.travellerShoals?.pinPhase(routeId, phase);
+  }
+
   /** Advances the ambient life in the reef: the meadow's sway, the kelp's and the seaweed's. */
   update(dt: number, reducedMotion: boolean): void {
     this.grass?.update(dt, reducedMotion);
