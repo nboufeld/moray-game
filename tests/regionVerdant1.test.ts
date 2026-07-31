@@ -339,9 +339,10 @@ describe("verdant-line-1 carpet determinism", () => {
     // floor (the sweep's "never bare by default" answer), the round-4
     // flank tussocks (the sweep's "nothing STANDS on the flanks" answer),
     // the round-7 saddle-mouth stand (sweep 12's outward-facing pose) —
-    // and the R12.3 re-pass's four: holdfast skirt-grass collars, forest
-    // ferns, and the vale/aisle road-edge blade stands.
-    expect(first.length).toBe(14);
+    // and the R12.3 re-pass's five: holdfast skirt-grass collars, forest
+    // ferns, the vale/aisle road-edge blade stands, and the round-5
+    // forest-shoulder stand (sweep 10's un-rested shoulder).
+    expect(first.length).toBe(15);
     expect(second.length).toBe(first.length);
     for (const [index, mesh] of first.entries()) {
       const twin = second[index]!;

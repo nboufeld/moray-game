@@ -713,6 +713,32 @@ export function buildVerdantCover(giants: readonly KelpFoot[]): VerdantCoverBuil
     }),
   );
 
+  // The forest-shoulder stand (round 5): sweep pose 10 stands on the
+  // shoulder between the forest basin and the maze rim (u 458, v −80 —
+  // NOT a registered rest) and its near cone owned nothing after the
+  // profile swaps re-rolled the global carpets' placements. Same lesson
+  // as the saddle mouth (F-R2): a sweep-critical band gets its own
+  // concentrated drift of the tussock growth, clumped on purpose.
+  keep(
+    buildCarpetField({
+      seed: SEED ^ FILL_SEEDS.carpetShoulderStand,
+      palette: { base: 0x7fa25e, tip: 0xa8c873, shade: 0x647550 },
+      area: discAreaAt(458, -80, 40),
+      gate: (x, z) => {
+        // Stay on the shoulder ground: the gully floors below −12 belong
+        // to the silt bloom and the split stones.
+        const aboveGullies = smoothstep01((seabedHeight(x, z) + 12) / 2);
+        return verdantWeight(x, z) * aboveGullies * restFree(x, z);
+      },
+      ground: seabedHeight,
+      count: 170,
+      profile: "blade",
+      size: [0.55, 1.05],
+      swayAmp: 0.05,
+      sunGlow: true,
+    }),
+  );
+
   // The maze's split stones: formed fracture-faced rock among the shard
   // rubble — the R12 `"split"` family, graded so the gully floors carry
   // foreground stones a close pose can rest on.

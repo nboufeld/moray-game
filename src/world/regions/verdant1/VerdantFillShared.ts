@@ -90,6 +90,8 @@ export const FILL_SEEDS = {
   carpetFerns: 0xf212,
   carpetValeStands: 0xf213,
   carpetAisleStands: 0xf214,
+  // 0xf215 is the meadow re-pass growth stream (VerdantMeadow).
+  carpetShoulderStand: 0xf216,
   mazeSplitStones: 0xf221,
 } as const;
 

@@ -707,7 +707,45 @@ floor, the kit turf only textures it; (3) litter 2×1,050, ferns 900,
 silt 1,600, split stones a value up (they matched the maze paint so
 exactly they vanished).
 
-## Round 4 (`rp-r4`) — the content close
+## Round 4 (`rp-r4`) — the sweep returns
 
 Measured **116 draws / 1,315,710 tris** (caps 130 / 1.34M, R12 room
-1.35M). Round-4 orders all landed.
+1.35M). Round-4 orders all landed. Perf gate re-run at the densest
+pose (forest aisle): **median 16.7 ms (59.9 fps) | p95 18.6 ms |
+scale 1.00** — under the 16.9 ms bar.
+
+**The full seeded sweep, 11/12** (the first re-pass sweep — rounds
+1–3 spent their capture windows on the close poses while the loaded
+machine kept killing the harness):
+
+- **01–09, 11, 12 PASS** (01/03/04 marginal but honest — thin near
+  bands carried by standing blade clumps and the green paint; 02's
+  tussocks, 05–07's stands and swells, 08's shell decrescendo, 09's
+  graded boulders, 11's sward tussocks, 12's meadow drifts and ridge
+  row all read as PLANTS now, which is the difference from the fill
+  sweeps at the same poses).
+- **10 FAIL — and it may not fail.** The pose stands at world
+  (178, 429) = spoke **(u 458, v −80)**, the shoulder between the
+  forest basin and the maze rim, facing along +u: a broad olive floor
+  with litter flecks, one grass tuft at frame edge, a trunk mid, the
+  forest wall far. NOT a registered rest (the rests: Sunwell bowl,
+  narrows u 190–250, lip crest, shelf pocket 585 −40) — so the miss
+  is not licensable. The fill-final sweep passed this pose 12/12;
+  what changed is the profile swaps RE-ROLLING the global carpets'
+  buffers — the clumps that happened to carry this cone landed
+  elsewhere. A global family cannot promise a cone anything (F-R2,
+  third time).
+
+**Round-5 orders**: a **forest-shoulder stand** — the saddle-mouth
+fix repeated: 170 blade clumps of the tussock ink, clumped on
+purpose, disc (458, −80) r 40, gated off the gully floors (seabed
+> −12) and off rests, fresh `^ 0xf216` appended after every existing
+stream. The close-pose set for round 4 was lost to a capture-harness
+crash (a mid-capture HMR reload); rounds 4 and 5 share the `rp-r5`
+close verdict below.
+
+## Round 5 (`rp-r5`) — the shoulder answered
+
+Measured **117 draws / 1,323,870 tris** (caps 130 / 1.34M). The
+shoulder stand is the only code change; every other stream is
+byte-identical to round 4.
