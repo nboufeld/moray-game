@@ -248,10 +248,14 @@ describe("the Ghost Reef's recovery", () => {
       }
     }
     const near = spreads.filter((entry) => entry.r <= 40);
-    // r ≥ 44 is halfway up the recovery ramp: colour is unmistakable there.
-    const far = spreads.filter((entry) => entry.r >= 44);
+    // Connective-2 (MASTER R6): the recovery no longer peaks AT the door —
+    // past r ≈ 45.6 the false-spring cooling deliberately takes the colour
+    // back down so the wing hands the Bone Meadows' seam a dying trace
+    // (asserted in tests/wingsConnective2.test.ts). Colour is unmistakable
+    // where the design now puts its peak: the band just shy of the seam.
+    const far = spreads.filter((entry) => entry.r >= 44.9 && entry.r <= 45.6);
     expect(near.length).toBeGreaterThan(10);
-    expect(far.length).toBeGreaterThan(10);
+    expect(far.length).toBeGreaterThanOrEqual(6);
     const mean = (entries: readonly { spread: number }[]): number =>
       entries.reduce((sum, entry) => sum + entry.spread, 0) / entries.length;
     // Instance colours land in linear working space, where the warm bone's

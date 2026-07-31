@@ -17,9 +17,22 @@ import {
 import { seabedHeight, type ContactPatch } from "../../Seabed";
 import { createToonMaterial } from "../../../rendering/ToonShading";
 import { Random, SEEDS } from "../../../util/Random";
+import { wedgeHalfAt } from "../WingGeometry";
 import type { WingDef, WingFlora } from "../WingTypes";
-import { drawFloorSpot, drawGateSpot, smoothstep01, swayClock, wingFrame } from "./W3FloraKit";
+import {
+  drawFloorSpot,
+  drawGateSpot,
+  lateralOf,
+  smoothstep01,
+  swayClock,
+  wingFrame,
+  wingPoint,
+} from "./W3FloraKit";
 import { mountGateVeil } from "./GateVeilMount";
+import { buildCarpetField } from "../../regions/kit/CarpetField";
+import { buildGroundLitter } from "../../regions/kit/GroundLitter";
+import { buildPercherColony, type PercherAnchor } from "../../regions/kit/PercherColony";
+import { buildWallDrapeBank, type DrapeAnchor } from "../../regions/kit/WallDrape";
 
 /**
  * Wing 7 — the Ghost Reef (worker W3). Grief with a door out of it: a
@@ -73,6 +86,40 @@ const RECOVERY = [new Color(0xf4bfcc), new Color(0xefc890), new Color(0xb6d8ac)]
 /** How far toward full colour the far end gets — recovery, not a carnival. */
 const RECOVERY_DEPTH = 0.85;
 
+/**
+ * MASTER R6 — the false spring's wing half (connective-2). The recovery
+ * used to peak at full pastel exactly at the doorway (r 46.5) where the
+ * Bone Meadows' ravine restarts at recovery 0 — full colour slamming into
+ * bone. Now the colour peaks by the den and COOLS toward the door: past
+ * `FALSE_SPRING_FROM` the pastel lerp gives up `FALSE_SPRING_COOL` of its
+ * depth over `FALSE_SPRING_OVER` metres, so the wing hands the seam a
+ * *dying trace* of blush — exactly the register pale-passage-1's
+ * region-side beat (its plan §8: blush gravel dying over u 48–68, hush by
+ * u 70) picks up on the other side. Palette only; no stand moves.
+ */
+const FALSE_SPRING_FROM = 44.9;
+const FALSE_SPRING_OVER = 1.6;
+const FALSE_SPRING_COOL = 0.78;
+
+/** Connective-2's named uplift subtree — the same literal all three
+ *  uplifted wings use; see `KelpCathedralFlora.CONN2_GROUP_NAME`. */
+const CONN2_GROUP_NAME = "wing-uplift-conn2";
+
+/** The ossuary floor: bone gravel over a violet-grey under-shade. */
+const RUBBLE_PALETTE = { base: 0xe2ddd0, shade: 0x9a90a0 } as const;
+
+/** The returning turf: blush fronds, gold at the tips — the recovery's T1. */
+const BLUSH_TURF = { base: 0xd8a0ae, tip: 0xefc890, shade: 0x9a7888 } as const;
+
+/** The wall drapes: bleached straps a breath over the milk, blush pads. */
+const GHOST_DRAPE = { base: 0xbfb9ac, tip: 0xd8d2c4, shade: 0x847c90, accent: 0xc9a9b2 } as const;
+
+/** The porcelain brittle-stars: bone bodies, the brightest lean rose. */
+const PORCELAIN_STAR = { base: 0xe8e6da, tip: 0xf0c2ce } as const;
+
+/** The uplift's corridor fence: the stands' own 0.078 rad, held for T1. */
+const UPLIFT_FENCE_RAD = 0.085;
+
 /** The kinds that stand here, and their share of a site's pieces. */
 const KIND_WEIGHTS: readonly (readonly [CoralKind, number])[] = [
   ["branch", 0.32],
@@ -122,7 +169,12 @@ function drawKind(random: Random, recoverySite: boolean): CoralKind {
   return "branch";
 }
 
-/** The tint a piece wears at radius `r`: bone at the gate, colour returning past it. */
+/**
+ * The tint a piece wears at radius `r`: bone at the gate, colour returning
+ * past it — and dying again at the door (R6's false spring; the envelope
+ * peaks by the den and hands the seam a cooled trace). The stream draws
+ * are unchanged, so no position anywhere re-rolls.
+ */
 function ghostTint(random: Random, r: number): Color {
   const warmth = random.next();
   const family = random.next();
@@ -130,7 +182,15 @@ function ghostTint(random: Random, r: number): Color {
   const bone = BONE_WARM.clone().lerp(BONE_COOL, warmth);
   const pastel = RECOVERY[Math.floor(family * RECOVERY.length)] ?? RECOVERY[0];
   const recovery = smoothstep01((r - RECOVERY_FROM) / (RECOVERY_TO - RECOVERY_FROM));
-  return bone.lerp(pastel, recovery * RECOVERY_DEPTH).multiplyScalar(value);
+  return bone
+    .lerp(pastel, recovery * RECOVERY_DEPTH * falseSpringDying(r))
+    .multiplyScalar(value);
+}
+
+/** R6's cooling envelope: 1 through the garden, falling toward the door.
+ *  Exported for `tests/wingsConnective2.test.ts`, which pins its shape. */
+export function falseSpringDying(r: number): number {
+  return 1 - FALSE_SPRING_COOL * smoothstep01((r - FALSE_SPRING_FROM) / FALSE_SPRING_OVER);
 }
 
 export function buildGhostReefFlora(def: WingDef): WingFlora {
@@ -304,6 +364,118 @@ export function buildGhostReefFlora(def: WingDef): WingFlora {
     group.add(mesh);
   }
 
+  // ── Connective-2: the Tier A uplift (MASTER Batch 2). ──
+  // The mid-ground the wave-8 audit called bare, dressed in the wing's own
+  // story: an ossuary rubble carpet (bone gravel, violet under-shade)
+  // through the wedge floor, a blush frond turf gated to the SAME recovery
+  // envelope the stands wear — R6's cooling included, so the ground's
+  // colour dies at the door beside them — pale drapes on the walls, and
+  // porcelain brittle-stars seated at the stands' feet. Fresh `^`
+  // substreams fed to kit-private Randoms, appended after every existing
+  // draw: no stand, tint draw or contact above re-rolls (the W3 pins and
+  // the connective-1 sentinels hold). No new light mark: the milk argues
+  // with focused light, and the doorway's pearl column stays the wing's
+  // one radiance.
+  const uplift = new Group();
+  uplift.name = CONN2_GROUP_NAME;
+
+  const insideUpliftBand = (x: number, z: number, rMin: number, rMax: number): number => {
+    const r = Math.hypot(x, z);
+    if (r < rMin || r > rMax) {
+      return 0;
+    }
+    if (Math.abs(lateralOf(frame, x, z)) < UPLIFT_FENCE_RAD * r + 0.15) {
+      return 0;
+    }
+    if (Math.abs(lateralOf(frame, x, z)) > (wedgeHalfAt(def, r) - 0.012) * r) {
+      return 0;
+    }
+    return 1;
+  };
+  const flankRoad = {
+    polyline: [
+      [wingPoint(frame, 34, 2.9).x, wingPoint(frame, 34, 2.9).z],
+      [wingPoint(frame, 46.2, 3.4).x, wingPoint(frame, 46.2, 3.4).z],
+      [wingPoint(frame, 46.2, -3.4).x, wingPoint(frame, 46.2, -3.4).z],
+      [wingPoint(frame, 34, -2.9).x, wingPoint(frame, 34, -2.9).z],
+    ] as [number, number][],
+    width: 3.6,
+  };
+
+  const rubble = buildGroundLitter({
+    seed: (SEEDS[def.seedKey] ^ 0x2d1a) >>> 0,
+    palette: RUBBLE_PALETTE,
+    area: flankRoad,
+    gate: (x, z) => insideUpliftBand(x, z, 33.6, 46.3),
+    ground: seabedHeight,
+    count: 540,
+    shapeSet: "gravel",
+    grade: 0.5,
+  });
+  uplift.add(rubble.group);
+
+  // The blush turf's density IS the story's envelope: nothing before the
+  // ramp, fullest by the den, a dying trace at the door (R6).
+  const blushGate = (x: number, z: number): number => {
+    if (insideUpliftBand(x, z, 40.8, 46.3) === 0) {
+      return 0;
+    }
+    const r = Math.hypot(x, z);
+    const recovery = smoothstep01((r - RECOVERY_FROM) / (RECOVERY_TO - RECOVERY_FROM));
+    return recovery * falseSpringDying(r);
+  };
+  const blushTurf = buildCarpetField({
+    seed: (SEEDS[def.seedKey] ^ 0x2d2b) >>> 0,
+    palette: BLUSH_TURF,
+    area: flankRoad,
+    gate: blushGate,
+    ground: seabedHeight,
+    count: 90,
+    profile: "frond",
+    swayAmp: 0.025,
+    looseShare: 0.4,
+  });
+  uplift.add(blushTurf.group);
+
+  const drapeRandom = new Random(SEEDS[def.seedKey] ^ 0x2d3c);
+  const drapeAnchors: DrapeAnchor[] = [];
+  for (let i = 0; i < 8; i++) {
+    const r = 35 + i * 1.45 + drapeRandom.signed(0.4);
+    const side = i % 2 === 0 ? 1 : -1;
+    const lift = drapeRandom.range(1.0, 2.3);
+    drapeAnchors.push(ghostWallAnchor(def, r, side, lift));
+  }
+  const drapes = buildWallDrapeBank({
+    seed: (SEEDS[def.seedKey] ^ 0x2d3c) >>> 0,
+    palette: GHOST_DRAPE,
+    anchors: drapeAnchors,
+    strandsPerAnchor: 4,
+    length: 1.2,
+    swayAmp: 0.04,
+  });
+  uplift.add(drapes.group);
+
+  // Porcelain brittle-stars at the stands' feet — seated only (R2 keeps
+  // frustum culling on inside a wing), on stands far enough out that a
+  // seat's 0.45 m scatter cannot cross the den's 0.06 rad approach.
+  const starAnchors: PercherAnchor[] = stands
+    .filter((stand, index) => index % 4 === 0 && Math.hypot(stand.x, stand.z) >= 36)
+    .slice(0, 10)
+    .map((stand) => ({
+      pos: [stand.x, seabedHeight(stand.x, stand.z) + 0.01, stand.z] as const,
+    }));
+  const stars = buildPercherColony({
+    seed: (SEEDS[def.seedKey] ^ 0x2d4d) >>> 0,
+    palette: PORCELAIN_STAR,
+    anchors: starAnchors,
+    perAnchor: 2,
+    body: "star",
+    motion: "seated",
+  });
+  uplift.add(stars.group);
+
+  group.add(uplift);
+
   // ── The gate veil (connective-1). ──
   // The end wall dressed with the Pale Passage's promise: bone-milk inks
   // that LIGHTEN toward the door (the one province whose distance is
@@ -323,11 +495,44 @@ export function buildGhostReefFlora(def: WingDef): WingFlora {
   });
   group.add(veil.group);
 
+  let upliftTime = 0;
   const update = (dt: number, reducedMotion: boolean): void => {
     // Even at the living end the sway is a breath, not a dance.
     clock.advance(dt, reducedMotion, 0.3);
+    upliftTime += dt * (reducedMotion ? 0.3 : 1);
+    blushTurf.update(upliftTime);
+    drapes.update(upliftTime);
     veil.update(dt, reducedMotion);
   };
 
   return { group, contacts, update };
+}
+
+/**
+ * A drape holdfast on the ghost reef's wedge wall at radius `r`, standing
+ * `lift` metres over the wing's own floor — the angle is searched, never
+ * drawn from a stream; the normal faces the axis so strands droop over
+ * the milk, never through the wall.
+ */
+function ghostWallAnchor(def: WingDef, r: number, side: number, lift: number): DrapeAnchor {
+  const frame = wingFrame(def);
+  const floorY = seabedHeight(frame.axisX * r, frame.axisZ * r);
+  // The angular window: the den approach's 0.06 rad plus a strand's full
+  // horizontal reach inside, a pad's slip off the wedge edge outside.
+  let lo = Math.max(def.wedge.floorHalf, (0.06 * r + 1.35) / r);
+  let hi = wedgeHalfAt(def, r) - 0.015;
+  for (let i = 0; i < 14; i++) {
+    const mid = (lo + hi) / 2;
+    const spot = wingPoint(frame, r, side * mid * r);
+    if (seabedHeight(spot.x, spot.z) - floorY < lift) {
+      lo = mid;
+    } else {
+      hi = mid;
+    }
+  }
+  const { x, z } = wingPoint(frame, r, side * ((lo + hi) / 2) * r);
+  return {
+    pos: [x, seabedHeight(x, z) + 0.04, z],
+    normal: [-side * frame.perpX, 0.12, -side * frame.perpZ],
+  };
 }

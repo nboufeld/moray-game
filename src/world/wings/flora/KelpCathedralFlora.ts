@@ -32,6 +32,7 @@ import { wedgeHalfAt } from "../WingGeometry";
 import type { WingDef, WingFlora } from "../WingTypes";
 import {
   addSwayAttributes,
+  angleOffAxis,
   clampInsideWedge,
   injectWingSway,
   lateralOf,
@@ -39,6 +40,9 @@ import {
   smoothstep01,
 } from "./W1FloraShared";
 import { mountGateVeil } from "./GateVeilMount";
+import { buildCarpetField } from "../../regions/kit/CarpetField";
+import { buildPercherColony } from "../../regions/kit/PercherColony";
+import { buildWallDrapeBank, type DrapeAnchor } from "../../regions/kit/WallDrape";
 
 /**
  * Wing 0 — the Kelp Cathedral. Awe and hush.
@@ -126,6 +130,34 @@ const SHAFTS: readonly {
 
 /** The moss palette: deep, cool, shaded greens for the floor of the nave. */
 const MOSS_TONES = [0x465f38, 0x516e40, 0x3d5631];
+
+/**
+ * Connective-2 (MASTER Batch 2): the Tier A density uplift's one named
+ * subtree, same idiom as the gate veil's — the wave-8 tests that pin the
+ * ORIGINAL flora exclude this name from their draw caps and nothing else;
+ * `tests/wingsConnective2.test.ts` measures what lives inside it against
+ * R2's ceilings. The three uplifted wings share the literal.
+ */
+export const CONN2_GROUP_NAME = "wing-uplift-conn2";
+
+/**
+ * The nave floor's turf: the aisle's hard fence (the W1 aisle pin reads
+ * every instance), the wedge's angular margin, and the radial band the
+ * carve owns at full weight.
+ */
+const TURF_AISLE_FENCE = 1.78;
+const TURF_R_MIN = 34.2;
+const TURF_R_MAX = 47.2;
+
+/** The turf palettes: the nave's own leaf tones under the TIP_GOLD kin. */
+const TURF_BLADE = { base: 0x4e7d44, tip: 0x8fae56, shade: 0x2f4a2c } as const;
+const TURF_FROND = { base: 0x3d6338, tip: 0x6d9c56, shade: 0x2c4228 } as const;
+
+/** The drape bank on the wedge walls: deep emerald, gold at the tips. */
+const DRAPE_PALETTE = { base: 0x4a6e3e, tip: 0x9cb45e, shade: 0x2c4030, accent: 0x54724a } as const;
+
+/** The cushion stars at the column feet: leaf-green bodies, gilt arms. */
+const STAR_PALETTE = { base: 0x5f7d3f, tip: 0xc9b968 } as const;
 
 export function buildKelpCathedralFlora(def: WingDef): WingFlora {
   const group = new Group();
@@ -245,6 +277,110 @@ export function buildKelpCathedralFlora(def: WingDef): WingFlora {
   }
   group.add(buildPools(def));
 
+  // ─── Connective-2: the Tier A uplift (MASTER Batch 2) ───────────────────
+  // The nave's floor and walls, dressed: blade and frond turf through the
+  // wedge floor (the R12 quality profiles, sun-through-leaf glow on the
+  // blades), a drape bank hanging from the wall slopes, and cushion stars
+  // seated at the column feet. Every piece rides its own fresh `^`
+  // substream fed to a kit-private Random, appended after every existing
+  // draw — nothing above re-rolls (the W1 aisle pins and the connective-1
+  // sentinels hold) — and everything lives under one named group so the
+  // wave-8 draw cap keeps pinning the original flora.
+  const uplift = new Group();
+  uplift.name = CONN2_GROUP_NAME;
+
+  // The turf's fences, as a gate: the aisle stays open (the W1 pin reads
+  // every instance at ≥ 1.65 m), the wedge's angular margin holds, and the
+  // band is the carve's own floor.
+  const turfGate = (x: number, z: number): number => {
+    const r = Math.hypot(x, z);
+    if (r < TURF_R_MIN || r > TURF_R_MAX) {
+      return 0;
+    }
+    if (Math.abs(lateralOf(def, x, z)) < TURF_AISLE_FENCE) {
+      return 0;
+    }
+    if (angleOffAxis(def, x, z) > wedgeHalfAt(def, r) - 0.012) {
+      return 0;
+    }
+    return 1;
+  };
+  const flankRoad = {
+    polyline: [
+      [polarPoint(def, 34.6, 2.6).x, polarPoint(def, 34.6, 2.6).z],
+      [polarPoint(def, 47, 2.9).x, polarPoint(def, 47, 2.9).z],
+      [polarPoint(def, 47, -2.9).x, polarPoint(def, 47, -2.9).z],
+      [polarPoint(def, 34.6, -2.6).x, polarPoint(def, 34.6, -2.6).z],
+    ] as [number, number][],
+    width: 3.2,
+  };
+
+  const bladeTurf = buildCarpetField({
+    seed: (SEEDS.wingKelpCathedral ^ 0x2b1a) >>> 0,
+    palette: TURF_BLADE,
+    area: flankRoad,
+    gate: turfGate,
+    ground: seabedHeight,
+    count: 240,
+    profile: "blade",
+    swayAmp: 0.045,
+    sunGlow: true,
+    looseShare: 0.45,
+  });
+  uplift.add(bladeTurf.group);
+
+  const frondTurf = buildCarpetField({
+    seed: (SEEDS.wingKelpCathedral ^ 0x2b2b) >>> 0,
+    palette: TURF_FROND,
+    area: flankRoad,
+    gate: turfGate,
+    ground: seabedHeight,
+    count: 110,
+    profile: "frond",
+    swayAmp: 0.03,
+    looseShare: 0.25,
+  });
+  uplift.add(frondTurf.group);
+
+  // The wall drapes: eight holdfasts a body's height up the wedge walls,
+  // alternating flanks down the nave — the "bare walls" answer.
+  const drapeRandom = new Random(SEEDS.wingKelpCathedral ^ 0x2b3c);
+  const drapeAnchors: DrapeAnchor[] = [];
+  for (let i = 0; i < 8; i++) {
+    const r = 35.2 + i * 1.5 + drapeRandom.signed(0.45);
+    const side = i % 2 === 0 ? 1 : -1;
+    const lift = drapeRandom.range(1.1, 2.5);
+    drapeAnchors.push(wallAnchor(def, r, side, lift));
+  }
+  const drapes = buildWallDrapeBank({
+    seed: (SEEDS.wingKelpCathedral ^ 0x2b3c) >>> 0,
+    palette: DRAPE_PALETTE,
+    anchors: drapeAnchors,
+    strandsPerAnchor: 5,
+    length: 1.4,
+    swayAmp: 0.05,
+  });
+  uplift.add(drapes.group);
+
+  // The cushion stars: seated colonies at every other column's holdfast
+  // (movers are banned in a wing — R2 keeps frustum culling on).
+  const starAnchors = columnFeet
+    .filter((_, index) => index % 2 === 0)
+    .map((foot) => ({
+      pos: [foot.x, seabedHeight(foot.x, foot.z) + 0.01, foot.z] as const,
+    }));
+  const stars = buildPercherColony({
+    seed: (SEEDS.wingKelpCathedral ^ 0x2b4d) >>> 0,
+    palette: STAR_PALETTE,
+    anchors: starAnchors,
+    perAnchor: 3,
+    body: "star",
+    motion: "seated",
+  });
+  uplift.add(stars.group);
+
+  group.add(uplift);
+
   // ─── The gate veil (connective-1) ────────────────────────────────────────
   // The opened end wall dressed with the Great Kelp Sea's own inks — deep
   // spring greens receding behind the door, a soft leaf-lit column and a
@@ -260,6 +396,7 @@ export function buildKelpCathedralFlora(def: WingDef): WingFlora {
   });
   group.add(veil.group);
 
+  let upliftTime = 0;
   return {
     group,
     contacts,
@@ -268,8 +405,48 @@ export function buildKelpCathedralFlora(def: WingDef): WingFlora {
       // motion, at a third of the rate and two fifths of the strength.
       sway.value += dt * (reducedMotion ? 0.3 : 1);
       wind.value = reducedMotion ? 0.4 : 1;
+      // The uplift's sway rides the same becalmed clock (closed-form off
+      // simulated seconds — the kit contract).
+      upliftTime += dt * (reducedMotion ? 0.3 : 1);
+      bladeTurf.update(upliftTime);
+      frondTurf.update(upliftTime);
+      drapes.update(upliftTime);
       veil.update(dt, reducedMotion);
     },
+  };
+}
+
+/**
+ * A drape holdfast on the wedge wall at radius `r`: the wall's angle is
+ * searched (never drawn from a stream) for the point standing `lift`
+ * metres over the wing's own floor, so a bank hangs where the eye reads
+ * "wall" whatever the slope does locally. The normal faces the axis —
+ * strands droop into the nave, never through the wall.
+ */
+function wallAnchor(def: WingDef, r: number, side: number, lift: number): DrapeAnchor {
+  const axisSpot = polarPoint(def, r, 0);
+  const floorY = seabedHeight(axisSpot.x, axisSpot.z);
+  // The angular window: never nearer the axis than the aisle plus a full
+  // strand's reach (a holdfast may hang nothing over the nave's heart),
+  // never nearer the wedge edge than a pad's slip.
+  let lo = Math.max(def.wedge.floorHalf, 3.15 / r);
+  let hi = wedgeHalfAt(def, r) - 0.015;
+  for (let i = 0; i < 14; i++) {
+    const mid = (lo + hi) / 2;
+    const spot = polarPoint(def, r, side * mid * r);
+    if (seabedHeight(spot.x, spot.z) - floorY < lift) {
+      lo = mid;
+    } else {
+      hi = mid;
+    }
+  }
+  const angle = (lo + hi) / 2;
+  const { x, z } = polarPoint(def, r, side * angle * r);
+  const perpX = -Math.sin(def.azimuth);
+  const perpZ = Math.cos(def.azimuth);
+  return {
+    pos: [x, seabedHeight(x, z) + 0.04, z],
+    normal: [-side * perpX, 0.12, -side * perpZ],
   };
 }
 

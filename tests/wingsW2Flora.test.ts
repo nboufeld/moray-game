@@ -101,9 +101,9 @@ function meshesOf(root: Object3D): (Mesh | InstancedMesh | Points)[] {
   return meshes;
 }
 
-function trianglesOf(root: Object3D): number {
+function trianglesOf(meshes: readonly (Mesh | InstancedMesh | Points)[]): number {
   let total = 0;
-  for (const mesh of meshesOf(root)) {
+  for (const mesh of meshes) {
     const geometry = mesh.geometry;
     const tris = (geometry.index ? geometry.index.count : geometry.attributes.position?.count ?? 0) / 3;
     if (mesh instanceof InstancedMesh) {
@@ -116,6 +116,24 @@ function trianglesOf(root: Object3D): number {
     }
   }
   return total;
+}
+
+/**
+ * Connective-2 (MASTER R2): the vent wing's Batch 2 density uplift is
+ * Phase 3 budget on its own ceiling (≤ +10 draws / ≤ 35k tris per Tier A
+ * wing including the Batch 1 veil), measured and asserted in
+ * `tests/wingsConnective2.test.ts`. The wave-8 cap below keeps pinning
+ * the ORIGINAL flora (plus the veil, which fits it) — only the budget
+ * case excludes the uplift subtree; the determinism, confinement and den
+ * corridor checks above still read every vertex of it.
+ */
+function insideConn2Uplift(object: Object3D): boolean {
+  for (let o: Object3D | null = object; o; o = o.parent) {
+    if (o.name === "wing-uplift-conn2") {
+      return true;
+    }
+  }
+  return false;
 }
 
 function fingerprint(flora: WingFlora): unknown {
@@ -225,8 +243,9 @@ describe("the W2 wings' flora", () => {
   it("stays within the wave's per-wing budgets", () => {
     for (const { def, build } of WINGS_UNDER_TEST) {
       const flora = build(def);
-      expect(meshesOf(flora.group).length, `${def.id} draw calls`).toBeLessThanOrEqual(10);
-      expect(trianglesOf(flora.group), `${def.id} triangles`).toBeLessThanOrEqual(30000);
+      const wave8 = meshesOf(flora.group).filter((mesh) => !insideConn2Uplift(mesh));
+      expect(wave8.length, `${def.id} draw calls`).toBeLessThanOrEqual(10);
+      expect(trianglesOf(wave8), `${def.id} triangles`).toBeLessThanOrEqual(30000);
     }
   });
 

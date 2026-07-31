@@ -61,16 +61,17 @@ interface DrawStats {
 }
 
 /**
- * Connective-1 (MASTER R2): a gateway wing's gate veil is Phase 3 uplift
- * on its own budget (≤ +10 draws / ≤ 35k tris per Tier A wing), measured
- * and asserted in `tests/wingsConnective1.test.ts`. The wave-8 cap below
- * keeps pinning the ORIGINAL flora, so the veil's subtree is excluded
- * here — and only here; the determinism and confinement checks still
- * read it.
+ * Connective-1/-2 (MASTER R2): a gateway wing's gate veil and its Batch 2
+ * density uplift are Phase 3 work on their own budget (≤ +10 draws /
+ * ≤ 35k tris per Tier A wing), measured and asserted in
+ * `tests/wingsConnective1.test.ts` / `tests/wingsConnective2.test.ts`.
+ * The wave-8 cap below keeps pinning the ORIGINAL flora, so those two
+ * named subtrees are excluded here — and only here; the determinism,
+ * confinement and aisle checks still read them.
  */
-function insideGateVeil(object: Object3D): boolean {
+function insidePhase3Uplift(object: Object3D): boolean {
   for (let o: Object3D | null = object; o; o = o.parent) {
-    if (o.name === "wing-gate-veil") {
+    if (o.name === "wing-gate-veil" || o.name === "wing-uplift-conn2") {
       return true;
     }
   }
@@ -81,7 +82,7 @@ function drawStats(flora: WingFlora): DrawStats {
   let draws = 0;
   let tris = 0;
   flora.group.traverse((object) => {
-    if (insideGateVeil(object)) {
+    if (insidePhase3Uplift(object)) {
       return;
     }
     if (object instanceof Points) {
