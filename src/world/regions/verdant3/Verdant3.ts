@@ -150,7 +150,10 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // At the Hollow Mesa's mouth, looking in through the curtain's part:
   // the glow garden, the oculus beam, the shaft rising. Round 2: the r1
   // pose stood inside the chamber staring at eight metres of wall.
-  { name: "hollow-mesa", u: 1410.5, v: -83, lift: 1.6, atU: HOLLOW.u, atV: HOLLOW.v, pitch: 0.12, settle: 6 },
+  // Round 4: the r3 pose sat INSIDE the mouth dressing (the round-3
+  // flank boulders landed on it) and captured solid stone — backed out
+  // to 9 m on the mouth's own axis, looking through the door.
+  { name: "hollow-mesa", u: 1405.8, v: -77.4, lift: 1.8, atU: 1416, atV: -89, pitch: 0.04, settle: 6 },
   // Along the fallen causeway, the swim-under at its chin.
   { name: "fallen-causeway", u: 1540, v: -56, lift: 4.0, atU: 1566, atV: -28, pitch: 0.0 },
   // The Province's End: the painted horizon that closes the line.

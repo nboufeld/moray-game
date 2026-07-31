@@ -111,9 +111,12 @@ function trunkGeometry(seed: number, height: number, footR: number): BufferGeome
       const streak = smoothstep01(
         (fbm(nx * 1.8, nz * 1.8 + t, { seed: seed ^ 0x51, period: 5, octaves: 2 }) - 0.42) / 0.26,
       );
+      // Round 4: grain frequency doubled and deepened — at touch range
+      // (sweep 05, grazing a gate trunk) the r3 bark read smooth.
       const grain =
-        (fbm(nx * 3.2 + 11, nz * 3.2 + t * 9, { seed: seed ^ 0x77, period: 8, octaves: 2 }) - 0.5) *
-        0.2;
+        (fbm(nx * 6.4 + 11, nz * 6.4 + t * 16, { seed: seed ^ 0x77, period: 8, octaves: 2 }) -
+          0.5) *
+        0.3;
       let cr = 0.54 + streak * 0.14 + grain;
       let cg = 0.46 + streak * 0.16 + grain;
       let cb = 0.34 + streak * 0.08 + grain * 0.8;
@@ -200,8 +203,10 @@ function padGeometry(random: Random): BufferGeometry {
 
   const colors = new Float32Array(position.count * 3);
   for (let i = 0; i < position.count; i++) {
+    const px = position.getX(i);
+    const pz = position.getZ(i);
     const y = position.getY(i);
-    const radial = Math.hypot(position.getX(i), position.getZ(i));
+    const radial = Math.hypot(px, pz);
     const rim = smoothstep01((radial - 0.7) / 0.5);
     let cr: number;
     let cg: number;
@@ -212,10 +217,18 @@ function padGeometry(random: Random): BufferGeometry {
       cg = 0.88;
       cb = 0.5;
     } else {
-      // The underside: deep violet-green, a colour holding shadow.
-      cr = 0.36;
-      cg = 0.34;
-      cb = 0.48;
+      // The underside. Round 4: lifted and mottled — the r3 sweep's
+      // under-canopy cones read the flat violet as one teal plate once
+      // the fog had it (frames 03/08); a roof overhead is drawn by its
+      // leaf-clump darks, so the dark becomes detail, not base.
+      const clump = fbm(px * 2.3 + 5, pz * 2.3 + 11, {
+        seed: noiseSeed ^ 0x9d,
+        period: 6,
+        octaves: 2,
+      });
+      cr = 0.46 + (clump - 0.5) * 0.22;
+      cg = 0.52 + (clump - 0.5) * 0.26;
+      cb = 0.58 + (clump - 0.5) * 0.14;
     }
     // The rim: the sky-through-leaves edge, lifted toward milk.
     cr += (0.76 - cr) * rim * 0.7;

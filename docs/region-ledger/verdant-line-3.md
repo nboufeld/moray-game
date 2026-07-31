@@ -338,8 +338,43 @@ the threshold (u ≈ 1250 → the gate), and lay a green-wash paint pass on
 the pass sheet so the approach reads as the Verdant Line's floor, not
 the wastes'.
 
-(Sweep verdicts and the close-pose recapture follow below once the r3
-sweep lands — it runs single-frame under sibling load.)
+**Sweep (`v3-r3`, first clean single-code sweep): 7 pass / 2
+marginal-pass / 3 marginal.**
+
+- 01 PASS — rampart bank, scree pads, glow bud, boulder, beams, canopy
+  line: three layers in every band.
+- 02 PASS (note) — straight-down cone: shade swarm near, blade dashes
+  mid, road far; sheet trim edges faintly visible from altitude.
+- 03 MARGINAL — under a crown pad: the pad's underside reads as ONE
+  flat teal plate at fog range (the violet under-paint dies under the
+  mood), and the band between pad and floor is open water.
+- 04 MARGINAL — meadow near the rim: near floor mustard with sparse
+  tufts, and the ground-litter split-stone rings read as TIRE-TRACK
+  ARCS on the sward (same artifact class as r2's wellspring rings).
+- 05 PASS (note) — grazing a gate trunk: percher on the bole, mesa
+  flank, canopy line — but the bark paint reads smooth at touch range.
+- 06 PASS — pad overhead, tuft bands, boulders, trunk + beam.
+- 07 PASS — **the rampart hem works** (F-R3 answered): violet-tipped
+  blades dress the slope's near band, mesa skyline behind.
+- 08 MARGINAL — extreme-close cone: half the frame is a pad seen
+  edge-on as a flat plane over deep blue; trunk + perchers + dweller
+  carry the rest. The same underside-paint fix should soften it.
+- 09 MARGINAL-PASS — pad + trunk + mesas okay; near floor khaki with
+  scattered tufts, thin at the bottom edge.
+- 10 PASS — rampart sward with violet runnel shadows, wellspring pools
+  + glow, blades.
+- 11 PASS — the region shot: trunk, pads, travellers, the Elderleaf
+  crossing, floor blades, beam.
+- 12 MARGINAL-PASS — midwater over the meadow: swarm + pad + cards;
+  floor khaki but alive.
+
+**Round-4 orders** (with the threshold road above): (1) crown-pad
+UNDERSIDES — lift the under-paint value and warm it so a pad overhead
+reads as a painted canopy, not a teal plate (frames 03/08); (2) the
+meadow's drift-low bands still read mustard at sweep height — one more
+green step on the base sward + raise the drift floor; (3) kill the
+split-stone ring arcs (scatter them as clusters, not rings); (4) bark
+micro-band paint for touch range (frame 05).
 
 ## Flags
 

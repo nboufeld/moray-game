@@ -125,18 +125,25 @@ export function buildVerdant3Distance(): { meshes: (Mesh | InstancedMesh)[] } {
     // a NEAR sector cluster added on the spoke's own bearing (the
     // verdant-2 Far Balcony device: the ring bands alone all hide below
     // the sightline from inside the bowl).
-    { rFrom: 240, rTo: 258, count: 18, fade: 0.26, hMin: 40, hMax: 56 },
-    { rFrom: 262, rTo: 286, count: 14, fade: 0.45, hMin: 44, hMax: 62 },
     // Round 3: the near cluster taller and MILKIER — at fade 0.3 the r2
     // heads read as black teeth floating on the crest line; distance
     // goes milky-bright, never dark (the value key, held).
+    // Round 4: EVERY band moved behind ring 1 (radius 246) and grown so
+    // the crowns break its crest — the r3 provinces-end pose caught the
+    // in-bowl sector cluster's waists crossing the fog gap between the
+    // rampart and the rings as hanging teeth, and the two ring bands'
+    // tops (−8…+14 against ring crests of 13–27) never showed at all.
+    // Feet at FOOT stay under every ring's own foot: no bottom edge can
+    // ever hang.
+    { rFrom: 252, rTo: 268, count: 18, fade: 0.4, hMin: 68, hMax: 86 },
+    { rFrom: 272, rTo: 292, count: 14, fade: 0.55, hMin: 78, hMax: 100 },
     {
-      rFrom: 168,
-      rTo: 196,
+      rFrom: 250,
+      rTo: 272,
       count: 8,
       fade: 0.48,
-      hMin: 54,
-      hMax: 68,
+      hMin: 72,
+      hMax: 92,
       sector: { at: VERDANT3_SLOT.azimuth, half: 0.55 },
     },
   ];

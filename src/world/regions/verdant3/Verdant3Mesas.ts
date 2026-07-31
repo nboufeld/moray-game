@@ -162,14 +162,26 @@ function mesaGeometry(spec: MesaSpec, mouthAngle: number, log = false): BufferGe
       let cr = 0.58 - strata * 0.12 + grain;
       let cg = 0.62 - strata * 0.09 + grain;
       let cb = 0.56 - strata * 0.05 + grain * 0.8;
-      cr += (0.46 - cr) * runnel * 0.8;
-      cg += (0.44 - cg) * runnel * 0.8;
-      cb += (0.56 - cb) * runnel * 0.8;
+      // Round 4: the runnel violet damped on the log — sideways, the
+      // violet runs read as pink blotches on the pale bole (the r3
+      // fallen-causeway fail).
+      cr += (0.46 - cr) * runnel * (log ? 0.3 : 0.8);
+      cg += (0.44 - cg) * runnel * (log ? 0.3 : 0.8);
+      cb += (0.56 - cb) * runnel * (log ? 0.3 : 0.8);
       // Moss streaks climb the shaded runnels; the foot is thick with it.
       // Round 3: the moss key brightened (log included) — the r2 fallen
       // pillar read as a pale tarp; a mossy bole is DRAWN by its moss.
-      const bands = log ? Math.max(0, Math.sin(t * 34 + noiseSeed % 9)) ** 2 * 0.55 : 0;
-      const moss = Math.min(1, streak * 0.95 + (1 - smoothstep01(t / 0.16)) * 0.7 + bands);
+      // Round 4: the log's moss coverage doubled down — band amplitude
+      // 0.55 → 0.9, a 0.18 floor, and the streaks at 1.2; twice now the
+      // bole read pale, so the moss stops being a suggestion.
+      const bands = log ? Math.max(0, Math.sin(t * 34 + noiseSeed % 9)) ** 2 * 0.9 : 0;
+      const moss = Math.min(
+        1,
+        streak * (log ? 1.2 : 0.95) +
+          (1 - smoothstep01(t / 0.16)) * 0.7 +
+          bands +
+          (log ? 0.18 : 0),
+      );
       cr += (0.4 - cr) * moss;
       cg += (0.74 - cg) * moss;
       cb += (0.44 - cb) * moss;

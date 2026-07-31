@@ -56,10 +56,12 @@ export interface Verdant3CoverBuild {
 
 /** The drift field: gathers broad-field scatter into ~14 m drifts.
  *  Round 2: floor 0.35 → 0.45 — the r1 close pose landed in a drift
- *  gap and read the floor as bare; gaps thin the cover, never zero it. */
+ *  gap and read the floor as bare; gaps thin the cover, never zero it.
+ *  Round 4: 0.45 → 0.55 — the r3 close-shade-floor pose STILL sat in a
+ *  near-bare gap; at this region's counts the gaps must stay planted. */
 function drift(x: number, z: number): number {
   const n = fbm(x * 0.048, z * 0.048, { seed: SEED ^ 0x30f0, period: 7, octaves: 2 });
-  return 0.45 + 0.55 * smoothstep01((n - 0.42) / 0.24);
+  return 0.55 + 0.45 * smoothstep01((n - 0.42) / 0.24);
 }
 
 /** The whole-domain base gate: ownership × stillness. */
@@ -90,17 +92,24 @@ function meadowGate(x: number, z: number): number {
   return g * past * pools * drift(x, z);
 }
 
-/** The pass road gate: the threshold and the Boughfall's channel. */
+/** The pass road gate: the threshold and the Boughfall's channel.
+ *  Round 4: presence, not ownership — `baseGate` scales with the
+ *  region weight, and the threshold's authored whisper (0.14 over the
+ *  terraces' rim) starved the road to nothing right where the front
+ *  door needs dressing (the r3 close-road and pass-threshold fails).
+ *  The road now dresses at full strength wherever the tongue exists,
+ *  and the band widened 12 → 16 m. */
 function roadGate(x: number, z: number): number {
-  const g = baseGate(x, z);
-  if (g === 0) {
+  const w = verdant3Weight(x, z);
+  if (w <= 0) {
     return 0;
   }
   const { u, v } = spokeOf(x, z);
   if (u > 1320) {
     return 0;
   }
-  const across = 1 - smoothstep01((Math.abs(v - channelCenter(u)) - 12) / 8);
+  const g = Math.min(1, w * 3.4) * stillnessGate(u, v);
+  const across = 1 - smoothstep01((Math.abs(v - channelCenter(u)) - 16) / 10);
   return g * across * (0.55 + 0.45 * drift(x, z));
 }
 
@@ -133,6 +142,10 @@ export function buildVerdant3Cover(): Verdant3CoverBuild {
   // this water — the verdant-1 re-pass lesson, applied harder).
   // Round 3: another density and value notch (r2's close pose still
   // read dark rosettes on khaki — value first, then count).
+  // Round 4: 7,400 → 8,200 AND the drift floor raised 0.45 → 0.55 —
+  // the r3 close pose framed FOUR rosettes; the floor raise (+22% in
+  // the gaps, where the close poses land) does most of the work, the
+  // count the rest, and the triangle cap holds the pair here.
   addCarpet(
     buildCarpetField({
       seed: SEED ^ 0x3001,
@@ -140,7 +153,7 @@ export function buildVerdant3Cover(): Verdant3CoverBuild {
       area: discArea,
       gate: meadowGate,
       ground: seabedHeight,
-      count: 7400,
+      count: 8200,
       profile: "frond",
       size: [0.36, 0.65],
       looseShare: 0.4,
@@ -156,7 +169,7 @@ export function buildVerdant3Cover(): Verdant3CoverBuild {
       area: discArea,
       gate: meadowGate,
       ground: seabedHeight,
-      count: 2600,
+      count: 3200,
       profile: "blade",
       size: [0.45, 0.85],
       looseShare: 0.42,
@@ -174,7 +187,7 @@ export function buildVerdant3Cover(): Verdant3CoverBuild {
       area: discArea,
       gate: meadowGate,
       ground: seabedHeight,
-      count: 420,
+      count: 520,
       profile: "blade",
       size: [1.05, 1.7],
       looseShare: 0.3,
@@ -194,9 +207,9 @@ export function buildVerdant3Cover(): Verdant3CoverBuild {
       area: roadArea,
       gate: roadGate,
       ground: seabedHeight,
-      count: 1500,
+      count: 2200,
       profile: "blade",
-      size: [0.3, 0.62],
+      size: [0.32, 0.66],
       looseShare: 0.45,
       swayAmp: 0.06,
     }),
@@ -209,7 +222,7 @@ export function buildVerdant3Cover(): Verdant3CoverBuild {
       area: roadArea,
       gate: roadGate,
       ground: seabedHeight,
-      count: 450,
+      count: 700,
       shapeSet: "pebble",
       twoTone: true,
     }),
@@ -223,7 +236,7 @@ export function buildVerdant3Cover(): Verdant3CoverBuild {
       area: { polyline: descentLine(), width: 26 },
       gate: roadGate,
       ground: seabedHeight,
-      count: 900,
+      count: 1000,
       profile: "frond",
       size: [0.32, 0.62],
       looseShare: 0.4,
@@ -284,9 +297,9 @@ export function buildVerdant3Cover(): Verdant3CoverBuild {
           return g * ring;
         },
         ground: seabedHeight,
-        count: 260,
+        count: 360,
         profile: "blade",
-        size: [0.34, 0.56],
+        size: [0.36, 0.62],
         looseShare: 0.4,
         swayAmp: 0.06,
       }),
@@ -479,7 +492,7 @@ export function buildVerdant3Cover(): Verdant3CoverBuild {
       area: roadArea,
       gate: roadGate,
       ground: seabedHeight,
-      count: 12,
+      count: 18,
       lobes: 5,
       fronds: 6,
       accents: 3,

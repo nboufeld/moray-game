@@ -130,7 +130,10 @@ function bakeDeepPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
     // Round 3: red 0.44 → 0.40 and the lichen patches widened — the r2
     // close poses still read the open floor as khaki, and instances
     // cannot out-paint the paint (the pilot's fill-r3 lesson).
-    let r = 0.4 - sward * 0.16;
+    // Round 4: 0.40 → 0.37 — the r3 close-shade-floor pose STILL read
+    // khaki-olive at 2 m; the sand wash under this water needs the red
+    // fully out of the open sward.
+    let r = 0.37 - sward * 0.16;
     let g = 0.96 - sward * 0.05;
     let b = 0.7 - sward * 0.04;
     if (lichen > 0) {
@@ -141,14 +144,16 @@ function bakeDeepPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
     }
 
     // The threshold: milky-bright, carrying the terraces' far-rim crest
-    // across the overlap — the same 0.98/1.02/0.92 multipliers the
-    // province has handed over twice already, lerping to our celadon
-    // over 40 m (the doctrine's 20+ m transition rule).
-    const milk = 1 - smoothstep01((u - 1206) / 40);
+    // across the overlap, lerping to our celadon (the doctrine's 20+ m
+    // transition rule). Round 4: the milk GREENED (0.98/1.02/0.92 →
+    // 0.84/1.04/0.94) and pulled back to fade out by u ≈ 1222 — the r3
+    // close-road pose read the whole front door as raw sand; the
+    // handover carries the terraces' LIGHT, not their bare ground.
+    const milk = 1 - smoothstep01((u - 1188) / 34);
     if (milk > 0) {
-      r += (0.98 - r) * milk;
-      g += (1.02 - g) * milk;
-      b += (0.92 - b) * milk;
+      r += (0.84 - r) * milk;
+      g += (1.04 - g) * milk;
+      b += (0.94 - b) * milk;
       value += milk * 0.06;
     }
 
@@ -194,7 +199,11 @@ function bakeDeepPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
     const rc = Math.hypot(x - CENTER_X, z - CENTER_Z);
     const rim = smoothstep01((rc - 176) / 34) * (1 - passGate(u, v));
     if (rim > 0) {
-      const ledge = Math.max(0, Math.sin(y * 0.55 + 0.5)) ** 2;
+      // Round 4: the ledge bands gated onto the climbing wall — on the
+      // near-flat rim skirt the height-keyed sin bands drew as
+      // tire-track contour arcs across the sward (sweep 04).
+      const ledge =
+        Math.max(0, Math.sin(y * 0.55 + 0.5)) ** 2 * smoothstep01((rim - 0.45) / 0.3);
       const crest = smoothstep01((y + 10) / 12);
       r += (0.6 - ledge * 0.1 + crest * 0.34 - r) * rim;
       g += (0.86 - ledge * 0.14 + crest * 0.16 - g) * rim;
@@ -228,15 +237,18 @@ function bakeDeepPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
     // clear pockets, faint concentric stillness rings. Round 3: the
     // rings' frequency halved and amplitude softened — at r2 close
     // range they read as tire tracks across the bowl.
+    // Round 4: the pale reach widened to the bowl's true lip and cooled
+    // — the r3 close-rim pose showed a khaki bowl slope around a small
+    // pale centre; the cool clear pocket must own its whole basin.
     for (const spring of WELLSPRINGS) {
       const d = Math.hypot(u - spring.u, v - spring.v);
       if (d < spring.radius * 2) {
-        const pool = 1 - smoothstep01((d - spring.radius * 0.7) / (spring.radius * 0.7));
+        const pool = 1 - smoothstep01((d - spring.radius * 0.8) / spring.radius);
         const rings = 0.5 + 0.5 * Math.sin(d * 0.55);
-        r += (0.92 - r) * pool;
-        g += (1.04 - g) * pool;
-        b += (1.0 - b) * pool;
-        value += pool * (0.1 + rings * 0.015);
+        r += (0.88 - r) * pool;
+        g += (1.06 - g) * pool;
+        b += (1.04 - b) * pool;
+        value += pool * (0.12 + rings * 0.015);
       }
     }
 
