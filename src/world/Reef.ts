@@ -45,6 +45,7 @@ import { regionBySlot } from "./regions/RegionRegistry";
 import { CoralField } from "./CoralField";
 import { CorridorDressing } from "./CorridorDressing";
 import { DistantReef } from "./DistantReef";
+import { TravellerShoals } from "./TravellerShoals";
 import { Kelp } from "./Kelp";
 import { createRockMaterial, weatherRock } from "./RockMaterial";
 import { archGeometry, boulderGeometry, slabGeometry, stackGeometry } from "./RockShapes";
@@ -480,6 +481,8 @@ export class Reef {
   private corridorDressing?: CorridorDressing;
   /** Wave 8: each wing's flora, in registry order; `update` fans out to them. */
   private readonly wingFlora: WingFlora[] = [];
+  /** Connective-3: the traveller-shoal network's wing legs (bowl budget). */
+  private travellerShoals?: TravellerShoals;
 
   constructor(seed: number = SEEDS.reef) {
     this.random = new Random(seed);
@@ -511,6 +514,7 @@ export class Reef {
     this.buildAbyssFlora();
     this.buildWingColliders();
     this.buildWingFlora();
+    this.buildTravellerShoals();
     // Last: the sand bakes a contact shadow under everything standing on it,
     // so it has to know where everything ended up. Nothing above consumes the
     // seabed mesh, and none of them share a random stream, so the reordering
@@ -1407,6 +1411,24 @@ export class Reef {
     }
   }
 
+  /**
+   * Connective-3 (MASTER Batch 3): the traveller-shoal wing legs — one
+   * seeded commuter route per province, bowl rim ↔ gateway wing ↔
+   * doorway; see {@link TravellerShoals}. Bowl content on the bowl
+   * budget by design: the runner's fish mesh opts out of frustum
+   * culling, which R2 forbids inside a wing. Scenery by construction —
+   * no colliders, no contacts, no obstruction meshes.
+   */
+  private buildTravellerShoals(): void {
+    this.travellerShoals = new TravellerShoals();
+    this.group.add(this.travellerShoals.group);
+  }
+
+  /** QA door: pins the traveller clock for the capture harness. */
+  pinTravellerPhase(routeId: string, phase: number): void {
+    this.travellerShoals?.pinPhase(routeId, phase);
+  }
+
   /** Advances the ambient life in the reef: the meadow's sway, the kelp's and the seaweed's. */
   update(dt: number, reducedMotion: boolean): void {
     this.grass?.update(dt, reducedMotion);
@@ -1416,6 +1438,7 @@ export class Reef {
     for (const flora of this.wingFlora) {
       flora.update?.(dt, reducedMotion);
     }
+    this.travellerShoals?.update(dt, reducedMotion);
   }
 }
 
