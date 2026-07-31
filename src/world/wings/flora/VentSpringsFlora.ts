@@ -9,6 +9,9 @@ import type { WingDef, WingFlora } from "../WingTypes";
 import { VentSpringsBubbles, type VentSource } from "./VentSpringsBubbles";
 import { applyVeinGlow, chimneyGeometry } from "./VentSpringsChimneys";
 import { mountGateVeil } from "./GateVeilMount";
+import { buildGlowColony } from "../../regions/kit/GlowColony";
+import { buildGroundLitter } from "../../regions/kit/GroundLitter";
+import { buildWallDrapeBank, type DrapeAnchor } from "../../regions/kit/WallDrape";
 
 /**
  * Wing 4 — the Vent Springs. Otherworldly warmth: mineral chimneys on a
@@ -48,6 +51,25 @@ const FISSURES = [
 
 const STONE_COUNT = 12;
 const BUBBLE_COUNT = 120;
+
+/** Connective-2's named uplift subtree — the same literal all three
+ *  uplifted wings use; see `KelpCathedralFlora.CONN2_GROUP_NAME`. */
+const CONN2_GROUP_NAME = "wing-uplift-conn2";
+
+/** The scoria drift: charcoal cinder with a warm under-shade, the floor's
+ *  T1 between the chimney banks. One tone family, one draw. */
+const SCORIA_PALETTE = { base: 0x554038, shade: 0x2e2328 } as const;
+
+/** The ember polyp fringe: the Smoulder register — warm, rising, and far
+ *  under the bloom (the kit caps emissive at 0.36, halos at 0.28). */
+const POLYP_TINT = 0xff9a4a;
+
+/** The wall drapes: heat-cured olive-umber straps, rust pads. */
+const VENT_DRAPE = { base: 0x6a5140, tip: 0x9a7448, shade: 0x38282a, accent: 0x7a4a30 } as const;
+
+/** The den corridor's fence for the uplift, a shade wider than the law's
+ *  0.06 rad so a bud cluster's 0.45 m scatter can never cross it. */
+const UPLIFT_FENCE_RAD = 0.075;
 
 export function buildVentSpringsFlora(def: WingDef): WingFlora {
   const group = new Group();
@@ -219,6 +241,101 @@ export function buildVentSpringsFlora(def: WingDef): WingFlora {
   const bubbles = new VentSpringsBubbles(vents, BUBBLE_COUNT, SEEDS.wingVentSprings ^ 0x5b22);
   group.add(bubbles.mesh);
 
+  // ── Connective-2: the Tier A uplift (MASTER Batch 2). ──
+  // The charcoal floor's T1 scoria drift, the ember polyp fringe along the
+  // chimney banks (the connective plan's own row — warm and RISING, the
+  // Smoulder register), and a drape bank on the strata walls. Every piece
+  // rides a fresh `^` substream fed to a kit-private Random, appended
+  // after every existing draw — nothing above re-rolls, and the whole den
+  // corridor law (r > 34.4, ≥ 0.06 rad off the axis through r 30–46)
+  // keeps reading every vertex added here.
+  const uplift = new Group();
+  uplift.name = CONN2_GROUP_NAME;
+
+  const point = (r: number, lateral: number): { x: number; z: number } => ({
+    x: axisX * r + perpX * lateral,
+    z: axisZ * r + perpZ * lateral,
+  });
+  const lateralAt = (x: number, z: number): number => x * perpX + z * perpZ;
+
+  const scoriaGate = (x: number, z: number): number => {
+    const r = Math.hypot(x, z);
+    if (r < 34.8 || r > 46.2) {
+      return 0;
+    }
+    const lateral = Math.abs(lateralAt(x, z));
+    if (lateral < UPLIFT_FENCE_RAD * r + 0.2) {
+      return 0;
+    }
+    if (lateral > (wedgeHalfAt(def, r) - 0.012) * r) {
+      return 0;
+    }
+    return 1;
+  };
+  const scoria = buildGroundLitter({
+    seed: (SEEDS.wingVentSprings ^ 0x2c1a) >>> 0,
+    palette: SCORIA_PALETTE,
+    area: {
+      polyline: [
+        [point(35, 3).x, point(35, 3).z],
+        [point(46, 3.4).x, point(46, 3.4).z],
+        [point(46, -3.4).x, point(46, -3.4).z],
+        [point(35, -3).x, point(35, -3).z],
+      ],
+      width: 3.4,
+    },
+    gate: scoriaGate,
+    ground: seabedHeight,
+    count: 640,
+    shapeSet: "gravel",
+    grade: 0.55,
+  });
+  uplift.add(scoria.group);
+
+  // The fringe's anchors carry their own fences: corridor plus the bud
+  // scatter's 0.45 m, wall less a metre — so no bud can leave either law.
+  const fringeRandom = new Random(SEEDS.wingVentSprings ^ 0x2c2b);
+  const fringeAnchors: (readonly [number, number, number])[] = [];
+  for (let i = 0; i < 12; i++) {
+    const r = fringeRandom.range(36, 46);
+    const side = i % 2 === 0 ? 1 : -1;
+    const low = UPLIFT_FENCE_RAD * r + 0.5;
+    const high = Math.max(low + 0.2, wedgeHalfAt(def, r) * r - 1.0);
+    const lateral = side * fringeRandom.range(low, high);
+    const { x, z } = point(r, lateral);
+    fringeAnchors.push([x, seabedHeight(x, z), z]);
+  }
+  const polyps = buildGlowColony({
+    seed: (SEEDS.wingVentSprings ^ 0x2c2b) >>> 0,
+    tint: POLYP_TINT,
+    anchors: fringeAnchors,
+    budsPerAnchor: 5,
+    glow: 0.33,
+  });
+  uplift.add(polyps.group);
+
+  const drapeRandom = new Random(SEEDS.wingVentSprings ^ 0x2c3c);
+  const drapeAnchors: DrapeAnchor[] = [];
+  // r3: ten holdfasts — a merged bank costs no extra draw, and eight
+  // left the strata walls' lower bands reading flat from the pose range.
+  for (let i = 0; i < 10; i++) {
+    const r = 36 + i * 1.05 + drapeRandom.signed(0.4);
+    const side = i % 2 === 0 ? -1 : 1;
+    const lift = drapeRandom.range(1.3, 2.7);
+    drapeAnchors.push(ventWallAnchor(def, r, side, lift));
+  }
+  const drapes = buildWallDrapeBank({
+    seed: (SEEDS.wingVentSprings ^ 0x2c3c) >>> 0,
+    palette: VENT_DRAPE,
+    anchors: drapeAnchors,
+    strandsPerAnchor: 4,
+    length: 1.1,
+    swayAmp: 0.045,
+  });
+  uplift.add(drapes.group);
+
+  group.add(uplift);
+
   // ── The gate veil (connective-1). ──
   // The end wall dressed with the Smoulder's own inks — charcoal-rust
   // silhouettes and a warm amber column, light from BELOW held warm and
@@ -236,13 +353,51 @@ export function buildVentSpringsFlora(def: WingDef): WingFlora {
   });
   group.add(veil.group);
 
+  let upliftTime = 0;
   return {
     group,
     contacts,
     update(dt: number, reducedMotion: boolean): void {
       bubbles.update(dt, reducedMotion);
+      upliftTime += dt * (reducedMotion ? 0.3 : 1);
+      drapes.update(upliftTime);
       veil.update(dt, reducedMotion);
     },
+  };
+}
+
+/**
+ * A drape holdfast on the vent wing's strata wall at radius `r`, standing
+ * `lift` metres over the wing's own floor — the angle is searched, never
+ * drawn from a stream, and the normal faces the axis so the strands droop
+ * into the gorge.
+ */
+function ventWallAnchor(def: WingDef, r: number, side: number, lift: number): DrapeAnchor {
+  const axisX = Math.cos(def.azimuth);
+  const axisZ = Math.sin(def.azimuth);
+  const perpX = -axisZ;
+  const perpZ = axisX;
+  const floorY = seabedHeight(axisX * r, axisZ * r);
+  // The angular window: the den corridor's 0.06 rad plus a full strand's
+  // horizontal reach on the inside, a pad's slip off the wedge edge on
+  // the outside — so no vertex this bank grows can cross either law.
+  let lo = Math.max(def.wedge.floorHalf, (0.06 * r + 1.25) / r);
+  let hi = wedgeHalfAt(def, r) - 0.015;
+  for (let i = 0; i < 14; i++) {
+    const mid = (lo + hi) / 2;
+    const lateral = side * mid * r;
+    if (seabedHeight(axisX * r + perpX * lateral, axisZ * r + perpZ * lateral) - floorY < lift) {
+      lo = mid;
+    } else {
+      hi = mid;
+    }
+  }
+  const lateral = side * ((lo + hi) / 2) * r;
+  const x = axisX * r + perpX * lateral;
+  const z = axisZ * r + perpZ * lateral;
+  return {
+    pos: [x, seabedHeight(x, z) + 0.04, z],
+    normal: [-side * perpX, 0.12, -side * perpZ],
   };
 }
 
