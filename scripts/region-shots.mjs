@@ -84,7 +84,10 @@ for (const pose of poses) {
       }),
     pose,
   );
-  await page.waitForTimeout(250);
+  // 900 ms, not 250: a pose that introduces still-uncompiled shader
+  // programs can otherwise screenshot mid-compile as a flat-violet frame
+  // (the Smoulder fill's documented race).
+  await page.waitForTimeout(900);
 
   const file = path.join(
     OUT_DIR,

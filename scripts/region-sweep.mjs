@@ -117,7 +117,8 @@ for (const [index, pose] of poses.entries()) {
   await page.evaluate((slot) => window.__reef.forceRegion(slot), slotId);
   await waitForAssets(page);
   await page.evaluate((p) => window.__reef.capture(p), pose);
-  await page.waitForTimeout(250);
+  // 900 ms: outwait first-use shader compilation (the flat-violet race).
+  await page.waitForTimeout(900);
 
   const name = `SWEEP-${slotId}-${String(index + 1).padStart(2, "0")}`;
   const file = path.join(OUT_DIR, `${prefix}_${name}_${tag}.png`);
