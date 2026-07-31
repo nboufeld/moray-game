@@ -396,7 +396,8 @@ export function buildRuinsTerraceFlora(def: WingDef): WingFlora {
     area: upliftArea,
     gate: upliftGate,
     ground: seabedHeight,
-    count: 420,
+    // r2: 420 → 500 — the field read faint at the canonical pose range.
+    count: 500,
     shapeSet: "split",
     size: [0.09, 0.28],
     rake: { from: WOUND_WORLD, strength: 0.9, jitter: 0.2 },

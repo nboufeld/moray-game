@@ -197,10 +197,12 @@ export function buildSandfallDunesFlora(def: WingDef): WingFlora {
   // soft-edged columns, scrolled slowly downward — while the curtains
   // keep their exact drawn placements (same stream, same draw count:
   // a repaint, not a re-roll; the open-blue curtain-ink precedent).
+  // r2: five narrower, better-defined streams (six soft ones washed into
+  // one broad sheet at pose range and the veil saturated back to blocks).
   const fallTexture = buildFallStreakTexture({
     seed: (SEEDS.wingSandfallDunes ^ 0xfa11) >>> 0,
-    columns: 6,
-    softness: 0.65,
+    columns: 5,
+    softness: 0.55,
   });
   group.add(buildStones(def, random, contacts));
   const curtains = buildCurtains(falls, fallTexture);
@@ -353,7 +355,9 @@ export function buildSandfallDunesFlora(def: WingDef): WingFlora {
         streaks.material.opacity = 0.15;
         return;
       }
-      streaks.material.opacity = 0.5;
+      // r2: 0.5 → 0.42 — the streaks ADD over the curtain, and together
+      // they saturated to white (the W5 becalmed test pins > 0.4).
+      streaks.material.opacity = 0.42;
       time += dt;
       streaks.update(time);
       // The repainted curtains fall: the streak pattern rides slowly
@@ -470,8 +474,11 @@ function buildCurtains(falls: readonly Sandfall[], texture: DataTexture): Mesh {
       // no edge of the ribbon ever reads as a cut.
       const bell = Math.pow(Math.max(0, Math.cos((u - 0.5) * Math.PI)), 1.3);
       const envelope = smoothstep01((v - 0.02) / 0.16) * (1 - smoothstep01((v - 0.88) / 0.12));
-      const alpha = Math.min(0.55, bell * envelope * 0.62);
-      const lift = 0.82 + 0.3 * v;
+      // r2: peak alpha 0.62 → 0.5 (capped 0.45) and the lift eased — at
+      // the old register the near-white veil saturated over the bright
+      // backdrop and the texture's clumps read as bright blocks again.
+      const alpha = Math.min(0.45, bell * envelope * 0.5);
+      const lift = 0.78 + 0.26 * v;
       colors[i * 4] = CURTAIN_CREAM.r * lift;
       colors[i * 4 + 1] = CURTAIN_CREAM.g * lift;
       colors[i * 4 + 2] = CURTAIN_CREAM.b * lift;
@@ -552,7 +559,9 @@ function buildStreaks(falls: readonly Sandfall[]): {
         // Pre-spread down the fall, so the first frame already hangs.
         p0: random.next(),
         speed: random.range(0.22, 0.4),
-        w: random.range(0.09, 0.2),
+        // r2: narrower grains — at 0.2 m the crossed quads clustered into
+        // the bright chunks the repaint exists to kill.
+        w: random.range(0.07, 0.16),
         h: random.range(0.45, 1.0),
         swayPhase: random.range(0, Math.PI * 2),
         fade: random.range(0.75, 1),

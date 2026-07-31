@@ -1,0 +1,234 @@
+/**
+ * Connective-3 capture harness: the two Batch 3 wings (interior pose from
+ * the wave-8 canon + a doorway pose), the five traveller routes (two
+ * authored poses each, framing most of a loop so the seeded timetable
+ * cannot hide the shoal), and the verdant pass verification pair (both
+ * regions forced, per MASTER R4 / connective §4.4).
+ *
+ *   node scripts/conn3-shots.mjs <change-tag> [wings|routes|pass|all]
+ *
+ * Requires a dev server (SHOT_URL, default http://localhost:5205 — this
+ * lane's port). SHOT_PER_LAUNCH=1 relaunches Chromium per pose (the
+ * Calamity fill's finding for loaded boxes).
+ */
+import { chromium } from "@playwright/test";
+import { mkdir } from "node:fs/promises";
+import path from "node:path";
+import { blockAssets, noAssets, waitForAssets } from "./wait-for-assets.mjs";
+
+const BASE_URL = process.env.SHOT_URL ?? "http://localhost:5205";
+const OUT_DIR = path.resolve("visual-qa");
+const SEED = "seed1";
+const QUALITY = "hi";
+const VIEWPORT = { width: 1600, height: 900 };
+// The box runs several sibling worktrees' capture rigs (load avg ~25);
+// page boot has been measured past 300 s — the conn1 ledger's hazard.
+const NAV_TIMEOUT_MS = 480_000;
+const perLaunch = process.env.SHOT_PER_LAUNCH === "1";
+
+const tag = process.argv[2];
+const set = process.argv[3] ?? "all";
+if (!tag) {
+  console.error("usage: node scripts/conn3-shots.mjs <change-tag> [wings|routes|pass|all]");
+  process.exit(1);
+}
+
+/** Look along (dx, dz): DiveController forward is (-sin yaw, 0, -cos yaw). */
+function yawToward(dx, dz) {
+  return Math.atan2(-dx, -dz);
+}
+
+/** The two wings' azimuths (FROZEN in the defs). */
+const WINGS = {
+  "sandfall-dunes": 6.39,
+  "ruins-terrace": 4.59,
+};
+
+function polar(azimuth, r, lateral = 0) {
+  const x = Math.cos(azimuth) * r - Math.sin(azimuth) * lateral;
+  const z = Math.sin(azimuth) * r + Math.cos(azimuth) * lateral;
+  return [x, z];
+}
+
+function wingPoses() {
+  const poses = [];
+  for (const [id, azimuth] of Object.entries(WINGS)) {
+    // The wave-8 canonical interior pose (scripts/wave8-wing-shots.mjs).
+    const y = id === "sandfall-dunes" ? -1.7 : -2.2;
+    const [ix, iz] = polar(azimuth, 36.5);
+    poses.push({
+      name: `WING-${id}`,
+      position: [ix, y, iz],
+      yaw: yawToward(Math.cos(azimuth), Math.sin(azimuth)),
+      pitch: -0.08,
+      settle: 4,
+    });
+    // The doorway pose: standing over the uplift bed, reading the door.
+    // r2: the ruins camera slides to the west flank — at (42.2, +1.4) it
+    // stood against the half-buried round doorway's torus.
+    const doorSpot = id === "ruins-terrace" ? [40.5, -2.6] : [42.2, 1.4];
+    const [dx, dz] = polar(azimuth, doorSpot[0], doorSpot[1]);
+    poses.push({
+      name: `WING-${id}-door`,
+      position: [dx, id === "sandfall-dunes" ? -2.6 : -3.0, dz],
+      yaw: yawToward(Math.cos(azimuth), Math.sin(azimuth)) + (id === "ruins-terrace" ? 0.06 : 0.03),
+      pitch: -0.1,
+      settle: 4,
+    });
+  }
+  return poses;
+}
+
+const ROUTES = {
+  verdant: 1.35,
+  golden: 6.39,
+  pale: 3.87,
+  smoking: 2.79,
+  calamity: 4.59,
+};
+
+function routePoses() {
+  const poses = [];
+  for (const [id, azimuth] of Object.entries(ROUTES)) {
+    // r2: beside the rim loop rather than 13 m behind it — at r 18.5 the
+    // fish were sub-pixel (the verdant r1 miss). The camera stands just
+    // off the outbound lane, watching the gate the commute threads.
+    const [bx, bz] = polar(azimuth, 24.5, -4.6);
+    const [gbx, gbz] = polar(azimuth, 31.2);
+    poses.push({
+      name: `ROUTE-${id}-bowl`,
+      // Raised to hold the whole rim loop AND the sill line in frame —
+      // the golden r5 lesson: a file that cannot leave the frame needs
+      // no phase luck.
+      position: [bx, 5.0, bz],
+      yaw: yawToward(gbx - bx, gbz - bz),
+      pitch: -0.14,
+      settle: 6,
+    });
+    // From beside the doorway, looking back down the corridor toward the
+    // gate and the bowl water beyond — most of the loop in one look.
+    // r2: the west flank (the r1 east stands crowded the kelp columns
+    // and the pearl arch); ruins keeps a step more clearance from its
+    // standing colonnade.
+    const lateral = id === "calamity" ? -3.2 : -3.6;
+    const [wx, wz] = polar(azimuth, 44.5, lateral);
+    const [gx, gz] = polar(azimuth, 30.5);
+    poses.push({
+      name: `ROUTE-${id}-wing`,
+      position: [wx, id === "calamity" ? -3.0 : -2.2, wz],
+      yaw: yawToward(gx - wx, gz - wz),
+      pitch: -0.06,
+      settle: 6,
+    });
+  }
+  return poses;
+}
+
+function stamp() {
+  const now = new Date();
+  const p = (n) => String(n).padStart(2, "0");
+  return `${now.getFullYear()}${p(now.getMonth() + 1)}${p(now.getDate())}-${p(now.getHours())}${p(now.getMinutes())}`;
+}
+
+async function openPage() {
+  const browser = await chromium.launch();
+  const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1 });
+  const page = await context.newPage();
+  page.setDefaultNavigationTimeout(NAV_TIMEOUT_MS);
+  page.setDefaultTimeout(NAV_TIMEOUT_MS);
+  page.on("pageerror", (error) => console.error(`  page error: ${error.message}`));
+  if (noAssets) {
+    await blockAssets(page);
+  }
+  return { browser, page };
+}
+
+await mkdir(OUT_DIR, { recursive: true });
+const prefix = stamp();
+
+let { browser, page } = await openPage();
+
+async function freshPage() {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      if (perLaunch || attempt > 0) {
+        await browser.close();
+        ({ browser, page } = await openPage());
+      }
+      await page.goto(`${BASE_URL}/?reset=1`, { waitUntil: "load" });
+      await page.waitForFunction(() => "__reef" in window);
+      await waitForAssets(page);
+      return;
+    } catch (error) {
+      if (attempt >= 2) {
+        throw error;
+      }
+      console.warn(`  boot attempt ${attempt + 1} failed (${error.name}); relaunching`);
+    }
+  }
+}
+
+async function shoot(name, pose) {
+  await page.evaluate((p) => window.__reef.capture(p), pose);
+  await page.waitForTimeout(900);
+  const file = path.join(OUT_DIR, `${prefix}_${SEED}_${QUALITY}_${name}_${tag}.png`);
+  await page.screenshot({ path: file });
+  console.info(`captured ${path.relative(process.cwd(), file)}`);
+}
+
+if (set === "wings" || set === "all") {
+  for (const pose of wingPoses()) {
+    await freshPage();
+    await shoot(pose.name, pose);
+  }
+}
+
+if (set === "routes" || set === "all") {
+  for (const pose of routePoses()) {
+    await freshPage();
+    await shoot(pose.name, pose);
+  }
+}
+
+if (set === "pass" || set === "all") {
+  // The Emerald Stair pass, verified with BOTH verdant regions attached
+  // (the ring-over-pass gate must hold from either side — MASTER R4).
+  const passPoses = [
+    // From the Great Kelp Sea side: the falling-edge country looking up
+    // the pass corridor (verdant-1's own falling-edge pose numbers live
+    // in its def; this stands on the corridor spine at the rim).
+    { region: "verdant-line-1", poseName: "falling-edge" },
+    // From the Emerald Terraces side: the authored pass-threshold pose.
+    { region: "verdant-line-2", poseName: "pass-threshold" },
+  ];
+  for (const spec of passPoses) {
+    await freshPage();
+    await page.evaluate(() => {
+      window.__reef.forceRegion("verdant-line-1");
+      window.__reef.forceRegion("verdant-line-2");
+    });
+    await waitForAssets(page);
+    const pose = await page.evaluate(
+      ([slot, name]) => {
+        const def = window.__reefRegions.defs.find((candidate) => candidate.slotId === slot);
+        if (!def) {
+          throw new Error(`no region def for ${slot}`);
+        }
+        const found = def.capturePoses.find((candidate) => candidate.name === name);
+        if (!found) {
+          throw new Error(`no pose ${name} in ${slot}`);
+        }
+        return found;
+      },
+      [spec.region, spec.poseName],
+    );
+    await shoot(`PASS-${spec.region}-${spec.poseName}`, {
+      position: [...pose.position],
+      yaw: pose.yaw,
+      pitch: pose.pitch,
+      settle: pose.settle,
+    });
+  }
+}
+
+await browser.close();

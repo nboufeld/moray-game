@@ -71,7 +71,9 @@ export const TRAVELLER_ROUTES: readonly TravellerRouteSpec[] = [
     id: "verdant",
     wingId: "kelp-cathedral",
     salt: 0x7a01,
-    fish: { scale: 0.82, color: 0xb9dcae, profile: "fusilier" },
+    // r2: a step larger and lighter — silver-green at 0.82 vanished into
+    // the bowl's own greens at the route poses' range.
+    fish: { scale: 0.88, color: 0xc2e2b6, profile: "fusilier" },
     count: 56,
     period: [200, 260],
     braid: { lateral: 0.34, vertical: 0.22 },
