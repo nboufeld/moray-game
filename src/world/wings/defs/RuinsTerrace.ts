@@ -1,4 +1,26 @@
+import { fbm } from "../../../rendering/ProceduralTexture";
 import type { WingDef } from "../WingTypes";
+
+/**
+ * Connective-3 (MASTER Batch 3, connective plan §2): one wall relief
+ * carving as cheap vertex paint — a worked frieze band running along
+ * both wedge walls at chest-to-eye height, the terrace-builders' hand
+ * on the walls themselves. A repeating carved motif every ~3.2 m of
+ * wall (the seabed grid runs ~0.94 m/vertex, so the motif stays
+ * Nyquist-honest), wobbled by one seeded fbm so no edge is ruled, and
+ * value-only (±6%): recesses shade, fillets catch the gold. Confined
+ * to the wall slopes (never the shelf floor) and scaled by the carve
+ * blend, so the paint contract's identity at the wedge edge holds.
+ */
+const FRIEZE_Y_CENTER = -3.3;
+const FRIEZE_Y_HALF = 0.9;
+const FRIEZE_WAVELENGTH = 3.2;
+const FRIEZE_SEED = 0x5a4d_090a ^ 0xf1e2;
+
+function smoothstep01(t: number): number {
+  const k = Math.min(1, Math.max(0, t));
+  return k * k * (3 - 2 * k);
+}
 
 /**
  * Wing 9 — the Ruins Terrace. Majesty and mystery: mossed stone arches and
@@ -35,10 +57,39 @@ export const RUINS_TERRACE: WingDef = {
   moodSurface: 8,
   moodDescent: 4.5,
   // The terrace floor wears the moss its monuments do: a gold-green wash
-  // over the baked sand, easing to identity at the wedge's edges.
-  paint: (_x, _z, _y, blend) => {
+  // over the baked sand, easing to identity at the wedge's edges — plus
+  // the connective-3 frieze band on the wall slopes (see above).
+  paint: (x, z, y, blend) => {
     const k = blend * blend * (3 - 2 * blend);
-    return [1 + 0.05 * k, 1 + 0.035 * k, 1 - 0.1 * k];
+    let red = 1 + 0.05 * k;
+    let green = 1 + 0.035 * k;
+    let blue = 1 - 0.1 * k;
+
+    // The frieze: only on the wall slopes (the carve blend eases from 1
+    // on the floor band toward 0 up the walls, so mid-blend IS the wall)
+    // and only in its height band.
+    const wallness = smoothstep01((0.85 - blend) / 0.45) * smoothstep01((blend - 0.04) / 0.18);
+    const bandY = smoothstep01(1 - Math.abs(y - FRIEZE_Y_CENTER) / FRIEZE_Y_HALF);
+    const r = Math.hypot(x, z);
+    // Kept off the gate ramp and the opened end wall: the frieze lives
+    // on the terrace's own walls, not across the doorway's slope.
+    const bandR = smoothstep01((r - 33.8) / 1.4) * (1 - smoothstep01((r - 44.6) / 1.2));
+    if (wallness > 0 && bandY > 0 && bandR > 0) {
+      // The motif runs ALONG the wall (the walls run radially): a
+      // softened square wave in r, its phase wandered by seeded fbm so
+      // the carving reads worked, not machined.
+      const wander =
+        (fbm(r * 0.31, y * 0.4, { seed: FRIEZE_SEED, period: 8, octaves: 2 }) - 0.5) * 1.6;
+      const wave = Math.sin(((r / FRIEZE_WAVELENGTH) * Math.PI * 2) + wander);
+      const motif = Math.sign(wave) * smoothstep01(Math.abs(wave) / 0.55);
+      const carve = motif * bandY * bandR * wallness * 0.06;
+      // Fillets catch the gold-green; recesses shade toward the violet
+      // ambient (blue held up so the shadow stays a colour).
+      red += carve * 1.0;
+      green += carve * 0.85;
+      blue += carve * 0.45;
+    }
+    return [red, green, blue];
   },
   ceilingAtGate: 12,
   ceilingInside: 9,

@@ -15,12 +15,16 @@ import {
   type DataTexture,
 } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import { buildScalarTexture, fbm } from "../../../rendering/ProceduralTexture";
+import { buildScalarTexture } from "../../../rendering/ProceduralTexture";
 import { smoothNormals } from "../../../rendering/SmoothNormals";
 import { createToonMaterial } from "../../../rendering/ToonShading";
 import { Random, SEEDS } from "../../../util/Random";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
-import { wedgeHalfAt } from "../WingGeometry";
+import { buildCarpetField } from "../../regions/kit/CarpetField";
+import { buildDriftDebris } from "../../regions/kit/DriftDebris";
+import { buildFallStreakTexture } from "../../regions/kit/FallStreak";
+import { buildParticulateField } from "../../regions/kit/ParticulateField";
+import { angleBetween, wedgeHalfAt } from "../WingGeometry";
 import type { WingDef, WingFlora } from "../WingTypes";
 import { mountGateVeil } from "./GateVeilMount";
 
@@ -68,6 +72,46 @@ const STREAK_TINT = 0xefe0bd;
 
 /** The pebbles' sandy tones. */
 const PEBBLE_TONES = [0xcdbb96, 0xd8c8a4, 0xc2b088] as const;
+
+/**
+ * Connective-3 (MASTER Batch 3): the Tier A density uplift's one named
+ * subtree — the same idiom as connective-2's `wing-uplift-conn2`: the
+ * wave-8 tests that pin the ORIGINAL flora exclude this name from their
+ * draw caps and nothing else; `tests/wingsConnective3.test.ts` measures
+ * what lives inside it against R2's ceilings. Both Batch 3 wings
+ * (sandfall-dunes, ruins-terrace) share the literal.
+ */
+export const CONN3_GROUP_NAME = "wing-uplift-conn3";
+
+/**
+ * The duneling bed's palette — sourced from what SHIPPED, not the plan:
+ * golden-waste-1's dune-crest wire-grass (`GoldenCover.ts`, the r3 value
+ * step) so the wing's bed and the Hourglass Sea's crests are one growth.
+ * The region lifts its copy with a small emissive against its dim honey
+ * sun; the wing's own light keeps far more of the rig (sun share 0.15),
+ * so the bed starts on the shipped hues and is judged in captures.
+ */
+const DUNELING_PALETTE = { base: 0xdcc87a, tip: 0xf6eaaa, shade: 0xa8946a } as const;
+
+/** The wrack drift's warm tan over a violet-grey underside. */
+const WRACK_PALETTE = { base: 0xc9ac7e, shade: 0x8a7a8e } as const;
+
+/** The gold motes — the Hourglass ledger's own gold (veil mote kin). */
+const MOTE_GOLD = 0xffe0a0;
+
+/** The bed's fences: the think-lane stays bare, the walls keep a margin. */
+const BED_R_MIN = 38.2;
+const BED_R_MAX = 48.0;
+const BED_LANE_HALF = 1.6;
+/** Radius past which the bed may cross the lane — the door apron. */
+const BED_APRON_FROM = 46.2;
+
+/** The curtains' texture-scroll rate (texture fraction per second ≈ 0.5 m/s
+ *  of falling sand at the 6 m tile — sand in no hurry). */
+const CURTAIN_SCROLL_PER_SEC = 0.085;
+
+/** Metres one repeat of the fall texture covers on a curtain. */
+const CURTAIN_TILE_METRES = 6;
 
 function smoothstep01(t: number): number {
   const k = Math.min(1, Math.max(0, t));
@@ -144,11 +188,133 @@ export function buildSandfallDunesFlora(def: WingDef): WingFlora {
   const fallRandom = new Random(SEEDS.wingSandfallDunes ^ 0x5a1d);
   const falls = drawSandfalls(def, fallRandom);
 
+  // ── The fall-mark repaint (connective-3, the standing wave-8 flag). ──
+  // The wave-8 curtains baked their streaks into per-vertex alpha on a
+  // 5 × 15 grid: linear interpolation across half-metre quads read as
+  // stacked bloom blocks from the canonical pose ("blocky bloom smears —
+  // hard quad edges through the glow"). The kit's fallStreak texture
+  // carries the streaks at 128 px instead — overlapping tapered
+  // soft-edged columns, scrolled slowly downward — while the curtains
+  // keep their exact drawn placements (same stream, same draw count:
+  // a repaint, not a re-roll; the open-blue curtain-ink precedent).
+  const fallTexture = buildFallStreakTexture({
+    seed: (SEEDS.wingSandfallDunes ^ 0xfa11) >>> 0,
+    columns: 6,
+    softness: 0.65,
+  });
   group.add(buildStones(def, random, contacts));
-  group.add(buildCurtains(falls));
+  const curtains = buildCurtains(falls, fallTexture);
+  group.add(curtains);
   const streaks = buildStreaks(falls);
   group.add(streaks.mesh);
   group.add(buildPebbles(def));
+
+  // ── Connective-3: the Tier A uplift (MASTER Batch 3) ──
+  // The golden handshake (MASTER §1.1, golden plan §8): the wing gains a
+  // duneling bed and gold motes so the LIFE gradient starts before the
+  // door. The bed thickens toward the doorway and keeps the wing's
+  // think-lane bare (this is still the place a player goes to think);
+  // a sparse wrack drift gives the bed's feet something the current
+  // left. Every piece rides a fresh `^` substream fed to a kit-private
+  // Random, appended after every existing draw — nothing above re-rolls
+  // (the connective-1 sentinels hold) — and everything lives under one
+  // named group so the wave-8 caps keep pinning the original flora.
+  const uplift = new Group();
+  uplift.name = CONN3_GROUP_NAME;
+
+  const axisX = Math.cos(def.azimuth);
+  const axisZ = Math.sin(def.azimuth);
+  const lateralOf = (x: number, z: number): number => x * -axisZ + z * axisX;
+  const bedGate = (x: number, z: number): number => {
+    const r = Math.hypot(x, z);
+    if (r < BED_R_MIN || r > BED_R_MAX) {
+      return 0;
+    }
+    const away = angleBetween(Math.atan2(z, x), def.azimuth);
+    if (away > wedgeHalfAt(def, r) - 1.1 / r) {
+      return 0;
+    }
+    if (r < BED_APRON_FROM && Math.abs(lateralOf(x, z)) < BED_LANE_HALF) {
+      return 0;
+    }
+    // The gradient: thin where the wing's quiet heart ends, thickening
+    // toward the doorway — the Hourglass Sea started early.
+    return 0.35 + 0.65 * smoothstep01((r - BED_R_MIN) / (BED_APRON_FROM - BED_R_MIN));
+  };
+  const bedArea = {
+    center: [axisX * 43.2, axisZ * 43.2] as [number, number],
+    radius: 5.6,
+  };
+
+  const dunelingBed = buildCarpetField({
+    seed: (SEEDS.wingSandfallDunes ^ 0x3d1a) >>> 0,
+    palette: DUNELING_PALETTE,
+    area: bedArea,
+    gate: bedGate,
+    ground: seabedHeight,
+    count: 240,
+    profile: "blade",
+    size: [0.34, 0.62],
+    swayAmp: 0.04,
+    sunGlow: true,
+    looseShare: 0.4,
+  });
+  uplift.add(dunelingBed.group);
+
+  // The wrack keeps a wider lane fence at every radius: a curl's merged
+  // vertices reach ~0.95 m from its centre, and unlike the blades the
+  // wrack never crosses the lane at the door apron.
+  const wrackGate = (x: number, z: number): number => {
+    const r = Math.hypot(x, z);
+    if (r < BED_R_MIN || r > BED_R_MAX) {
+      return 0;
+    }
+    const away = angleBetween(Math.atan2(z, x), def.azimuth);
+    if (away > wedgeHalfAt(def, r) - 1.5 / r) {
+      return 0;
+    }
+    if (Math.abs(lateralOf(x, z)) < 2.3) {
+      return 0;
+    }
+    return 0.35 + 0.65 * smoothstep01((r - BED_R_MIN) / (BED_APRON_FROM - BED_R_MIN));
+  };
+  const wrack = buildDriftDebris({
+    seed: (SEEDS.wingSandfallDunes ^ 0x3d2b) >>> 0,
+    palette: WRACK_PALETTE,
+    area: bedArea,
+    gate: wrackGate,
+    ground: seabedHeight,
+    count: 46,
+    shapeSet: "wrack",
+  });
+  uplift.add(wrack.group);
+
+  // The gold motes: a drift filling the doorway half of the wedge,
+  // biased gently INTO the wing — the region's gold blowing through the
+  // door. The box is sized off the wedge itself so every live point
+  // (volume + the kit's 1.9 m sway margin) stays inside the walls.
+  const moteR = 43.0;
+  const moteAlong = 8.0;
+  const moteNearR = moteR - moteAlong / 2 - 0.6;
+  const moteLateralRoom = moteNearR * wedgeHalfAt(def, moteNearR) - 1.9 - 0.4;
+  const moteAcross = Math.max(1.6, 2 * (moteLateralRoom - (moteAlong / 2) * Math.abs(axisZ)));
+  const moteFloor = seabedHeight(axisX * moteR, axisZ * moteR);
+  const goldMotes = buildParticulateField({
+    seed: (SEEDS.wingSandfallDunes ^ 0x3d3c) >>> 0,
+    tint: MOTE_GOLD,
+    count: 80,
+    mode: "drift",
+    volume: {
+      center: [axisX * moteR, moteFloor + 2.4, axisZ * moteR],
+      size: [moteAlong, 3.6, moteAcross],
+    },
+    size: 0.09,
+    opacity: 0.5,
+    bias: { dir: [-axisX, 0.05, -axisZ], speed: 0.12 },
+  });
+  uplift.add(goldMotes.group);
+
+  group.add(uplift);
 
   // ── The gate veil (connective-1). ──
   // The quietest doorway ends on the Hourglass Sea's promise: honey over
@@ -169,20 +335,30 @@ export function buildSandfallDunesFlora(def: WingDef): WingFlora {
   group.add(veil.group);
 
   let time = 0;
+  let upliftTime = 0;
   return {
     group,
     contacts,
     update(dt: number, reducedMotion: boolean): void {
       veil.update(dt, reducedMotion);
+      // The uplift's sway and drift ride the becalmed clock (closed-form
+      // off simulated seconds — the kit contract, connective-2's idiom).
+      upliftTime += dt * (reducedMotion ? 0.3 : 1);
+      dunelingBed.update(upliftTime);
+      goldMotes.update(upliftTime);
       if (reducedMotion) {
         // Becalmed: the falls freeze mid-fall and dim to faint static
-        // veils — the baked curtains carry the look on their own.
+        // veils — the baked curtains carry the look on their own. The
+        // curtain scroll freezes with them (`time` stops).
         streaks.material.opacity = 0.15;
         return;
       }
       streaks.material.opacity = 0.5;
       time += dt;
       streaks.update(time);
+      // The repainted curtains fall: the streak pattern rides slowly
+      // down the veils, closed-form off the same simulated clock.
+      fallTexture.offset.y = time * CURTAIN_SCROLL_PER_SEC;
     },
   };
 }
@@ -273,15 +449,19 @@ function ridgeStoneGeometry(): BufferGeometry {
 
 /**
  * The static veils: one merged geometry of the three curtains, world space
- * like the abyss's. The fall shape — side fade, lip fade, floor fade and
- * the vertical streaks — is all baked into four-component vertex colours,
- * so the material is a plain transparent basic and the veil reads in fog.
+ * like the abyss's. The fall SHAPE — side fade, lip fade, floor fade —
+ * stays baked in four-component vertex colours; the STREAKS moved off the
+ * vertex grid and onto the kit's fallStreak texture (connective-3): the
+ * wave-8 bake interpolated an fbm field across half-metre quads and read
+ * as stacked bloom blocks, where the 128 px texture carries true tapered
+ * soft-edged columns. Same placements, same stream, same one draw.
  */
-function buildCurtains(falls: readonly Sandfall[]): Mesh {
+function buildCurtains(falls: readonly Sandfall[], texture: DataTexture): Mesh {
   const parts: BufferGeometry[] = [];
   for (const [index, fall] of falls.entries()) {
     const geometry = new PlaneGeometry(fall.width, fall.height, 4, 14);
     const position = geometry.attributes.position!;
+    const uv = geometry.attributes.uv!;
     const colors = new Float32Array(position.count * 4);
     for (let i = 0; i < position.count; i++) {
       const u = position.getX(i) / fall.width + 0.5;
@@ -290,17 +470,19 @@ function buildCurtains(falls: readonly Sandfall[]): Mesh {
       // no edge of the ribbon ever reads as a cut.
       const bell = Math.pow(Math.max(0, Math.cos((u - 0.5) * Math.PI)), 1.3);
       const envelope = smoothstep01((v - 0.02) / 0.16) * (1 - smoothstep01((v - 0.88) / 0.12));
-      // UV-less streaks: fbm across the fall's width, one field per fall.
-      const streak =
-        0.65 +
-        0.7 *
-          fbm(u * 2.5, index * 7.3, { seed: SEEDS.wingSandfallDunes ^ 0x5a1d, period: 3, octaves: 2 });
-      const alpha = Math.min(0.55, bell * envelope * streak * 0.55);
+      const alpha = Math.min(0.55, bell * envelope * 0.62);
       const lift = 0.82 + 0.3 * v;
       colors[i * 4] = CURTAIN_CREAM.r * lift;
       colors[i * 4 + 1] = CURTAIN_CREAM.g * lift;
       colors[i * 4 + 2] = CURTAIN_CREAM.b * lift;
       colors[i * 4 + 3] = alpha;
+      // World-metre UVs with a per-fall phase, so the three veils never
+      // share columns and the shared scroll offset drifts them all.
+      uv.setXY(
+        i,
+        index * 0.37 + (u * fall.width) / CURTAIN_TILE_METRES,
+        index * 0.61 + (v * fall.height) / CURTAIN_TILE_METRES,
+      );
     }
     geometry.setAttribute("color", new BufferAttribute(colors, 4));
     geometry.rotateY(fall.yaw);
@@ -318,6 +500,9 @@ function buildCurtains(falls: readonly Sandfall[]): Mesh {
   merged.computeBoundingSphere();
 
   const material = new MeshBasicMaterial({
+    // The texture shapes the alpha; the vertex colours keep the cream and
+    // the edge envelopes. Normal blending — bright sand, not glow.
+    alphaMap: texture,
     vertexColors: true,
     transparent: true,
     depthWrite: false,

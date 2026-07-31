@@ -108,10 +108,31 @@ function acrossOf(def: WingDef, x: number, z: number): number {
   return angleBetween(Math.atan2(z, x), def.azimuth);
 }
 
+/**
+ * Connective-3 (MASTER R2, the connective-2 precedent): the budget pin
+ * below holds the ORIGINAL wave-8 flora. Phase 3 uplift subtrees — the
+ * Batch 1 gate veil and the Batch 3 `wing-uplift-conn3` density — are
+ * measured against R2's own ceilings in `tests/wingsConnective3.test.ts`
+ * (and the veil in `tests/wingsConnective1.test.ts`), so they are
+ * excluded from THIS count only. Determinism and confinement still read
+ * every uplift vertex and instance.
+ */
+function insidePhase3Uplift(object: Object3D): boolean {
+  for (let o: Object3D | null = object; o; o = o.parent) {
+    if (o.name === "wing-gate-veil" || o.name === "wing-uplift-conn3") {
+      return true;
+    }
+  }
+  return false;
+}
+
 function budgets(flora: WingFlora): { draws: number; triangles: number } {
   let draws = 0;
   let triangles = 0;
   flora.group.traverse((object: Object3D) => {
+    if (insidePhase3Uplift(object)) {
+      return;
+    }
     if (object instanceof Points) {
       draws++;
       return;

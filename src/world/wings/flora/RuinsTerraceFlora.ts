@@ -14,7 +14,7 @@ import { createToonMaterial } from "../../../rendering/ToonShading";
 import { fbm } from "../../../rendering/ProceduralTexture";
 import { Random, SEEDS } from "../../../util/Random";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
-import { wedgeHalfAt } from "../WingGeometry";
+import { angleBetween, wedgeHalfAt } from "../WingGeometry";
 import type { WingDef, WingFlora } from "../WingTypes";
 import {
   instantiate,
@@ -27,7 +27,11 @@ import {
   worldMerge,
   type PlacedPart,
 } from "./W4FloraKit";
+import { buildCarpetField } from "../../regions/kit/CarpetField";
+import { buildDriftDebris } from "../../regions/kit/DriftDebris";
+import { buildGroundLitter } from "../../regions/kit/GroundLitter";
 import { mountGateVeil } from "./GateVeilMount";
+import { CONN3_GROUP_NAME } from "./SandfallDunesFlora";
 
 /**
  * Wing 9 — the Ruins Terrace. Ancient majesty, no menace: a terrace of
@@ -75,6 +79,22 @@ const TUFT_HUES = [0x7d9053, 0x8ba05c, 0x6f8a52] as const;
 const CORRIDOR_ANGLE = 0.06;
 /** Meadow law: the Kirin's grazing strip inside the monument band. */
 const MEADOW_LATERAL = 2.6;
+
+/**
+ * The Wound — the Sunken Calamity's crater, u 700 down this wing's own
+ * spoke (sunken-calamity-1 ledger). Everything thrown lies raked AWAY
+ * from it (MASTER §1.1's handshake row: blast-rake globally away from
+ * the WOUND) — in the wing that means pointing back up the terrace,
+ * toward the bowl, the way the region's own ejecta already does.
+ */
+const WOUND_WORLD: readonly [number, number] = [Math.cos(4.59) * 700, Math.sin(4.59) * 700];
+
+/** The fallen-block litter: the terrace's own stone under violet shade. */
+const BLOCK_PALETTE = { base: 0xa39d85, shade: 0x6e6880 } as const;
+/** The relic scatter's stone, mossed in the wing's own tuft green. */
+const RELIC_PALETTE = { base: 0x99957f, shade: 0x6e6880 } as const;
+/** The moss carpet between the stones: the tuft hues, carpeted. */
+const MOSS_PALETTE = { base: 0x7d9053, tip: 0x9db06a, shade: 0x4e5c3c } as const;
 
 interface MonumentSpec {
   readonly r: number;
@@ -314,6 +334,103 @@ export function buildRuinsTerraceFlora(def: WingDef): WingFlora {
   }
   group.add(instantiate(tuftGeometry(), tuftMaterial, tuftParts, "w4-ruins-tufts"));
 
+  // ── Connective-3: the Tier A uplift (MASTER Batch 3) ──
+  // The wave-8 audit's "centre of frame is a bare wall" answered on the
+  // ground: fallen-block litter raked away from the WOUND, a relic
+  // scatter in the wing's own architectural vocabulary (the kit's relic
+  // family restates this very wing's drum radius and tile profile —
+  // wreckage a player recognises when the march shows it again), and a
+  // moss carpet at the stones' feet. Every piece rides a fresh `^`
+  // substream fed to a kit-private Random, appended after every existing
+  // draw — nothing above re-rolls (the connective-1 sentinels hold) —
+  // and the wave-8 laws are kept by gate: the corridor stays swimmable,
+  // the Kirin's meadow stays open, the gate stretch stays ankle-height.
+  const uplift = new Group();
+  uplift.name = CONN3_GROUP_NAME;
+
+  const upliftGate = (x: number, z: number): number => {
+    const r = Math.hypot(x, z);
+    if (r < 33.8 || r > 47.2) {
+      return 0;
+    }
+    const away = angleBetween(Math.atan2(z, x), def.azimuth);
+    if (away > wedgeHalfAt(def, r) - 0.9 / r) {
+      return 0;
+    }
+    // 0.8 m of corridor margin, and the fence runs a metre past the
+    // corridor law's own r 46: merged relic vertices can reach ~0.6 m
+    // back and inward from their centres, and the law reads every vertex.
+    if (r <= 47.2 && away < CORRIDOR_ANGLE + 0.8 / r) {
+      return 0;
+    }
+    const lateral = x * -Math.sin(def.azimuth) + z * Math.cos(def.azimuth);
+    if (r >= 38 && r <= 44 && Math.abs(lateral) < MEADOW_LATERAL + 0.15) {
+      return 0;
+    }
+    return 1;
+  };
+  const upliftArea = {
+    center: [Math.cos(def.azimuth) * 40.5, Math.sin(def.azimuth) * 40.5] as [number, number],
+    radius: 7.0,
+  };
+  // The moss carpet's own, tighter footprint: two flank rails through
+  // the monument band (moss where the sun touched the stones), the
+  // connective-2 flank-road idiom — an instanced sphere is the union of
+  // every instance's geometry sphere, and the R2 frustum cone wants the
+  // whole cloud comfortably inside the wedge.
+  const rail = (r: number, lateral: number): [number, number] => {
+    const { x, z } = wingPoint(frame, r, lateral);
+    return [x, z];
+  };
+  const mossArea = {
+    polyline: [rail(35.2, 3.2), rail(44.2, 4.0), rail(44.2, -4.0), rail(35.2, -3.2)] as [
+      number,
+      number,
+    ][],
+    width: 3.0,
+  };
+
+  const fallenBlocks = buildGroundLitter({
+    seed: (seed ^ 0x4e2b) >>> 0,
+    palette: BLOCK_PALETTE,
+    area: upliftArea,
+    gate: upliftGate,
+    ground: seabedHeight,
+    count: 420,
+    shapeSet: "split",
+    size: [0.09, 0.28],
+    rake: { from: WOUND_WORLD, strength: 0.9, jitter: 0.2 },
+    grade: 0.5,
+  });
+  uplift.add(fallenBlocks.group);
+
+  const relics = buildDriftDebris({
+    seed: (seed ^ 0x4e1a) >>> 0,
+    palette: RELIC_PALETTE,
+    area: upliftArea,
+    gate: upliftGate,
+    ground: seabedHeight,
+    count: 40,
+    shapeSet: "relics",
+    mossTint: TUFT_HUES[0],
+  });
+  uplift.add(relics.group);
+
+  const mossCarpet = buildCarpetField({
+    seed: (seed ^ 0x4e3c) >>> 0,
+    palette: MOSS_PALETTE,
+    area: mossArea,
+    gate: upliftGate,
+    ground: seabedHeight,
+    count: 170,
+    profile: "tuft",
+    swayAmp: 0.03,
+    looseShare: 0.35,
+  });
+  uplift.add(mossCarpet.group);
+
+  group.add(uplift);
+
   // ── The gate veil (connective-1). ──
   // The processional way ends on the Sunken Calamity's promise: grey-violet
   // inks (the march's own distance family) behind the door, a faint COLD
@@ -330,11 +447,16 @@ export function buildRuinsTerraceFlora(def: WingDef): WingFlora {
   });
   group.add(veil.group);
 
+  let upliftTime = 0;
   return {
     group,
     contacts,
     update(dt: number, reducedMotion: boolean): void {
       veil.update(dt, reducedMotion);
+      // The moss carpet's sway rides the becalmed clock (closed-form off
+      // simulated seconds — the kit contract, connective-2's idiom).
+      upliftTime += dt * (reducedMotion ? 0.3 : 1);
+      mossCarpet.update(upliftTime);
     },
   };
 }
