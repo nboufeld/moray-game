@@ -433,3 +433,22 @@ pass the three-layer law.
   first 35 m, freckles and grit keep the floor from reading bare.
 - No misses. Neither registered rest (Quiet Gallery pan, Ravine Hush)
   was drawn by this sweep's poses, so no rest-excused frames needed.
+
+Authored (14) and noassets (14) sets re-captured on this build and all
+READ. The grit trim reads honest in `ravine-descent` / `chalk-stairs` /
+`ossuary-floor` — the shard drifts, ossuary carpet and stumps carry the
+near fields unchanged. The two rests hold their stillness: the Quiet
+Gallery pan shows monuments, threshold plates and freckles only; the
+Ravine Hush channel floor is bare wall-to-wall with the hush-fry
+holding past u 212. The noassets set is compositionally identical to
+the authored set (the fill is fully procedural — only the Gardener's
+GLB shell reverts to a plain dome).
+
+Final capture roster (visual-qa/, newest per pose is canonical):
+
+- Authored `pa-filled`: `20260731-0657_*`, all 14 poses
+  (the `0258` set is the round-4 build, retained for history).
+- Sweep `pa-filled`: `20260731-0610_SWEEP-pale-passage-1-01..12`
+  (the `0449` sweep set is the round-4 build, retained for history).
+- Noassets `pa-filled-noassets`: `20260731-0747_*`, all 14 poses
+  (the `0356` set is the round-4 build, retained for history).
