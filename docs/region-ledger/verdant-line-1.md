@@ -643,3 +643,33 @@ density where the close poses stand — moss 1,780→2,200, turf
 650→800, silt 1,100→1,300 and sized up, stands 300/260→380/320, skirt
 grass 380→430, split stones 160→200; (3) grow silt size to [0.2,0.4] so
 the maze bloom stands off its own floor.
+
+## Round 2 (`rp-r2`) — critique (all 17 poses, close judged hardest)
+
+Measured **116 draws / 1,242,990 tris** after the round-2 orders.
+
+- **`close-vale-road`**: the road reads as a mossy pebbled lane now —
+  rosettes green and legible, graded pink drifts, stands on both banks.
+  Marginal PASS on the "painted plants" bar; one more moss notch would
+  not hurt but is not owed.
+- **`close-forest-floor`**: PASS — golden litter curls, green fern
+  rosettes, wayside blades, the orange rake mark; the floor has its two
+  heights and its seasons.
+- **`close-meadow-sward`**: still FAILS — the value lift worked (the
+  blades in frame read as plants), but the pose's near metres sit in a
+  turf hole and the inter-sward ground still reads MUSTARD under the
+  warm wash. Instances cannot out-paint the paint (the fill-r3 lesson,
+  round 2 of learning it).
+- **`close-maze-floor`**: FAILS — the silt value lift reads (pale
+  violet rosettes are plants now), but the pose stares at a ridge mound
+  the 0.3-baseline gate left bald; the split stones pooled elsewhere.
+- Authored set: `vale-descent`/`vale-narrows` green road arcs work;
+  `meadow-hills` mid-frame still broad mustard with specks;
+  `root-maze` foreground still bald on its ridge; everything else
+  holds its r1 read or better.
+
+**Round-3 orders**: (1) cut the base paint's red again (0.74 → 0.66
+off-sward) — no square metre of the meadows may read mustard at
+swimming distance; (2) turf 4,200 → 4,800 and a touch taller; (3) the
+silt gate's ridge baseline 0.3 → 0.45 (a maze floor is never bare,
+just thinner uphill), silt 1,300 → 1,450, split stones 200 → 260.

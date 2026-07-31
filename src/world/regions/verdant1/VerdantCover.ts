@@ -170,7 +170,10 @@ const litterGate: GateFn = (x, z) => {
   );
 };
 
-/** Silt bloom pools on the maze's gully floors — the deeper, the denser. */
+/** Silt bloom pools on the maze's gully floors — the deeper, the denser.
+ *  R12.3 round 3 raised the ridge baseline 0.3 → 0.45: the close-maze
+ *  pose stared at a ridge mound the old gate left bald, and a maze floor
+ *  is never bare, just thinner where it climbs. */
 const siltGate: GateFn = (x, z) => {
   const { u, v } = spokeOf(x, z);
   const maze = mazeWeight(u, v);
@@ -178,7 +181,7 @@ const siltGate: GateFn = (x, z) => {
     return 0;
   }
   const gully = smoothstep01((-seabedHeight(x, z) - 17.5) / 3);
-  return maze * (0.3 + 0.7 * gully) * restFree(x, z);
+  return maze * (0.45 + 0.55 * gully) * restFree(x, z);
 };
 
 /**
@@ -315,9 +318,11 @@ export function buildVerdantCover(giants: readonly KelpFoot[]): VerdantCoverBuil
       area: discAreaAt(350, 0, 320),
       gate: turfGate,
       ground: seabedHeight,
-      count: 4200,
+      // Round 3: 4,200 → 4,800 and a touch taller — the close-meadow
+      // pose's near metre still owned too few blades.
+      count: 4800,
       profile: "blade",
-      size: [0.3, 0.62],
+      size: [0.32, 0.66],
       swayAmp: 0.035,
       looseShare: 0.45,
       sunGlow: true,
@@ -452,7 +457,7 @@ export function buildVerdantCover(giants: readonly KelpFoot[]): VerdantCoverBuil
       area: discAreaAt(495, -82, 60),
       gate: siltGate,
       ground: seabedHeight,
-      count: 1300,
+      count: 1450,
       profile: "frond",
       size: [0.2, 0.4],
       swayAmp: 0.02,
@@ -718,7 +723,7 @@ export function buildVerdantCover(giants: readonly KelpFoot[]): VerdantCoverBuil
       area: discAreaAt(495, -82, 58),
       gate: siltGate,
       ground: seabedHeight,
-      count: 200,
+      count: 260,
       shapeSet: "split",
       size: [0.14, 0.34],
       grade: 0.6,
