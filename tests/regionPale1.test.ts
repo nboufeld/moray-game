@@ -1,4 +1,4 @@
-import { Color, InstancedMesh, Mesh, Points, Scene, type Object3D } from "three";
+import { Color, InstancedMesh, Matrix4, Mesh, Points, Scene, Vector3, type Object3D } from "three";
 import { beforeAll, describe, expect, it } from "vitest";
 // Import order is load-bearing (the pilot's documented cycle note):
 // `Seabed` pulls `RegionField` → `RegionRegistry` → the defs, and that
@@ -7,10 +7,16 @@ import { beforeAll, describe, expect, it } from "vitest";
 // finishes evaluating.
 import { seabedHeight } from "../src/world/Seabed";
 import { PALE_1, buildSeals } from "../src/world/regions/pale1/Pale1";
+import { buildPaleBloom } from "../src/world/regions/pale1/PaleBloom";
+import { buildPaleBones } from "../src/world/regions/pale1/PaleBones";
+import { aisleDistance } from "../src/world/regions/pale1/PaleFillShared";
+import { hushFryStations } from "../src/world/regions/pale1/PaleLife";
 import {
   CENTER_X,
   CENTER_Z,
   PALE_SLOT,
+  SEED_GROVE,
+  galleryWeight,
   paleCeiling,
   paleTerrainTarget,
   paleWeight,
@@ -162,11 +168,15 @@ describe("pale-passage-1 build", () => {
         }
       }
     });
-    expect(draws).toBeLessThanOrEqual(120);
-    expect(triangles).toBeLessThanOrEqual(250_000);
-    // Honest floors as well as caps: an empty region passes no bar.
-    expect(draws).toBeGreaterThan(20);
-    expect(triangles).toBeGreaterThan(100_000);
+    // The fill doctrine's Phase 3 ceilings (MASTER R1): the pilot's
+    // 120/250k caps are superseded; the measured numbers go in the
+    // region ledger.
+    expect(draws).toBeLessThanOrEqual(160);
+    expect(triangles).toBeLessThanOrEqual(450_000);
+    // Honest floors as well as caps: an empty region passes no bar, and
+    // a FILLED region must actually be filled.
+    expect(draws).toBeGreaterThan(85);
+    expect(triangles).toBeGreaterThan(380_000);
   });
 
   it("keeps every collider inside the domain", () => {
@@ -276,8 +286,11 @@ describe("pale-passage-1 seals", () => {
 });
 
 describe("pale-passage-1 capture poses", () => {
-  it("authors 8–12+ poses that stand inside the region's own water", () => {
-    expect(PALE_1.capturePoses.length).toBeGreaterThanOrEqual(8);
+  it("authors the pilot's 12 poses plus the fill round's 2, in real water", () => {
+    expect(PALE_1.capturePoses.length).toBe(14);
+    // The fill's poses are APPENDED so archives stay comparable.
+    expect(PALE_1.capturePoses[12]!.name).toBe("ravine-hush");
+    expect(PALE_1.capturePoses[13]!.name).toBe("ossuary-floor");
     for (const pose of PALE_1.capturePoses) {
       const [x, y, z] = pose.position;
       expect(paleWeight(x, z), pose.name).toBeGreaterThan(0.3);
@@ -285,6 +298,250 @@ describe("pale-passage-1 capture poses", () => {
       expect(y, `${pose.name} above floor`).toBeGreaterThan(floor);
       expect(y, `${pose.name} below ceiling`).toBeLessThan(paleCeiling(x, z));
       expect(pose.settle).toBeGreaterThan(0);
+    }
+  });
+});
+
+// ─── The Phase 3 fill's own contracts ────────────────────────────────────────
+
+describe("pale-passage-1 reroll fence", () => {
+  // The pilot's landmark coordinates, captured BEFORE the fill landed
+  // (scripts run against the pre-fill build). Every fill stream is a
+  // fresh `^` substream appended after the pilot's draws, so these
+  // numbers must never move — if they do, existing content re-rolled
+  // and the fence is broken. Instance matrices are float32; the
+  // Gardener target is double precision.
+  it("keeps the pilot's bone trees exactly where they stood", () => {
+    const build = PALE_1.build(new Scene());
+    const matrix = new Matrix4();
+    const at = new Vector3();
+    const pins: Record<string, { count: number; first: [number, number]; last: [number, number] }> =
+      {
+        "pale-bone-trees-0": { count: 20, first: [-229.64018, -243.6749], last: [-344.17569, -309.70322] },
+        "pale-bone-trees-1": { count: 15, first: [-303.51505, -282.34296], last: [-238.189, -227.21796] },
+        "pale-bone-trees-2": { count: 13, first: [-313.86304, -216.89716], last: [-344.96445, -286.28577] },
+      };
+    let seen = 0;
+    (build.group as Object3D).traverse((node) => {
+      if (!(node instanceof InstancedMesh)) {
+        return;
+      }
+      const pin = pins[node.name];
+      if (!pin) {
+        return;
+      }
+      seen++;
+      expect(node.count, node.name).toBe(pin.count);
+      node.getMatrixAt(0, matrix);
+      at.setFromMatrixPosition(matrix);
+      expect(at.x, `${node.name} first x`).toBeCloseTo(pin.first[0], 3);
+      expect(at.z, `${node.name} first z`).toBeCloseTo(pin.first[1], 3);
+      node.getMatrixAt(node.count - 1, matrix);
+      at.setFromMatrixPosition(matrix);
+      expect(at.x, `${node.name} last x`).toBeCloseTo(pin.last[0], 3);
+      expect(at.z, `${node.name} last z`).toBeCloseTo(pin.last[1], 3);
+    });
+    expect(seen).toBe(3);
+  });
+
+  it("keeps the first monument and the Gardener exactly in place", () => {
+    const build = PALE_1.build(new Scene());
+    const matrix = new Matrix4();
+    const at = new Vector3();
+    (build.group as Object3D).traverse((node) => {
+      if (node instanceof InstancedMesh && node.name === "pale-monument-0") {
+        node.getMatrixAt(0, matrix);
+        at.setFromMatrixPosition(matrix);
+        expect(at.x).toBeCloseTo(-224.55841, 3);
+        expect(at.z).toBeCloseTo(-289.96808, 3);
+      }
+    });
+    const target = build.targets![0]!;
+    expect(target.position.x).toBeCloseTo(-349.8401585606639, 9);
+    expect(target.position.y).toBeCloseTo(-0.9536567030300063, 9);
+    expect(target.position.z).toBeCloseTo(-346.9176609200655, 9);
+  });
+});
+
+describe("pale-passage-1 fill gating (MASTER §1.2 — inviolable)", () => {
+  // Every T1/T2 fill instance, read back off the built scene graph.
+  const FILL_NAMES = /^(kit-ground-litter-\d|kit-carpet-field|kit-scree-apron|pale-bone-stumps)$/;
+
+  function fillPoints(build: RegionBuild): { x: number; z: number; name: string }[] {
+    const points: { x: number; z: number; name: string }[] = [];
+    (build.group as Object3D).traverse((node) => {
+      if (!FILL_NAMES.test(node.name)) {
+        return;
+      }
+      if (node instanceof InstancedMesh) {
+        const matrices = node.instanceMatrix;
+        for (let i = 0; i < node.count; i++) {
+          points.push({
+            x: matrices.array[i * 16 + 12]!,
+            z: matrices.array[i * 16 + 14]!,
+            name: node.name,
+          });
+        }
+      } else if (node instanceof Mesh) {
+        // The ossuary's merged draws: sample vertices (each within
+        // ~0.4 m of its placement).
+        const position = node.geometry.attributes.position!;
+        for (let i = 0; i < position.count; i += 12) {
+          points.push({ x: position.getX(i), z: position.getZ(i), name: node.name });
+        }
+      }
+    });
+    return points;
+  }
+
+  let build: RegionBuild;
+  let points: { x: number; z: number; name: string }[];
+
+  beforeAll(() => {
+    build = PALE_1.build(new Scene());
+    points = fillPoints(build);
+    expect(points.length).toBeGreaterThan(4000);
+  });
+
+  it("keeps every fill piece off the Quiet Gallery pan", () => {
+    for (const point of points) {
+      const { u, v } = spokeOf(point.x, point.z);
+      expect(
+        galleryWeight(u, v),
+        `${point.name} at u=${u.toFixed(0)}, v=${v.toFixed(0)}`,
+      ).toBeLessThanOrEqual(0.4);
+    }
+  });
+
+  it("keeps the Mother's Pool clean", () => {
+    for (const point of points) {
+      const { u, v } = spokeOf(point.x, point.z);
+      expect(
+        Math.hypot(u - SEED_GROVE.u, v - SEED_GROVE.v),
+        `${point.name} inside the pool`,
+      ).toBeGreaterThan(7.5);
+    }
+  });
+
+  it("keeps the forest aisle's swim line clear", () => {
+    for (const point of points) {
+      const { u, v } = spokeOf(point.x, point.z);
+      expect(
+        aisleDistance(u, v),
+        `${point.name} on the aisle at u=${u.toFixed(0)}`,
+      ).toBeGreaterThanOrEqual(2.4);
+    }
+  });
+
+  it("keeps the Ravine Hush's channel floor bare (u 130–210, gravel stops)", () => {
+    // The rest is the CHANNEL FLOOR: the stairs slabs on the benches keep
+    // their (outward-fanned) aprons, the ledge at u 200 is wall
+    // architecture — but nothing may lie in the hush's open water lane.
+    for (const point of points) {
+      const { u, v } = spokeOf(point.x, point.z);
+      if (u < 130.5 || u > 209.5) {
+        continue;
+      }
+      const away = Math.abs(v - ravineChannelCenter(u));
+      expect(
+        away,
+        `${point.name} on the hush floor at u=${u.toFixed(1)}, v=${v.toFixed(1)}`,
+      ).toBeGreaterThan(ravineChannelHalf(u) + 0.5);
+    }
+  });
+});
+
+describe("pale-passage-1 fill density floors", () => {
+  it("carries real bone gravel down the ravine channel", () => {
+    const build = PALE_1.build(new Scene());
+    let inChannel = 0;
+    (build.group as Object3D).traverse((node) => {
+      if (!(node instanceof InstancedMesh) || !node.name.startsWith("kit-ground-litter-")) {
+        return;
+      }
+      const matrices = node.instanceMatrix;
+      for (let i = 0; i < node.count; i++) {
+        const x = matrices.array[i * 16 + 12]!;
+        const z = matrices.array[i * 16 + 14]!;
+        const { u, v } = spokeOf(x, z);
+        if (u < 60 || u > 292) {
+          continue;
+        }
+        if (Math.abs(v - ravineChannelCenter(u)) < ravineChannelHalf(u) + 6) {
+          inChannel++;
+        }
+      }
+    });
+    expect(inChannel).toBeGreaterThan(600);
+  });
+
+  it("plants at least two fans in every authored bed", () => {
+    const bones = buildPaleBones();
+    const bloom = buildPaleBloom(bones.archCrown);
+    for (const [bu, bv] of [
+      [518, -48],
+      [532, -62],
+      [545, -45],
+      [509, -30],
+      [508, -6],
+      [494, 30],
+    ] as const) {
+      const fans = bloom.stands.filter(
+        (stand) => stand.kind === "fan" && Math.hypot(stand.u - bu, stand.v - bv) < 8,
+      );
+      expect(fans.length, `fans at bed (${bu}, ${bv})`).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it("grows the nursery to sixteen seats per line, aligned", () => {
+    const bones = buildPaleBones();
+    const bloom = buildPaleBloom(bones.archCrown);
+    const nursery = bloom.stands.filter((stand) => {
+      const d = Math.hypot(stand.u - SEED_GROVE.u, stand.v - SEED_GROVE.v);
+      return d > 9 && d < 36 && (stand.kind === "branch" || stand.kind === "fan");
+    });
+    // 6 rows × 2 lines × 16 seats plus the rim-gate hedges, minus any
+    // garden-site strays double-counted — a floor, not an exact count.
+    expect(nursery.length).toBeGreaterThan(180);
+  });
+});
+
+describe("pale-passage-1 hush-fry route", () => {
+  it("stays out of the Ravine Hush and the Quiet Gallery (MASTER R10)", () => {
+    const stations = hushFryStations();
+    expect(stations.length).toBeGreaterThan(10);
+    for (const [x, , z] of stations) {
+      const { u, v } = spokeOf(x, z);
+      expect(u, "hush (u 130–210) is motes-only").toBeGreaterThanOrEqual(212);
+      expect(galleryWeight(u, v), "the gallery is dust-only").toBeLessThan(0.35);
+      expect(paleWeight(x, z)).toBeGreaterThan(0.3);
+    }
+  });
+});
+
+describe("pale-passage-1 carpet determinism", () => {
+  it("builds byte-identical fill carpets twice", () => {
+    const collect = (build: RegionBuild): InstancedMesh[] => {
+      const found: InstancedMesh[] = [];
+      (build.group as Object3D).traverse((node) => {
+        if (node instanceof InstancedMesh && node.name === "kit-carpet-field") {
+          found.push(node);
+        }
+      });
+      return found;
+    };
+    const first = collect(PALE_1.build(new Scene()));
+    const second = collect(PALE_1.build(new Scene()));
+    // The shelf's rose-gold turf, the grove's rim turf, the deep flanks'
+    // pioneer sprigs (round 4) and their south-flank patch (round 5).
+    expect(first.length).toBe(4);
+    expect(second.length).toBe(first.length);
+    for (const [index, mesh] of first.entries()) {
+      const twin = second[index]!;
+      expect(twin.count).toBe(mesh.count);
+      expect(Array.from(twin.instanceMatrix.array)).toEqual(
+        Array.from(mesh.instanceMatrix.array),
+      );
     }
   });
 });

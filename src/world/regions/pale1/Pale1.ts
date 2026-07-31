@@ -3,6 +3,7 @@ import type { SphereCollider } from "../../CollisionField";
 import type { RegionBuild, RegionCapturePose, RegionDef } from "../RegionTypes";
 import { buildPaleBloom } from "./PaleBloom";
 import { buildPaleBones } from "./PaleBones";
+import { buildPaleCarpet } from "./PaleCarpet";
 import { buildPaleDistance } from "./PaleDistance";
 import { GARDENER_SPECIES_ID, buildGardener } from "./PaleGardener";
 import { buildPaleGround } from "./PaleGround";
@@ -154,6 +155,11 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // Looking back the way we came: the petal current head-on, the white
   // horizon behind it — the whole story in one frame.
   { name: "white-lookback", u: 500, v: 2, lift: 3.2, atU: 420, atV: -8, pitch: 0.02, settle: 4 },
+  // ── Fill-round poses, appended so the archives stay comparable ──
+  // The Ravine Hush: the dust column's slow rise, the one movement.
+  { name: "ravine-hush", u: 162, v: 2, lift: 2.2, atU: 145, atV: -1.5, pitch: 0.04, settle: 4 },
+  // The cathedral's ossuary floor, low among the vertebrae.
+  { name: "ossuary-floor", u: 344, v: -27, lift: 1.1, atU: 352, atV: -34, pitch: 0.18, settle: 4 },
 ];
 
 function buildPoses(): RegionCapturePose[] {
@@ -218,9 +224,11 @@ export const PALE_1: RegionDef = {
     const bones = buildPaleBones();
     const bloom = buildPaleBloom(bones.archCrown);
     const gardener = buildGardener();
-    const life = buildPaleLife(bloom.motherCrown);
+    const life = buildPaleLife(bloom.motherCrown, bones.archCrown, bones.treeSpots);
     const light = buildPaleLight();
     const distance = buildPaleDistance();
+    // The Phase 3 fill tier (fresh substreams — nothing above re-rolls).
+    const carpet = buildPaleCarpet(bones.treeSpots, bones.screeAnchors);
     const ground = buildPaleGround([...bones.contacts, ...bloom.contacts]);
 
     for (const mesh of [
@@ -228,8 +236,11 @@ export const PALE_1: RegionDef = {
       ...bones.meshes,
       ...bloom.meshes,
       ...life.meshes,
+      ...life.groups,
       ...light.meshes,
       ...distance.meshes,
+      ...carpet.groups,
+      ...carpet.meshes,
     ]) {
       group.add(mesh);
     }
@@ -242,9 +253,12 @@ export const PALE_1: RegionDef = {
       colliders,
       targets: [gardener.target],
       update(dt, ctx): void {
+        const calm = ctx.reducedMotion ? 0.45 : 1;
         bloom.update(dt, ctx.reducedMotion);
         life.update(dt, ctx.time, ctx.reducedMotion);
         gardener.update(ctx.time, ctx.reducedMotion);
+        // The carpets' sway is closed-form off simulated time (kit law 5).
+        carpet.update(ctx.time * calm);
       },
     };
   },

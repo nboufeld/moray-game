@@ -45,28 +45,40 @@ interface Shaft {
   readonly top: number;
   readonly width: number;
   readonly opacity: number;
-  /** Milk shafts stay neutral; warm ones carry the grove's gold-rose. */
-  readonly warm: boolean;
+  /** milk stays neutral; warm carries the grove's gold-rose; bone is the
+   *  white half's paper-warm — light, not colour. */
+  readonly tone: "milk" | "warm" | "bone";
   readonly inRavine?: boolean;
 }
 
 const SHAFTS: readonly Shaft[] = [
   // The gallery's milk-column: wide, faint, and alone.
-  { u: QUIET_GALLERY.u + 4, v: QUIET_GALLERY.v + 2, top: 18, width: 7, opacity: 0.07, warm: false },
+  { u: QUIET_GALLERY.u + 4, v: QUIET_GALLERY.v + 2, top: 18, width: 7, opacity: 0.07, tone: "milk" },
   // The lip's thin reveal-beam.
-  { u: RAVINE_LIP_U + 6, v: 0, top: 10, width: 2.0, opacity: 0.1, warm: false, inRavine: true },
-  // The Blush Arch's blade.
-  { u: 456, v: -11, top: 12, width: 2.6, opacity: 0.1, warm: true },
+  { u: RAVINE_LIP_U + 6, v: 0, top: 10, width: 2.0, opacity: 0.1, tone: "milk", inRavine: true },
+  // The Blush Arch's blade — widened 2.6 → 3.4 (fill plan §4): the
+  // doorway into colour should glow.
+  { u: 456, v: -11, top: 12, width: 3.4, opacity: 0.1, tone: "warm" },
   // The Seed Grove's fall: the region's brightest mark.
-  { u: SEED_GROVE.u, v: SEED_GROVE.v, top: 16, width: 8, opacity: 0.16, warm: true },
-  { u: SEED_GROVE.u - 8, v: SEED_GROVE.v + 7, top: 13, width: 3.2, opacity: 0.09, warm: true },
+  { u: SEED_GROVE.u, v: SEED_GROVE.v, top: 16, width: 8, opacity: 0.16, tone: "warm" },
+  { u: SEED_GROVE.u - 8, v: SEED_GROVE.v + 7, top: 13, width: 3.2, opacity: 0.09, tone: "warm" },
+  // Fill plan §4: the stairs god-ray pair — low, paper-warm, ≤ 0.08, so
+  // the hush has light events instead of gloom.
+  { u: 150, v: 0, top: 8, width: 2.6, opacity: 0.08, tone: "bone", inRavine: true },
+  { u: 210, v: 0, top: 9, width: 2.4, opacity: 0.07, tone: "bone", inRavine: true },
+  // The blush skeletons' blades: the budded pair catch their own light.
+  { u: 448, v: -18, top: 11, width: 2.2, opacity: 0.09, tone: "warm" },
+  { u: 463, v: 0, top: 10, width: 2.0, opacity: 0.08, tone: "warm" },
 ];
 
 export function buildPaleLight(): { meshes: Mesh[] } {
   const random = new Random(SEED ^ 0x11f9);
   const meshes: Mesh[] = [];
-  const milk = milkSprite();
-  const warm = warmShaftSprite();
+  const sprites = {
+    milk: milkSprite(),
+    warm: warmShaftSprite(),
+    bone: boneShaftSprite(),
+  } as const;
 
   for (const shaft of SHAFTS) {
     const at = worldOf(shaft.u, shaft.v + (shaft.inRavine ? ravineChannelCenter(shaft.u) : 0));
@@ -96,7 +108,7 @@ export function buildPaleLight(): { meshes: Mesh[] } {
     geometry.computeBoundingSphere();
 
     const material = new MeshBasicMaterial({
-      map: shaft.warm ? warm : milk,
+      map: sprites[shaft.tone],
       transparent: true,
       opacity: shaft.opacity,
       blending: AdditiveBlending,
@@ -125,14 +137,30 @@ export function buildPaleLight(): { meshes: Mesh[] } {
     meshes.push(mesh);
   }
 
-  meshes.push(buildGrovePool());
+  // The pools: the grove's warm fall (exists), the gallery column's
+  // landing (fill plan §4 — "the column lands on something"), and two
+  // petal-lit micro-pools under the densest nursery rows so the rows
+  // read at the seed-grove pose's 25 m.
+  meshes.push(buildPool(SEED_GROVE.u, SEED_GROVE.v, 8, 0xf2d8b0, 0.3, "pale-grove-pool"));
+  meshes.push(
+    buildPool(QUIET_GALLERY.u + 4, QUIET_GALLERY.v + 2, 5.5, 0xf4f2ec, 0.12, "pale-gallery-pool"),
+  );
+  meshes.push(buildPool(SEED_GROVE.u + 14, SEED_GROVE.v + 6, 3, 0xf0c6b8, 0.08, "pale-nursery-pool"));
+  meshes.push(buildPool(SEED_GROVE.u - 4, SEED_GROVE.v - 15, 3, 0xf0c6b8, 0.08, "pale-nursery-pool"));
   return { meshes };
 }
 
-/** The pool of warm light under the mother-coral. */
-function buildGrovePool(): Mesh {
-  const { x, z } = worldOf(SEED_GROVE.u, SEED_GROVE.v);
-  const ring = new RingGeometry(0, 8, 28, 6);
+/** A pool of light landing on the sand — the shaft's other half. */
+function buildPool(
+  u: number,
+  v: number,
+  radius: number,
+  color: number,
+  opacity: number,
+  name: string,
+): Mesh {
+  const { x, z } = worldOf(u, v);
+  const ring = new RingGeometry(0, radius, 28, 6);
   ring.rotateX(-Math.PI / 2);
   const position = ring.attributes.position!;
   const fade = new Float32Array(position.count * 3);
@@ -140,7 +168,7 @@ function buildGrovePool(): Mesh {
     const lx = position.getX(i);
     const lz = position.getZ(i);
     position.setY(i, seabedHeight(x + lx, z + lz) + 0.08);
-    const edge = 1 - smoothstep01((Math.hypot(lx, lz) / 8 - 0.35) / 0.65);
+    const edge = 1 - smoothstep01((Math.hypot(lx, lz) / radius - 0.35) / 0.65);
     fade[i * 3] = edge;
     fade[i * 3 + 1] = edge;
     fade[i * 3 + 2] = edge;
@@ -152,16 +180,16 @@ function buildGrovePool(): Mesh {
 
   const material = new MeshBasicMaterial({
     map: poolSprite(),
-    color: 0xf2d8b0,
+    color,
     vertexColors: true,
     transparent: true,
-    opacity: 0.3,
+    opacity,
     blending: AdditiveBlending,
     depthWrite: false,
     fog: false,
   });
   const mesh = new Mesh(ring, material);
-  mesh.name = "pale-grove-pool";
+  mesh.name = name;
   mesh.renderOrder = 1;
   return mesh;
 }
@@ -199,6 +227,19 @@ function warmShaftSprite(): DataTexture {
     return [value, value * 0.82, value * 0.62];
   });
   return warmShaftSpriteTexture;
+}
+
+/** The white half's paper-warm shaft: the milk sprite leaned toward
+ *  BONE_WARM — light events for the hush, not colour. */
+let boneShaftSpriteTexture: DataTexture | undefined;
+function boneShaftSprite(): DataTexture {
+  boneShaftSpriteTexture ??= buildColorTexture(64, (u, v) => {
+    const bell = Math.pow(Math.max(0, Math.cos((u - 0.5) * Math.PI)), 1.5);
+    const along = Math.pow(v, 1.15) * Math.min(1, (1 - v) * 5);
+    const value = bell * along;
+    return [value, value * 0.95, value * 0.85];
+  });
+  return boneShaftSpriteTexture;
 }
 
 let poolSpriteTexture: DataTexture | undefined;
