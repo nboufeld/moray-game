@@ -339,3 +339,45 @@ weight cut, ossuary and shelf-turf trims (bed density untouched,
 asserted). Ledge stacks sink 0.55 with shorter climb steps; the
 mother's plates go lathe + ripple corrugation. Measured **99 draws /
 448,083 tris**; 27/27 region tests green.
+
+Full 14 authored + 12 sweep captured and READ.
+
+- Authored: all 14 read as composed places. The lathe plates finally
+  wear their rings (`mother-crown` a firm pass from below now), the
+  u-96 ledge stack sits inside the bank silhouette, `blush-arch` gets
+  its petal eddies, and the two rests (`quiet-gallery`, `ravine-hush`)
+  hold their registered stillness.
+- Sweep: **9/12** — 05/07/08/10/11/12 clean, 01/02/06 soft passes on
+  the bank shards and stump line. Still missing: **03** u 357 v 174,
+  **04** u 497 v −159, **09** u 556 k 1.0. The r3 thesis (gate holes)
+  was only half right: the gates now COVER those flanks, but what they
+  deliver is ankle-height chips — 950 petals over a radius-130 disc is
+  one chip per 56 m², and a 0.06 m chip is gone past arm's reach at
+  eye height. The white half already knew the answer: something must
+  STAND in the first 35 m (MASTER's field-note flank bands). The
+  coloured half has no standing layer at all outside the beds.
+- Also traced: sweep 03's stump starvation is arithmetic, not gating —
+  `keep` multiplies by `paleWeight` (0.5 at the disc's far edge) on top
+  of the flank thinness; the edge poses were taxed twice.
+
+## Rework round 4 (`pa-fill-r4`) — the flanks get a standing layer
+
+The three misses share one shape: an outward pose over ground that
+holds only litter. Round 4 gives each half its knee-height answer:
+
+- **Pioneer sprigs** (NEW, `^ 0xfa0e`): kit carpetField tufts,
+  0.3–0.55 m, rose-gold painted for the region's warm light with a
+  violet shade (the verdant round-3 lesson), radius-175 disc reaching
+  both far flanks, gated `k > 0.42`, thinner where the shelf's own
+  turf speaks, `t1Free` keeps the pool/aisle law.
+- **Stumps 640 → 900**, `paleWeight` → `sqrt(paleWeight)` (un-taxing
+  the disc edge), and a `|v|`-flank lean joined to the radial one.
+- **Petal-fall grown**: 950 → 1,100 and 0.06–0.15 → 0.10–0.22 m.
+- Paid honestly: staghorn weight 0.03 → 0.015, brain 0.04 → 0.02
+  (fans take the freed weight — 9 staghorns and 8 brains remain, all
+  authored-bed anchors), grit 3,000 → 2,400, ossuary 2,950 → 2,800,
+  blush gravel 2,100 → 2,000, shelf turf 1,700 → 1,500, grove turf
+  1,200 → 1,100. Bed density and site counts untouched.
+
+Measured **100 draws / 449,597 tris**; 27/27 region tests green
+(carpet determinism now pins three carpet fields).

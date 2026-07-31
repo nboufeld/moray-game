@@ -54,6 +54,7 @@ export const FILL_SEEDS = {
   blushGravel: 0xfa08,
   bankShards: 0xfa0c,
   petalFall: 0xfa0d,
+  pioneerSprigs: 0xfa0e,
   turfShelf: 0xfa09,
   turfGrove: 0xfa0a,
   bedRubble: 0xfa0b,

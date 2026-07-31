@@ -104,13 +104,17 @@ export interface PaleBloomBuild {
 // Round 3: staghorn → 0.03 and brain → 0.04, fans take the freed weight
 // — the round pays for the ravine banks' and deep flanks' new ground
 // cover (the r2 sweep's four misses) without touching bed density.
+// Round 4: halved again (fans take the difference) — the flanks' new
+// standing layer (pioneer sprigs + stump growth) costs ~20k tris and the
+// two heaviest kinds are still 990 and 720 tris a head; the beds keep
+// their site count and piece count, only the silhouette mix shifts.
 const KIND_WEIGHTS: readonly (readonly [CoralKind, number])[] = [
   ["branch", 0.36],
   ["tube", 0.18],
   ["plateStack", 0.16],
-  ["staghorn", 0.03],
-  ["brain", 0.04],
-  ["fan", 0.23],
+  ["staghorn", 0.015],
+  ["brain", 0.02],
+  ["fan", 0.265],
 ];
 
 /**

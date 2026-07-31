@@ -235,6 +235,22 @@ const petalFallGate: GateFn = (x, z) => {
   return deep * grove * paleWeight(x, z) * t1Free(x, z);
 };
 
+/** Pioneer sprigs (round 4): the coloured half's STANDING layer. The r3
+ *  sweep's two remaining colour-side misses (04 at k 0.72, 09 at k 1.0)
+ *  both stood on far flanks where the only fill was ankle-height chips —
+ *  invisible past ten metres at eye height (the white half learned this
+ *  in round 2 and got stumps; MASTER's field note asks for flank bands
+ *  in the first 35 m). Knee-height rose tufts answer, dense in deep
+ *  recovery, thinner where the shelf's own turf already speaks. */
+const sprigGate: GateFn = (x, z) => {
+  const { u, v } = spokeOf(x, z);
+  const k = recovery(u, v);
+  const deep = smoothstep01((k - 0.42) / 0.18);
+  const shelfOwn = 1 - bloomWeight(u, v) * 0.6;
+  const grove = 1 - groveWeight(u, v) * 0.4;
+  return deep * shelfOwn * grove * Math.sqrt(paleWeight(x, z)) * t1Free(x, z);
+};
+
 /** The shelf's rose-gold turf, thickening with the gardens. */
 const shelfTurfGate: GateFn = (x, z) => {
   const { u, v } = spokeOf(x, z);
@@ -346,13 +362,18 @@ function stumpGeometry(): BufferGeometry {
  * draw, gated like the grit but thinning as the colour returns. Round 2:
  * grown in count and height, and LEANED toward the disc's outer band —
  * the r1 sweep's rim-facing poses (02/03) stared across ground where
- * nothing stood in the first 35 m (verdant's F-R3, again).
+ * nothing stood in the first 35 m (verdant's F-R3, again). Round 4:
+ * count up again and the region-weight starvation fixed — sweep 03
+ * stood at paleWeight 0.5 (the disc's far edge) and the multiplicative
+ * keep halved an already-thin flank; the square root restores the edge
+ * without touching the interior, and a |v|-flank lean joins the radial
+ * one so BOTH kinds of outward pose meet something standing.
  */
 function buildBoneStumps(): InstancedMesh {
   const random = new Random(SEED ^ FILL_SEEDS.stumps);
   const geometry = stumpGeometry();
   const material = createToonMaterial({ vertexColors: true });
-  const count = 640;
+  const count = 900;
   const mesh = new InstancedMesh(geometry, material, count);
   mesh.name = "pale-bone-stumps";
   mesh.castShadow = false;
@@ -385,9 +406,10 @@ function buildBoneStumps(): InstancedMesh {
     const k = recovery(u, v);
     const rc = Math.hypot(x - discCenter.x, z - discCenter.z);
     const rimLean = 0.55 + 0.45 * smoothstep01((rc - 120) / 45);
+    const flankLean = 0.55 + 0.45 * smoothstep01((Math.abs(v) - 70) / 45);
     const keep =
-      paleWeight(x, z) *
-      rimLean *
+      Math.sqrt(paleWeight(x, z)) *
+      Math.max(rimLean, flankLean) *
       (1 - smoothstep01((k - 0.3) / 0.35)) *
       (1 - groveWeight(u, v)) *
       t1Free(x, z);
@@ -529,7 +551,9 @@ export function buildPaleCarpet(
       area: discAreaAt(445, 0, 205),
       gate: gritGate,
       ground: seabedHeight,
-      count: 3000,
+      // Round 4: 3000 → 2400 — the grit's near-field job is done by the
+      // ossuary and stumps now; the trim part-funds the pioneer sprigs.
+      count: 2400,
       shapeSet: "shard",
       size: [0.1, 0.26],
       twoTone: true,
@@ -547,7 +571,8 @@ export function buildPaleCarpet(
       area: discAreaAt(BONE_FOREST.u, BONE_FOREST.v, 100),
       gate: ossuaryGate(treeSpots),
       ground: seabedHeight,
-      count: 2950,
+      // Round 4: 2950 → 2800, part of the sprig funding.
+      count: 2800,
       shapeSet: [vertebraGeometry(), branchFragmentGeometry()],
       size: [0.13, 0.3],
       twoTone: true,
@@ -566,7 +591,8 @@ export function buildPaleCarpet(
       area: blushArea(),
       gate: blushGravelGate,
       ground: seabedHeight,
-      count: 2100,
+      // Round 4: 2100 → 2000, part of the sprig funding.
+      count: 2000,
       shapeSet: "shard",
       size: [0.09, 0.22],
       twoTone: true,
@@ -581,7 +607,9 @@ export function buildPaleCarpet(
       area: discAreaAt(BLOOM_SHELF.u, BLOOM_SHELF.v, 90),
       gate: shelfTurfGate,
       ground: seabedHeight,
-      count: 1700,
+      // Round 4: 1700 → 1500 — the shelf holds its lushness at this
+      // density; the trim part-funds the flanks' new standing layer.
+      count: 1500,
       profile: "tuft",
       size: [0.3, 0.58],
       swayAmp: 0.03,
@@ -597,7 +625,8 @@ export function buildPaleCarpet(
       area: discAreaAt(SEED_GROVE.u, SEED_GROVE.v, 46),
       gate: groveTurfGate,
       ground: seabedHeight,
-      count: 1200,
+      // Round 4: 1200 → 1100, part of the sprig funding.
+      count: 1100,
       profile: "tuft",
       size: [0.22, 0.44],
       swayAmp: 0.03,
@@ -606,7 +635,9 @@ export function buildPaleCarpet(
 
   // Petal-fall (round 3): the deep-recovery flanks wear the grove's
   // shed petals — rose chips with a cream second tone, the coloured
-  // half's answer to the white half's grit floor.
+  // half's answer to the white half's grit floor. Round 4: grown a
+  // size and a fifth — at 0.06 m the r3 chips vanished past arm's
+  // reach, which is why sweeps 04 and 09 still read bare.
   keep(
     buildGroundLitter({
       seed: SEED ^ FILL_SEEDS.petalFall,
@@ -614,10 +645,27 @@ export function buildPaleCarpet(
       area: discAreaAt(SEED_GROVE.u - 42, SEED_GROVE.v, 130),
       gate: petalFallGate,
       ground: seabedHeight,
-      count: 950,
+      count: 1100,
       shapeSet: "shard",
-      size: [0.06, 0.15],
+      size: [0.1, 0.22],
       twoTone: true,
+    }),
+  );
+
+  // Pioneer sprigs (round 4): the coloured half's standing layer — see
+  // `sprigGate`. The disc reaches the far flanks the petal-fall's tighter
+  // circle leaves; rose-gold for the region's warm light, violet shade.
+  keep(
+    buildCarpetField({
+      seed: SEED ^ FILL_SEEDS.pioneerSprigs,
+      palette: { base: 0xe8a090, tip: 0xf6c9a8, shade: 0x96688c },
+      area: discAreaAt(SEED_GROVE.u - 40, SEED_GROVE.v, 175),
+      gate: sprigGate,
+      ground: seabedHeight,
+      count: 1250,
+      profile: "tuft",
+      size: [0.3, 0.55],
+      swayAmp: 0.04,
     }),
   );
 
