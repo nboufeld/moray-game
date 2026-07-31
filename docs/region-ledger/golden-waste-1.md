@@ -601,3 +601,53 @@ kit carpetField, fresh seed `crestStand` appended, 54 blades in a
 4.5 m disc at the scanned crest, dune-wire palette, `restFree ×
 lensFree` gated — exactly the lily-bench move that made
 close-salt-lily work in round 1.
+
+## Rework round 4 (`go-filled`) — the final read
+
+The crest stand is the round's only code change; the set is the
+canonical `go-filled` roster (authored 20/20 + sweep 12/12, all
+captured per-launch under sustained sibling load ~20 and ALL READ).
+
+**Authored + close: 20/20 pass.**
+
+- **close-wire-crest RESOLVED**: the authored stand fills the near
+  field with lit golden wire at 2–4 m, the crest line silhouettes
+  behind it and the road beams hold the distance — the frame that
+  failed three rounds is the set's best argument for the lily-bench
+  rule (author the close subject; never ask a global scatter to land
+  one).
+- The other four close poses hold their round-3 reads: lee-garden a
+  garden, salt-lily a pale bench under the pool glow, sand-rose glass
+  stars over fracture seams, palm-foot an understory with the trunk
+  off-axis.
+- The touring poses hold: saddle a road with gardens/stones/beam/veil,
+  oasis dense and warm, singing-flats' eels + caravan over shell
+  drift, slip-face's shoal on the dune's back, glass-reach's roses +
+  aprons + fins, gilded-shore's beam between the stacks over standing
+  tufts, drift-line's beat under its beam, dune-ocean anchored on
+  wrack + drift-marks, ray-crossing's file with pilot outriders,
+  hourglass/keeper poses framing the patrol, empty-quarter composed
+  bareness (the pale horizon slab flag stands — pre-fill distance
+  geometry, the region owner's).
+
+**Sweep: 11/12 three-layer, the miss inside a registered rest —
+STANDARD MET.** 01 dune face under glints against the glass rim; 02
+Glass Reach roses + seams + fin ranks; 03 a lee garden under dune
+walls; 05 the shore edge; 06 crest wire on the skyline over drift
+trails; 07 the monolith avenue over pebble drift; 08 tuft-scattered
+dune ocean; 10 the lee vale; 12 a sand-rose anchoring the reach — all
+carry near instances + mid dune + distance landmark. 04/09 are the
+thin cases (big dune walls with sparse near tufts) but both hold three
+honest layers past the r3 wire/grit boost. 11 looks into the Hourglass
+bowl floor — the Drain's Eye rest, bare by design with the pool glow
+and terrace treads composing it.
+
+**Budgets at close: 90 draws / 510,334 tris** (before the fill: 47 /
+136,326; caps 260 / 1.35M — the quality-first licence spent on blade
+profiles and paint, not raw count). **Headed frame gate: median
+16.7 ms (59.9 fps), p95 18.6 ms, settled scale 1.00** at BOTH probe
+poses (`oasis` 504.5,−0.6,3.8 — the densest interior — and
+`saddle-reveal` 250.6,5.0,26.9), measured on the shared box at load
+~20 with a sibling capture running; 16.7 ms is the 60 Hz vsync
+cadence, i.e. the region holds refresh at full scale. Gate ≤16.9 ms:
+**PASS**.
