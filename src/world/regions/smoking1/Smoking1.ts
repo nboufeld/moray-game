@@ -2,8 +2,10 @@ import { Group, Vector3 } from "three";
 import type { SphereCollider } from "../../CollisionField";
 import type { RegionBuild, RegionCapturePose, RegionDef } from "../RegionTypes";
 import { buildSmokingBasalt, COLONNADE, ORGAN } from "./SmokingBasalt";
+import { buildSmokingCarpets } from "./SmokingCarpets";
 import { buildSmokingChimneys } from "./SmokingChimneys";
 import { buildSmokingDistance } from "./SmokingDistance";
+import { buildSmokingFillLife } from "./SmokingFillLife";
 import { buildSmokingFlora } from "./SmokingFlora";
 import { buildSmokingGround } from "./SmokingGround";
 import { KEEPER_SPECIES_ID, buildKeeper } from "./SmokingKeeper";
@@ -163,6 +165,11 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "kiln-keeper", u: 498, v: 46, lift: 2.0, atU: KILN.u + 2, atV: KILN.v + 3, pitch: 0.02, settle: 6 },
   // The Ember Shore: the shelf, the stacks, the painted distance.
   { name: "ember-shore", u: 583, v: 12, lift: 3, atU: 645, atV: 0, pitch: 0.02 },
+  // Fill poses (plan §7.9) — aimed at the former bare stretches so the
+  // fixes stay photographed: mid-gorge looking back down the road, and
+  // the springs→forest road at its emptiest former metre.
+  { name: "gorge-road", u: 200, v: 2, lift: 2.2, atU: 150, atV: -2, pitch: 0.02 },
+  { name: "forest-road", u: 450, v: -62, lift: 2.4, atU: 498, atV: -54, pitch: 0.03 },
 ];
 
 function buildPoses(): RegionCapturePose[] {
@@ -218,6 +225,9 @@ export const SMOKING_1: RegionDef = {
     const life = buildSmokingLife(chimneys.kings);
     const light = buildSmokingLight();
     const distance = buildSmokingDistance();
+    // The Phase 3 fill tiers (fresh substreams — nothing above re-rolls).
+    const carpets = buildSmokingCarpets(chimneys.stands);
+    const fillLife = buildSmokingFillLife(basalt.perchTops);
     const ground = buildSmokingGround([
       ...basalt.contacts,
       ...chimneys.contacts,
@@ -238,6 +248,8 @@ export const SMOKING_1: RegionDef = {
       ...life.meshes,
       ...light.meshes,
       ...distance.meshes,
+      ...carpets.groups,
+      ...fillLife.groups,
     ]) {
       group.add(mesh);
     }
@@ -261,6 +273,11 @@ export const SMOKING_1: RegionDef = {
         flora.update(dt, ctx.reducedMotion);
         life.update(dt, ctx.time, ctx.reducedMotion);
         keeper.update(ctx.time, ctx.reducedMotion);
+        // The fill's motion is closed-form off simulated time (kit law 5).
+        const calm = ctx.reducedMotion ? 0.45 : 1;
+        carpets.update(ctx.time * calm);
+        fillLife.update(ctx.time * calm);
+        light.update(ctx.time * calm);
       },
     };
   },

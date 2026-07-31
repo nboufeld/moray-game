@@ -4,6 +4,8 @@ import type { SphereCollider } from "../../CollisionField";
 import { createRockMaterial } from "../../RockMaterial";
 import { boulderGeometry, slabGeometry, stackGeometry } from "../../RockShapes";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
+import { mergedMesh } from "./SmokingShared";
+import { FILL_SEEDS, MID_SHORE, inCalderaNorthQuadrant, inFlatsRest } from "./SmokingFillShared";
 import {
   CALDERA,
   GORGE_LIP_U,
@@ -208,6 +210,156 @@ export function buildSmokingRocks(): SmokingRocksBuild {
     5.4,
     paleStone,
   );
+
+  // ─── Phase 3 fill stones (fresh substream, appended — the fence) ─────────
+  // ~32 more stones for the reveal cadence: gorge boulders 7 → 18, flats
+  // cobble pairs, the fork cairn, six shore leaners and eight more caldera
+  // rim crags — merged into two draws (one per stone family) instead of
+  // one mesh per stone, colliders per stone as before.
+  const fill = new Random(SEED ^ FILL_SEEDS.fillRocks);
+  const charcoalParts: BufferGeometry[] = [];
+  const paleParts: BufferGeometry[] = [];
+
+  const standMerged = (
+    geometry: BufferGeometry,
+    u: number,
+    v: number,
+    yaw: number,
+    radius: number,
+    height: number,
+    pale: boolean,
+  ): void => {
+    const { x, z } = worldOf(u, v);
+    const y = seabedHeight(x, z);
+    geometry.applyMatrix4(new Matrix4().makeRotationY(yaw));
+    geometry.translate(x, y, z);
+    (pale ? paleParts : charcoalParts).push(geometry);
+    contacts.push({ x, z, radius: radius * 1.3, strength: 0.4 });
+    colliders.push({ center: new Vector3(x, y + height * 0.35, z), radius: radius * 0.85 });
+    if (height > radius * 1.6) {
+      colliders.push({ center: new Vector3(x, y + height * 0.75, z), radius: radius * 0.6 });
+    }
+  };
+
+  // Eleven more gorge boulders, filling the gaps between the pilot's seven
+  // so a wall foot breaches the fog every ~15 m of the approach.
+  for (const [i, u] of [70, 98, 112, 126, 140, 152, 168, 182, 210, 224, 238].entries()) {
+    const uu = u + fill.signed(3);
+    const side = i % 2 === 0 ? 1 : -1;
+    const lateral = gorgeChannelCenter(uu) + side * fill.range(4.6, 7);
+    const radius = fill.range(0.8, 1.7);
+    const height = radius * fill.range(0.85, 1.25);
+    standMerged(
+      boulderGeometry({ seed: SEED ^ (0x5fa1 + i), radius, height }),
+      uu,
+      lateral,
+      fill.range(0, Math.PI * 2),
+      radius,
+      height,
+      i % 4 === 0,
+    );
+  }
+
+  // Flats cobble pairs: three two-stone stations off the road, outside
+  // the Ash Meadows rest bar.
+  for (const [i, [u, v]] of ([
+    [296, 10],
+    [314, 34],
+    [346, -32],
+  ] as const).entries()) {
+    for (const [k, spread] of [0, 2.4].entries()) {
+      const radius = fill.range(0.6, 1.3) * (k === 0 ? 1 : 0.7);
+      const uu = u + spread * (k === 0 ? 0 : 1) + fill.signed(0.8);
+      const vv = v + (k === 0 ? 0 : fill.range(1.2, 2.6));
+      if (inFlatsRest(uu, vv)) {
+        continue;
+      }
+      standMerged(
+        boulderGeometry({ seed: SEED ^ (0x5fb1 + i * 2 + k), radius, height: radius }),
+        uu,
+        vv,
+        fill.range(0, Math.PI * 2),
+        radius,
+        radius,
+        i === 1,
+      );
+    }
+  }
+
+  // The fork cairn: a small pale stack marking the loop split — held off
+  // the rest bar's east edge (deviation from the plan's u 360, logged:
+  // the registry's flats rest ends at u 360, and the registry wins).
+  standMerged(
+    stackGeometry(
+      [
+        { radius: 0.9, rise: 0.4, stretch: 1.5, lean: 0.2 },
+        { radius: 0.6, rise: 1.6, stretch: 1.4, lean: -0.4 },
+      ],
+      { seed: SEED ^ 0x5fc1 },
+    ),
+    363,
+    24,
+    fill.range(0, Math.PI * 2),
+    0.9,
+    2.6,
+    true,
+  );
+
+  // Six shore leaners: the stacks' outriders, clear of the mid-shore rest.
+  for (let i = 0; i < 6; i++) {
+    const u = 562 + i * 14 + fill.signed(4);
+    const v = (i % 2 === 0 ? 1 : -1) * fill.range(18, 38);
+    if (Math.hypot(u - MID_SHORE.u, v - MID_SHORE.v) < 10) {
+      continue;
+    }
+    const radius = fill.range(0.9, 1.6);
+    const slab = fill.next() < 0.4;
+    const height = slab ? radius * fill.range(0.6, 0.8) : radius * fill.range(1.2, 1.8);
+    standMerged(
+      slab
+        ? slabGeometry({ seed: SEED ^ (0x5fd1 + i), radius, height })
+        : boulderGeometry({ seed: SEED ^ (0x5fd1 + i), radius, height }),
+      u,
+      v,
+      fill.range(0, Math.PI * 2),
+      radius,
+      height,
+      i % 3 === 0,
+    );
+  }
+
+  // Eight more rim crags, so the caldera's lip reads broken all the way
+  // round (the rim stands outside the north floor quadrant's rest ring).
+  for (let i = 0; i < 8; i++) {
+    const theta = ((i + 0.5) / 8) * Math.PI * 2 + fill.signed(0.18);
+    const d = 52 + fill.signed(3);
+    const u = CALDERA.u + Math.cos(theta) * d;
+    const v = CALDERA.v + Math.sin(theta) * d;
+    if (inCalderaNorthQuadrant(u, v)) {
+      continue;
+    }
+    const radius = fill.range(1.0, 2.0);
+    const slab = fill.next() < 0.5;
+    const height = slab ? radius * fill.range(0.6, 0.8) : radius * fill.range(1.0, 1.4);
+    standMerged(
+      slab
+        ? slabGeometry({ seed: SEED ^ (0x5fe1 + i), radius, height })
+        : boulderGeometry({ seed: SEED ^ (0x5fe1 + i), radius, height }),
+      u,
+      v,
+      fill.range(0, Math.PI * 2),
+      radius,
+      height,
+      i % 3 === 1,
+    );
+  }
+
+  if (charcoalParts.length > 0) {
+    meshes.push(mergedMesh(charcoalParts, charcoalStone, "smoulder-fill-rocks-charcoal"));
+  }
+  if (paleParts.length > 0) {
+    meshes.push(mergedMesh(paleParts, paleStone, "smoulder-fill-rocks-pale"));
+  }
 
   return { meshes, colliders, contacts };
 }

@@ -16,6 +16,8 @@ import { VEIN_GLOW_CHUNK, smoothstep01 } from "./SmokingShared";
 import {
   CHIMNEYS,
   GORGE_TO,
+  KILN,
+  SPRINGS,
   basaltWeight,
   calderaWeight,
   chimneysWeight,
@@ -116,9 +118,14 @@ function buildAshGrass(sway: { value: number }, wind: { value: number }): Instan
   };
   material.customProgramCacheKey = () => "smoulder-ash-grass";
 
-  const patches = 58;
+  // Fill growth (plan §7.4): 58 pilot patches kept byte-identical, 48
+  // more APPENDED on the same stream, plus a shore drift — the flats'
+  // swells and the rim's dune grass thicken without one pilot blade
+  // moving.
+  const patches = 106;
+  const shorePatches = 12;
   const bladesPerPatch = 34;
-  const capacity = patches * bladesPerPatch;
+  const capacity = (patches + shorePatches) * bladesPerPatch;
   const mesh = new InstancedMesh(bladeGeometry(), material, capacity);
   mesh.name = "smoulder-ash-grass";
   mesh.castShadow = false;
@@ -166,6 +173,19 @@ function buildAshGrass(sway: { value: number }, wind: { value: number }): Instan
     }
   }
 
+  // The Ember Shore's dune grass (fill): drifts of the same families out
+  // where the shelf fades to the rim, so the last road carries growth too.
+  for (let patch = 0; patch < shorePatches; patch++) {
+    const u = random.range(558, 645);
+    const v = random.signed(55);
+    const family = ASH_FAMILIES[Math.floor(paletteRandom.next() * ASH_FAMILIES.length)]!;
+    for (let blade = 0; blade < 24; blade++) {
+      const spread = 3.2 * Math.sqrt(random.next());
+      const angle = random.range(0, Math.PI * 2);
+      plant(u + Math.cos(angle) * spread, v + Math.sin(angle) * spread, family, 0.85);
+    }
+  }
+
   // Park the rest far below the world.
   dummy.position.set(0, -300, 0);
   dummy.scale.setScalar(0.0001);
@@ -204,7 +224,9 @@ function buildFlameFronds(sway: { value: number }, wind: { value: number }): Ins
   };
   material.customProgramCacheKey = () => "smoulder-flame-frond";
 
-  const capacity = 230;
+  // Fill growth: capacity for the new banks below; the pilot's plantings
+  // keep their exact stream (appended draws only).
+  const capacity = 420;
   const mesh = new InstancedMesh(geometry, material, capacity);
   mesh.name = "smoulder-flame-fronds";
   mesh.castShadow = false;
@@ -255,6 +277,51 @@ function buildFlameFronds(sway: { value: number }, wind: { value: number }): Ins
     for (let k = 0; k < 3; k++) {
       plant(u + random.signed(1.4), v + random.signed(1.2));
     }
+  }
+
+  // ─── Fill banks (appended draws — the fence) ─────────────────────────────
+  // The reveal-cadence banks: the gorge's ember seep at 78, the wall
+  // vein-scar's foot at 105, the warm pool at 240 — every mat and glow
+  // mark grows something alive beside it.
+  for (const [u, offset, count] of [
+    [78, 1.6, 6],
+    [105, -1.8, 5],
+    [240, -1.8, 4],
+  ] as const) {
+    const v = gorgeChannelCenter(u) + offset;
+    for (let k = 0; k < count; k++) {
+      plant(u + random.signed(1.8), v + random.signed(1.4));
+    }
+  }
+  // The springs road bank and the terraces' own rims (the crown pool rest
+  // keeps its five-metre mirror).
+  for (let k = 0; k < 8; k++) {
+    plant(370 + random.signed(2.4), -40 + random.signed(2));
+  }
+  for (const bearing of [0.8, 2.2, 3.9, 5.2]) {
+    const d = 14 + (bearing % 1.3) * 9;
+    const u = SPRINGS.u + Math.cos(bearing) * d;
+    const v = SPRINGS.v + Math.sin(bearing) * d;
+    for (let k = 0; k < 6; k++) {
+      plant(u + random.signed(2.2), v + random.signed(2.2));
+    }
+  }
+  // The forest thickens: twenty more clusters where the heat is.
+  for (let cluster = 0; cluster < 20; cluster++) {
+    const angle = random.range(0, Math.PI * 2);
+    const spread = Math.sqrt(random.next()) * (CHIMNEYS.radius * 0.82);
+    const u = CHIMNEYS.u + Math.cos(angle) * spread;
+    const v = CHIMNEYS.v + Math.sin(angle) * spread;
+    if (chimneysWeight(u, v) < 0.4) {
+      continue;
+    }
+    for (let i = 0; i < 8; i++) {
+      plant(u + random.signed(2.2), v + random.signed(2.2));
+    }
+  }
+  // The kiln's south feet — the Keeper tends a living hearth.
+  for (let k = 0; k < 6; k++) {
+    plant(KILN.u - 2 + random.signed(2.6), KILN.v - 9 + random.signed(1.8));
   }
 
   dummy.position.set(0, -300, 0);

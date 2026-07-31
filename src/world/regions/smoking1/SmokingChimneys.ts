@@ -22,7 +22,9 @@ import { Random, SEEDS } from "../../../util/Random";
 import type { SphereCollider } from "../../CollisionField";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
 import { EMBER, SINTER_PALE, applyVeinGlow, smoothstep01 } from "./SmokingShared";
+import { FILL_SEEDS, inCalderaNorthQuadrant } from "./SmokingFillShared";
 import {
+  CALDERA,
   CHIMNEYS,
   calderaWeight,
   chimneysWeight,
@@ -306,6 +308,35 @@ export function buildSmokingChimneys(): SmokingChimneysBuild {
   // ghost actually ghosts; round 4 measured 66 m as invisible).
   stands.push(seat(308, 14, 8));
 
+  // ─── Phase 3 fill stands (fresh substream, appended — the fence) ────────
+  // Six sapling smokers among the elders and two gorge minis at the warm
+  // pool and the shimmer column stations (fill plan §3, gorge T3). They
+  // are placed AFTER every pilot draw on the pilot's own stream, so the
+  // pilot's forest keeps its exact bytes.
+  const fillRandom = new Random(SEED ^ FILL_SEEDS.fillChimneys);
+  const fillStands: ChimneyStand[] = [];
+  let fillAttempts = 0;
+  while (fillStands.length < 6 && fillAttempts++ < 220) {
+    const angle = fillRandom.range(0, Math.PI * 2);
+    const spread = Math.sqrt(fillRandom.next()) * (CHIMNEYS.radius * 0.85);
+    const u = CHIMNEYS.u + Math.cos(angle) * spread;
+    const v = CHIMNEYS.v + Math.sin(angle) * spread;
+    if (chimneysWeight(u, v) < 0.45 || calderaWeight(u, v) > 0.25) {
+      continue;
+    }
+    if (
+      stands.some((s) => Math.hypot(s.u - u, s.v - v) < 6) ||
+      fillStands.some((s) => Math.hypot(s.u - u, s.v - v) < 6)
+    ) {
+      continue;
+    }
+    fillStands.push(seat(u, v, fillRandom.range(3.2, 5.4)));
+  }
+  for (const [i, u] of [175, 215].entries()) {
+    const v = gorgeChannelCenter(u) + (i === 0 ? -5.5 : 5);
+    fillStands.push(seat(u, v, fillRandom.range(2.6, 3.4)));
+  }
+
   // Instanced across three archetypes.
   const archetypes = [0, 1, 2].map((variant) => smokerGeometry(variant));
   const smokerMaterial = createToonMaterial({
@@ -314,7 +345,7 @@ export function buildSmokingChimneys(): SmokingChimneysBuild {
     emissiveIntensity: 0.3,
   });
   applyVeinGlow(smokerMaterial, "smoulder-smoker");
-  const perArchetype = Math.ceil(stands.length / archetypes.length) + 2;
+  const perArchetype = Math.ceil((stands.length + fillStands.length) / archetypes.length) + 2;
   const smokerMeshes = archetypes.map((geometry) => {
     const mesh = new InstancedMesh(geometry, smokerMaterial, perArchetype);
     mesh.name = "smoulder-smokers";
@@ -347,6 +378,28 @@ export function buildSmokingChimneys(): SmokingChimneysBuild {
     );
     contacts.push({ x: stand.x, z: stand.z, radius: girth * 2.6, strength: 0.45 });
   }
+  // The fill stands, appended with their own stream (saplings run a touch
+  // slimmer — young mineral, not yet a tree).
+  for (const stand of fillStands) {
+    const variant = Math.floor(fillRandom.next() * archetypes.length);
+    const mesh = smokerMeshes[variant]!;
+    const girth = stand.height * fillRandom.range(0.12, 0.16);
+    dummy.position.set(stand.x, stand.y - 0.2, stand.z);
+    dummy.rotation.set(0, fillRandom.range(0, Math.PI * 2), 0);
+    dummy.scale.set(girth, stand.height + 0.2, girth);
+    dummy.updateMatrix();
+    mesh.setMatrixAt(counts[variant]!, dummy.matrix);
+    tint.setScalar(fillRandom.range(0.85, 1.1));
+    mesh.setColorAt(counts[variant]!, tint);
+    counts[variant]!++;
+
+    colliders.push(
+      { center: new Vector3(stand.x, stand.y + stand.height * 0.18, stand.z), radius: girth * 1.15 },
+      { center: new Vector3(stand.x, stand.y + stand.height * 0.55, stand.z), radius: girth * 0.75 },
+      { center: new Vector3(stand.x, stand.y + stand.height * 0.9, stand.z), radius: girth * 0.55 },
+    );
+    contacts.push({ x: stand.x, z: stand.z, radius: girth * 2.6, strength: 0.45 });
+  }
   for (const [variant, mesh] of smokerMeshes.entries()) {
     mesh.count = counts[variant]!;
     mesh.instanceMatrix.needsUpdate = true;
@@ -364,8 +417,11 @@ export function buildSmokingChimneys(): SmokingChimneysBuild {
     emissiveIntensity: 0.5,
   });
   applyVeinGlow(ventMaterial, "smoulder-vent");
+  // The pilot's 30 vents keep their exact stream; the mesh's capacity is
+  // grown for the fill's appended vents and fume domes below.
   const ventCount = 30;
-  const vents = new InstancedMesh(ventGeometry(), ventMaterial, ventCount);
+  const ventCapacity = 84;
+  const vents = new InstancedMesh(ventGeometry(), ventMaterial, ventCapacity);
   vents.name = "smoulder-vents";
   vents.castShadow = false;
   vents.receiveShadow = false;
@@ -390,6 +446,51 @@ export function buildSmokingChimneys(): SmokingChimneysBuild {
       ventPlaced++;
     }
   }
+  // ─── Fill vents (fresh substream, appended) ──────────────────────────────
+  // Vents grow 30 → ~80: more mouths under the forest and around the fill
+  // stands, and twelve low fume domes on the caldera's south floor — the
+  // north quadrant keeps its registered quiet.
+  const ventFill = new Random(SEED ^ FILL_SEEDS.fillVents);
+  const allStands = [...stands, ...fillStands];
+  let fillVentGuard = 0;
+  while (ventPlaced < ventCapacity - 12 && fillVentGuard++ < 400) {
+    const stand = allStands[Math.floor(ventFill.next() * allStands.length)]!;
+    const theta = ventFill.range(0, Math.PI * 2);
+    const d = ventFill.range(2.4, 6.5) * Math.max(0.6, stand.height / 12);
+    const x = stand.x + Math.cos(theta) * d;
+    const z = stand.z + Math.sin(theta) * d;
+    dummy.position.set(x, seabedHeight(x, z) + 0.02, z);
+    dummy.rotation.set(0, ventFill.range(0, Math.PI * 2), 0);
+    dummy.scale.setScalar(ventFill.range(0.6, 1.4));
+    dummy.updateMatrix();
+    vents.setMatrixAt(ventPlaced, dummy.matrix);
+    tint.setScalar(ventFill.range(0.9, 1.1));
+    vents.setColorAt(ventPlaced, tint);
+    ventPlaced++;
+  }
+  let domeGuard = 0;
+  let domesPlaced = 0;
+  while (domesPlaced < 12 && domeGuard++ < 200 && ventPlaced < ventCapacity) {
+    const theta = ventFill.range(0, Math.PI * 2);
+    const d = 8 + Math.sqrt(ventFill.next()) * 34;
+    const u = CALDERA.u + Math.cos(theta) * d;
+    const v = CALDERA.v + Math.sin(theta) * d;
+    if (inCalderaNorthQuadrant(u, v) || calderaWeight(u, v) < 0.5) {
+      continue;
+    }
+    const { x, z } = worldOf(u, v);
+    const w = ventFill.range(1.2, 2.2);
+    dummy.position.set(x, seabedHeight(x, z) + 0.02, z);
+    dummy.rotation.set(0, ventFill.range(0, Math.PI * 2), 0);
+    dummy.scale.set(w, w * 0.55, w);
+    dummy.updateMatrix();
+    vents.setMatrixAt(ventPlaced, dummy.matrix);
+    tint.setScalar(ventFill.range(0.85, 1.05));
+    vents.setColorAt(ventPlaced, tint);
+    ventPlaced++;
+    domesPlaced++;
+  }
+
   vents.count = ventPlaced;
   vents.instanceMatrix.needsUpdate = true;
   if (vents.instanceColor) {
@@ -403,7 +504,7 @@ export function buildSmokingChimneys(): SmokingChimneysBuild {
   // puff climbs its column, swells, and dies into the water — additive,
   // so brightness is its opacity, warm grey keyed to the ember throats.
   const puffsPer = 7;
-  const puffCount = stands.length * puffsPer;
+  const puffCount = (stands.length + fillStands.length) * puffsPer;
   const smokeMaterial = new MeshBasicMaterial({
     map: smokeTexture(),
     transparent: true,
@@ -431,6 +532,20 @@ export function buildSmokingChimneys(): SmokingChimneysBuild {
         rise: 6 + stand.height * 0.6,
         phase: random.range(0, 1),
         drift: random.range(0, Math.PI * 2),
+      });
+    }
+  }
+  // The fill stands breathe too — appended homes on their own stream.
+  const smokeFill = new Random(SEED ^ FILL_SEEDS.fillSmoke);
+  for (const stand of fillStands) {
+    for (let i = 0; i < puffsPer; i++) {
+      puffHomes.push({
+        x: stand.x,
+        y: stand.y + stand.height,
+        z: stand.z,
+        rise: 6 + stand.height * 0.6,
+        phase: smokeFill.range(0, 1),
+        drift: smokeFill.range(0, Math.PI * 2),
       });
     }
   }
@@ -468,7 +583,9 @@ export function buildSmokingChimneys(): SmokingChimneysBuild {
     meshes,
     colliders,
     contacts,
-    stands,
+    // Fill stands included: consumers (the carpet module's foot aprons)
+    // dress every smoker, pilot and sapling alike.
+    stands: allStands,
     kings,
     update(dt: number, reducedMotion: boolean): void {
       time += dt * (reducedMotion ? 0.35 : 1);

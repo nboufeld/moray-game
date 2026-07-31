@@ -14,6 +14,7 @@ import { Random, SEEDS } from "../../../util/Random";
 import type { SphereCollider } from "../../CollisionField";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
 import { smoothstep01 } from "./SmokingShared";
+import { FILL_SEEDS } from "./SmokingFillShared";
 import { BASALT, BASALT_STEP, basaltWeight, worldOf } from "./SmokingTerrain";
 
 /**
@@ -38,6 +39,9 @@ export interface SmokingBasaltBuild {
   readonly meshes: InstancedMesh[];
   readonly colliders: SphereCollider[];
   readonly contacts: ContactPatch[];
+  /** Break-face tops of the tall standing columns (colonnade rows and
+   *  organ pipes), world space — seats for the fill's perch fish. */
+  readonly perchTops: readonly (readonly [number, number, number])[];
 }
 
 /** The Broken Colonnade: the swim-through arcade on the meadow approach. */
@@ -237,6 +241,23 @@ export function buildSmokingBasalt(): SmokingBasaltBuild {
     });
   }
 
+  // ─── Fill: fallen segments on the colonnade approach ────────────────────
+  // Phase 3 (fresh substream, appended after every pilot draw — the
+  // reroll fence): four broken shafts shed toward the meadow side, so the
+  // arcade's doorway carries its own rubble story.
+  const fillRandom = new Random(SEED ^ FILL_SEEDS.fillBasalt);
+  for (let i = 0; i < 4; i++) {
+    const s = -9 - i * 3.2 + fillRandom.signed(1.2);
+    spots.push({
+      u: COLONNADE.u + along.u * s + across.u * fillRandom.signed(5),
+      v: COLONNADE.v + along.v * s + across.v * fillRandom.signed(5),
+      height: fillRandom.range(2.0, 3.8),
+      radius: fillRandom.range(0.42, 0.58),
+      yaw: fillRandom.range(0, Math.PI * 2),
+      fallen: true,
+    });
+  }
+
   // ─── Instancing ──────────────────────────────────────────────────────────
   const archetypes = [0, 1, 2].map((variant) => columnGeometry(variant));
   const material = createToonMaterial({ vertexColors: true });
@@ -251,6 +272,7 @@ export function buildSmokingBasalt(): SmokingBasaltBuild {
 
   const colliders: SphereCollider[] = [];
   const contacts: ContactPatch[] = [];
+  const perchTops: [number, number, number][] = [];
   const dummy = new Object3D();
   const tint = new Color();
   const counts = [0, 0, 0];
@@ -281,6 +303,11 @@ export function buildSmokingBasalt(): SmokingBasaltBuild {
     mesh.setColorAt(counts[variant]!, tint);
     counts[variant]!++;
 
+    // The tall standing shafts' break faces are the fill's perch seats.
+    if (!spot.fallen && spot.height > 4.5) {
+      perchTops.push([x, y + spot.height, z]);
+    }
+
     if (spot.collide) {
       if (spot.fallen) {
         colliders.push({ center: new Vector3(x, y + spot.radius, z), radius: spot.height * 0.42 });
@@ -309,5 +336,5 @@ export function buildSmokingBasalt(): SmokingBasaltBuild {
     mesh.computeBoundingSphere();
   }
 
-  return { meshes, colliders, contacts };
+  return { meshes, colliders, contacts, perchTops };
 }

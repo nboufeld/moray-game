@@ -199,3 +199,186 @@ kiln-keeper, ember-shore.
 
 - The round 1–3 critique text above is a reconstruction (see the
   provenance note); the capture PNGs and commits are the primary record.
+
+---
+
+# Phase 3 rework — the fill (docs/fill-plans/smoking-marches-1.md)
+
+Executed against FILL-DOCTRINE / MASTER (registry §1.2 inviolable; the
+two Smoulder rest bars are the Ash Meadows centre u 330–360 v ±20 and
+the caldera's north floor quadrant — both tested empty of every fill
+tier). Budgets per R1: ≤ 160 draws / ≤ 450k tris, measured by the
+region test. All fill streams are `SEEDS.regionSmoking1 ^ FILL_SEEDS.*`
+(fresh constants, appended after every pilot draw); the test pins
+smoker/basalt/bead/vent/rock positions from the pre-fill build to prove
+the fence.
+
+## Deviations, cited
+
+- **The fork cairn and its glow at u 363, v 24** (plan §2 drew the fork
+  at u ≈ 360, v 0): the registry's Ash Meadows rest bar ends at u 360 /
+  v ±20 and is glow-free — the registry wins (R10). The cairn marks the
+  fork from just past the bar's corner.
+- **The spine shoal's fork pool at (365, 26)** — same clause; the loop
+  also rides the flats' NORTH shoulder out and the south home leg at
+  v ≈ −28, so it never crosses the rest bar, the erratic's shadow or
+  the mid-shore pocket. Asserted by test.
+- **The Spring Head geyser** stands over the crown's throat; the crown
+  pool rest itself takes NO standing fill (the burst is the landmark's
+  own breath, plan §4.3's authored event; new light marks are tested
+  out of all six rests, with the pilot's six pool rows grandfathered).
+- **No new contacts registered for the mats** (plan §7.3 said "contacts
+  registered with buildSmokingGround"): a mat is a draped decal with a
+  dissolving rim — a contact shadow under it would darken through its
+  own transparency. The new rocks/smokers register contacts as before.
+- **Vents 30 → 72** (plan said 80): the pilot's 30 keep their exact
+  stream; 30 more forest/stand vents + 12 caldera fume domes land under
+  an 84 capacity — the last 8 were headroom, not composition.
+
+## Rework round 1 (`sm-fill-r1`) — critique
+
+All 14 authored poses captured (12 pilot + the plan's two road poses)
+and READ against the `smoulder-final` baseline:
+
+- `gorge-descent`/`first-breath`/`gorge-road`: the road is a place now —
+  cinder gravel, seep mats + frond banks, wall boulders every ~15 m,
+  glow marks, the spine shoal overhead, gorge motes. **Fails on marks**:
+  the shoal's glint thread reads as cold-white fairy lights in the warm
+  register (kit sparkle is 0xf4ffe8 — wrong lamp for this country).
+- `gorge-lip`: skyline + beam land; the foreground shelf u 252–280
+  still bare — the sulfur band started at u 280.
+- `ash-flats`: grass, cobble pairs, tufts, hoppers, erratic, scout ✓.
+- `colonnade`: aisle blade ✓, fallen segments ✓; the floor's joint
+  litter reads as specks (too small at pose height).
+- `organ-steps`: scree + fallen shafts + skyline ✓.
+- `spring-stair`: the geyser fires ✓, shard litter + mats on the treads
+  — but the near thermophile mat reads maroon-black (rust/skirt bands
+  painted too deep for this light: the verdant round-1 lesson, again)
+  and large mats break across risers.
+- `chimney-forest`/`twin-kings`/`forest-road`: floor fed (ember gravel,
+  aprons, fronds, urchins) — but the vent-shrimp swarms spray white
+  sparkle across the SKY at pose height: too many, too big, too high.
+- `caldera-rim`: cobble run + fume domes + seam mats give the bowl a
+  floor; north quadrant quiet ✓.
+- `kiln-keeper`: **corrupted frame** (flat violet) — diagnosed as a
+  capture-harness race, not scene content: the same pose re-captured
+  with longer post-capture wall time renders clean every time (the pose
+  triggers the keeper discovery mid-settle and brings several unique
+  programs into frustum; the 250 ms screenshot wait can race the
+  compile). Flagged below; retaken per round.
+- `ember-shore`: dune grass, scoria windrows, leaners, tufts ✓.
+
+### Round-1 sweep — verdict ~4–5/12
+
+PASS 05 (basalt near/mid/skyline), 08 (forest eaves), 09 (forest);
+marginal 04, 06 (smoke-bushes read as pumpkin buns — tips too ripe),
+10, 12; FAIL 01, 02, 03, 07, 11 — every fail is the bare inter-zone
+disc / rim flank band, none in a registered rest. The verdant shape
+exactly: 620 sulfur tufts over a 215 m disc cannot carry the near
+layer, and default-size litter vanishes past 8 m.
+
+**Round-2 orders**: a base ash-tuft carpet (3,000 cards, bone-over-
+violet, painted a step off the ground paint) across the whole disc;
+sulfur tufts 620 → 950, taller, band leaned harder to the rim and
+reached back to the lip flanks; flats pebbles and joint litter grown a
+size; vent shrimp halved, smaller, dimmer, floor-hugging; the shoal's
+glint thread dropped (the motes are this region's sparkle); smoke-bush
+tips off pumpkin onto smoulder; spring-mat bands lifted a value and
+radii tightened to one tread.
+
+## Rework round 2 (`sm-fill-r2`) — critique
+
+All 14 authored poses (kiln-keeper clean this round) and the 12-pose
+sweep captured and READ. The mark tune-downs landed: shrimp swarms sit
+low and dim, the shoal keeps its ember body without the cold glint,
+smoke-bushes read burnt, the spring mats hold their tread and their
+value. `chimney-forest`/`forest-road`/`spring-stair`/`kiln-keeper` are
+finished pictures.
+
+### Round-2 sweep — verdict ~6–7/12
+
+PASS 04, 06, 08, 09 (the forest and its eaves carry everywhere);
+borderline-pass 05, 10, 12 (basalt country: columns + litter, near
+layer thin); FAIL 01, 02, 03, 07, 11 — the same inter-zone disc bands
+as r1, none in a registered rest. The r2 base carpet did NOT read:
+
+- **The bone-pale paint converged with the fog-lit ash floor** — the
+  exact wording of verdant-1's round-3 lesson, suffered here despite
+  quoting it: 3,000 pale cards stood on a pale ground under a warm fog
+  and vanished. What DOES read at pose height, in every frame that has
+  it, is the ash grass's dark violet silhouette.
+- Litter at 0.07–0.24 m still reads as specks past ~8 m; the gorge's
+  near field (`first-breath`, `gorge-road`) is gravel-only and bare.
+
+**Round-3 orders** (the value pass, done properly): repaint the base
+carpet INTO the dark family the region already proves — charcoal-violet
+stubble a full value BELOW the ground paint — and double it (3,000 →
+6,000 cards, 0.4–0.75 m); give the gorge its own standing stubble
+(1,100 cards on the wall feet, centre tread kept lighter so the road
+stays a road); sulfur tufts 950 → 1,300 with the flank floor raised
+0.35 → 0.45; every litter family up a size step (gorge gravel 1,500 @
+0.1–0.28, ripple/scoria 0.1–0.3, forest gravel 800 @ 0.08–0.24).
+
+## Rework round 3 (`sm-fill-r3`) — critique
+
+All 14 authored poses (kiln-keeper retaken with a 9 s post-capture
+wait after the harness race hit again — scene content clean both
+times) and the 12-pose sweep captured and READ.
+
+The value pass is the round that made the region. The charcoal-violet
+stubble reads at pose height in EVERY sweep frame — the exact dark
+silhouette the ash grass was already proving — and the up-sized litter
+finally survives past 8 m:
+
+- `gorge-descent`/`first-breath`/`gorge-road`: the gorge is finished —
+  standing stubble on the wall feet, cinder gravel with visible stones,
+  the centre tread lighter so the road still reads as a road, seep mats
+  and glow marks pacing it, the spine shoal and motes overhead.
+- `gorge-lip`: the u 252–280 shelf carries its own tuft band now.
+- `colonnade`/`organ-steps`: joint litter reads as stones, stubble
+  fills the aisles; fallen segments + blade ✓.
+- `spring-stair`: mats hold their tread and value; geyser fires ✓.
+- `chimney-forest`/`twin-kings`/`forest-road`: finished pictures —
+  smoker feet glowing, ember gravel, shrimp low and dim.
+- `caldera-rim`: fume domes + seam mats; north-quadrant floor still
+  quiet ✓. `ash-flats`: hoppers, cobbles, tufts, grass ✓.
+- `ember-shore`: leaners with scoria saddles, dune grass, windrows ✓.
+- `kiln-keeper`: dome, jellies, prints and a hatchling in frame; the
+  mood table untouched.
+
+### Round-3 sweep — verdict 11/12
+
+PASS 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 12 — every frame carries
+near stubble/litter, a mid event (columns, boulders, smokers, mats)
+and a far silhouette (skyline stands, rim, motes). 06 and 07 are the
+thinnest passes (flats country: far layer is one distant stand plus
+marks) but all three layers are present on the flanks. The one MISS is
+11: the camera looks straight down the flats centre — the REGISTERED
+flats rest bar — so its mid band is deliberately empty; near fronds
+and the colonnade skyline are there. Miss inside a registered rest:
+allowed by the standard. 11/12 ≥ 11 — the standard is met; rounds
+close.
+
+## Fill close-out — budgets and captures
+
+Budgets, measured by the region test (printed by the budget spec):
+
+- **Before** (pilot, `smoulder-final`): 59 draws / 171,543 tris.
+- **After** (fill, r3): **94 draws / 398,685 tris** — inside the
+  doctrine's ≤160 / ≤450k with headroom (66 draws / ~51k tris).
+
+Final capture sets under `sm-filled`: authored (14 poses), sweep
+(12 poses), and the `SHOT_NO_ASSETS=1` procedural-fallback authored
+set — all read.
+
+Flags for the orchestrator:
+
+- **Capture-harness race** (pre-existing, not a scene bug): poses that
+  trigger a discovery mid-settle can screenshot before the last unique
+  programs compile (flat-violet frame). A longer post-capture wait
+  renders clean every time. `scripts/region-shots.mjs`'s 250 ms wait is
+  worth raising, but that file is out of this branch's scope.
+- The fork cairn glow sits at u 363 (plan said ~360) — the registry's
+  glow-free bar u 330–360 wins over the plan's number.
+- Thermophile mats are decals and register no ground contacts — a
+  contact shadow would darken through their own transparency.
