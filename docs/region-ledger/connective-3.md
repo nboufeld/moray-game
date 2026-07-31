@@ -302,9 +302,31 @@ Three misses were not bad poses; they were a lottery.
 4. r4 recaptures the full route set under pins — the passing r3 frames
    were unpinned luck; the pinned set is the record.
 
-### r4 (looked at — ten route poses, pinned)
+### r4 (looked at — ten route poses, pinned) — ALL TEN PASS
 
-_(pending capture)_
+The pinned set is the record; the standard ("visibly alive at ≥ 2
+authored poses per route") holds for all five routes:
+
+- **verdant** — bowl: the file crosses the saddle crest beside the
+  kelp stand; wing: the set's best frame — near fish at the shoulder,
+  the file mid-lane over the bed, the far cluster against the doorway
+  blue.
+- **golden** — bowl: the gold file draped along the whole crest line;
+  wing: the file large at the near shoulder trailing to the gate
+  notch, motes and the repainted falls in the same look — the Honey
+  Gate handshake in one frame.
+- **pale** — bowl: the pearl file dense over the gate crest by the
+  mossy arch; wing: the file threads the grass corridor mid-frame.
+- **smoking** — bowl: the ember file rides the crest past the smoker
+  chimney, warm bellies against the sand; wing: FIXED — from the
+  raised stand the file streams the whole corridor down toward the
+  camera, gate notch and kelp country behind.
+- **calamity** — bowl: the grey file crosses the notch over the fallen
+  arch, countable and moving — sparse as designed, no longer a
+  lottery; wing: FIXED — the file rides the corridor's left shoulder
+  large in frame, the raked litter walls on both sides, the doorway
+  green beyond. Melancholy reads as intended: fewer, slower, no
+  sparkle.
 
 ## The verdant pass (MASTER R4 / connective §4.4) — VERIFIED
 
