@@ -246,6 +246,101 @@ the Deep Sentinel a pebble on the horizon.
    the mouth looking IN through the curtain; wellsprings lower and
    closer; fallen-causeway reframed; Deep Sentinel grown to 6.2 m.
 
+### Round 2 (`v3-r2`) — the vistas arrive; the close range and the paint still owe
+
+All 16 authored poses captured; the sweep ran while the round-3 edits
+landed (frames 06–12 carry mixed code — the seeded poses recur, the
+full clean sweep re-runs in round 3).
+
+Silhouette: **the region exists now.** `twin-court` is a real vista —
+the twins tower with garden-fringe crowns (the antlers are gone), the
+Sunfall falls between them, a near flank crops the left; `doorwarden`
+and `kingpillar` are portraits (backing off to d ≈ 34 worked; the crown
+pads + short drapes read as gardens); `hollow-mesa` finally shows its
+room — interior wall, oculus light, glow buds — but the mouth's raw
+lathe cut reads as razor diagonals, and the Elderleaf's curtain is
+thin; `provinces-end`'s horizon EXISTS but the near mesa cards read as
+BLACK TEETH floating on the crest line (fade 0.3 made the nearest
+distance ink the darkest thing in frame — the value key inverted);
+`fallen-causeway`'s log profile is right and its PAINT is not (a pale
+tarp; a mossy bole is drawn by its moss); `boughfall`'s mid-frame is
+the Boughfall Shadow rest itself, and unpainted stillness reads as
+missing fill, not composed dark.
+
+Value: the canopy pads read organic now but chunky-angular at pose
+range (detail-1 icosahedra torn into plates); trunks read barky at the
+gate, flat-grey at 30 m (fog does part of that); mesa flanks at close
+range still one wash — the r2 contrast helps at portrait range only.
+**The close poses still fail**: `close-shade-floor` — dark violet-navy
+rosettes on khaki (the value lift was half a step short; 6,000 fronds
+over 140,000 m² is still 1/23 m²); `close-road-moss` — better, thin
+(and a dark seam line at grazing angle: the pass sheet's overlap edge);
+`close-garden-skirt` — PASSES (S-bend gold-tipped blades read as
+painted grass; the prismatic toon gradient is genuinely Ghibli);
+`close-wellspring-rim` — bubbles ✓ pale pool ✓, but the ring paint
+reads as tire tracks and the near rim is bare.
+
+Sweep (r2/r3 mixed): **~7 pass / 4 marginal / 1 harness glitch**
+(frame 05 solid teal with the "hidden moray" HUD — the documented
+capture-state glitch; recaptured next round). The marginals are all
+ONE class: rim-facing cones (02/03/09 thin near bands, 08's left half
+open water + the distance ring seen dead-on) — MASTER's F-R3 field
+note verbatim.
+
+**Round-3 orders** (all landed before the r3 capture): floor paint red
+0.40 + lichen widened; frond/blade palettes a second value step up,
+counts 7,400/2,600, tall stands 420; road 1,500 + 450 shell pebbles,
+band 26 m; descent moss lifted; pads to detail-2 spheres; mesa violet
+runnels + log moss banding; hollow mouth dressed (flank boulders +
+lintel slab), curtain 7 strands; Boughfall Shadow painted as a composed
+cool dark; distance near cards fade 0.48 / heights 54–68, the Mother at
+−10 with fade 0.44; wellspring rings softened + rim sward 260 widened
+inward; pass sheet sunk 7 cm; **the rampart hem** (F-R3): 560 standing
+blades ringing rc 168–198; `boughfall` pose moved up-channel to keep
+dressed treads in its near band.
+
+### Round 3 (`v3-r3`) — the paint answers arrive; the threshold road still owes
+
+Capture note: the machine carried four sibling region workers; the
+authored run crashed after six poses (the browser, not the build) and
+the remaining ten — all four close poses among them — recapture after
+the r3 sweep completes. Critique of the six in hand:
+
+Silhouette: `twin-court` is now the region's proof shot — the Sunfall
+shaft falls full-height between the twins, the kingpillar's fringed
+crown stacks behind, the Fallen's log-end crops the right, the Ray
+Wheel crosses mid-frame, and the west cliff crops the left: five
+depth planes, no dead quarter. `deep-vista` reads as a mesa CITY under
+one canopy — nine distinct verticals, no two alike, ray in the middle
+distance. `boughfall` (the moved pose) now frames the descent between
+two gate trunks with the beam falling into the channel — the Boughfall
+Shadow below reads as a composed cool dark, not a hole. `doorwarden`
+keeps its portrait: fringe crown, violet runnels legible through fog.
+`eaves-gate` is the round's best floor — sward with lichen mottle,
+waymark pair, boulder, blades in three bands to the trees.
+
+Value: the second value step landed — `eaves-gate`'s blades read
+mid-value against the sward (r2's navy specks are gone at this range),
+lichen patches break the sward without dirtying it. The r3 canopy pads
+(detail-2) hold their silhouette at portrait range; no more torn
+plates.
+
+Colour: the sward reads GREEN under the shade mood — the mustard
+read survives only where the dune-level base sheet shows: which is
+exactly the two threshold poses.
+
+**The round's fail: the threshold road.** `pass-threshold` and
+`doorwarden`'s near floor is bare mustard dune — the road band and its
+celadon start at the disc and never reach out the tongue, so the
+region's front door breaks road-as-place. R4 order: carry the road
+band + shell pebbles + litter clusters out along the pass centreline to
+the threshold (u ≈ 1250 → the gate), and lay a green-wash paint pass on
+the pass sheet so the approach reads as the Verdant Line's floor, not
+the wastes'.
+
+(Sweep verdicts and the close-pose recapture follow below once the r3
+sweep lands — it runs single-frame under sibling load.)
+
 ## Flags
 
 - **Verdant-2's far-rim seal ring crosses this pass corridor** (its
