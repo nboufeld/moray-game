@@ -386,3 +386,32 @@ holds only litter. Round 4 gives each half its knee-height answer:
 
 Measured **100 draws / 449,597 tris**; 27/27 region tests green
 (carpet determinism now pins three carpet fields).
+
+Captured as the first `pa-filled` candidate set (14 authored + 14
+noassets + 12 sweep), all READ.
+
+- Authored: all 14 composed; the sprigs carry `gardener`,
+  `blooming-shelf`, `seed-grove` and `white-lookback` visibly; the two
+  rests hold; noassets set identical in composition (the region is
+  fully procedural).
+- Sweep: **11/12** — 05/07/08/09/10/11/12 clean (09, the k = 1.0
+  flank, is TRANSFORMED by the sprigs), 01/02/03/06 soft passes on the
+  stump/shard lines. The last miss: **04** (u 497, v −159, k 0.72) —
+  traced with a probe: the pose stands 198 m from the sprig disc's
+  centre and 198 m from the petal disc's — both gates HOT, both areas
+  short. The deep-recovery band is a crescent; one disc cannot hold it.
+- The standard demands misses land only in registered rests, and no
+  drawn pose stands in a rest — so 04 must pass. One more round.
+
+## Rework round 5 (`pa-filled`) — the south flank
+
+One targeted move: a dedicated south-flank sprig patch (same palette,
+profile and gate as the round-4 field, own stream `^ 0xfa0f`, disc
+r 78 at the crescent's south end) so sweep 04's first 35 m gets its
+standing layer. Funded by grit 2,400 → 2,050 and petal-fall
+1,100 → 1,050. Full final sets re-captured on this build.
+
+Measured **101 draws / 449,997 tris** (fill program caps ≤160 / ≤450k;
+pilot baseline was 59 / 233,235). Gates: typecheck clean, eslint
+0 warnings, region+kit vitest targets green, full `npm test` 714/714
+green. Carpet determinism pins four carpet fields.
