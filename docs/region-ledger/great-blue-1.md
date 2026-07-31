@@ -336,6 +336,111 @@ as round 1b before the canonical round-1 sets:
    where turf was meant, blue above green. Stories warmed (the calamity
    ledger's lesson: fill palettes are for THIS region's light); the
    mid-tuft tip ink greened off the near-white silver that rendered
-   12-tri tufts as pale wedges at arm's length (the "half-cut grass"
+   12-tri tufts as pale wedges at arm's length    (the "half-cut grass"
    read, avoided by palette rather than paid in triangles); near blades
    7,500 so the quality profile owns the foreground.
+
+### Round 1 (`bl-fill-r1`) — critique (18 authored + 12 sweep, all read)
+
+**Sweep verdict: 9 pass (01, 02, 10 marginal) + 2 licensed rests (04,
+06 — the Under-Blue, composed and correct) + ONE FAIL: pose 11
+(u 543, v 84), the third shelf's lip country over the drop's south-east
+shoulder — floor −29.4, dropWeight 0, NOT a rest. The round-1 grass cut
+at −25.5 left the last shelf bald, the deep arcs filled two thirds of
+the frame as smooth bands, and nothing owned the near metres.**
+
+- Working sweep frames: 03 and 05 are the fill's proof — grass banks
+  with whelks and far cards, collared silhouettes breaching the fog,
+  beams and monolith cards layering the distance. 07's look-back down
+  the road carries both shoulders' grass; 08 stacks the Shepherd, the
+  beams and the horizon band; 12 reads gravel + grass + cards over the
+  reveal's mouth.
+- Marginals: 01's near layer is one lip slab + whelk specks (carried by
+  the two migration threads and the painted deep); 02 and 10 catch the
+  fogged terrace faces as smooth blue paper (the depth paint reading
+  synthetic at range).
+- Authored set: `gnomon` is the fill's frame — the prairie finally owns
+  its floor at every depth of field. `slope-glide` gets its beat (the
+  outrider school crossing the shoulder). `fallen-king` composes the
+  hollow: grass rings it, the rest stays stars-and-beam. `the-prow` and
+  `under-blue` hold their plains-final reads (the fence, visible).
+  `terrace-stairs` carries grass + whelk trios + sentinel.
+- FAILS/finds in the authored set: `edge-lookback`'s shelves went to
+  MUD — the depth story at full lerp measured (62,74,112) where
+  plains-final had (84,103,117); the depth dim + violet both eased in
+  round 2. `close-steppe-sward`/`close-crest-bed` caught 4-tri far
+  cards as legible pale wedges at 15–25 m (nearFade 14 too tight) and
+  some blade tones landing steel-grey. `close-collar` reads apron +
+  calf + ring, but the stone STILL renders muddy purple with rust
+  mottle — (101,96,120) measured, red above green. `wayline-walk`
+  framed only one stone of three (camera stood past the first);
+  `ferryman-crossing` caught a huge flat grey RECTANGLE — a distant
+  monolith card floating where the World's Edge sector's rim has
+  fallen away (node-toggle probe: not the rings; the card bands'
+  margin was authored for the prairie rim, not the gap's shoulders).
+- The R11 cloud-shadow (second mechanism — fogged alpha sheets): no
+  decal read in any frame; the shadows read as soft floor blotches.
+  Drift verified in round 2 with a timed pair before the verdict.
+
+**Round-2 orders**: lip country gets its floor (mid tier sparse to
+−28.5, deep stars 16 → 30 biased to the last shelf, scree 4 → 6 tongues
+per lip); depth paint paled and eased; nearFade 14 → 26; monolith cards
+post-filtered off the gap (stream-identical collapse in place); stone
+tint lift deepened toward the sky key; near blades 9,000 / looseShare
+0.48; migration-river lifted to its band; wayline-walk re-staged behind
+the first stone; ferryman-crossing swung off the card.
+
+### Round 2 (`bl-fill-r2`) — critique (18 authored + 12 sweep, all read)
+
+**Sweep verdict: 10 pass + 2 licensed rests (04, 06) + ONE FAIL, and it
+is the same one — pose 11.** The round-2 orders answered the wrong
+metres: the mid tier's −28.5 cut never reached the last shelf's floor
+(−29 to −31 — the whisper was ordered for country the cut still
+excluded), and the camera's near layer is the terrace FACE, a country no
+gate dressed at all. 01 and 10 both graduated from marginal (grass +
+whelks + scree slab + migration threads own their near metres now); 02
+passes with the note that the fogged terrace faces still read smooth.
+
+- Authored set: no hard fails. `gnomon` and `sisters-frame` are the
+  fill's frames; `the-prow` is the set's best (the braid crossing over
+  the whale, the pale slab's gold-lichen read); `wayline-walk` now walks
+  the line (first stone repoussoir, second waymark + beam mid-frame,
+  the grit line legible); `ferryman-crossing`'s grey rectangle is GONE
+  (the gap post-filter, verified); `migration-river` reads as painted
+  fish with glint bubbles, not specks. `slope-glide` caught the
+  outrider school out of frame (a timed loop, load-dependent capture
+  moment — one school misses as often as it makes it). `ferryman`
+  caught the whale far out on its patrol (same mechanism, pre-existing
+  pose, noted not failed).
+- The stone read, MEASURED settled: the gnomon body means (98,111,142)
+  — blue above green above red, no longer mud. What remains is the
+  wash's own ochre patching, and `the-prow`/`close-collar` show that
+  same patching reading as gold lichen on lavender — painterly,
+  consistent, KEPT (a third lift would chalk the family out).
+- `edge-lookback` improved but SHORT: shelves measured (63,79,117)
+  against plains-final's (84,103,117) — the round-2 easing bought +2
+  to +4. The depth story starts at −18.5, on the look-back rim's OWN
+  floor; the onset is the problem, not the lerp.
+- Close poses: painted plants, no legible cards anywhere (nearFade 26
+  verified at 2–4 m). One persisting note: the near tier's LOOSE
+  splayed blades carry the silver tip ink to a bleached grey-white at
+  arm's length. `close-slope-road` is marginal — the road is rightly
+  bare, but its shoulder reads as one lone boulder.
+- **The R11 cloud-shadow VERDICT: the fallback mechanism (fogged
+  translucent alpha sheets) passes.** No decal read in any of the 30
+  round-2 frames; the shadows read as soft drifting floor blotches
+  under the prairie's light. The first mechanism (MultiplyBlending)
+  remains ruled out on this render chain (round-1b whiteout).
+
+**Round-3 orders**: the terrace faces get their own gravel (a
+slope-country litter pass over each step's fall and the last shelf's
+lip belt — the country pose 11 actually stands in); the mid tier's cut
+−28.5 → −31.5 so the whisper reaches the floor it was ordered for;
+deep stars 30 → 42 with a third of the draws pulled to the south-east
+shoulder; depth-paint onset −18.5 → −22.5 and eased again (the rim's
+own floor stops wearing the deep's ink); the near tier's tip ink
+greened (0xcfeadb → 0xb8e2c6 — wind-pale value, green hue); a second
+outrider school in anti-phase (stations rotated by two, fresh stream)
+so the glide's crossing cannot be missed by timing; a two-stone
+shoulder seat + whelks by the close-slope-road pose (appended after
+every real site, earlier draws unchanged).

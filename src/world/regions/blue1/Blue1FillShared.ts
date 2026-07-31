@@ -48,6 +48,9 @@ export const FILL_SEEDS = {
   cloudShadow: 0xf313,
   grassSeeds: 0xf314,
   cloudShadow2: 0xf315,
+  shelfLitter: 0xf316,
+  outriders2: 0xf317,
+  roadSeat: 0xf318,
 } as const;
 
 /** The Fallen King's ring (the secret at the stump's foot) — the rest's

@@ -225,12 +225,15 @@ function bakeBlue1Paint(geometry: PlaneGeometry, contacts: readonly ContactPatch
 
     // Depth is the dimmer: from the first terrace down, every metre takes
     // the ground deeper in value and further into violet-blue (red held
-    // above green — a colour, never a black).
-    const depthK = smoothstep01((-y - 18.5) / 26);
+    // above green — a colour, never a black). Round 3: onset −18.5 →
+    // −22.5 and the lerp eased again — the round-2 easing bought the
+    // look-back's shelves only (63,79,117) against plains-final's
+    // (84,103,117); the story was starting on the rim's OWN floor.
+    const depthK = smoothstep01((-y - 22.5) / 24);
     const silt = fbm(x * 0.045, z * 0.045, { seed: SEED ^ 0x51f7, period: 11, octaves: 3 }) - 0.5;
     if (depthK > 0) {
-      col.lerp(DEPTH_VIOLET, depthK * (0.72 + silt * 0.3));
-      value -= depthK * (0.1 - silt * 0.12);
+      col.lerp(DEPTH_VIOLET, depthK * (0.6 + silt * 0.3));
+      value -= depthK * (0.07 - silt * 0.1);
     }
 
     // The terrace silt bands: a pale violet drift pooled below each shelf

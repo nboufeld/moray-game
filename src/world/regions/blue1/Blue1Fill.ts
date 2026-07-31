@@ -78,8 +78,11 @@ export interface Blue1FillBuild {
 
 // ─── The grass palette (value-first for the blue register) ──────────────────
 
-/** Tip owns the hue (the kit ceiling rule): pale wind-silver over green. */
-const GRASS_PALETTE = { base: 0x66bda2, tip: 0xcfeadb, shade: 0x2f6e5c } as const;
+/** Tip owns the hue (the kit ceiling rule): pale wind-silver over green.
+ *  Round 3: the silver pulled the loose splayed blades to a bleached
+ *  grey-white at arm's length (close-steppe-sward, close-crest-bed) —
+ *  the tip keeps its wind-pale value but on a clearly green ink. */
+const GRASS_PALETTE = { base: 0x66bda2, tip: 0xb8e2c6, shade: 0x2f6e5c } as const;
 /** The mid tier keeps GREEN tips: with the silver tip ink its 12-tri
  *  tufts rendered as pale wedges at close range (round-1 probe) — the
  *  near blades own the silver note. */
@@ -215,9 +218,11 @@ export function buildBlue1Fill(sites: readonly Blue1StoneSite[]): Blue1FillBuild
       seed: SEED ^ FILL_SEEDS.grassMid,
       palette: GRASS_MID_PALETTE,
       area: discArea(212),
-      // The mid tier runs sparse down to the third shelf (floor −28.5):
-      // the lip country's whisper of grass, sweep pose 11's near layer.
-      gate: grassGate(sites, 0.22, 0.55, -28.5),
+      // The mid tier runs sparse down past the LAST shelf (round 3: the
+      // shelf floors sit at −29 to −31 and the −28.5 cut still left
+      // sweep pose 11's lip country bald — the whisper has to actually
+      // reach the country it was ordered for).
+      gate: grassGate(sites, 0.22, 0.55, -31.5),
       ground: seabedHeight,
       count: 9000,
       profile: "tuft",
@@ -333,13 +338,23 @@ export function buildBlue1Fill(sites: readonly Blue1StoneSite[]): Blue1FillBuild
     "blue1-fill-collar-aprons",
   );
 
+  // Round 3: the road's shoulder seat — two synthetic sites at the wall's
+  // foot by the glide crossing (u ≈ 162, v ≤ −18, clear of the lane),
+  // where close-slope-road's near metres read as one lone boulder.
+  // APPENDED after every real site so the earlier placements keep their
+  // draws from the same streams.
+  const roadSeats: Blue1StoneSite[] = [
+    { ...worldOf(162, -18.5), radius: 1.15, kind: "waymark" },
+    { ...worldOf(167, -20.5), radius: 1.0, kind: "waymark" },
+  ];
+
   // Calf-stones ringing the stones, plus the terrace-edge overlook cairn.
-  const calves = buildCalves(collarEligible);
+  const calves = buildCalves([...collarEligible, ...roadSeats]);
   named["blue1-fill-calves"] = calves;
   nodes.push(calves);
 
   // Whelk trios at the stone feet and along the terrace lips.
-  const whelks = buildCollarWhelks([...collarSites, ...lipSites]);
+  const whelks = buildCollarWhelks([...collarSites, ...lipSites, ...roadSeats]);
   named["blue1-fill-whelks"] = whelks;
   nodes.push(whelks);
 
@@ -369,6 +384,36 @@ export function buildBlue1Fill(sites: readonly Blue1StoneSite[]): Blue1FillBuild
       slabsPerAnchor: 9,
     }),
     "blue1-fill-scree",
+  );
+
+  // Round 3: the terrace FACES' own gravel. The scree tongues dress the
+  // lips at their anchors, but the faces between them rendered as naked
+  // smooth slopes whenever a sweep camera stood on shelf country (pose
+  // 11 twice; the fogged "blue paper" faces of 02/06's margins) — the
+  // steps' falls collect what rolls down them.
+  keep(
+    buildGroundLitter({
+      seed: SEED ^ FILL_SEEDS.shelfLitter,
+      palette: { base: 0x8497ac, accent: 0x97a8b8, shade: 0x5c5a7a },
+      area: (() => {
+        const { x, z } = worldOf(500, 0);
+        return { center: [x, z] as [number, number], radius: 135 };
+      })(),
+      gate: (x, z) => {
+        const { u, v } = spokeOf(x, z);
+        if (dropWeight(u - 445, v) > 0.05) {
+          return 0;
+        }
+        return shelfFaceWeight(u - 445) * restFree(x, z);
+      },
+      ground: seabedHeight,
+      count: 1400,
+      shapeSet: "gravel",
+      size: [0.05, 0.19],
+      grade: 0.5,
+      twoTone: true,
+    }),
+    "blue1-fill-shelf-litter",
   );
 
   // The deep star variant: cobalt-violet cushions below the grass line.
@@ -401,6 +446,21 @@ export function buildBlue1Fill(sites: readonly Blue1StoneSite[]): Blue1FillBuild
       // themselves carry the crossing at the glide's range.
     }),
     "blue1-fill-outriders",
+  );
+  // Round 3: a second school half a loop behind (the stations rotated by
+  // two). The crossing is the slope-glide pose's whole beat, and one
+  // school on a timed loop missed the frame as often as it made it — two
+  // in anti-phase mean the glide always has a thread somewhere near.
+  keep(
+    buildShoalRunner({
+      seed: SEED ^ FILL_SEEDS.outriders2,
+      route: { stations: rotateStations(outriderStations(), 2), closed: true },
+      count: 24,
+      fish: { scale: 1.3, color: 0xe2f2f6, emissive: 0x4a7a92, profile: "fusilier" },
+      phaseSpeed: 0.02,
+      braid: { lateral: 0.7, vertical: 0.35 },
+    }),
+    "blue1-fill-outriders-b",
   );
 
   // ── The gate's last-reef bed: warm rubble dying out by u ≈ 74… ──
@@ -643,7 +703,9 @@ function buildDeepStars(): InstancedMesh {
   const material = createWhelkMaterial();
   // Round 2: 16 → 30, and the last shelf draws double weight — sweep
   // pose 11 stood on bare lip country and the stars are its floor fauna.
-  const count = 30;
+  // Round 3: 30 → 42, a third of the draws pulled to the south-east
+  // shoulder (v 52–102) where that camera actually stands.
+  const count = 42;
   const mesh = new InstancedMesh(geometry, material, count);
   mesh.name = "blue1-fill-deep-stars";
   mesh.castShadow = false;
@@ -657,7 +719,7 @@ function buildDeepStars(): InstancedMesh {
     const pick = Math.floor(random.next() * 4);
     const step = TERRACE_STEPS[Math.min(pick, TERRACE_STEPS.length - 1)]!;
     const u = 445 + step.s + random.range(2, 22);
-    const v = random.signed(120);
+    const v = random.next() < 0.34 ? random.range(52, 102) : random.signed(120);
     const { x, z } = worldOf(u, v);
     const floor = blue1TerrainTarget(x, z);
     if (floor > -19.5 || dropWeight(u - 445, v) > 0.05 || restFree(x, z) < 0.5) {
@@ -721,6 +783,32 @@ function fryAnchors(): { pos: readonly [number, number, number] }[] {
     const { x, z } = worldOf(u, v);
     return { pos: [x, seabedHeight(x, z) + 1.7, z] as const };
   });
+}
+
+/**
+ * Where the terrace faces fall (round 3): a [0, 1] weight peaking on each
+ * step's 8-metre fall and across the last shelf's lip belt (s 88–102,
+ * where sweep pose 11 stands). The faces collect the gravel that rolls
+ * off the shelves; the flats between them stay the grass tiers' country.
+ */
+function shelfFaceWeight(s: number): number {
+  let w = 0;
+  for (const step of TERRACE_STEPS) {
+    const into = smoothstep01((s - (step.s - 1)) / 3);
+    const out = 1 - smoothstep01((s - (step.s + 7)) / 4);
+    w = Math.max(w, into * out);
+  }
+  // The lip belt: the last country before the drop takes a steady scatter.
+  const belt = smoothstep01((s - 88) / 5) * (1 - smoothstep01((s - 99) / 4));
+  return Math.max(w, belt * 0.8);
+}
+
+/** The same loop, entered elsewhere: rotates a station cycle by `by`. */
+function rotateStations(
+  stations: (readonly [number, number, number])[],
+  by: number,
+): (readonly [number, number, number])[] {
+  return stations.map((_, i) => stations[(i + by) % stations.length]!);
 }
 
 /** The outrider loop: a small closed circuit crossing the glide at u ≈ 150. */

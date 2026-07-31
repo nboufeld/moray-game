@@ -177,7 +177,9 @@ describe("great-blue-1 build", () => {
     });
     // Fill rounds (R12 budgets ≤260 / ≤1.35M): round 1 measured 90 draws
     // / 853,315 tris; round 2 (near blades 9k, lip-country mid tier,
-    // deep stars 30) measured 89 / 996,159.
+    // deep stars 30) measured 89 / 996,159; round 3 (shelf-face litter,
+    // second outrider school, stars 42, road seat) measured 92 /
+    // 1,029,519 — headed gate at the gnomon: median 16.7 ms, scale 1.00.
     expect(draws).toBeLessThanOrEqual(140);
     expect(triangles).toBeLessThanOrEqual(1_100_000);
     // Honest floors as well as caps: an empty region passes no bar.
