@@ -153,19 +153,25 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "gnomon", u: 407, v: 50, lift: 2.2, atU: 416, atV: 58, pitch: 0.32 },
   // The Fallen King's secret: the ring, the beam, the toppled crown.
   { name: "fallen-king", u: 377, v: -104, lift: 2.0, atU: 383.5, atV: -100, pitch: -0.06, settle: 5 },
-  // The Sisters framing the Wayline's run toward the Edge.
-  { name: "sisters-frame", u: 461, v: -44, lift: 2.6, atU: 520, atV: -8, pitch: 0.02 },
+  // The Sisters framing the run toward the Edge. Round 4: the old stand
+  // (461,-44 aiming 520,-8) put both stones outside the right frame edge;
+  // this one shoots *through* the near-arch toward the Prow.
+  { name: "sisters-frame", u: 451, v: -70, lift: 2.6, atU: 545, atV: 4, pitch: 0.02 },
   // Under the Migration Line, looking along the silver.
   { name: "migration-river", u: 442, v: 46, lift: 4.5, atU: 478, atV: 74, pitch: 0.14, settle: 6 },
   // The Terrace Stairs: three shelves stepping down into deeper value.
   { name: "terrace-stairs", u: 462, v: 18, lift: 3.4, atU: 540, atV: 0, pitch: -0.08 },
   // The Prow: the Friedrich overlook — the drop, the deep steps beyond.
-  { name: "the-prow", u: 540, v: 4, lift: 2.2, atU: 600, atV: 0, pitch: -0.18, settle: 5 },
+  // Round 4: stepped left and up (the audit's re-stage) so the slab juts
+  // across the lower-right third instead of filling the frame's centre.
+  { name: "the-prow", u: 540, v: 7, lift: 3.4, atU: 600, atV: -2, pitch: -0.16, settle: 5 },
   // Down inside the void, against the cliff, the painted deep ahead.
   { name: "under-blue", u: 556, v: -20, lift: 0, absoluteY: -38, atU: 606, atV: -8, pitch: 0.06 },
   // The Ferryman working the edge; the aim rides beside the anchor so the
   // settle frames the patrol without completing the discovery plate.
-  { name: "ferryman", u: 561, v: 30, lift: 0, absoluteY: -26, atU: 578, atV: -8, pitch: -0.04, settle: 8 },
+  // Round 4: the stand moved in — at thirty metres in the deep mood the
+  // animal fogged into an illegible blue mass behind the arcs.
+  { name: "ferryman", u: 566, v: 20, lift: 0, absoluteY: -25, atU: 577, atV: 2, pitch: -0.04, settle: 8 },
   // From the lip, back across everything: terraces, stones, steppe.
   { name: "edge-lookback", u: 548, v: -8, lift: 2.4, atU: 445, atV: -14, pitch: 0.06 },
 ];

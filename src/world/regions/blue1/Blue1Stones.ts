@@ -204,13 +204,20 @@ export function buildBlue1Stones(): Blue1StonesBuild {
     1.7,
     3.2,
   );
-  const crown = slabGeometry({ seed: SEED ^ 0x0c02, radius: 1.6, height: 1.1 });
+  // Round 4 re-stage (the audit's "the toppled story does not read"): the
+  // crown is thinner than any standing stone's girth, half-sunk in the
+  // sand, and its long axis lies exactly along the fall line from the
+  // stump — a stone that fell, not a second boulder.
+  const crown = slabGeometry({ seed: SEED ^ 0x0c02, radius: 1.6, height: 0.7 });
   crown.scale(1, 1, 3.4);
   crown.applyMatrix4(new Matrix4().makeRotationZ(0.08));
-  crown.applyMatrix4(new Matrix4().makeRotationY(2.1));
   const crownAt = worldOf(kingAt.u + 4.6, kingAt.v - 3.4);
+  const fallFrom = worldOf(kingAt.u, kingAt.v);
+  crown.applyMatrix4(
+    new Matrix4().makeRotationY(Math.atan2(crownAt.x - fallFrom.x, crownAt.z - fallFrom.z)),
+  );
   const crownY = seabedHeight(crownAt.x, crownAt.z);
-  crown.translate(crownAt.x, crownY + 0.3, crownAt.z);
+  crown.translate(crownAt.x, crownY - 0.22, crownAt.z);
   crown.computeBoundingSphere();
   const crownMesh = new Mesh(crown, blueStone);
   crownMesh.name = "blue1-fallen-crown";
@@ -218,7 +225,7 @@ export function buildBlue1Stones(): Blue1StonesBuild {
   crownMesh.receiveShadow = false;
   meshes.push(crownMesh);
   contacts.push({ x: crownAt.x, z: crownAt.z, radius: 4.6, strength: 0.4 });
-  colliders.push({ center: new Vector3(crownAt.x, crownY + 0.9, crownAt.z), radius: 2.1 });
+  colliders.push({ center: new Vector3(crownAt.x, crownY + 0.45, crownAt.z), radius: 1.9 });
   const secretSpot = worldOf(kingAt.u + 1.8, kingAt.v - 6.2);
 
   // ─── The terrace lips ────────────────────────────────────────────────────

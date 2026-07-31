@@ -76,6 +76,35 @@ function keepGround(x: number, z: number): boolean {
   return inCorridor(u, v);
 }
 
+/**
+ * Bends the sheet's rim down below the painted deep steps in the World's
+ * Edge sector. Round 5's node-toggle probe found the "sawtooth teeth" over
+ * the void were never the arcs at all: the trimmed sheet edge at rc ≈ 178
+ * rises with the disc's sealing rim, stands above the Under-Blue's eye
+ * line, and its triangulated boundary silhouetted against the fog as
+ * regular teeth. The last metres of sheet now pour down to −52 — under
+ * the arcs' own feet — so the floor visibly falls away and the painted
+ * distance owns everything beyond. The droop begins outside the seal ring
+ * (rc 164), so no reachable water ever stands over it.
+ */
+function droopEdgeRim(geometry: PlaneGeometry): void {
+  const position = geometry.attributes.position!;
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i);
+    const z = position.getZ(i);
+    const { u, v } = spokeOf(x, z);
+    if (!(u - 445 > DROP_LIP_S + 26 && Math.abs(v) < 118)) {
+      continue;
+    }
+    const rc = Math.hypot(x - CENTER_X, z - CENTER_Z);
+    const k = smoothstep01((rc - 166) / 10);
+    if (k > 0) {
+      position.setY(i, position.getY(i) - k * (position.getY(i) + 52));
+    }
+  }
+  position.needsUpdate = true;
+}
+
 /** Drops every triangle whose three corners all fail `keep`. */
 function trimSheet(geometry: PlaneGeometry, keep: (x: number, z: number) => boolean): void {
   const position = geometry.attributes.position!;
@@ -222,6 +251,7 @@ export function buildBlue1Ground(contacts: readonly ContactPatch[]): Mesh[] {
   for (const [cx, cz] of centers) {
     const geometry = createSeabedGeometryAt(cx, cz, DISC_TILE, DISC_SEGMENTS);
     trimSheet(geometry, keepGround);
+    droopEdgeRim(geometry);
     bakeBlue1Paint(geometry, contacts);
     const mesh = new Mesh(geometry, material);
     mesh.name = "blue1-ground-disc";

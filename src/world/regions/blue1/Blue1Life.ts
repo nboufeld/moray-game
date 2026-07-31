@@ -126,7 +126,9 @@ function buildMigrationLine(): {
   }
   const path = new CatmullRomCurve3(points, true, "centripetal", 0.5);
 
-  const count = 300;
+  // Round 5: 300 over the ~700 m loop left the pose's stretch of river
+  // reading as "several fish"; 420 closes the nose-to-tail gaps.
+  const count = 420;
   const geometry = createFishGeometry({
     width: 0.8,
     height: 0.95,
@@ -138,10 +140,12 @@ function buildMigrationLine(): {
   });
   // The river must sit above the water's value at forty metres (the
   // pilot's measured lesson): bright blue-silver with a cool emissive.
+  // Round 4: intensity up — at 0.85 the fill-plan audit measured the
+  // 300-fish river as "~10 mauve specks in empty water".
   const material = createToonMaterial({
     vertexColors: true,
-    emissive: 0x3d6478,
-    emissiveIntensity: 0.85,
+    emissive: 0x4a7a92,
+    emissiveIntensity: 1.15,
   });
   const mesh = new InstancedMesh(geometry, material, count);
   mesh.name = "blue1-migration-line";
@@ -156,12 +160,15 @@ function buildMigrationLine(): {
     [];
   for (let i = 0; i < count; i++) {
     offsets.push({
-      // The whole loop is occupied: a migration, not a school.
+      // The whole loop is occupied: a migration, not a school. Round 4
+      // tightened the braid (2.1 → 1.4 lateral) and raised the fish
+      // (1.15–1.7 → 1.5–2.2) so the band reads as one silver thread from
+      // across the steppe instead of dissolving into specks.
       along: i / count + random.signed(0.0012),
-      lateral: random.signed(2.1),
-      rise: random.signed(1.0),
+      lateral: random.signed(1.4),
+      rise: random.signed(0.8),
       phase: random.range(0, Math.PI * 2),
-      scale: random.range(1.15, 1.7),
+      scale: random.range(1.5, 2.2),
     });
     tint.copy(silver).multiplyScalar(random.range(0.85, 1.08));
     mesh.setColorAt(i, tint);
@@ -201,14 +208,16 @@ function buildMigrationLine(): {
   // The glint: a static thread of pale additive sparks along the river's
   // own line, unfogged, so the band reads from the far side of the steppe
   // the way a river reads from a hill — the fish carry the close view.
-  const glintCount = 220;
+  // Round 4: doubled and enlarged — the audit's measured ask for a band
+  // that reads as a silver thread from anywhere on the steppe.
+  const glintCount = 400;
   const glintPositions = new Float32Array(glintCount * 3);
   const glintAt = new Vector3();
   for (let i = 0; i < glintCount; i++) {
     path.getPointAt(i / glintCount, glintAt);
-    glintPositions[i * 3] = glintAt.x + random.signed(1.6);
-    glintPositions[i * 3 + 1] = glintAt.y + random.signed(0.9);
-    glintPositions[i * 3 + 2] = glintAt.z + random.signed(1.6);
+    glintPositions[i * 3] = glintAt.x + random.signed(1.4);
+    glintPositions[i * 3 + 1] = glintAt.y + random.signed(0.8);
+    glintPositions[i * 3 + 2] = glintAt.z + random.signed(1.4);
   }
   const glintGeometry = new BufferGeometry();
   glintGeometry.setAttribute("position", new BufferAttribute(glintPositions, 3));
@@ -217,10 +226,10 @@ function buildMigrationLine(): {
     glintGeometry,
     new PointsMaterial({
       color: 0xd9eef8,
-      size: 0.28,
+      size: 0.4,
       map: moteTexture(),
       transparent: true,
-      opacity: 0.38,
+      opacity: 0.46,
       blending: AdditiveBlending,
       depthWrite: false,
       sizeAttenuation: true,

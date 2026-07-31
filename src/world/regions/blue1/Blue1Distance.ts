@@ -40,38 +40,62 @@ interface HorizonLayer {
   readonly radius: number;
   readonly base: number;
   readonly vary: number;
-  readonly fade: number;
+  readonly ink: Color;
 }
 
 // Raised in round 2: the round-1 tops (0.5–5) barely cleared the rim's own
 // dune-level ground and the rings read as thin water-lines, not swells.
+// Round 5 measured the bands +20 of blue over the water they stand in and
+// dead flat; every layer now carries its own authored ink (nearest a step
+// darker-warmer, furthest nearly the water) instead of one ink lerped
+// toward a fog that is intrinsically bluer than the backdrop behind it.
 const PRAIRIE_LAYERS: readonly HorizonLayer[] = [
-  { radius: 240, base: 3.2, vary: 2.4, fade: 0.42 },
-  { radius: 262, base: 6.5, vary: 3.0, fade: 0.6 },
-  { radius: 288, base: 10.0, vary: 3.8, fade: 0.76 },
+  { radius: 240, base: 3.2, vary: 2.4, ink: new Color(0.94, 0.86, 0.82) },
+  { radius: 262, base: 6.5, vary: 3.0, ink: new Color(0.96, 0.9, 0.86) },
+  { radius: 288, base: 10.0, vary: 3.8, ink: new Color(0.98, 0.94, 0.9) },
 ];
-const PRAIRIE_FOOT = -9;
+// Round 5: −9 floated five metres ABOVE the steppe floor, and the rings'
+// straight bottom edges hung in the fog as flat wedges wherever the rim's
+// rise dipped. The feet now tuck below the ground everywhere visible.
+const PRAIRIE_FOOT = -20;
 
 interface DeepStep {
   readonly radius: number;
   readonly top: number;
   readonly vary: number;
-  readonly fade: number;
+  readonly ink: Color;
 }
 
+// Round 4 (the fill-plan audit's "canyon-curtain gradient" fix): a fourth,
+// palest arc so the void ends in four planes; `vary` halved and the
+// columns more than doubled so the tops stop reading as sawtooth teeth.
+// Round 5 re-derived the inks against the measured frame: the arcs render
+// as fog × ink, and even with red held high the old fade-lerp back toward
+// the fog re-supplied the blue it had just cut (bands measured blue 190
+// against water at 151). Authored per arc, no fade: the nearest arc is the
+// darkest violet, each further arc a step paler and warmer until the last
+// all but dissolves into the water — red above green in every ink.
 const DEEP_STEPS: readonly DeepStep[] = [
-  { radius: 174, top: -38, vary: 1.4, fade: 0.28 },
-  { radius: 190, top: -32.5, vary: 2.2, fade: 0.48 },
-  { radius: 208, top: -27.5, vary: 3.0, fade: 0.66 },
+  { radius: 174, top: -38, vary: 0.7, ink: new Color(0.92, 0.4, 0.44) },
+  { radius: 190, top: -32.5, vary: 1.1, ink: new Color(0.94, 0.46, 0.5) },
+  { radius: 208, top: -27.5, vary: 1.5, ink: new Color(0.96, 0.54, 0.58) },
+  { radius: 224, top: -23.5, vary: 1.9, ink: new Color(1.0, 0.64, 0.68) },
 ];
 const DEEP_FOOT = -50;
 
 const SEGMENTS = 220;
 
-/** Milky blue ink for the prairie horizon: barely a step off the fog. */
-const PRAIRIE_INK = new Color(0.78, 0.84, 1.0);
-/** Violet-blue ink for the deep steps: red above green, never black. */
-const DEEP_INK = new Color(0.6, 0.52, 0.86);
+/** The monolith cards' inks: a step deeper than the rings they pierce. */
+const CARD_INKS: readonly Color[] = [new Color(0.9, 0.8, 0.78), new Color(0.94, 0.86, 0.84)];
+
+// The vertical grade every distance plane carries (the canyon-curtain
+// lesson): a curtain seen from below fills the upper frame, and one flat
+// value reads as paper. Feet sink toward the shadow violet, crowns pale
+// toward the light. Baked as vertex colours; the materials multiply.
+const DEEP_FOOT_TINT: readonly [number, number, number] = [0.58, 0.56, 0.66];
+const DEEP_CROWN_TINT: readonly [number, number, number] = [1.1, 1.05, 1.0];
+const PRAIRIE_FOOT_TINT: readonly [number, number, number] = [0.72, 0.72, 0.78];
+const PRAIRIE_CROWN_TINT: readonly [number, number, number] = [1.06, 1.04, 1.0];
 
 /** Half-angle of the gap over the approach corridor. */
 const GAP_APPROACH = 0.4;
@@ -81,7 +105,7 @@ const GAP_EDGE = 0.62;
 export function buildBlue1Distance(): { meshes: (Mesh | InstancedMesh)[] } {
   const random = new Random(SEEDS.regionBlue1 ^ 0xd15b);
   const meshes: (Mesh | InstancedMesh)[] = [];
-  const entries: { material: MeshBasicMaterial; ink: Color; fade: number }[] = [];
+  const entries: { material: MeshBasicMaterial; ink: Color }[] = [];
   let lastFog = -1;
 
   const followFog = (scene: Scene): void => {
@@ -94,10 +118,8 @@ export function buildBlue1Distance(): { meshes: (Mesh | InstancedMesh)[] } {
       return;
     }
     lastFog = hex;
-    const mixed = new Color();
     for (const entry of entries) {
-      mixed.copy(fog.color).multiply(entry.ink);
-      entry.material.color.copy(mixed).lerp(fog.color, entry.fade);
+      entry.material.color.copy(fog.color).multiply(entry.ink);
     }
   };
 
@@ -111,8 +133,9 @@ export function buildBlue1Distance(): { meshes: (Mesh | InstancedMesh)[] } {
       fog: false,
       side: DoubleSide,
       toneMapped: true,
+      vertexColors: true,
     });
-    entries.push({ material, ink: PRAIRIE_INK, fade: layer.fade });
+    entries.push({ material, ink: layer.ink });
     const geometry = horizonRing(
       layer,
       SEEDS.regionBlue1 ^ (0xd200 + index * 131),
@@ -137,8 +160,9 @@ export function buildBlue1Distance(): { meshes: (Mesh | InstancedMesh)[] } {
       fog: false,
       side: DoubleSide,
       toneMapped: true,
+      vertexColors: true,
     });
-    entries.push({ material, ink: DEEP_INK, fade: step.fade });
+    entries.push({ material, ink: step.ink });
     const geometry = deepArc(step, SEEDS.regionBlue1 ^ (0xd300 + index * 131), gapOutward);
     const mesh = new Mesh(geometry, material);
     mesh.castShadow = false;
@@ -149,16 +173,17 @@ export function buildBlue1Distance(): { meshes: (Mesh | InstancedMesh)[] } {
 
   // ── The distant monoliths: instanced silhouette cards in two bands. ──
   for (const [band, spec] of [
-    { rFrom: 236, rTo: 252, count: 12, fade: 0.5, hMin: 11, hMax: 18 },
-    { rFrom: 260, rTo: 282, count: 9, fade: 0.68, hMin: 15, hMax: 24 },
+    { rFrom: 236, rTo: 252, count: 12, hMin: 11, hMax: 18 },
+    { rFrom: 260, rTo: 282, count: 9, hMin: 15, hMax: 24 },
   ].entries()) {
     const material = new MeshBasicMaterial({
       color: 0x7d97b8,
       fog: false,
       side: DoubleSide,
       toneMapped: true,
+      vertexColors: true,
     });
-    entries.push({ material, ink: PRAIRIE_INK, fade: spec.fade });
+    entries.push({ material, ink: CARD_INKS[band]! });
     const mesh = new InstancedMesh(monolithCardGeometry(), material, spec.count);
     mesh.name = `blue1-distance-monoliths-${band}`;
     mesh.castShadow = false;
@@ -175,11 +200,9 @@ export function buildBlue1Distance(): { meshes: (Mesh | InstancedMesh)[] } {
         continue;
       }
       const r = random.range(spec.rFrom, spec.rTo);
-      dummy.position.set(
-        CENTER_X + Math.cos(theta) * r,
-        PRAIRIE_FOOT + 3,
-        CENTER_Z + Math.sin(theta) * r,
-      );
+      // The cards keep their own base (−6): they stand on the rim's rise,
+      // not on the rings' dropped foot line.
+      dummy.position.set(CENTER_X + Math.cos(theta) * r, -6, CENTER_Z + Math.sin(theta) * r);
       dummy.rotation.set(0, random.range(0, Math.PI), random.signed(0.05));
       dummy.scale.set(
         random.range(1.0, 1.6),
@@ -232,6 +255,16 @@ function monolithCardGeometry(): BufferGeometry {
   if (!merged) {
     throw new Error("blue1 monolith card blades could not be merged");
   }
+  // The same vertical grade the rings carry, so a card is never one value.
+  const position = merged.attributes.position!;
+  const colors = new Float32Array(position.count * 3);
+  for (let i = 0; i < position.count; i++) {
+    const t = smoothstep01(position.getY(i) / CARD_HEIGHT);
+    colors[i * 3] = 0.78 + t * 0.28;
+    colors[i * 3 + 1] = 0.78 + t * 0.26;
+    colors[i * 3 + 2] = 0.82 + t * 0.18;
+  }
+  merged.setAttribute("color", new BufferAttribute(colors, 3));
   merged.computeBoundingSphere();
   monolithCard = merged;
   return monolithCard;
@@ -244,6 +277,7 @@ function horizonRing(
   inGap: (theta: number) => boolean,
 ): BufferGeometry {
   const positions: number[] = [];
+  const colors: number[] = [];
   const indices: number[] = [];
   let column = 0;
 
@@ -270,6 +304,7 @@ function horizonRing(
       PRAIRIE_FOOT + Math.max(1.2, crest - PRAIRIE_FOOT) * end + 0.2,
       z,
     );
+    colors.push(...PRAIRIE_FOOT_TINT, ...PRAIRIE_CROWN_TINT);
     if (column > 0) {
       const a = positions.length / 3 - 4;
       indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
@@ -279,6 +314,7 @@ function horizonRing(
 
   const geometry = new BufferGeometry();
   geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
+  geometry.setAttribute("color", new BufferAttribute(new Float32Array(colors), 3));
   geometry.setIndex(indices);
   geometry.computeBoundingSphere();
   return geometry;
@@ -287,9 +323,12 @@ function horizonRing(
 /** One deep step: an arc across the World's Edge sector, top below the lip. */
 function deepArc(step: DeepStep, noiseSeed: number, gapOutward: number): BufferGeometry {
   const positions: number[] = [];
+  const colors: number[] = [];
   const indices: number[] = [];
   const span = GAP_EDGE + 0.26;
-  const count = 64;
+  // Round 4: 64 columns put ~6 m of arc in each quad and the per-column
+  // noise rendered as regular sawtooth teeth; at 160 the ridge is a line.
+  const count = 160;
   let column = 0;
 
   for (let i = 0; i <= count; i++) {
@@ -299,12 +338,20 @@ function deepArc(step: DeepStep, noiseSeed: number, gapOutward: number): BufferG
     const end = 1 - smoothstep01((Math.abs(off) - 0.72) / 0.24);
     const x = CENTER_X + Math.cos(theta) * step.radius;
     const z = CENTER_Z + Math.sin(theta) * step.radius;
-    const ridge =
-      step.top +
-      (fbm(i * 0.11, step.radius * 0.017, { seed: noiseSeed, period: 7, octaves: 3 }) - 0.5) *
-        2 *
-        step.vary;
+    // A broad drooping swell carries the skyline; the fine ripple only
+    // roughens it — a ridge runs a long way before it turns.
+    const broad =
+      fbm((i / count) * 2.3 + 0.4, step.radius * 0.011, {
+        seed: noiseSeed,
+        period: 3,
+        octaves: 2,
+      }) - 0.5;
+    const fine =
+      fbm(i * 0.11, step.radius * 0.017, { seed: noiseSeed ^ 0x5a5a, period: 7, octaves: 3 }) -
+      0.5;
+    const ridge = step.top + broad * 2 * step.vary + fine * 0.5 * step.vary;
     positions.push(x, DEEP_FOOT, z, x, DEEP_FOOT + Math.max(1.5, ridge - DEEP_FOOT) * end, z);
+    colors.push(...DEEP_FOOT_TINT, ...DEEP_CROWN_TINT);
     if (column > 0) {
       const a = positions.length / 3 - 4;
       indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
@@ -314,6 +361,7 @@ function deepArc(step: DeepStep, noiseSeed: number, gapOutward: number): BufferG
 
   const geometry = new BufferGeometry();
   geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
+  geometry.setAttribute("color", new BufferAttribute(new Float32Array(colors), 3));
   geometry.setIndex(indices);
   geometry.computeBoundingSphere();
   return geometry;
