@@ -2,6 +2,7 @@ import {
   AdditiveBlending,
   BufferAttribute,
   DoubleSide,
+  Group,
   Mesh,
   MeshBasicMaterial,
   PlaneGeometry,
@@ -15,8 +16,14 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 import { buildColorTexture, fbm } from "../../../rendering/ProceduralTexture";
 import { Random, SEEDS } from "../../../util/Random";
 import { seabedHeight } from "../../Seabed";
+import { buildBeamAndPool } from "../kit/BeamAndPool";
+import { buildDappleSheet } from "../kit/DappleSheet";
+import { buildParticulateField } from "../kit/ParticulateField";
+import type { KitArea } from "../kit/KitTypes";
+import { FILL_SEEDS } from "./GoldenFillShared";
 import { smoothstep01 } from "./GoldenShared";
 import {
+  FLATS,
   GLASS,
   HOURGLASS,
   OASIS_A,
@@ -70,7 +77,13 @@ const GLOWS: readonly { u: number; v: number; radius: number; opacity: number }[
   { u: OASIS_B.u, v: OASIS_B.v, radius: 4, opacity: 0.1 },
 ];
 
-export function buildGoldenLight(): { meshes: Mesh[] } {
+export interface GoldenLightBuild {
+  readonly meshes: Mesh[];
+  readonly groups: Group[];
+  update(timeSec: number): void;
+}
+
+export function buildGoldenLight(): GoldenLightBuild {
   const random = new Random(SEED ^ 0x11fb);
   const meshes: Mesh[] = [];
   const map = shaftSprite();
@@ -133,7 +146,158 @@ export function buildGoldenLight(): { meshes: Mesh[] } {
   }
 
   meshes.push(buildLightPools());
-  return { meshes };
+
+  // ─── Phase 3 fill (plan §4) — the gold dapple, the road light events,
+  // the Drain's Eye pool and the glass-glint breathing. All kit calls on
+  // fresh substreams; every update below is closed-form off simulated
+  // time (capture-safe, nothing for reduced motion to re-clock).
+  const groups: Group[] = [];
+  const updaters: ((timeSec: number) => void)[] = [];
+
+  // The gold dapple — the desert had NO dapple, and it is the cheapest
+  // "sunlit" signal in the project. Honey, over-mixed warm (the
+  // sRGB-on-sand lesson: blue pulled far further than it looks).
+  const saddleDapple: KitArea = (() => {
+    const polyline: [number, number][] = [];
+    for (let u = 62; u <= 262; u += 20) {
+      const { x, z } = worldOf(u, saddleChannelCenter(u));
+      polyline.push([x, z]);
+    }
+    return { polyline, width: 16 };
+  })();
+  const oasisAt = worldOf(528, -52);
+  const flatsAt = worldOf(FLATS.u - 6, FLATS.v - 4);
+  for (const [seed, area, opacity] of [
+    [FILL_SEEDS.dappleSaddle, saddleDapple, 0.2],
+    [FILL_SEEDS.dappleOasis, { center: [oasisAt.x, oasisAt.z], radius: 30 }, 0.22],
+    [FILL_SEEDS.dappleFlats, { center: [flatsAt.x, flatsAt.z], radius: 42 }, 0.16],
+  ] as const) {
+    const dapple = buildDappleSheet({
+      seed: SEED ^ seed,
+      tint: 0xffca6e,
+      ground: seabedHeight,
+      area: area as KitArea,
+      opacity,
+      tileMetres: 8,
+    });
+    groups.push(dapple.group);
+    updaters.push((timeSec) => dapple.update(timeSec));
+  }
+
+  // The road light events: one beam over drift-line 1 (the u ~130 beat)
+  // and one over the Gilded Shore stacks — with the kit's own pools
+  // under them, because a beam that brightens nothing is a decal.
+  const driftAt = worldOf(131, saddleChannelCenter(131) - 1);
+  const shoreAt = worldOf(596, 30);
+  groups.push(
+    buildBeamAndPool({
+      seed: SEED ^ FILL_SEEDS.roadBeams,
+      tint: 0xffd98c,
+      ground: seabedHeight,
+      beams: [
+        {
+          pos: [driftAt.x, driftAt.z],
+          top: seabedHeight(driftAt.x, driftAt.z) + 9,
+          width: 2.6,
+          opacity: 0.12,
+          slant: [0.08, 0.05],
+        },
+        {
+          pos: [shoreAt.x, shoreAt.z],
+          top: seabedHeight(shoreAt.x, shoreAt.z) + 11,
+          width: 3.2,
+          opacity: 0.1,
+          slant: [0.06, -0.07],
+        },
+      ],
+    }).group,
+  );
+
+  // Three faint secondary blades between the Hourglass falls, so the
+  // ring advertises at more azimuths than the two the pilot lit.
+  const hgCentre = worldOf(HOURGLASS.u, HOURGLASS.v);
+  groups.push(
+    buildBeamAndPool({
+      seed: SEED ^ FILL_SEEDS.hourglassBlades,
+      tint: 0xf6ecd0,
+      ground: seabedHeight,
+      beams: [0.55, 2.65, 4.35].map((phi) => {
+        const x = hgCentre.x + Math.cos(phi) * 30;
+        const z = hgCentre.z + Math.sin(phi) * 30;
+        return {
+          pos: [x, z] as const,
+          top: 1.6,
+          width: 3.4,
+          opacity: 0.08,
+        };
+      }),
+    }).group,
+  );
+
+  // The Drain's Eye pool: cool, so the great falling column lands on
+  // something (the beam-that-brightens-nothing rule) — the one mark the
+  // registered rest licences, beside the Keeper's circle.
+  groups.push(
+    buildBeamAndPool({
+      seed: SEED ^ FILL_SEEDS.drainPool,
+      tint: 0xd8d4f0,
+      ground: seabedHeight,
+      beams: [],
+      pools: [
+        {
+          pos: [hgCentre.x, hgCentre.z],
+          radius: 6.5,
+          opacity: 0.2,
+        },
+      ],
+    }).group,
+  );
+
+  // The glass-glint breathing: the pilot's static sparks gain a slow
+  // anchored shimmer over the whole fused field…
+  const glassAt = worldOf(GLASS.u, GLASS.v);
+  const breath = buildParticulateField({
+    seed: SEED ^ FILL_SEEDS.glintBreath,
+    tint: 0xeafff0,
+    count: 110,
+    mode: "swarm",
+    volume: {
+      center: [glassAt.x, seabedHeight(glassAt.x, glassAt.z) + 2.6, glassAt.z],
+      size: [88, 7, 88],
+    },
+    size: 0.16,
+    opacity: 0.5,
+  });
+  groups.push(breath.group);
+  updaters.push((timeSec) => breath.update(timeSec));
+
+  // …and one glint TEASE over the saddle's west wall at u ~205: a spark
+  // where the Reach lies, the fork advertised before the lip (plan §2).
+  const teaseAt = worldOf(205, saddleChannelCenter(205) - 15);
+  const tease = buildParticulateField({
+    seed: SEED ^ FILL_SEEDS.glintTease,
+    tint: 0xeafff0,
+    count: 8,
+    mode: "swarm",
+    volume: {
+      center: [teaseAt.x, seabedHeight(teaseAt.x, teaseAt.z) + 1.4, teaseAt.z],
+      size: [4, 2.4, 4],
+    },
+    size: 0.2,
+    opacity: 0.55,
+  });
+  groups.push(tease.group);
+  updaters.push((timeSec) => tease.update(timeSec));
+
+  return {
+    meshes,
+    groups,
+    update(timeSec: number): void {
+      for (const update of updaters) {
+        update(timeSec);
+      }
+    },
+  };
 }
 
 /** All the ground light-pools merged into one additive mark. */

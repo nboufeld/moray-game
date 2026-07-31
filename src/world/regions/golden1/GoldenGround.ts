@@ -3,6 +3,7 @@ import { fbm } from "../../../rendering/ProceduralTexture";
 import { SEEDS } from "../../../util/Random";
 import { createSandMaterial } from "../../SandMaterial";
 import { createSeabedGeometryAt, type ContactPatch } from "../../Seabed";
+import { EMPTY_QUARTER } from "./GoldenFillShared";
 import { MONOLITHS } from "./GoldenRocks";
 import { smoothstep01 } from "./GoldenShared";
 import {
@@ -163,6 +164,15 @@ function bakeGoldenPaint(geometry: PlaneGeometry, contacts: readonly ContactPatc
     // And the windward crests catch the sun.
     const crest = rank.rise * (1 - rank.slip) * (1 - calm);
     value += crest * 0.14;
+    // Phase 3 fill (plan §7.1): the crest SHELL-LINE — the pale seam of
+    // wind-sorted shell along each rank's very top, the T1 mark that
+    // makes a crest a drawn line instead of a value ramp. Keyed to the
+    // rank function itself (wavelength 46 m — honest on the 2.2 m grid).
+    const shellLine = smoothstep01((rank.rise - 0.72) / 0.2) * (1 - smoothstep01(rank.slip / 0.35)) * (1 - calm);
+    r += (1.12 - r) * shellLine * 0.5;
+    g += (1.06 - g) * shellLine * 0.5;
+    b += (0.78 - b) * shellLine * 0.4;
+    value += shellLine * 0.08;
 
     if (u < SADDLE_TO) {
       // The Dune Saddle: honey walls banded by height, the channel floor
@@ -210,6 +220,18 @@ function bakeGoldenPaint(geometry: PlaneGeometry, contacts: readonly ContactPatc
       g += (0.98 - groove * 0.08 + glint * 0.28 - g) * glass;
       b += (0.9 - groove * 0.02 + glint * 0.26 - b) * glass;
       value += glass * (glint * 0.18 - groove * 0.06);
+      // Phase 3 fill: FRACTURE paint — broad cooled seams crossing the
+      // grooves at a second angle, so the fused field reads as cracked
+      // plates rather than one polish. Seam bands ~9 m wide on a ~55 m
+      // spacing (the grid-honesty floor: nothing finer than 8 m in
+      // vertex paint — fine fracture grain lives in the shard aprons).
+      const fracture =
+        smoothstep01((Math.abs(Math.sin((u * 0.9 - v * 0.55) * 0.11 + 0.7)) - 0.82) / 0.18) *
+        glass;
+      r -= fracture * 0.1;
+      g -= fracture * 0.04;
+      b += fracture * 0.06;
+      value -= fracture * 0.07;
     }
 
     // The Oasis Hollows: green-gold ground, deepest green in the hearts.
@@ -282,9 +304,14 @@ function bakeGoldenPaint(geometry: PlaneGeometry, contacts: readonly ContactPatc
         // now the brightest painted value in the region, the risers and
         // the deep go firmly violet, and the gold sand-runs stay lit all
         // the way down to the drain.
-        const tr = 1.02 - depthT * 0.5 + rim * 0.5 - riser * 0.4 + run * (0.4 + nearFloor * 0.3);
-        const tg = 0.9 - depthT * 0.52 + rim * 0.46 - riser * 0.42 + run * (0.28 + nearFloor * 0.18);
-        const tb = 0.52 + depthT * 0.44 + rim * 0.24 + riser * 0.1 - run * 0.12;
+        // Phase 3 fill: the tread FRINGE — a violet-cooled band just
+        // inside each rim, the debris line a pouring fall leaves along
+        // the bench it lands on. Same spatial key as the shipped rim
+        // paint (the bench function), so it aliases exactly as much.
+        const fringe = smoothstep01((frac - 0.44) / 0.1) * (1 - smoothstep01((frac - 0.58) / 0.08));
+        const tr = 1.02 - depthT * 0.5 + rim * 0.5 - riser * 0.4 + run * (0.4 + nearFloor * 0.3) - fringe * 0.12;
+        const tg = 0.9 - depthT * 0.52 + rim * 0.46 - riser * 0.42 + run * (0.28 + nearFloor * 0.18) - fringe * 0.14;
+        const tb = 0.52 + depthT * 0.44 + rim * 0.24 + riser * 0.1 - run * 0.12 + fringe * 0.1;
         r += (tr - r) * inBowl;
         g += (tg - g) * inBowl;
         b += (tb - b) * inBowl;
@@ -295,6 +322,23 @@ function bakeGoldenPaint(geometry: PlaneGeometry, contacts: readonly ContactPatc
         const onLip = smoothstep01((d - 44) / 6) * (1 - smoothstep01((d - 58) / 12));
         value += onLip * 0.1;
         b -= onLip * 0.06;
+      }
+    }
+
+    // Phase 3 fill: THE EMPTY QUARTER (MASTER §1.2, registered rest) —
+    // its bareness is composed, not defaulted: full ripple T1 paint,
+    // wind-laid stripes at ~11.5 m wavelength (honest on the 2.2 m
+    // grid), and nothing else. The fill gates keep every instance out.
+    {
+      const dq = Math.hypot(u - EMPTY_QUARTER.u, v - EMPTY_QUARTER.v);
+      const quarter = 1 - smoothstep01((dq - EMPTY_QUARTER.radius + 4) / 8);
+      if (quarter > 0) {
+        const stripe = Math.sin(u * 0.55 + Math.sin(v * 0.13) * 1.8);
+        const wave = smoothstep01((stripe - 0.15) / 0.5);
+        r += (1.06 - r) * quarter * wave * 0.4;
+        g += (0.98 - g) * quarter * wave * 0.4;
+        b += (0.52 - b) * quarter * wave * 0.3;
+        value += quarter * (wave - 0.5) * 0.12;
       }
     }
 

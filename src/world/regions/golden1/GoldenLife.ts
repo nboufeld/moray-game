@@ -7,6 +7,7 @@ import {
   CylinderGeometry,
   DoubleSide,
   DynamicDrawUsage,
+  Group,
   InstancedMesh,
   MeshBasicMaterial,
   Mesh,
@@ -24,8 +25,10 @@ import { smoothNormals } from "../../../rendering/SmoothNormals";
 import { createToonMaterial } from "../../../rendering/ToonShading";
 import { Random, SEEDS } from "../../../util/Random";
 import { seabedHeight } from "../../Seabed";
+import { buildShoalRunner } from "../kit/ShoalRunner";
+import { FILL_SEEDS } from "./GoldenFillShared";
 import { smoothstep01 } from "./GoldenShared";
-import { FLATS, RANK_WAVELENGTH, worldOf } from "./GoldenTerrain";
+import { FLATS, RANK_WAVELENGTH, saddleChannelCenter, worldOf } from "./GoldenTerrain";
 
 /**
  * The Hourglass Sea's ambient life:
@@ -54,12 +57,12 @@ import { FLATS, RANK_WAVELENGTH, worldOf } from "./GoldenTerrain";
 const SEED = SEEDS.regionGolden1;
 
 export interface GoldenLifeBuild {
-  readonly meshes: (Mesh | Points | InstancedMesh)[];
+  readonly meshes: (Mesh | Points | InstancedMesh | Group)[];
   update(dt: number, time: number, reducedMotion: boolean, diver: Vector3): void;
 }
 
 export function buildGoldenLife(): GoldenLifeBuild {
-  const meshes: (Mesh | Points | InstancedMesh)[] = [];
+  const meshes: GoldenLifeBuild["meshes"] = [];
   const updaters: ((dt: number, time: number, calm: number, diver: Vector3) => void)[] = [];
 
   const motes = buildShimmerMotes();
@@ -79,8 +82,26 @@ export function buildGoldenLife(): GoldenLifeBuild {
   updaters.push(eels.update);
 
   const rays = buildRayCaravan();
-  meshes.push(rays.mesh);
+  meshes.push(...rays.meshes);
   updaters.push(rays.update);
+
+  // The traveller shoal (Phase 3 fill, connective §5's region leg): a
+  // gold fusilier ribbon commuting the doorway ↔ saddle ↔ first crescent
+  // — life as wayfinding on the region's own road. Kit `shoalRunner`,
+  // closed-form off simulated time, fresh substream.
+  const traveller = buildShoalRunner({
+    seed: SEED ^ FILL_SEEDS.travellerShoal,
+    route: { stations: travellerStations(), closed: true },
+    count: 46,
+    fish: { scale: 0.82, color: 0xf2da9a, emissive: 0x9a7a30, profile: "fusilier" },
+    // One commute every ~5 minutes: stately, and seeded apart from every
+    // other province's route by construction (the seed is the timetable).
+    phaseSpeed: 1 / 300,
+    braid: { lateral: 0.5, vertical: 0.28 },
+    glint: { count: 24, size: 0.12 },
+  });
+  meshes.push(traveller.group);
+  updaters.push((_dt, time, calm) => traveller.update(time * calm));
 
   return {
     meshes,
@@ -91,6 +112,33 @@ export function buildGoldenLife(): GoldenLifeBuild {
       }
     },
   };
+}
+
+/**
+ * The traveller's road: out along the channel's east shoulder, around the
+ * first crescent past the lip, and home along the west — the loop leaves
+ * the doorway at u 52 (the Sandfall Dunes handshake: the wing's own leg
+ * is the connective worker's, and the two agree at the door).
+ */
+function travellerStations(): (readonly [number, number, number])[] {
+  const stations: (readonly [number, number, number])[] = [];
+  const spine = [52, 84, 116, 148, 180, 212, 244, 266, 284] as const;
+  const seat = (u: number, dv: number, lift: number): void => {
+    const { x, z } = worldOf(u, saddleChannelCenter(u) + dv);
+    stations.push([x, seabedHeight(x, z) + lift, z] as const);
+  };
+  for (const u of spine) {
+    seat(u, 2.4, 2.6);
+  }
+  // The turn: out over the lip to the first crescent's smoking shoulder.
+  seat(300, 6, 3.4);
+  const crest = worldOf(314, 10);
+  stations.push([crest.x, seabedHeight(crest.x, crest.z) + 3.8, crest.z] as const);
+  seat(298, -4, 3.2);
+  for (let i = spine.length - 1; i >= 0; i--) {
+    seat(spine[i]!, -2.4, 3.2);
+  }
+  return stations;
 }
 
 // ─── The heat-shimmer ────────────────────────────────────────────────────────
@@ -176,20 +224,6 @@ function buildSandVeils(): {
   const random = new Random(SEED ^ 0x0e11);
   const count = 9;
 
-  const geometry = new PlaneGeometry(14, 4, 1, 1);
-  const material = new MeshBasicMaterial({
-    alphaMap: veilSprite(),
-    color: 0xf0e0b4,
-    transparent: true,
-    opacity: 0.16,
-    depthWrite: false,
-    side: DoubleSide,
-  });
-  const mesh = new InstancedMesh(geometry, material, count);
-  mesh.name = "hourglass-sand-veils";
-  mesh.frustumCulled = false;
-  mesh.instanceMatrix.setUsage(DynamicDrawUsage);
-
   const seats: { u: number; v: number; y: number; yaw: number; phase: number; drift: number }[] =
     [];
   for (let i = 0; i < count; i++) {
@@ -205,6 +239,38 @@ function buildSandVeils(): {
       drift: random.range(1.6, 3.2),
     });
   }
+
+  // Phase 3 fill (plan §5): one veil routed down the saddle, so the road
+  // has weather. Appended from a FRESH substream after every pilot draw
+  // — the nine original seats above are byte-identical forever.
+  {
+    const extra = new Random(SEED ^ FILL_SEEDS.saddleVeil);
+    const u = extra.range(120, 190);
+    const v = saddleChannelCenter(u) + extra.signed(3);
+    const { x, z } = worldOf(u, v);
+    seats.push({
+      u,
+      v,
+      y: seabedHeight(x, z) + extra.range(2.2, 4),
+      yaw: extra.range(0, Math.PI),
+      phase: extra.range(0, Math.PI * 2),
+      drift: extra.range(1.2, 2.2),
+    });
+  }
+
+  const geometry = new PlaneGeometry(14, 4, 1, 1);
+  const material = new MeshBasicMaterial({
+    alphaMap: veilSprite(),
+    color: 0xf0e0b4,
+    transparent: true,
+    opacity: 0.16,
+    depthWrite: false,
+    side: DoubleSide,
+  });
+  const mesh = new InstancedMesh(geometry, material, seats.length);
+  mesh.name = "hourglass-sand-veils";
+  mesh.frustumCulled = false;
+  mesh.instanceMatrix.setUsage(DynamicDrawUsage);
 
   const dummy = new Object3D();
   const update = (_dt: number, time: number, calm: number): void => {
@@ -393,12 +459,24 @@ function eelGeometry(): BufferGeometry {
   return geometry;
 }
 
-/** The colonies, in spoke coordinates. */
+/** The pilot colonies, in spoke coordinates (the flats' core four). */
 const EEL_COLONIES: readonly { u: number; v: number; radius: number; count: number }[] = [
   { u: 516, v: 84, radius: 9, count: 44 },
   { u: 538, v: 102, radius: 8, count: 38 },
   { u: 500, v: 108, radius: 7, count: 32 },
   { u: FLATS.u + 26, v: FLATS.v - 22, radius: 8, count: 34 },
+] as const;
+
+/**
+ * Phase 3 fill (plan §5): colonies 4 → 7 — an oasis fringe, a shore
+ * outpost, and the SADDLE outpost the journey map schedules at u ~175 (a
+ * taste of the flats on the road itself, twenty eels). Placed from a
+ * FRESH substream appended after every pilot draw — the fence.
+ */
+const NEW_EEL_COLONIES: readonly { u: number; v: number; radius: number; count: number }[] = [
+  { u: 528, v: -48, radius: 6, count: 30 },
+  { u: 582, v: 36, radius: 7, count: 30 },
+  { u: 176, v: saddleChannelCenter(176) + 5.5, radius: 4.5, count: 20 },
 ] as const;
 
 function buildGardenEels(): {
@@ -414,14 +492,20 @@ function buildGardenEels(): {
     readonly yaw: number;
     readonly height: number;
     readonly phase: number;
+    /** Which colony the eel rose from — the colony-wide sway wave. */
+    readonly colony: number;
     /** Retraction eases per eel, so a colony ripples down, not snaps. */
     shy: number;
   }
   const eels: Eel[] = [];
-  for (const colony of EEL_COLONIES) {
+  const plantColony = (
+    colony: { u: number; v: number; radius: number; count: number },
+    index: number,
+    stream: Random,
+  ): void => {
     for (let i = 0; i < colony.count; i++) {
-      const angle = random.range(0, Math.PI * 2);
-      const spread = Math.sqrt(random.next()) * colony.radius;
+      const angle = stream.range(0, Math.PI * 2);
+      const spread = Math.sqrt(stream.next()) * colony.radius;
       const { x, z } = worldOf(
         colony.u + Math.cos(angle) * spread,
         colony.v + Math.sin(angle) * spread,
@@ -430,12 +514,20 @@ function buildGardenEels(): {
         x,
         y: seabedHeight(x, z) - 0.02,
         z,
-        yaw: random.range(0, Math.PI * 2),
-        height: random.range(0.85, 1.35),
-        phase: random.range(0, Math.PI * 2),
+        yaw: stream.range(0, Math.PI * 2),
+        height: stream.range(0.85, 1.35),
+        phase: stream.range(0, Math.PI * 2),
+        colony: index,
         shy: 1,
       });
     }
+  };
+  for (const [index, colony] of EEL_COLONIES.entries()) {
+    plantColony(colony, index, random);
+  }
+  const fillStream = new Random(SEED ^ FILL_SEEDS.eelColonies);
+  for (const [index, colony] of NEW_EEL_COLONIES.entries()) {
+    plantColony(colony, EEL_COLONIES.length + index, fillStream);
   }
 
   const material = createToonMaterial({
@@ -468,7 +560,11 @@ function buildGardenEels(): {
       // past eleven they rise again. Each eases at its own speed.
       const want = smoothstep01((d - 8) / 3);
       eel.shy += (want - eel.shy) * Math.min(1, dt * (want < eel.shy ? 5 : 1.2));
-      const sway = Math.sin(time * calm * 1.3 + eel.phase) * 0.06;
+      // The colony-wide wave (plan §5): a slow shared phase per colony
+      // riding under each eel's own sway, so a distant field visibly
+      // ripples — "the flats sing". Derived, not drawn: no randomness.
+      const colonyWave = Math.sin(time * calm * 0.42 + eel.colony * 2.3) * 0.045;
+      const sway = Math.sin(time * calm * 1.3 + eel.phase) * 0.06 + colonyWave;
       const graze = 1 + Math.sin(time * calm * 0.5 + eel.phase * 1.7) * 0.06;
       const rise = Math.max(0.01, eel.height * eel.shy * graze);
       dummy.position.set(eel.x, eel.y, eel.z);
@@ -526,7 +622,7 @@ function rayGeometry(): BufferGeometry {
 }
 
 function buildRayCaravan(): {
-  mesh: InstancedMesh;
+  meshes: InstancedMesh[];
   update: (dt: number, time: number, calm: number) => void;
 } {
   const random = new Random(SEED ^ 0x4a71);
@@ -604,12 +700,68 @@ function buildRayCaravan(): {
     mesh.instanceColor.needsUpdate = true;
   }
 
+  // ── The pilot-fish satellites (Phase 3 fill, doctrine T5 satellites):
+  // small bright gold fish riding each ray's slipstream — the caravan
+  // stops being seven lone deltas and becomes a procession with
+  // outriders. One instanced draw, a FRESH substream (the fence), and
+  // an update that reuses the caravan's own path arithmetic.
+  const pilotRandom = new Random(SEED ^ FILL_SEEDS.pilotFish);
+  const pilotCount = 42;
+  const pilotGeometry = createFishGeometry({
+    width: 0.9,
+    height: 0.95,
+    length: 0.9,
+    tailTaper: 0.52,
+    dorsal: 0.45,
+    pectoral: 0.8,
+    tail: { reach: 1.4, lobe: 0.6, notch: 1.0 },
+  });
+  const pilotMaterial = createToonMaterial({
+    vertexColors: true,
+    emissive: 0x9a7a30,
+    emissiveIntensity: 0.6,
+  });
+  const pilots = new InstancedMesh(pilotGeometry, pilotMaterial, pilotCount);
+  pilots.name = "hourglass-pilot-fish";
+  pilots.castShadow = false;
+  pilots.receiveShadow = false;
+  pilots.frustumCulled = false;
+  pilots.instanceMatrix.setUsage(DynamicDrawUsage);
+
+  const pilotGold = new Color(0xf6dc9c);
+  const pilotTint = new Color();
+  const pilotSeats: {
+    ray: number;
+    behind: number;
+    side: number;
+    lift: number;
+    phase: number;
+    scale: number;
+  }[] = [];
+  for (let i = 0; i < pilotCount; i++) {
+    pilotSeats.push({
+      ray: i % count,
+      behind: pilotRandom.range(0.004, 0.022),
+      side: pilotRandom.signed(1.6),
+      lift: pilotRandom.range(-0.5, 1.0),
+      phase: pilotRandom.range(0, Math.PI * 2),
+      scale: pilotRandom.range(0.34, 0.5),
+    });
+    pilotTint.copy(pilotGold).multiplyScalar(pilotRandom.range(0.86, 1.1));
+    pilots.setColorAt(i, pilotTint);
+  }
+  if (pilots.instanceColor) {
+    pilots.instanceColor.needsUpdate = true;
+  }
+
   // Single file: on the shrunk ~155 m circuit the procession spreads
   // wider (0.45) so seven rays ride nose-to-tail with daylight between.
   const fileSpan = 0.45;
   const dummy = new Object3D();
   const at = new Vector3();
   const ahead = new Vector3();
+  const side = new Vector3();
+  const up = new Vector3(0, 1, 0);
 
   const update = (_dt: number, time: number, calm: number): void => {
     sway.value = time * calm;
@@ -632,7 +784,28 @@ function buildRayCaravan(): {
       mesh.setMatrixAt(i, dummy.matrix);
     }
     mesh.instanceMatrix.needsUpdate = true;
+
+    for (const [i, seat] of pilotSeats.entries()) {
+      const s =
+        (((head - (seat.ray / count) * fileSpan - seat.behind) % 1) + 1) % 1;
+      path.getPointAt(s, at);
+      path.getPointAt((s + 0.006) % 1, ahead);
+      side.subVectors(ahead, at).cross(up).normalize();
+      const dart = Math.sin(time * calm * 1.1 + seat.phase) * 0.3;
+      at.addScaledVector(side, seat.side + dart);
+      at.y +=
+        seat.lift +
+        Math.sin(time * calm * 0.4 + seat.ray * 1.7) * 0.5 +
+        Math.sin(time * calm * 0.9 + seat.phase * 1.3) * 0.18;
+      dummy.position.copy(at);
+      dummy.rotation.set(0, Math.atan2(ahead.x - at.x, ahead.z - at.z), 0);
+      dummy.rotateZ(-Math.cos(time * calm * 1.1 + seat.phase) * 0.2);
+      dummy.scale.setScalar(seat.scale);
+      dummy.updateMatrix();
+      pilots.setMatrixAt(i, dummy.matrix);
+    }
+    pilots.instanceMatrix.needsUpdate = true;
   };
   update(0, 0, 1);
-  return { mesh, update };
+  return { meshes: [mesh, pilots], update };
 }
