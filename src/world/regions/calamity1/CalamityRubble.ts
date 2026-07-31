@@ -24,6 +24,7 @@ import type { SphereCollider } from "../../CollisionField";
 import { createRockMaterial } from "../../RockMaterial";
 import { archGeometry, boulderGeometry, slabGeometry, stackGeometry } from "../../RockShapes";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
+import { FILL_SEEDS } from "./CalamityFillShared";
 import { smoothstep01 } from "./CalamityShared";
 import {
   GATE_U,
@@ -293,7 +294,10 @@ export function buildCalamityRubble(): CalamityRubbleBuild {
     const y = seabedHeight(x, z);
     dummy.position.set(x, y + 0.12, z);
     dummy.rotation.set(random.signed(0.5), random.range(0, Math.PI * 2), random.signed(0.5));
-    dummy.scale.setScalar(random.range(0.6, 0.95));
+    // ×1.7 (the fill's pot-read audit): at 0.6–0.95 the pots read as
+    // pebbles from the suffocated-mile pose's own camera. The multiplier
+    // scales the SAME stream draw, so no survivor moves (the fence).
+    dummy.scale.setScalar(random.range(0.6, 0.95) * 1.7);
     dummy.updateMatrix();
     amphoraMesh.setMatrixAt(i, dummy.matrix);
     tint.setHex(i % 4 === 0 ? 0xa88a68 : 0x8f7d70).multiplyScalar(random.range(0.85, 1.1));
@@ -490,6 +494,259 @@ export function buildCalamityRubble(): CalamityRubbleBuild {
     0.2,
   );
 
+  // ═══ THE PHASE 3 FILL — everything below draws from fresh streams,
+  // appended after every pilot draw (the reroll fence): no existing stone,
+  // pot or tooth moves. Ruin-density as story: masonry piles, the fallen
+  // lintel, heaved flags, menhirs, the causeway grown 12 → 20, the teeth
+  // 12 → 30, the amphorae 14 → 22 in four clusters. ═══
+
+  /** A stone transformed into world space, scorched, for a merged mesh. */
+  const bakeStone = (
+    geometry: BufferGeometry,
+    u: number,
+    v: number,
+    yaw: number,
+    sink = 0,
+  ): BufferGeometry => {
+    const { x, z } = worldOf(u, v);
+    const y = seabedHeight(x, z) - sink;
+    geometry.applyMatrix4(new Matrix4().makeRotationY(yaw));
+    geometry.translate(x, y, z);
+    geometry.computeBoundingBox();
+    const dir = woundDir(u, v);
+    scorchToward(geometry, dir.x, dir.z, 0.14);
+    return geometry;
+  };
+
+  {
+    const fill = new Random(SEED ^ FILL_SEEDS.fillStones);
+    const paleParts: BufferGeometry[] = [];
+    const woundParts: BufferGeometry[] = [];
+
+    // The fallen lintel at u 108 — the reveal cadence's first new beat.
+    {
+      const lintel = slabGeometry({ seed: SEED ^ 0x0f31, radius: 2.6, height: 1.0 });
+      lintel.applyMatrix4(new Matrix4().makeRotationX(0.16));
+      paleParts.push(bakeStone(lintel, 108, -8.5, 1.1, 0.3));
+      contacts.push({ x: worldOf(108, -8.5).x, z: worldOf(108, -8.5).z, radius: 3.2, strength: 0.42 });
+      const at = worldOf(108, -8.5);
+      colliders.push({ center: new Vector3(at.x, seabedHeight(at.x, at.z) + 0.8, at.z), radius: 1.9 });
+    }
+
+    // Masonry piles: five on the march, four in the Shatterfield — a
+    // handful of small terrace blocks jumbled where a wall came down.
+    const pileSpots: { u: number; v: number }[] = [
+      { u: 128, v: 7 },
+      { u: 176, v: -9 },
+      { u: 226, v: 8.5 },
+      { u: 264, v: -8 },
+      { u: 298, v: 9 },
+      { u: 502, v: -18 },
+      { u: 518, v: 13 },
+      { u: 546, v: -24 },
+      { u: 562, v: 20 },
+    ];
+    for (const [pileIndex, spot] of pileSpots.entries()) {
+      const stones = 4 + (pileIndex % 3);
+      for (let s = 0; s < stones; s++) {
+        const angle = fill.range(0, Math.PI * 2);
+        const r = fill.range(0, 1.6) * Math.sqrt(fill.next());
+        const radius = fill.range(0.4, 0.85);
+        const block = slabGeometry({
+          seed: SEED ^ (0x0f40 + pileIndex * 8 + s),
+          radius,
+          height: radius * fill.range(0.5, 0.8),
+        });
+        block.applyMatrix4(new Matrix4().makeRotationX(fill.signed(0.4)));
+        block.translate(Math.cos(angle) * r, s * 0.16, Math.sin(angle) * r);
+        paleParts.push(bakeStone(block, spot.u, spot.v, fill.range(0, Math.PI * 2)));
+      }
+      const at = worldOf(spot.u, spot.v);
+      contacts.push({ x: at.x, z: at.z, radius: 2.2, strength: 0.4 });
+      colliders.push({
+        center: new Vector3(at.x, seabedHeight(at.x, at.z) + 0.5, at.z),
+        radius: 1.4,
+      });
+    }
+
+    // Heaved-flag pavement patches: eight flags lying almost flush in the
+    // Shatterfield's floor, one edge lifted — pavement remembering itself.
+    for (let i = 0; i < 8; i++) {
+      const u = 496 + fill.range(0, 84);
+      const v = fill.signed(60);
+      const radius = fill.range(1.5, 2.6);
+      const flag = slabGeometry({ seed: SEED ^ (0x0f60 + i), radius, height: radius * 0.22 });
+      flag.applyMatrix4(new Matrix4().makeRotationX(fill.signed(0.16)));
+      paleParts.push(bakeStone(flag, u, v, fill.range(0, Math.PI * 2), radius * 0.12));
+      const at = worldOf(u, v);
+      contacts.push({ x: at.x, z: at.z, radius: radius * 1.1, strength: 0.32 });
+    }
+
+    // The menhir pair: two thrown slabs standing on edge at the
+    // Shatterfield's south shoulder, leaning the way the blast left them.
+    for (const [i, spot] of [
+      { u: 540, v: 34, yaw: 0.7 },
+      { u: 549, v: 40, yaw: 1.3 },
+    ].entries()) {
+      const menhir = slabGeometry({ seed: SEED ^ (0x0f70 + i), radius: 2.3, height: 1.1 });
+      menhir.applyMatrix4(new Matrix4().makeRotationX(Math.PI / 2 - 0.18 + i * 0.1));
+      woundParts.push(bakeStone(menhir, spot.u, spot.v, spot.yaw));
+      const at = worldOf(spot.u, spot.v);
+      contacts.push({ x: at.x, z: at.z, radius: 2.4, strength: 0.42 });
+      colliders.push(
+        { center: new Vector3(at.x, seabedHeight(at.x, at.z) + 1.4, at.z), radius: 1.5 },
+        { center: new Vector3(at.x, seabedHeight(at.x, at.z) + 3.4, at.z), radius: 1.1 },
+      );
+    }
+
+    // The causeway grown 12 → 20: eight more slabs threading the same
+    // procession, from a fresh stream so the first twelve never move.
+    for (let i = 0; i < 8; i++) {
+      const u = 500 + i * 8.5 + fill.signed(3);
+      const side = i % 2 === 0 ? 1 : -1;
+      const lateral = side * fill.range(4, 12) + fill.signed(3);
+      const radius = fill.range(1.8, 3.4);
+      const slab = slabGeometry({
+        seed: SEED ^ (0x0f80 + i),
+        radius,
+        height: radius * fill.range(0.32, 0.48),
+      });
+      slab.applyMatrix4(new Matrix4().makeRotationX(fill.signed(0.4)));
+      woundParts.push(bakeStone(slab, u, lateral, fill.range(0, Math.PI * 2)));
+      const at = worldOf(u, lateral);
+      contacts.push({ x: at.x, z: at.z, radius: radius * 1.2, strength: 0.38 });
+      if (i % 2 === 0) {
+        colliders.push({
+          center: new Vector3(at.x, seabedHeight(at.x, at.z) + radius * 0.7, at.z),
+          radius: radius * 0.55,
+        });
+      }
+    }
+
+    // The Quiet Rim's two extra leaning stones, framing the relic pair.
+    for (const [i, spot] of [
+      { u: 866, v: -20, yaw: 2.2 },
+      { u: 890, v: 26, yaw: 5.1 },
+    ].entries()) {
+      const stone = stackGeometry(
+        [
+          { radius: 1.2, rise: 0.6, stretch: 1.7, lean: 0.4 * (i === 0 ? 1 : -1) },
+          { radius: 0.8, rise: 2.9, stretch: 1.5, lean: 0.9 * (i === 0 ? 1 : -1) },
+        ],
+        { seed: SEED ^ (0x0f90 + i) },
+      );
+      paleParts.push(bakeStone(stone, spot.u, spot.v, spot.yaw));
+      const at = worldOf(spot.u, spot.v);
+      contacts.push({ x: at.x, z: at.z, radius: 1.6, strength: 0.4 });
+      colliders.push({
+        center: new Vector3(at.x, seabedHeight(at.x, at.z) + 1.4, at.z),
+        radius: 1.1,
+      });
+    }
+
+    for (const [parts, material, name] of [
+      [paleParts, paleStone, "calamity-fill-stones-pale"],
+      [woundParts, woundStone, "calamity-fill-stones-wound"],
+    ] as const) {
+      const merged = mergeGeometries([...parts], false);
+      for (const part of parts) {
+        part.dispose();
+      }
+      if (!merged) {
+        throw new Error(`calamity ${name} parts could not be merged`);
+      }
+      merged.computeBoundingSphere();
+      const mesh = new Mesh(merged, material);
+      mesh.name = name;
+      mesh.castShadow = false;
+      mesh.receiveShadow = false;
+      meshes.push(mesh);
+    }
+  }
+
+  // The teeth grown 12 → 30: eighteen more stacks interleaved down the
+  // march (fresh stream, fresh geometry seed — the first twelve stand).
+  {
+    const fill = new Random(SEED ^ FILL_SEEDS.fillTeeth);
+    const fillTooth = stackGeometry(
+      [
+        { radius: 1.0, rise: 0.5, stretch: 1.7, lean: 0.4 },
+        { radius: 0.7, rise: 2.8, stretch: 1.5, lean: 0.9 },
+      ],
+      { seed: SEED ^ 0x0fa1 },
+    );
+    const count = 18;
+    const mesh = new InstancedMesh(fillTooth, paleStone, count);
+    mesh.name = "calamity-bank-teeth-fill";
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    for (let i = 0; i < count; i++) {
+      let u = 96 + i * 22.5 + fill.signed(5);
+      const side = i % 2 === 0 ? -1 : 1;
+      let vc = marchChannelCenter(u);
+      let lateral = vc + side * fill.range(7.5, 12.5);
+      // The Gardener's stage stays clear — not just the registry's bare
+      // ten metres but the POSE's whole frame: round 1's tooth at
+      // u ≈ 253 photobombed the statue like an unintended totem. Any
+      // tooth drawn inside the stage steps 34 m down-road, keeping its
+      // drawn bank offset (identical stream consumption either way).
+      if (Math.hypot(u - 252, lateral - 5.5) < 18) {
+        const offset = lateral - vc;
+        u += 34;
+        vc = marchChannelCenter(u);
+        lateral = vc + offset;
+      }
+      const { x, z } = worldOf(u, lateral);
+      const y = seabedHeight(x, z);
+      dummy.position.set(x, y, z);
+      dummy.rotation.set(0, fill.range(0, Math.PI * 2), fill.signed(0.08));
+      dummy.scale.setScalar(fill.range(0.7, 1.4));
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+      contacts.push({ x, z, radius: 1.5, strength: 0.38 });
+      colliders.push({ center: new Vector3(x, y + 1.4, z), radius: 1.1 });
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+    meshes.push(mesh);
+  }
+
+  // The amphorae grown 14 → 22: four clusters at u 352/375/400/425 — the
+  // Mile's ONLY fill (registry clause), pot-read scale against its pose.
+  {
+    const fill = new Random(SEED ^ FILL_SEEDS.fillAmphorae);
+    const count = 8;
+    const mesh = new InstancedMesh(amphora, amphoraMat, count);
+    mesh.name = "calamity-amphorae-clusters";
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    const clusterU = [352, 375, 400, 425];
+    for (let i = 0; i < count; i++) {
+      const u = clusterU[i % 4]! + fill.signed(3.5);
+      const vc = marchChannelCenter(u);
+      const lateral = vc + fill.signed(5.5);
+      const { x, z } = worldOf(u, lateral);
+      const y = seabedHeight(x, z);
+      dummy.position.set(x, y + 0.12, z);
+      dummy.rotation.set(fill.signed(0.5), fill.range(0, Math.PI * 2), fill.signed(0.5));
+      dummy.scale.setScalar(fill.range(1.1, 1.7));
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+      tint.setHex(i % 3 === 0 ? 0xa88a68 : 0x8f7d70).multiplyScalar(fill.range(0.85, 1.1));
+      mesh.setColorAt(i, tint);
+      if (i % 4 === 0) {
+        colliders.push({ center: new Vector3(x, y + 0.7, z), radius: 0.7 });
+      }
+      contacts.push({ x, z, radius: 1.1, strength: 0.3 });
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) {
+      mesh.instanceColor.needsUpdate = true;
+    }
+    mesh.computeBoundingSphere();
+    meshes.push(mesh);
+  }
+
   return { meshes, colliders, contacts };
 }
 
@@ -566,6 +823,10 @@ function gardenerFallbackGeometry(): BufferGeometry {
     for (let i = 0; i < position.count; i++) {
       const up = smoothstep01((normal.getY(i) - 0.25) / 0.6);
       shade.copy(sage).lerp(moss, up * 0.5);
+      // The moss-glimmer (fill plan §4): a hand-sized pale value lift on
+      // the statue's up-facing moss — paint, not additive. The sculpted
+      // GLB keeps its own paint; this is the stand-in's answer.
+      shade.multiplyScalar(1 + up * 0.16);
       if (Math.hypot(position.getX(i) / 0.26, (position.getZ(i) - 1.05) / 0.3) < 1.1) {
         shade.lerp(recess, 0.6);
       }

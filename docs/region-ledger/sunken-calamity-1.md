@@ -287,3 +287,207 @@ grove all hold; nothing breaks.
   vec3`, unnamed material) fires at game startup on the capture harness
   — reproduced with this region's registry entry reverted; not this
   region's code, and invisible in every captured frame.
+
+## Phase 3 fill rework (docs/fill-plans/sunken-calamity-1.md)
+
+Baseline: the main tree's `_verify` set (this region's own
+`calamity-final` set was port-corrupted; documented above). Budgets
+before the fill: 78 draws / 210,609 tris measured (the budget section
+above). After round 0 of the fill: 110 draws / 345,828 tris measured
+(caps updated honestly to 160/450k per MASTER). Reroll fence proven in tests: amphora 0, tooth 0,
+stone collider 3 and ghost 0 pinned to nine decimals against the
+pre-fill build — every kit stream is `SEEDS.regionCalamity ^ <fresh
+constant>` appended after existing draws.
+
+### Round 1 (`ca-fill-r1`) — the spine got the fill, the banks got nothing
+
+Captured 18 authored poses + 12 sweep poses on :5196 (verified before
+capture). READ all 30.
+
+**Sweep verdict: 3/12** (04 ghost-forest core, 12 forest east edge, 03
+grove-approach marginal). The nine misses are NOT in registered rests —
+this round fails the standard, and the reason is structural: the pose
+stream was computed offline (same FNV ^ KIT_SWEEP_SALT stream the
+sweep script draws) and nine of twelve poses sit on the OUTER BANKS at
+|v| ≥ 60 (u 548–819) — the crater rim shoulders and mid-bank flats —
+exactly the rim-facing flanks MASTER's field note warned about. Round
+0's fill hugged the march channel and the named zones; the banks read
+as bare felt with a horizon (01: shatterfield east flank, bare with
+shard flecks only at frame edge; 05/06/07/08: east bank flats, empty
+first-35-m; 09: west bank outside the ghost wood, empty; 10: gardens'
+east edge, two worm tents on the horizon and nothing near; 11:
+mid-water over the far rim, wisp+bubbles mid, floor bare).
+
+**The round-2 answer is story, not garnish: the ejecta blanket.** The
+Wound is an explosion; its debris didn't politely follow the road. A
+region-wide sparse T1 ejecta pass (pavement crumbs + ash clots + bone
+gravel, raked AWAY from the Wound like everything else) over all owned
+ground, plus the field-note flank bands: dead-scrub + straw + knuckle
+stands banded along the rim-facing outer flanks, and a handful of
+extra snapped ghost snags scattered up the east/west banks so the
+mid-ground has things that stand.
+
+Authored-set critique (all 18 read):
+
+- silhouette — `the-gardener`: a relocated fill tooth photobombs the
+  frame behind the statue like an unintended totem; MOVE it. `the-
+  shrine`: a grove plant leans diagonally across the lens; move it off
+  the pose axis. `shatterfield`: the foreground bench is nearly bare —
+  the shard families are too sparse for the bench's scale; densify and
+  pull tighter to the camera line. `wound-gate`: right bank bare —
+  ejecta blanket will cover it.
+- value — `sorrow-gate`: the shard carpet drifts salmon/warm and reads
+  as wood chips under the entry light; cool the palette toward ash
+  violet/bone (the verdant round-3 lesson: paint for THIS region's
+  light). `ghost-forest`/`the-wound`: straw lanes too dark, reading as
+  sticks; lift straw values toward bleached bone. `last-grove`: meadow
+  blades invisible — too small and palette-merged with the lawn; grow
+  the blades and brighten tips so the meadow answers the shaft.
+- colour — mile pots, wisps, terrace seams, sky card all read and stay
+  cold; the warm near-field wash is covered where the ejecta lies.
+- detail — pioneer worm trails read (cold-candle excellent); gleam
+  crabs read at the banks; ash-moths too faint to register at
+  ghost-forest — acceptable, they are a whisper by design; ghost
+  shrimp sparkles faint at gardens (leave — the wisps carry it).
+
+Working frames: first-dead, mid-march, shock-rings, card-house,
+suffocated-mile (registry-still: pots + one bubble thread + eighth-
+density snow all present), the-reveal, cold-candle, seep-gardens,
+grove-lawn, quiet-rim (rest — bare by registry).
+
+### Round 2 (`ca-fill-r2`) — the ejecta blanket lands
+
+The rework: the ejecta blanket (crumbs + thrown slabs over all crater
+country, raked off the Wound, swim line and rests held), the flank
+bands (thrown straw, pale dead scrub, bone-coral pioneers past |v| 46),
+28 bank snags stood INTO the sweep poses' computed view lines (the
+pose stream recomputed offline; zero new draws — snags merge into the
+forest chunks), shard tones cooled off salmon, straw lifted to
+bleached bone, the Shatterfield grown 1050 → 1500, meadow blades grown
+to 0.3–0.62 m with brighter tips, the Gardener's stage cleared (the
+u ≈ 253 tooth stepped 34 m down-road), a grove plant moved off the
+shrine lens. Measured after: 116 draws / 391,696 tris. All 21 region
+tests green (fence pins, rake, Mile stillness, route clearances).
+
+**Sweep verdict: 8/12 clear** (01, 02, 03, 04, 08, 10, 11, 12), with
+04 and 12 unchanged-strong and every bank pose now carrying snags in
+its mid-ground. **Marginal: 05, 06, 07, 09** — the mid layer stands
+now but the NEAR layer is still thin: the blanket's 1500 crumbs over
+a 215 m disc is one stone per ~10 m of near-field, and the first ten
+metres under those poses still read as felt with specks. Not rests;
+must be fixed. Round-3 orders: densify the blanket (crumbs 1500 →
+3200, slabs 300 → 560 and a step larger), grow the flank scrub 120 →
+200, straw 300 → 460, knuckles 46 → 70.
+
+Authored set (all 18 read): the Gardener's stage is CLEAN — the statue
+lies alone again; sorrow-gate's carpet reads bone not salmon; the
+Shatterfield bench finally carries its story ("the pavement of a
+drowned city, thrown"); ghost-forest straw reads as pale shed straps;
+grove-lawn's meadow answers the shaft in yellow-green blades;
+suffocated-mile untouched-still by registry; quiet-rim stays the
+registered rest. One find: the-shrine's diagonal trunk is NOT fill —
+it stands in the `_verify` baseline identically (a pilot west-clump
+plant 1.5 m off the camera corridor, accepted in the pilot's round-5
+full-set review). The plant stays (pilot content is fenced); the POSE
+gets a two-metre camera slide off its shoulder instead.
+
+### Round 3 (`ca-fill-r3`) — the blanket thickened; two poses still read felt
+
+The rework: the blanket densified per round-2 orders (crumbs 1500 →
+3200 and a step larger 0.12–0.34 m, slabs 300 → 560 at 0.42–0.95 m,
+flank straw 300 → 460, flank scrub 120 → 200, knuckles 46 → 70), the
+shrine pose's two-metre slide committed. Measured after: 116 draws /
+421,456 tris. All 21 region tests green.
+
+**Sweep verdict: 10/12.** Clear: 01, 03, 04, 08, 09, 11, 12 (01's
+near carpet is now dense shard-fall; 09's west flank carries streaked
+ash, shards and its arching ghost; 11 has its gleam-crab, bubble
+thread and snag rank). Passing but lean: 02, 07, 10. **Still failing:
+05 (u 733, v 143) and 06 (u 548, v 90)** — both on full-weight ground
+(1.00 and 0.95 measured), neither a registered rest, and both still
+read the first ten metres as bare felt with a good mid (snags) and far
+(ridge) layer. Diagnosis, honestly: a UNIFORM blanket over the crater
+country's ~145,000 m² cannot buy a foreground read at any honest
+budget — 3200 crumbs is still only one stone per ~45 m². Densifying
+again would burst the triangle cap before it fixed the read.
+
+Authored set (all 18 read): everything from round 2 holds; the-shrine
+is CLEAN after the slide (pile and Curator centre-frame, no trunk on
+the lens); the-reveal's crest rains raked bone shards down the bank;
+wound-gate's shoulders carry their flank scrub and thrown straw;
+suffocated-mile and quiet-rim stay registry-still.
+
+Round-4 orders — the story answer, not brute force: craters do not
+blanket evenly, they throw debris in **RAYS**. Five ejecta rays
+radiate from the Wound at azimuths 51°, 83°, 119°, 149.4° and 225°
+(spoke frame, 0° down-spine) — chosen to lie along the failing and
+lean view lines (10, 05, 07, 06, 09 respectively) the way the bank
+snags were placed: the pose stream is deterministic, so the rays are
+aimed where the region is actually seen. Dense crumb/slab/straw fill
+inside the rays only (~10–20 m half-width, craterD 62–178), raked off
+the Wound like all ejecta, swim line and rests held, fresh seeds
+appended (0xf256–0xf258).
+
+### Round 4 (`ca-fill-r4`) — the rays land; the sweep reads
+
+The rework: the five ejecta rays exactly per round-3 orders — 1,800
+ray crumbs (0.14–0.4 m), 240 ray slabs (0.45–1.0 m), 320 ray straw
+straps, all inside `ejectaRayReach` (half-width 9–20 m, craterD
+62–178, angular falloff per ray), gated off the grove, the Wound
+mouth, the swim line (< 1.8 m) and every registered rest, raked off
+the Wound at strength 0.85–0.9. Seeds 0xf256–0xf258 appended after
+all existing draws; the fence pins stay byte-identical. Paid for by
+a trim of the general blanket (crumbs 3200 → 3000). Measured after:
+120 draws / 440,976 tris — inside 160 / 450k with headroom gone,
+honestly: the region is FULL. All 21 region tests green.
+
+**Sweep verdict: 12/12.** The two round-3 failures now read:
+**05 (u 733, v 143)** — the 83° ray crosses its first ten metres as
+raked shard-fall and streaked drag-marks, its snag pair and frond
+arch hold the mid, ridge far. **06 (u 548, v 90)** — the 149.4° ray
+scatters crumb and slab around its menhir pair down to the lens,
+teeth-spiked ridge far. The three lean passes hardened: 02's shard
+flecks sit in its streak field under the ghost-frond rank, 07's
+first metres carry thrown flakes and pink slab corners under the
+boulder pair, 10's crest rains shards toward the down-slope. 01, 03,
+04, 08, 09, 11 (gleam-crab, bubble thread, snag rank), 12 all hold
+as in round 3. No pose leans on a registered rest for its pass; the
+Mile and quiet-rim never entered the pose stream this seed.
+
+Authored set (all 18 read, captured pose-per-launch after repeated
+Chromium crashes in long runs — one crash now costs one frame):
+everything from round 3 holds; no ray crosses an authored lens
+wrongly — the rays live on the outer banks where only the sweep
+looks; suffocated-mile stays registry-still (four pot clusters, one
+bubble thread, eighth-density snow, the Gardener's ten metres bare);
+quiet-rim stays the registered rest. Round 4 closes the loop at the
+standard: ≥ 11/12 met at 12/12 with zero rest exemptions needed.
+
+### Final (`ca-filled`) — the record sets
+
+Captured against the round-4 build (no code changes after r4), server
+restarted fresh before each set on port 5196, every frame read:
+
+- **Sweep `ca-filled`** — 12/12, identical reads to the r4 sweep
+  (same deterministic pose stream). No pass leans on a registered
+  rest; the Mile and quiet-rim never enter the stream this seed.
+- **Authored `ca-filled`** — all 18 poses; everything from the r4
+  authored review holds. Suffocated-mile registry-still, quiet-rim
+  the registered rest, the-shrine's lens clean after its r3 slide,
+  the Gardener's stage clear.
+- **Noassets `ca-filled-noassets`** — all 18 poses on the procedural
+  fallback build: the fill is procedural so it ALL survives — shard
+  carpets, straw, flank bands, ejecta rays, meadow, ash snow at its
+  eighth, the four pot clusters, the Wound's rise-into-light column.
+  No missing-asset holes, no black.
+
+Budgets, measured (tmp vite-node scene walk, instance-aware):
+**before fill 78 draws / 210,609 tris → after 120 draws / 440,976
+tris** — inside the honest caps of 160 / 450k held by the test.
+Gates at close: typecheck clean, eslint clean (`--max-warnings 0`),
+targeted vitest green (regions, regionCalamity1, kitGround, kitLife),
+one full `npm test` green. Reroll fence proven throughout: landmark
+pins byte-identical to the pre-fill build.
+
+Flag for the orchestrator: triangle headroom is ~9k of 450k — the
+region is full; any future addition must trade something out.

@@ -66,9 +66,9 @@ export function buildCalamityLife(plume: { x: number; z: number; base: number; t
   meshes.push(darts.points);
   updaters.push(darts.update);
 
-  const shoal = buildPallidShoal();
-  meshes.push(shoal.mesh);
-  updaters.push(shoal.update);
+  // The pallid shoal's old fog-ellipse circuit is retired: the fill
+  // re-routes the survivors onto the SPINE as two kit shoal runners
+  // (CalamityFillLife) — life as wayfinding, per the fill plan §5.
 
   const gyre = buildGyre(plume);
   meshes.push(gyre.mesh);
@@ -112,8 +112,16 @@ function buildAshSnow(): { points: Points; update: (dt: number, time: number, ca
   for (let i = 0; i < count; i++) {
     // Snow through the whole region and down the march: the devastation's
     // dandruff does not stop at the crater's rim.
-    const u = random.range(70, 880);
+    let u = random.range(70, 880);
     const v = u < 530 ? random.signed(20) : random.signed(150);
+    // The Suffocated Mile keeps its stillness (MASTER §1.2): ash snow at
+    // ~an eighth density between u 352–440. The roll is drawn for EVERY
+    // mote (fixed draws per mote), and the overflow relocates rather than
+    // vanishes, so the count and the stream shape both hold.
+    const mileRoll = random.next();
+    if (u > 352 && u < 440 && mileRoll > 0.125) {
+      u = u < 396 ? u - 140 : u + 140;
+    }
     const { x, z } = worldOf(u, v);
     const floor = seabedHeight(x, z);
     base[i * 3] = x;
@@ -214,83 +222,6 @@ function buildSiltDarts(): { points: Points; update: (dt: number, time: number, 
       attribute.needsUpdate = true;
     },
   };
-}
-
-// ─── The pallid shoal ────────────────────────────────────────────────────────
-
-function buildPallidShoal(): {
-  mesh: InstancedMesh;
-  update: (dt: number, time: number, calm: number) => void;
-} {
-  const random = new Random(SEED ^ 0x5a01);
-  const count = 50;
-  const geometry = createFishGeometry({
-    width: 0.9,
-    height: 0.95,
-    length: 1.05,
-    tailTaper: 0.5,
-    dorsal: 0.5,
-    pectoral: 0.9,
-    tail: { reach: 1.5, lobe: 0.62, notch: 1.05 },
-  });
-  const material = createToonMaterial({
-    vertexColors: true,
-    emissive: 0x2a3234,
-    emissiveIntensity: 0.5,
-  });
-  const mesh = new InstancedMesh(geometry, material, count);
-  mesh.name = "calamity-pallid-shoal";
-  mesh.castShadow = false;
-  mesh.receiveShadow = false;
-  mesh.frustumCulled = false;
-  mesh.instanceMatrix.setUsage(DynamicDrawUsage);
-
-  // Silver-ash, *lifted*: the pilot's round-8 lesson — a small dark fish
-  // on saturated water turns complement-warm, so the survivors ride above
-  // the water's value, not below it.
-  const silver = new Color(0xcfd8d2);
-  const offsets: { a: number; r: number; h: number; phase: number; scale: number }[] = [];
-  const tint = new Color();
-  for (let i = 0; i < count; i++) {
-    offsets.push({
-      a: random.range(0, Math.PI * 2),
-      r: random.range(0, 1),
-      h: random.signed(1),
-      phase: random.range(0, Math.PI * 2),
-      scale: random.range(0.85, 1.25),
-    });
-    tint.copy(silver).multiplyScalar(random.range(0.85, 1.08));
-    mesh.setColorAt(i, tint);
-  }
-  if (mesh.instanceColor) {
-    mesh.instanceColor.needsUpdate = true;
-  }
-
-  const dummy = new Object3D();
-  const centre = { u: 618, v: 4 };
-  const update = (_dt: number, time: number, calm: number): void => {
-    const t = time * calm;
-    const angle = t * 0.05 * Math.PI * 2;
-    for (const [i, o] of offsets.entries()) {
-      const a = angle + o.a * 0.22;
-      const u = centre.u + Math.cos(a) * 56 * (0.82 + o.r * 0.24);
-      const v = centre.v + Math.sin(a) * 44 * (0.82 + o.r * 0.24);
-      const { x, z } = worldOf(u, v);
-      const y = seabedHeight(x, z) + 3.2 + Math.sin(t * 0.5 + o.phase) * 1.1 + o.h * 1.3;
-      dummy.position.set(x, y, z);
-      const du = -Math.sin(a) * 56;
-      const dv = Math.cos(a) * 44;
-      const from = worldOf(u, v);
-      const to = worldOf(u + du * 0.01, v + dv * 0.01);
-      dummy.rotation.set(0, Math.atan2(to.x - from.x, to.z - from.z), 0);
-      dummy.scale.setScalar(o.scale);
-      dummy.updateMatrix();
-      mesh.setMatrixAt(i, dummy.matrix);
-    }
-    mesh.instanceMatrix.needsUpdate = true;
-  };
-  update(0, 0, 1);
-  return { mesh, update };
 }
 
 // ─── The crater gyre ─────────────────────────────────────────────────────────
@@ -513,8 +444,9 @@ function buildUrchins(): InstancedMesh {
   return mesh;
 }
 
-/** A white crab: a low domed shell, two claw arms, six legs, merged once. */
-function crabGeometry(): BufferGeometry {
+/** A white crab: a low domed shell, two claw arms, six legs, merged once.
+ *  Exported for the fill's darting percher colonies (same body, one truth). */
+export function crabGeometry(): BufferGeometry {
   const shell = new IcosahedronGeometry(0.16, 1);
   shell.scale(1.25, 0.55, 1);
   const parts: BufferGeometry[] = [shell];

@@ -3,9 +3,12 @@ import {
   CatmullRomCurve3,
   Color,
   DoubleSide,
+  IcosahedronGeometry,
+  InstancedMesh,
   LatheGeometry,
   Matrix4,
   Mesh,
+  Object3D,
   PlaneGeometry,
   TubeGeometry,
   Vector2,
@@ -21,6 +24,7 @@ import { Random, SEEDS } from "../../../util/Random";
 import type { SphereCollider } from "../../CollisionField";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
 import { createSunViewUniform, injectLeafGlow, trackSunView } from "../../SeaGrass";
+import { FILL_SEEDS } from "./CalamityFillShared";
 import {
   BONE_TONES,
   GROVE_TONES,
@@ -339,6 +343,85 @@ export function buildCalamityForest(): CalamityForestBuild {
     }
   }
 
+  // ═══ THE PHASE 3 FILL — appended after every pilot draw (the reroll
+  // fence: the streams' existing consumption is untouched, so no giant,
+  // stump or grove plant moves). ═══
+
+  // Six dead sapling snags up the march's banks: the reveal cadence's
+  // small dead, standing where the story's kelp meadows drowned.
+  for (const spot of [
+    { u: 146, v: 8, h: 4.6 },
+    { u: 152, v: 10.5, h: 3.4 },
+    { u: 206, v: -9, h: 5.2 },
+    { u: 292, v: 8.5, h: 4.2 },
+    { u: 306, v: -10, h: 3.8 },
+    { u: 452, v: 9, h: 5.6 },
+  ]) {
+    growGhost(chunks.outriders!, spot.u, spot.v, spot.h, blastYaw(spot.u, spot.v), "snapped");
+  }
+
+  // The grove grown 8 → 14 (plus the survivor), with the shrine's
+  // approach kept clear: three more on each clump's outer shoulder.
+  // (Round 2: the second one moved off the shrine pose's lens — at
+  // u−10,v+8 it stood three metres from the camera, a diagonal trunk
+  // across the whole frame.)
+  groveAt(-16, -3, 9.5);
+  groveAt(-20, 10, 8.5);
+  groveAt(-4, -11, 10.5);
+  groveAt(12, 8, 9);
+  groveAt(18, -6, 9.5);
+  groveAt(6, -13, 8);
+  // And the juveniles grown 7 → 20: the regrowth the ridge still shelters.
+  for (let i = 0; i < 13; i++) {
+    const angle = random.range(0, Math.PI * 2);
+    const r = random.range(13, 26);
+    groveAt(Math.cos(angle) * r, Math.sin(angle) * r, random.range(3.2, 6));
+  }
+
+  // Round 2 — the bank snag stands: the sweep put nine poses on the
+  // crater's outer shoulders and the mid-ground had nothing that stands.
+  // The story already owns the answer: the forest didn't stop at the
+  // bench — its outliers died on the banks too. Mostly short snapped
+  // saplings with a few full ghosts, all raked off the Wound, all kept
+  // off the shoal routes' corridor (|v| ≤ 46 stays snag-free out here).
+  for (const spot of [
+    // The Shatterfield's east shoulder.
+    { u: 556, v: 66, h: 4.6, giant: false },
+    { u: 546, v: 78, h: 3.8, giant: false },
+    { u: 562, v: 74, h: 5.2, giant: false },
+    { u: 534, v: 96, h: 4.0, giant: false },
+    { u: 530, v: 92, h: 3.4, giant: false },
+    { u: 544, v: 88, h: 4.4, giant: false },
+    // The east bank between the forest and the gardens.
+    { u: 636, v: 110, h: 4.6, giant: false },
+    { u: 652, v: 116, h: 10.5, giant: true },
+    { u: 626, v: 121, h: 3.6, giant: false },
+    // The far east shoulder.
+    { u: 716, v: 150, h: 4.4, giant: false },
+    { u: 702, v: 144, h: 10, giant: true },
+    { u: 726, v: 138, h: 3.6, giant: false },
+    { u: 786, v: 132, h: 4.6, giant: false },
+    { u: 789, v: 119, h: 10, giant: true },
+    { u: 780, v: 145, h: 3.4, giant: false },
+    { u: 790, v: 110, h: 4.2, giant: false },
+    { u: 805, v: 115, h: 3.6, giant: false },
+    { u: 782, v: 97, h: 4.8, giant: false },
+    { u: 800, v: 88, h: 9.5, giant: true },
+    { u: 798, v: 76, h: 4.4, giant: false },
+    // The west shoulder, around the grove's far side.
+    { u: 728, v: -86, h: 4.6, giant: false },
+    { u: 717, v: -75, h: 3.8, giant: false },
+    { u: 706, v: -69, h: 4.4, giant: false },
+    { u: 726, v: -81, h: 3.4, giant: false },
+    { u: 738, v: -64, h: 4.6, giant: false },
+    { u: 588, v: -108, h: 4.4, giant: false },
+    { u: 574, v: -116, h: 10, giant: true },
+    { u: 598, v: -122, h: 3.6, giant: false },
+  ]) {
+    const chunk = spot.v < 0 ? chunks.forestWest! : chunks.forestEast!;
+    growGhost(chunk, spot.u, spot.v, spot.h, blastYaw(spot.u, spot.v), spot.giant ? "giant" : "snapped");
+  }
+
   // ─── The meshes ──────────────────────────────────────────────────────────
   const meshes: Mesh[] = [];
   const sunView = createSunViewUniform();
@@ -362,6 +445,55 @@ export function buildCalamityForest(): CalamityForestBuild {
         meshes.push(mergedMesh(chunk.leaves, deadLeafMat, `calamity-ghost-straps-${name}`));
       }
     }
+  }
+
+  // Root-boss mounds (fill): the dead giants' swollen holdfast bosses,
+  // one low dome at a share of the feet — the trunks grow FROM somewhere.
+  {
+    const fill = new Random(SEED ^ FILL_SEEDS.rootBosses);
+    const boss = new IcosahedronGeometry(0.7, 1);
+    boss.scale(1.2, 0.42, 1.2);
+    const position = boss.attributes.position!;
+    for (let i = 0; i < position.count; i++) {
+      if (position.getY(i) < 0) {
+        position.setY(i, position.getY(i) * 0.2);
+      }
+    }
+    position.needsUpdate = true;
+    boss.computeVertexNormals();
+    const colors = new Float32Array(position.count * 3);
+    const normal = boss.attributes.normal!;
+    for (let i = 0; i < position.count; i++) {
+      const up = Math.max(0, normal.getY(i));
+      colors[i * 3] = 0.62 + up * 0.34;
+      colors[i * 3 + 1] = 0.58 + up * 0.36;
+      colors[i * 3 + 2] = 0.62 + up * 0.3;
+    }
+    boss.setAttribute("color", new BufferAttribute(colors, 3));
+    const bossMaterial = createToonMaterial({
+      color: 0x8a8478,
+      vertexColors: true,
+      emissive: 0x2e2c26,
+      emissiveIntensity: 0.5,
+    });
+    const count = Math.min(26, ghosts.length);
+    const bossMesh = new InstancedMesh(boss, bossMaterial, count);
+    bossMesh.name = "calamity-root-bosses";
+    bossMesh.castShadow = false;
+    bossMesh.receiveShadow = false;
+    const dummy = new Object3D();
+    for (let i = 0; i < count; i++) {
+      const foot = ghosts[Math.floor(fill.next() * ghosts.length)]!;
+      dummy.position.set(foot.x, seabedHeight(foot.x, foot.z) + 0.04, foot.z);
+      dummy.rotation.set(0, fill.range(0, Math.PI * 2), 0);
+      const s = fill.range(0.8, 1.7);
+      dummy.scale.set(s, s * fill.range(0.7, 1.1), s);
+      dummy.updateMatrix();
+      bossMesh.setMatrixAt(i, dummy.matrix);
+    }
+    bossMesh.instanceMatrix.needsUpdate = true;
+    bossMesh.computeBoundingSphere();
+    meshes.push(bossMesh);
   }
 
   return {
