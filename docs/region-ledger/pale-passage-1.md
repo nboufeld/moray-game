@@ -415,3 +415,21 @@ Measured **101 draws / 449,997 tris** (fill program caps ≤160 / ≤450k;
 pilot baseline was 59 / 233,235). Gates: typecheck clean, eslint
 0 warnings, region+kit vitest targets green, full `npm test` 714/714
 green. Carpet determinism pins four carpet fields.
+
+Final sweep, re-captured on this build, all twelve READ: **12/12**
+pass the three-layer law.
+
+- **04** — the round-4 miss — now stands in the south-flank sprigs:
+  rose-gold tufts through the first 35 m over petal-fall chips and the
+  violet ground wash. The crescent's south end is covered.
+- **09** keeps its round-4 transformation after the petal-fall trim
+  (1,100 → 1,050): colour washes + standing sprigs near, ridge forms
+  mid, bone-forest silhouettes far.
+- **12** is finally a valid frame (round 3's was hot-reload-corrupted):
+  stumps and ossuary litter near, bone trees mid, gallery silhouettes
+  far, petals drifting at frame right.
+- **01/03/06** remain soft passes on the stump/shard lines — re-read
+  after the grit trim (2,400 → 2,050), they hold: stumps stand in the
+  first 35 m, freckles and grit keep the floor from reading bare.
+- No misses. Neither registered rest (Quiet Gallery pan, Ravine Hush)
+  was drawn by this sweep's poses, so no rest-excused frames needed.
