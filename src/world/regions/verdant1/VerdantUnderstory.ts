@@ -168,77 +168,96 @@ export function buildVerdantUnderstory(giants: readonly KelpFoot[]): VerdantUnde
   };
 
   // ─── The six bush banks ──────────────────────────────────────────────────
+  // R12.3: every bank opts into the kit's quality-pass richness — `fronds`
+  // (drooping strap overhangs, the line that breaks the "smooth boulder"
+  // read at swimming distance) and `accents` (berry/bud knots on each
+  // palette's own accent ink, painted values, nothing glows). The wine
+  // bank takes fewer, sparser fronds — dead scrub is thorny, not leafy.
+  // Opting in re-welds each bank's own geometry (expected under the
+  // fence: these families' buffers may re-roll; nothing else moves).
   keep(
     buildBushBank({
       seed: SEED ^ FILL_SEEDS.bushVale,
-      palette: { base: 0x5d8a52, tip: 0x86b060, shade: 0x44603f },
+      palette: { base: 0x5d8a52, tip: 0x86b060, shade: 0x44603f, accent: 0x96525e },
       area: discAreaAt(155, 0, 118),
       gate: valeLedgeGate,
       ground: seabedHeight,
       count: 40,
       lobes: 4,
       scale: 0.72,
+      fronds: 4,
+      accents: 3,
     }),
   );
   keep(
     buildBushBank({
       seed: SEED ^ FILL_SEEDS.bushMeadow,
-      palette: { base: 0x74a45c, tip: 0x9cc96e, shade: 0x527a4a },
+      palette: { base: 0x74a45c, tip: 0x9cc96e, shade: 0x527a4a, accent: 0xa8505c },
       area: discAreaAt(360, 0, 92),
       gate: meadowBushGate,
       ground: seabedHeight,
       count: 60,
       lobes: 4,
       scale: 0.9,
+      fronds: 5,
+      accents: 4,
     }),
   );
   keep(
     buildBushBank({
       seed: SEED ^ FILL_SEEDS.bushForest,
-      palette: { base: 0x5f8a4c, tip: 0x8aa85c, shade: 0x3f5c3a },
+      palette: { base: 0x5f8a4c, tip: 0x8aa85c, shade: 0x3f5c3a, accent: 0x8a6a3e },
       area: discAreaAt(450, -10, 116),
       gate: forestBushGate,
       ground: seabedHeight,
       count: 70,
       lobes: 4,
       scale: 0.95,
+      fronds: 5,
+      accents: 3,
     }),
   );
   keep(
     buildBushBank({
       seed: SEED ^ FILL_SEEDS.bushMaze,
       // Round 2: deepened toward true wine — the r1 ramp read magenta.
-      palette: { base: 0x54353f, tip: 0x704650, shade: 0x38232c },
+      palette: { base: 0x54353f, tip: 0x704650, shade: 0x38232c, accent: 0x7e4640 },
       area: discAreaAt(ROOT_MAZE.u, ROOT_MAZE.v, 56),
       gate: mazeBushGate,
       ground: seabedHeight,
       count: 40,
       lobes: 4,
       scale: 0.8,
+      fronds: 3,
+      accents: 3,
     }),
   );
   keep(
     buildBushBank({
       seed: SEED ^ FILL_SEEDS.bushEdge,
-      palette: { base: 0x9aa87e, tip: 0xc9cf9e, shade: 0x6e7a62 },
+      palette: { base: 0x9aa87e, tip: 0xc9cf9e, shade: 0x6e7a62, accent: 0xb0a06a },
       area: discAreaAt(580, 0, 78),
       gate: edgeBushGate,
       ground: seabedHeight,
       count: 20,
       lobes: 4,
       scale: 0.85,
+      fronds: 3,
+      accents: 2,
     }),
   );
   keep(
     buildBushBank({
       seed: SEED ^ FILL_SEEDS.bushSunwell,
-      palette: { base: 0x8fb26a, tip: 0xc4d788, shade: 0x5d7a50 },
+      palette: { base: 0x8fb26a, tip: 0xc4d788, shade: 0x5d7a50, accent: 0xc9a860 },
       area: discAreaAt(475, 58, 56),
       gate: sunwellOutsideGate,
       ground: seabedHeight,
       count: 8,
       lobes: 4,
       scale: 0.62,
+      fronds: 6,
+      accents: 5,
     }),
   );
 
@@ -292,13 +311,16 @@ export function buildVerdantUnderstory(giants: readonly KelpFoot[]): VerdantUnde
 // ─── Exclusive 1 — the holdfast skirt ────────────────────────────────────────
 
 /**
- * One root-knuckle collar: eight arcing fingers gripping the ground around
- * a low collar cone (~208 tris), painted in the stipe's own holdfast stops
- * so trunk and skirt read as one plant. Instanced over all giant feet.
+ * One root-knuckle collar: arcing fingers gripping the ground around a low
+ * collar cone, painted in the stipe's own holdfast stops so trunk and
+ * skirt read as one plant. Instanced over all giant feet. R12.3 deepened
+ * the collar — nine fingers (was seven) plus an inner ring of five short
+ * knuckles (~340 tris, was ~208), because at 2 m the seven-finger skirt
+ * read as a sparse claw with sand between the toes.
  */
 function skirtGeometry(random: Random): BufferGeometry {
   const parts: BufferGeometry[] = [];
-  const fingers = 7;
+  const fingers = 9;
   for (let i = 0; i < fingers; i++) {
     const heading = (i / fingers) * Math.PI * 2 + random.signed(0.3);
     const reach = random.range(0.55, 1.0);
@@ -319,6 +341,32 @@ function skirtGeometry(random: Random): BufferGeometry {
         new CatmullRomCurve3([from, mid, to]),
         4,
         random.range(0.05, 0.085),
+        3,
+        false,
+      ),
+    );
+  }
+
+  // The inner knuckle ring: five short, steep grips filling the collar
+  // between the long fingers — the mass the close read was missing.
+  const knuckles = 5;
+  for (let i = 0; i < knuckles; i++) {
+    const heading = ((i + 0.5) / knuckles) * Math.PI * 2 + random.signed(0.4);
+    const reach = random.range(0.28, 0.48);
+    const crown = random.range(0.22, 0.36);
+    parts.push(
+      new TubeGeometry(
+        new CatmullRomCurve3([
+          new Vector3(Math.cos(heading) * 0.1, crown, Math.sin(heading) * 0.1),
+          new Vector3(
+            Math.cos(heading) * reach * 0.6,
+            crown * 0.5,
+            Math.sin(heading) * reach * 0.6,
+          ),
+          new Vector3(Math.cos(heading) * reach, -0.06, Math.sin(heading) * reach),
+        ]),
+        3,
+        random.range(0.055, 0.08),
         3,
         false,
       ),

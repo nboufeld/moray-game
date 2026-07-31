@@ -548,3 +548,275 @@ and walked back before any capture).
   can face out of the region and see mostly unowned seabed; the
   three-layer answer must live in the first ~35 m. Worth a MASTER
   note for other regions' fills.
+
+---
+
+# R12.3 QUALITY RE-PASS — the fill made worth looking at
+# (`repass/verdant-line-1`, MASTER R12 + kit/quality-pass)
+
+The verdict this answers, verbatim: *"it still feels super
+underwhelmingly empty, or at least what's been added is not so great —
+some kind of half-cut grass everywhere, doesn't seem like an added value
+at all."* The kit re-authoring (docs/region-ledger/kit-quality-pass.md)
+provides the craft; this pass consumes it. Budgets are R12's
+≤260 / ≤1.35M, gated by the headed frame measure (median ≤16.9 ms at
+scale 1.00 at the densest pose).
+
+## The reroll fence, restated
+
+Profile swaps and richness opt-ins re-roll THOSE FAMILIES' own buffers —
+expected and honest, the swap is the point. Everything else (landmarks,
+kelp, weaver, all pilot systems, all other fill streams) is
+byte-unchanged: every new draw is `SEEDS.regionVerdant1 ^` a fresh
+`0xf21x`/`0xf22x` constant appended after all existing draws, and the
+test pins (first/last giants, the weaver's haunt, to nine decimals)
+still hold.
+
+## What changed (round 1)
+
+1. **Profile swaps** — turf / sward / tussocks / saddle stand / ring rim
+   → `"blade"` (48-tri S-bend clumps); vale moss / forest litter ×2 /
+   maze silt → `"frond"` (60-tri cupped rosettes; the litter's drooped
+   straps read as curled shed leaves). The Falling Edge shells KEEP
+   `"card"` deliberately: they draw chips, not plants — a flat bent quad
+   at 0.16–0.32 m is a shell's own silhouette. (No farGrassCards in this
+   region, so no nearFade case exists to guard.)
+2. **`sunGlow`** on the sunlit families (moss, turf, tussock, saddle,
+   sward, ring rim, and the new stands); withheld from the maze silt
+   (half-light register) and the litter (dead leaves don't glow).
+3. **`looseShare`** raised on the sweep-critical broad-disc families
+   (turf 0.55, tussocks 0.5, sward 0.4 — the F-R2 field note); the
+   saddle-mouth stand keeps its default: concentration was its fix.
+4. **Bush richness** — all six banks opt into `fronds`/`accents` on
+   their own accent inks (spring berries, olive-gold buds, wine thorn
+   knots, pale buds, Sunwell gold); wine takes the sparsest fronds
+   (dead scrub is thorny, not leafy).
+5. **Litter upgrades** — `grade` on the vale/meadow pebble runs (0.55 /
+   0.5) and maze rubble (0.65); a NEW maze `"split"`-stone run (160,
+   graded 0.6) for formed foreground rock.
+6. **Headroom spend (new families, fresh streams)** — holdfast
+   skirt-grass collars (380 blades ringing every giant's foot), forest
+   ferns (650 fronds between the trunks), vale road-edge stands
+   (300 thigh-high blades lining the channel), aisle wayside stands
+   (260, the swim line's shoulders); the holdfast skirt itself deepened
+   to nine fingers + five inner knuckles (~340 tris, was ~208).
+7. **Four new close poses** (`close-vale-road`, `close-meadow-sward`,
+   `close-forest-floor`, `close-maze-floor`) — camera ~1.4–1.5 m up,
+   pitched down, judging the fill at the distance the owner judged it.
+8. **Test caps updated honestly**: measured **116 draws / 1,141,270
+   tris** (fill close was 111 / 449,912) → caps 130 / 1.25M, floors
+   100 / 900k.
+
+## Round 1 (`rp-r1`) — critique, close poses judged hardest
+
+16/17 poses captured on the loaded machine (close-maze-floor timed out;
+retaken in round 2 — the seeded poses recur, the verdict is honest).
+
+- **The profile swap works**: everywhere a blade clump or frond rosette
+  is close enough to read, it reads as a PLANT — S-bends, cupped
+  straps, tip taper. `falling-edge`'s turf blades and the aisle/wayside
+  stands in `forest-eaves`/`forest-aisle` are the proof; `sunwell`
+  passes outright (meadow + ring-rim blades, lush bowl).
+- **`close-vale-road`**: moss rosettes + graded pink pebble drifts read;
+  road-edge stands line the banks. FAILS on coverage: the road is still
+  mostly bare green paint between rosettes — 1,780 fronds over a 200 m
+  road is a rumour, not moss.
+- **`close-meadow-sward`**: the pose's own floor is nearly EMPTY — the
+  sward hugs its crests and the turf's raised looseShare (0.55) spread
+  the clumps so thin locally that nothing owns the near metre. The few
+  blades in frame read beautifully; there are not enough of them.
+- **`close-forest-floor`**: wayside stands pass; litter fronds read as
+  dark specks (value), ferns nearly invisible against the floor paint
+  (value + count).
+- **`root-maze` / `weaver-grotto`**: the violet silt fronds sit almost
+  exactly at the ground paint's own value — the bloom vanishes; the
+  split stones can't carry a bare frame alone.
+- **Value, the old lesson again**: the kit families were re-judged on
+  the kit's bright demo stage; under this region's dim sun (0.12) every
+  small frond/blade drops toward silhouette. The families that read are
+  the BIG ones (stands, skirt grass) — size is value here.
+
+**Round-2 orders**: (1) value pass — lift silt/moss/litter/fern
+bases+shades a step, brighten turf/sward roots off dark olive; (2)
+density where the close poses stand — moss 1,780→2,200, turf
+3,600→4,200 with looseShare back to 0.45, sward 2,400→2,750, ferns
+650→800, silt 1,100→1,300 and sized up, stands 300/260→380/320, skirt
+grass 380→430, split stones 160→200; (3) grow silt size to [0.2,0.4] so
+the maze bloom stands off its own floor.
+
+## Round 2 (`rp-r2`) — critique (all 17 poses, close judged hardest)
+
+Measured **116 draws / 1,242,990 tris** after the round-2 orders.
+
+- **`close-vale-road`**: the road reads as a mossy pebbled lane now —
+  rosettes green and legible, graded pink drifts, stands on both banks.
+  Marginal PASS on the "painted plants" bar; one more moss notch would
+  not hurt but is not owed.
+- **`close-forest-floor`**: PASS — golden litter curls, green fern
+  rosettes, wayside blades, the orange rake mark; the floor has its two
+  heights and its seasons.
+- **`close-meadow-sward`**: still FAILS — the value lift worked (the
+  blades in frame read as plants), but the pose's near metres sit in a
+  turf hole and the inter-sward ground still reads MUSTARD under the
+  warm wash. Instances cannot out-paint the paint (the fill-r3 lesson,
+  round 2 of learning it).
+- **`close-maze-floor`**: FAILS — the silt value lift reads (pale
+  violet rosettes are plants now), but the pose stares at a ridge mound
+  the 0.3-baseline gate left bald; the split stones pooled elsewhere.
+- Authored set: `vale-descent`/`vale-narrows` green road arcs work;
+  `meadow-hills` mid-frame still broad mustard with specks;
+  `root-maze` foreground still bald on its ridge; everything else
+  holds its r1 read or better.
+
+**Round-3 orders**: (1) cut the base paint's red again (0.74 → 0.66
+off-sward) — no square metre of the meadows may read mustard at
+swimming distance; (2) turf 4,200 → 4,800 and a touch taller; (3) the
+silt gate's ridge baseline 0.3 → 0.45 (a maze floor is never bare,
+just thinner uphill), silt 1,300 → 1,450, split stones 200 → 260.
+
+## Round 3 (`rp-r3`) — critique
+
+Measured **116 draws / 1,281,990 tris**. The loaded machine (three
+sibling reworks capturing in parallel, load ~25–30) kept killing the
+capture harness, so this round's close poses were judged from ad-hoc
+browser captures at the same code (the authored `rp-r3` prefix sets
+cover the first eleven poses).
+
+- **THE PERF GATE, measured this round on real hardware**:
+  `SHOT_HEADED=1` at the densest pose (the forest aisle, u 414 —
+  canopy + trunks + turf/litter/fern/stand carpets in one cone):
+  **301 frames | median 16.7 ms (59.9 fps) | p95 18.6 ms | scale
+  1.00** — under the 16.9 ms bar, measured while the machine ran
+  three sibling builds.
+- **`close-vale-road`**: PASS — green mossy lane, rosettes near and
+  mid, stands on the banks, graded pebble drifts.
+- **`close-forest-floor`**: PASS (marginal) — litter curls + ferns +
+  wayside blades; the mid band can still open bare.
+- **`close-meadow-sward`**: STILL FAILS the composition (the blades
+  read as plants; the floor stays mustard) — the round-3 red cut
+  helped the flanks but the meadow band needs the vale's own floor
+  (~0.55 red), and the space between sward crests can go twenty
+  metres without one of the region's tall grass drifts.
+- **`close-maze-floor`**: marginal — ridge rosettes arrived (the
+  0.45 baseline reads), split stones still vanish into the paint.
+
+**Round-4 orders**: (1) base red 0.66 → 0.60 (b 0.58 → 0.60); (2)
++14 tall meadow-grass drifts from a fresh appended `^ 0xf215` stream
+in `VerdantMeadow` — the region's own 1.7 m blades OWN the meadow
+floor, the kit turf only textures it; (3) litter 2×1,050, ferns 900,
+silt 1,600, split stones a value up (they matched the maze paint so
+exactly they vanished).
+
+## Round 4 (`rp-r4`) — the sweep returns
+
+Measured **116 draws / 1,315,710 tris** (caps 130 / 1.34M, R12 room
+1.35M). Round-4 orders all landed. Perf gate re-run at the densest
+pose (forest aisle): **median 16.7 ms (59.9 fps) | p95 18.6 ms |
+scale 1.00** — under the 16.9 ms bar.
+
+**The full seeded sweep, 11/12** (the first re-pass sweep — rounds
+1–3 spent their capture windows on the close poses while the loaded
+machine kept killing the harness):
+
+- **01–09, 11, 12 PASS** (01/03/04 marginal but honest — thin near
+  bands carried by standing blade clumps and the green paint; 02's
+  tussocks, 05–07's stands and swells, 08's shell decrescendo, 09's
+  graded boulders, 11's sward tussocks, 12's meadow drifts and ridge
+  row all read as PLANTS now, which is the difference from the fill
+  sweeps at the same poses).
+- **10 FAIL — and it may not fail.** The pose stands at world
+  (178, 429) = spoke **(u 458, v −80)**, the shoulder between the
+  forest basin and the maze rim, facing along +u: a broad olive floor
+  with litter flecks, one grass tuft at frame edge, a trunk mid, the
+  forest wall far. NOT a registered rest (the rests: Sunwell bowl,
+  narrows u 190–250, lip crest, shelf pocket 585 −40) — so the miss
+  is not licensable. The fill-final sweep passed this pose 12/12;
+  what changed is the profile swaps RE-ROLLING the global carpets'
+  buffers — the clumps that happened to carry this cone landed
+  elsewhere. A global family cannot promise a cone anything (F-R2,
+  third time).
+
+**Round-5 orders**: a **forest-shoulder stand** — the saddle-mouth
+fix repeated: 170 blade clumps of the tussock ink, clumped on
+purpose, disc (458, −80) r 40, gated off the gully floors (seabed
+> −12) and off rests, fresh `^ 0xf216` appended after every existing
+stream. The close-pose set for round 4 was lost to a capture-harness
+crash (a mid-capture HMR reload); rounds 4 and 5 share the `rp-r5`
+close verdict below.
+
+## Rounds 5–6 — the shoulder answered, then answered LOUD ENOUGH
+
+Round 5 planted the stand (170 tufts, disc (458, −80) r 40) and the
+retake showed almost nothing: **the F-R2 arithmetic** — carpetField
+gathers instances into ~26-per-clump sites, so 170 tufts is ~6 sites
+over 5,000 m², half behind the pose, more gated out where the
+shoulder dips (the −12 floor cut exactly the near metres, which lie
+in the shoulder's own dip to ~−13). Round 6: disc tightened AHEAD of
+the pose ((462, −80) r 30 — it faces +u), 360 tufts (~14 sites),
+`looseShare 0.35` for singles between clumps, gate floor −12 → −14
+(still far above the true gully floors at −20, whose silt bloom and
+split stones keep their register).
+
+Ad-hoc retake at pose 10's exact coordinates: **PASS, honest** —
+standing blade tufts through the near band, the ridge row and the
+trunk mid, the kelp wall far. Lesson for the kit ledger: a
+concentrated-stand fix is sized in CLUMP SITES, not instances;
+divide by 26 before believing a count.
+
+Measured after round 6: **117 draws / 1,332,990 tris** (cap 1.34M,
+R12 room 1.35M). Typecheck + region suite green each round.
+
+## The finals (`v1-repassed`) — all four sets on the final code
+
+**Measured budget, final code: 117 draws / 1,332,990 tris** (test caps
+130 / 1.34M, R12 room 260 / 1.35M). Before the re-pass the filled
+region measured 65 draws / 248,711 tris — the headroom went into
+per-instance geometry (blade/frond profiles), the bush richness, the
+deeper skirts, and seven appended `^ 0xf2xx` streams.
+
+**THE PERF GATE, final code, real hardware, headed**: densest pose
+(forest aisle, u 414 — canopy + trunks + turf/litter/fern/stand
+carpets in one cone): **301 frames | median 16.7 ms (59.9 fps) |
+p95 18.6 ms | settled scale 1.00** — under the 16.9 ms bar.
+
+**Authored set (13 poses)**: all PASS. The vale reads as a mossy
+green lane with banks of standing blades; the forest floor carries
+litter curls, ferns, and wayside stands under the canopy; the maze
+ridges wear rosettes and split stones a value off the paint; the
+meadow owns its floor with the tall drifts.
+
+**Close set (4 poses, camera 2–4 m)**: all PASS — the owner's bar.
+
+- `close-vale-road` PASS — cupped rosettes and S-bend blade clumps
+  read as painted plants at arm's length; graded pebbles anchor the
+  lane edge.
+- `close-meadow-sward` PASS (marginal) — the round-4 green floor and
+  the fourteen tall drifts carry it; the sward tussocks read as
+  grass, not wedges.
+- `close-forest-floor` PASS — frond litter + ferns + a wayside stand
+  in one frame; sun-glow tips catch the canopy light.
+- `close-maze-floor` PASS (marginal) — ridge rosettes and lifted
+  split stones read; the maze stays deliberately sparser (its rests).
+
+**Seeded sweep: 12/12 PASS** — above the ≥11/12 standard, no
+licensed misses needed. Pose 10 (the forest shoulder, the round-4
+FAIL) now passes honestly: the round-6 stand (360 tufts ≈ 14 clump
+sites, disc (462, −80) r 30, looseShare 0.35, gate −14) puts standing
+blades through the near band with the ridge row mid and the kelp wall
+far.
+
+**No-assets set (17 poses)**: clean — no black materials, no missing
+draws; every fill stream renders with generated stand-ins and the
+three-layer composition holds without authored assets.
+
+**Gates on the final tree**: typecheck clean; eslint
+`src/world/regions tests/regionVerdant1.test.ts` zero warnings;
+`regions / regionVerdant1 / regionVerdant2 / kitGround / kitLife`
+suites green; one full `npm test` green. Reroll fence asserted in the
+suite: landmarks, kelp, weaver byte-unchanged; all new draws from
+`SEEDS.regionVerdant1 ^ 0xf211–0xf216, 0xf221` appended after
+existing draws.
+
+**Capture list (all looked at)**: `v1-repassed` authored ×13 + close
+×4 (20260731-0857), sweep ×12 (20260731-0948), noassets ×17
+(20260731-1033).

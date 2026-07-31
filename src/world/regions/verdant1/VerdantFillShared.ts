@@ -82,6 +82,17 @@ export const FILL_SEEDS = {
   lightMain: 0xf191,
   lightMaze: 0xf192,
   lightEdge: 0xf193,
+  // ── R12.3 quality re-pass streams — all fresh, appended after every
+  // fill draw above (the reroll fence's second fence line: profile swaps
+  // may re-roll their OWN families' buffers, but nothing below reaches
+  // into any stream above).
+  carpetSkirtGrass: 0xf211,
+  carpetFerns: 0xf212,
+  carpetValeStands: 0xf213,
+  carpetAisleStands: 0xf214,
+  // 0xf215 is the meadow re-pass growth stream (VerdantMeadow).
+  carpetShoulderStand: 0xf216,
+  mazeSplitStones: 0xf221,
 } as const;
 
 // ─── The registry gates ──────────────────────────────────────────────────────

@@ -98,9 +98,10 @@ export function buildVerdantMeadow(): VerdantMeadowBuild {
   material.customProgramCacheKey = () => "verdant-meadow";
 
   // Headroom covers the pilot's plantings AND the fill growth below
-  // (patches 42 → 70, Sunwell ×1.3, Falling Edge ×1.5) — the capacity
-  // check in `plant` sits before any stream draw, so it must never trip.
-  const capacity = 70 * BLADES_PER_PATCH + 1900;
+  // (patches 42 → 70, Sunwell ×1.3, Falling Edge ×1.5, the R12.3 re-pass
+  // drifts) — the capacity check in `plant` sits before any stream draw,
+  // so it must never trip.
+  const capacity = 70 * BLADES_PER_PATCH + 2500;
   const mesh = new InstancedMesh(bladeGeometry(), material, capacity);
   mesh.name = "verdant-meadow";
   mesh.castShadow = false;
@@ -244,6 +245,32 @@ export function buildVerdantMeadow(): VerdantMeadowBuild {
         family,
         0.85,
         growth,
+      );
+    }
+  }
+
+  // ─── The R12.3 re-pass growth (fresh stream, appended after every draw
+  // above — the reroll fence) ───────────────────────────────────────────────
+  // Fourteen more meadow drifts: the close-meadow pose proved the space
+  // BETWEEN the sward crests could go twenty metres without one of the
+  // region's own tall grass drifts, and the 1.7 m blades are the meadows'
+  // real presence — the kit turf textures the floor, these OWN it.
+  const repass = new Random(SEED ^ 0xf215);
+  for (let patch = 0; patch < 14; patch++) {
+    const patchU = repass.range(292, 470);
+    const patchV = repass.signed(88);
+    const family = FAMILIES[Math.floor(repass.next() * FAMILIES.length)] ?? FAMILIES[0]!;
+    const thin = smoothstep01((patchU - 380) / 80);
+    const count = Math.round(BLADES_PER_PATCH * (1 - thin * 0.5));
+    for (let blade = 0; blade < count; blade++) {
+      const spread = PATCH_RADIUS * 1.2 * Math.sqrt(repass.next());
+      const angle = repass.range(0, Math.PI * 2);
+      plant(
+        patchU + Math.cos(angle) * spread,
+        patchV + Math.sin(angle) * spread,
+        family,
+        1,
+        repass,
       );
     }
   }
