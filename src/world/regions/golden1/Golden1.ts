@@ -217,7 +217,9 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "close-lee-garden", u: 308.9, v: 16.4, lift: 1.5, atU: 312.5, atV: 20.5, pitch: -0.22, settle: 3 },
   { name: "close-salt-lily", u: 432.5, v: 24.5, lift: 1.5, atU: 435.5, atV: 27.5, pitch: -0.24, settle: 3 },
   { name: "close-sand-rose", u: 387.5, v: -66.5, lift: 1.4, atU: 390.2, atV: -63.8, pitch: -0.26, settle: 3 },
-  { name: "close-palm-foot", u: 521.5, v: -72.5, lift: 1.6, atU: 524.2, atV: -69.8, pitch: -0.12, settle: 3 },
+  // Round 3: aim nudged off-axis — the r2 frame centred the trunk like
+  // a mugshot; the camera (and the lens registry) hold still.
+  { name: "close-palm-foot", u: 521.5, v: -72.5, lift: 1.6, atU: 524.6, atV: -70.9, pitch: -0.12, settle: 3 },
   // Resolved onto the scanned crest at build time, like slip-face: the
   // wire-grass band on the dune's own back, grit underfoot, the ribbon
   // smoking overhead.

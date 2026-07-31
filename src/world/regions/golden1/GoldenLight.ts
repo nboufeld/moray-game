@@ -168,12 +168,15 @@ export function buildGoldenLight(): GoldenLightBuild {
   const oasisAt = worldOf(528, -52);
   const flatsAt = worldOf(FLATS.u - 6, FLATS.v - 4);
   // Round 2: the r1 dapple read as hot leopard spots owning the whole
-  // channel — halved and spread (a dapple is a whisper of surface, not a
+  // channel — halved and spread. Round 3: still stamping ellipses at
+  // the saddle and reading as repeated dashes on faces at grazing angle
+  // — another third off and the tile up to 12 m, below the eye's
+  // pattern-registration (a dapple is a whisper of surface, not a
   // pattern the ground wears).
   for (const [seed, area, opacity] of [
-    [FILL_SEEDS.dappleSaddle, saddleDapple, 0.1],
-    [FILL_SEEDS.dappleOasis, { center: [oasisAt.x, oasisAt.z], radius: 30 }, 0.11],
-    [FILL_SEEDS.dappleFlats, { center: [flatsAt.x, flatsAt.z], radius: 42 }, 0.08],
+    [FILL_SEEDS.dappleSaddle, saddleDapple, 0.07],
+    [FILL_SEEDS.dappleOasis, { center: [oasisAt.x, oasisAt.z], radius: 30 }, 0.09],
+    [FILL_SEEDS.dappleFlats, { center: [flatsAt.x, flatsAt.z], radius: 42 }, 0.06],
   ] as const) {
     const dapple = buildDappleSheet({
       seed: SEED ^ seed,
@@ -181,7 +184,7 @@ export function buildGoldenLight(): GoldenLightBuild {
       ground: seabedHeight,
       area: area as KitArea,
       opacity,
-      tileMetres: 10,
+      tileMetres: 12,
     });
     groups.push(dapple.group);
     updaters.push((timeSec) => dapple.update(timeSec));

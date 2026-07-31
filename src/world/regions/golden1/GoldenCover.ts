@@ -224,11 +224,15 @@ const duneWireGate: GateFn = (x, z) => {
   const flats = flatsWeight(u, v);
   // The flats keep their emptiness composed: a thin fringe only.
   const flatsThin = 1 - flats * 0.72;
-  const base = (0.42 + 0.58 * wind) * (1 - calm) * flatsThin;
+  // Round 3: base 0.42 → 0.52 — the sweep's recurring miss was the
+  // featureless slip face across a frame's whole lower half; the
+  // doctrine's near layer must live on the faces too, thinner but there.
+  const base = (0.52 + 0.48 * wind) * (1 - calm) * flatsThin;
   // The close-wire pose's crest carries an authored stand of the same
-  // growth (the verdant saddle-mouth-stand lesson at dune scale).
+  // growth (the verdant saddle-mouth-stand lesson at dune scale) —
+  // widened round 3, the r2 lens read a loose fringe, not a stand.
   const crestStand =
-    (1 - smoothstep01((Math.hypot(u - crestLensU, v - 14) - 2) / 5)) * 0.9;
+    (1 - smoothstep01((Math.hypot(u - crestLensU, v - 14) - 3) / 6)) * 0.9;
   return (
     goldenWeight(x, z) *
     restFree(x, z) *
@@ -378,7 +382,7 @@ export function buildGoldenCover(finSpots: readonly FinSpot[]): GoldenCoverBuild
       area: discArea(),
       gate: gritGate,
       ground: seabedHeight,
-      count: 5200,
+      count: 5900,
       shapeSet: "grit",
       size: [0.03, 0.09],
       twoTone: true,
@@ -439,15 +443,17 @@ export function buildGoldenCover(finSpots: readonly FinSpot[]): GoldenCoverBuild
       area: discArea(),
       gate: duneWireGate,
       ground: seabedHeight,
-      count: 1400,
+      count: 1700,
       profile: "blade",
       size: [0.5, 0.95],
       swayAmp: 0.05,
       sunGlow: true,
     }),
   ),
-    0x5a4c22,
-    0.5,
+    // Round 3: the r2 half-step — tufts at range still read as dark
+    // sticks against lit sand. The second (final) value step.
+    0xa08a48,
+    0.6,
   );
 
   // The saddle's own wire-grass on the dune shoulders.
@@ -466,8 +472,8 @@ export function buildGoldenCover(finSpots: readonly FinSpot[]): GoldenCoverBuild
       sunGlow: true,
     }),
   ),
-    0x5a4c22,
-    0.5,
+    0xa08a48,
+    0.6,
   );
 
   // Lee-garden fronds: the pockets' green-gold hearts (the T2 debut the
@@ -480,15 +486,15 @@ export function buildGoldenCover(finSpots: readonly FinSpot[]): GoldenCoverBuild
       area: pocketsArea(),
       gate: leeFrondGate,
       ground: seabedHeight,
-      count: 560,
+      count: 720,
       profile: "frond",
       size: [0.3, 0.55],
       swayAmp: 0.04,
       sunGlow: true,
     }),
   ),
-    0x4c4c20,
-    0.5,
+    0x8c8c3e,
+    0.6,
   );
 
   // Wrack strewn through the pockets — dry gold curls the current left.
@@ -589,8 +595,8 @@ export function buildGoldenCover(finSpots: readonly FinSpot[]): GoldenCoverBuild
       accents: 5,
     }),
   ),
-    0x4c4422,
-    0.45,
+    0x847434,
+    0.55,
   );
 
   // Fallen palm fronds at the trunks' feet.
@@ -619,9 +625,9 @@ export function buildGoldenCover(finSpots: readonly FinSpot[]): GoldenCoverBuild
       area: discAreaAt(395, -78, 64),
       gate: shardApronGate,
       ground: seabedHeight,
-      count: 460,
+      count: 580,
       shapeSet: "shard",
-      size: [0.1, 0.3],
+      size: [0.12, 0.34],
       twoTone: true,
       grade: 0.6,
     }),
@@ -635,7 +641,9 @@ export function buildGoldenCover(finSpots: readonly FinSpot[]): GoldenCoverBuild
     keep(
     buildGroundLitter({
       seed: SEED ^ FILL_SEEDS.singingStones,
-      palette: { base: 0xb0906e, shade: 0x86687a },
+      // Round 3: the shade was still violet under the violet ambient
+      // (sweep 07) — both tones pulled warm, ochre over plum.
+      palette: { base: 0xb89a70, shade: 0x8a7060 },
       area: discAreaAt(528, 84, 76),
       gate: singingStoneGate,
       ground: seabedHeight,
@@ -645,8 +653,8 @@ export function buildGoldenCover(finSpots: readonly FinSpot[]): GoldenCoverBuild
       grade: 0.8,
     }),
   ),
-    0x38302a,
-    0.3,
+    0x4c3e2e,
+    0.35,
   );
 
   // ── The Gilded Shore's decrescendo ───────────────────────────────────────
@@ -698,8 +706,8 @@ export function buildGoldenCover(finSpots: readonly FinSpot[]): GoldenCoverBuild
       sunGlow: true,
     }),
   ),
-    0x564c28,
-    0.45,
+    0x9a8848,
+    0.55,
   );
 
   return {
