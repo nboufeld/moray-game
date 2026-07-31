@@ -558,11 +558,18 @@ meadow, floor olive and alive). Meets the ≥11/12 standard with misses
 only in registered licences. Sweep 01's one-cone percher cube and the
 grazing-angle trim hairlines carry as documented.
 
-### No-assets pass (`v3-final-noassets`) — the region's first
+### No-assets pass (`v3-final-noassets`) — the region's first: CLEAN
 
-(Verdict recorded below once the set lands — the region is built
-entirely from kit/procedural geometry and vertex paint, so the
-fallback risk surface is the base game's washes and GLBs, not ours.)
+All 16 authored poses captured with every authored asset request
+aborted at the network, and READ: **nothing breaks, nothing empties.**
+The region is procedural by construction (kit geometry + vertex
+paint), so the whole composition carries — road, gate, descent, mesa
+city, twin court, wellsprings, hollow mouth, causeway, Province's End
+horizon, all four close floors — against the procedural gradient
+backdrop and fallback ground washes. One capture-race casualty: the
+first take of `boughfall` screenshotted the boot template (the W-N3
+"void frame with the boot-template HUD" hazard, reproduced under
+load); retaken same-session and clean, the void frame deleted.
 
 ### Budgets and the frame gate (the R12 numbers, final build)
 
@@ -586,8 +593,10 @@ fallback risk surface is the base game's washes and GLBs, not ours.)
   stale against the R12 kit's merged pieces — its repair already
   exists on the mainline as `0aa67de`, which this branch predates).
   Cherry-picked that exact commit (verbatim, no conflict possible at
-  merge) and the file passes 20/20; final full-suite re-run recorded
-  below.
+  merge) and the file passes 20/20.
+- Final full-suite re-run after everything above: **791/791 across 56
+  files**, typecheck and `eslint . --max-warnings 0` re-run clean
+  after the harness edits. All three gates unpiped, real exit codes.
 
 ### The canonical capture roster
 
