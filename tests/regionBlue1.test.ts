@@ -175,8 +175,9 @@ describe("great-blue-1 build", () => {
         }
       }
     });
-    // Fill round 1 (R12 budgets ≤260 / ≤1.35M): measured 90 draws /
-    // 853,315 tris after the grass tiers, collars, crest beds and life.
+    // Fill rounds (R12 budgets ≤260 / ≤1.35M): round 1 measured 90 draws
+    // / 853,315 tris; round 2 (near blades 9k, lip-country mid tier,
+    // deep stars 30) measured 89 / 996,159.
     expect(draws).toBeLessThanOrEqual(140);
     expect(triangles).toBeLessThanOrEqual(1_100_000);
     // Honest floors as well as caps: an empty region passes no bar.

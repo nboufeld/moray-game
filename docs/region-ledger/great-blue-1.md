@@ -234,3 +234,108 @@ edge-lookback.
   arbitrary anyway, so the behaviour is unchanged in kind.
 - The mood's fog blue 0.86 is measured against THIS backdrop fade (0.5);
   re-tuning either re-opens the cobalt-band question.
+
+# Phase 3 fill rework (docs/fill-plans/great-blue-1.md, R12 standard)
+
+Branch `rework/great-blue-1`. The plan was written against the stalled
+first-instance draft and carries a re-sync flag (MASTER R9); the rework
+opened with a re-audit of its checklist against the rescued final tree
+and the `plains-final` captures.
+
+## The re-audit (what the rescue already did)
+
+Read against the plains-final set, DONE and not re-done here: step 1
+(the flat-violet corruption — fixed in round 4 with the normals
+regression test), step 2 (the deep-steps rework: per-arc violet inks,
+fourth arc, 160 drooped columns, baked gradients — rounds 5–9; the
+prairie horizon carries its gradient and no cobalt band remains), the
+migration legibility package from §5 (420 fish at scale 1.5–2.2, braid
+1.4, emissive 1.15, 400 glints at 0.4 — the-prow reads a river of
+silver), the Fallen King re-stage, the-prow's camera re-stage, and the
+Ferryman's deterministic attach-clock patrol. STILL OPEN and executed by
+this rework: the whole fill (grass tiers, sward paint, collars, crest
+beds, slope dressing, outriders, jacks, light additions, cloud-shadow
+prototype, stillness tests, new poses, the R12-measured budgets).
+`steppe-sea` in plains-final was still the audit's frame: ~70% bare tan,
+single blades; `slope-glide` a clean empty road; the gnomon's stone
+still muddy violet-brown with a bare foot.
+
+The sweep stream was recomputed offline before building (the calamity
+lesson: aim the fill where the region is actually seen): two of twelve
+poses live in the Under-Blue rest (licensed bare); three stand on the
+rim-facing flanks at |v| 100–135 (the MASTER field-note warning); one
+looks back down the slope channel from the reveal's mouth.
+
+## The reroll fence, restated
+
+Every fill stream is `SEEDS.regionBlue1 ^ 0xf3xx`, appended after all
+existing draws. The test pins (nine decimals) hold the first collider,
+the Ferryman's posed attach position, and the first deep-arc column
+byte-identical to the pre-fill build (`plains-final`, e1a519d). The
+stone MATERIAL tints were lifted (the plan's step-5 value fix — geometry
+streams untouched); the ground bake was re-authored (step 3 — paint is
+not fenced, it is the work).
+
+## Round 1 (`bl-fill-r1`) — what the fill is
+
+- **Grass tiers** (~4× the prairie): near tier 7,500 kit QUALITY
+  `"blade"` clumps (48-tri S-bends, sunGlow, sway) at 0.5–1.05 m; mid
+  tier 9,000 `"tuft"`; far tier 10,000 4-tri cards with `nearFade` 14
+  (10,000 cards = 40k tris, the kit's own budget note). The region's two
+  signature tall-blade draws stay byte-untouched above them. Gates share
+  one truth: `swardAt` + collar rings, off the drop, off the channel,
+  thinning down the shelves, `restFree` everywhere.
+- **The sward's absolute paint** (the pale1 lesson): the bake composes
+  story colours and divides by the wash's linear mean; turf threshold
+  dropped so green owns the prairie; crest/lee value split; terrace silt
+  bands below each lip; the milky rim held.
+- **Megalith collars**: one graded gravel apron draw over every stone
+  foot, 40+ calf-stones + the (508,−30) overlook cairn in one instanced
+  draw, whelk trios (fresh stream, the pilot's shell), stone-skirt
+  blennies (kit percher), grass rings in the near-blade gate. The
+  mid-glide hush's waymark (u ≈ 193) is deliberately excluded — the one
+  stone whose bare foot IS the composition.
+- **The slope**: shoulder gravel runs (twoTone, off the lane), the
+  gate's warm last-reef bed (pebbles + five warm bushBank growths dying
+  out by u ≈ 74), the outrider loop crossing the glide at u ≈ 150
+  (30 kit fusiliers), waymark collars.
+- **The Wayline grit line**, scree tongues down all three shelf lips,
+  16 deep-star cushions, three grass-fry pod haunts (kit percher,
+  hover), 46 drifting grass seeds downwind.
+- **The Ferryman's two pilot jacks** riding its flank in the patrol's
+  own frame (fresh stream; the mola's phase pinned unchanged).
+- **Light**: Sisters + Wayline blades appended after the existing four
+  shafts; the King's beam 0.13 → 0.16; the R11 cloud-shadow prototype.
+- **Poses**: `wayline-walk`, `ferryman-crossing`, and four close poses
+  (2–4 m): `close-steppe-sward`, `close-crest-bed`, `close-collar`,
+  `close-slope-road`.
+
+Measured after round 1: **90 draws / 853,315 tris / 267 colliders**
+(caps updated honestly to 140 / 1.1M; R12 room 260 / 1.35M). All 20
+region tests green (fence pins, rests-empty walk over every static fill
+instance, grass-tier floors, jacks).
+
+### Round-1 probe findings (before the full set was even captured)
+
+The first partial capture run found three build-breaking reads, fixed
+as round 1b before the canonical round-1 sets:
+
+1. **The MultiplyBlending cloud sheets white-outed every prairie
+   frame** — not "reads as a decal", worse: the whole steppe rendered
+   as cream-white fog from every pose (node-toggle probe: hiding the
+   two sheets restored the frame). Mechanism unresolved on this render
+   chain; the prototype's second try is a plain fogged translucent
+   shadow-violet sheet whose ALPHA carries the blotches (islands of
+   shadow, nothing drawn between them). R11's verdict is judged from
+   the round captures below.
+2. **The outrider glint** rendered as one hot static white ribbon on
+   the shoulder (a 160 m loop is too tight for a static additive
+   thread). Dropped; the fish carry the crossing.
+3. **The absolute stories were painted for neutral light**: the blue
+   mood pushed the composed floor to grey-blue — measured (81,89,108)
+   where turf was meant, blue above green. Stories warmed (the calamity
+   ledger's lesson: fill palettes are for THIS region's light); the
+   mid-tuft tip ink greened off the near-white silver that rendered
+   12-tri tufts as pale wedges at arm's length (the "half-cut grass"
+   read, avoided by palette rather than paid in triangles); near blades
+   7,500 so the quality profile owns the foreground.

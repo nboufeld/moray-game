@@ -158,8 +158,10 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // (461,-44 aiming 520,-8) put both stones outside the right frame edge;
   // this one shoots *through* the near-arch toward the Prow.
   { name: "sisters-frame", u: 451, v: -70, lift: 2.6, atU: 545, atV: 4, pitch: 0.02 },
-  // Under the Migration Line, looking along the silver.
-  { name: "migration-river", u: 442, v: 46, lift: 4.5, atU: 478, atV: 74, pitch: 0.14, settle: 6 },
+  // Under the Migration Line, looking along the silver. Fill round 2:
+  // lifted two metres closer to the band — at lift 4.5 the fish fogged
+  // to faint petals thirty metres up.
+  { name: "migration-river", u: 442, v: 46, lift: 6.5, atU: 481, atV: 76, pitch: 0.12, settle: 6 },
   // The Terrace Stairs: three shelves stepping down into deeper value.
   { name: "terrace-stairs", u: 462, v: 18, lift: 3.4, atU: 540, atV: 0, pitch: -0.08 },
   // The Prow: the Friedrich overlook — the drop, the deep steps beyond.
@@ -177,11 +179,14 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "edge-lookback", u: 548, v: -8, lift: 2.4, atU: 445, atV: -14, pitch: 0.06 },
   // ── The fill's poses (appended after every existing pose). ──
   // Down the three Wayline stones toward the World's Edge — the region's
-  // one drawn road, walked.
-  { name: "wayline-walk", u: 470, v: 8, lift: 2.6, atU: 526, atV: 2, pitch: -0.02, settle: 3 },
+  // one drawn road, walked. Round 2: stepped back behind the first stone
+  // so all three read in file (from u 470 only one stood in frame).
+  { name: "wayline-walk", u: 450, v: 14, lift: 2.6, atU: 492, atV: 6, pitch: -0.02, settle: 3 },
   // The scheduled spectacle: the Ferryman arriving at the Prow crossing
-  // while the migration dips over the edge beside it.
-  { name: "ferryman-crossing", u: 546, v: 34, lift: 0, absoluteY: -18, atU: 572, atV: -16, pitch: -0.06, settle: 8 },
+  // while the migration dips over the edge beside it. Round 2: swung
+  // right — the first stand caught a floating monolith card (fixed in
+  // Blue1Distance) and too little of the dip.
+  { name: "ferryman-crossing", u: 549, v: 20, lift: 0, absoluteY: -19, atU: 575, atV: -6, pitch: -0.05, settle: 8 },
   // The four close poses (camera 2–4 m — the owner's judged distance):
   // the sward with its three grass tiers…
   { name: "close-steppe-sward", u: 356, v: 10, lift: 1.5, atU: 359, atV: 12, pitch: -0.15, settle: 3 },

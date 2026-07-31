@@ -88,13 +88,15 @@ export function buildBlue1Stones(): Blue1StonesBuild {
   // rendered as dark muddy violet-brown under this mood's taken light —
   // the plains-final gnomon frame measured nothing of STONE_PALE's
   // blue-grey. The material tints are lifted toward the intended read;
-  // the geometry streams are untouched.
+  // the geometry streams are untouched. Round 2: the round-1 lift still
+  // measured (101,96,120) on the gnomon — red above green, mud — so the
+  // lift deepened and its target cooled toward the pale sky key.
   const liftStone = (hex: number, lift: number): number => {
-    const c = new Color(hex).lerp(new Color(0xdce6f0), lift);
+    const c = new Color(hex).lerp(new Color(0xc8dcee), lift);
     return c.getHex();
   };
-  const blueStone = createRockMaterial(liftStone(STONE_BLUE, 0.22));
-  const paleStone = createRockMaterial(liftStone(STONE_PALE, 0.3));
+  const blueStone = createRockMaterial(liftStone(STONE_BLUE, 0.34));
+  const paleStone = createRockMaterial(liftStone(STONE_PALE, 0.44));
   // The gate keeps the reef's warmth: the last warm colour on the way out.
   const warmStone = createRockMaterial(0x9a8a72);
 

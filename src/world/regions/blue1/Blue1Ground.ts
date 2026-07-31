@@ -168,7 +168,10 @@ const SAND_STEPPE = story(0xc6c6ac);
 const SAND_WARM = story(0xd4b488);
 const TURF = story(0x5da45e);
 const TURF_CREST = story(0x8cc878);
-const DEPTH_VIOLET = story(0x6b5c94);
+// Round 2: 0x6b5c94 at full lerp crushed the look-back's shelves to mud
+// (measured (62,74,112) against plains-final's (84,103,117)) — paler,
+// and the depth dim eased below.
+const DEPTH_VIOLET = story(0x8478aa);
 const SILT_PALE = story(0xa89cc2);
 const MILKY_RIM = story(0xc2d4cf);
 
@@ -226,8 +229,8 @@ function bakeBlue1Paint(geometry: PlaneGeometry, contacts: readonly ContactPatch
     const depthK = smoothstep01((-y - 18.5) / 26);
     const silt = fbm(x * 0.045, z * 0.045, { seed: SEED ^ 0x51f7, period: 11, octaves: 3 }) - 0.5;
     if (depthK > 0) {
-      col.lerp(DEPTH_VIOLET, depthK * (0.9 + silt * 0.3));
-      value -= depthK * (0.18 - silt * 0.14);
+      col.lerp(DEPTH_VIOLET, depthK * (0.72 + silt * 0.3));
+      value -= depthK * (0.1 - silt * 0.12);
     }
 
     // The terrace silt bands: a pale violet drift pooled below each shelf

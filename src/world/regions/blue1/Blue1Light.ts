@@ -187,7 +187,7 @@ function buildCloudShadows(): {
       color: 0x2a3252,
       alphaMap: map,
       transparent: true,
-      opacity: 0.16,
+      opacity: 0.18,
       depthWrite: false,
     });
     map.repeat.set(spec.repeat, spec.repeat);

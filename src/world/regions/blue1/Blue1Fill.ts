@@ -88,26 +88,35 @@ const CREST_PALETTE = { base: 0x74c9ac, tip: 0xdcf2e2, shade: 0x35755f } as cons
 
 // ─── The shared gate arithmetic ──────────────────────────────────────────────
 
-/** Steppe-country base: on the disc, off the drop, off the deep shelves. */
-function steppeBase(x: number, z: number): number {
+/** Steppe-country base: on the disc, off the drop, thinning down the
+ *  shelves. `floorCut` is the tier's own grass line — round 2 lets the
+ *  mid tier run sparse down to the third shelf (sweep pose 11 stood on
+ *  lip country with nothing near it), while the near tier stops higher. */
+function steppeBase(x: number, z: number, floorCut: number): number {
   const { u, v } = spokeOf(x, z);
   if (dropWeight(u - 445, v) > 0.05) {
     return 0;
   }
   const floor = blue1TerrainTarget(x, z);
-  if (floor < -25.5) {
+  if (floor < floorCut) {
     return 0;
   }
-  // Grass thins as the shelves step the light away.
-  const shelfThin = 1 - 0.6 * smoothstep01((-floor - 18.5) / 8);
+  // Grass thins as the shelves step the light away — never to zero
+  // above the tier's own cut, so lip country keeps a sparse whisper.
+  const shelfThin = Math.max(0.12, 1 - 0.6 * smoothstep01((-floor - 18.5) / 8));
   // The disc owns the prairie; the slope keeps its own composed shoulders.
   const open = smoothstep01((u - 292) / 16);
   return shelfThin * open;
 }
 
-function grassGate(sites: readonly Blue1StoneSite[], minBase: number, swardShare: number): GateFn {
+function grassGate(
+  sites: readonly Blue1StoneSite[],
+  minBase: number,
+  swardShare: number,
+  floorCut = -24.5,
+): GateFn {
   return (x, z) => {
-    const base = steppeBase(x, z);
+    const base = steppeBase(x, z, floorCut);
     if (base <= 0) {
       return 0;
     }
@@ -192,12 +201,12 @@ export function buildBlue1Fill(sites: readonly Blue1StoneSite[]): Blue1FillBuild
       area: discArea(205),
       gate: grassGate(sites, 0.38, 0.6),
       ground: seabedHeight,
-      count: 7500,
+      count: 9000,
       profile: "blade",
       size: [0.5, 1.05],
       swayAmp: 0.05,
       sunGlow: true,
-      looseShare: 0.42,
+      looseShare: 0.48,
     }),
     "blue1-fill-grass-near",
   );
@@ -206,7 +215,9 @@ export function buildBlue1Fill(sites: readonly Blue1StoneSite[]): Blue1FillBuild
       seed: SEED ^ FILL_SEEDS.grassMid,
       palette: GRASS_MID_PALETTE,
       area: discArea(212),
-      gate: grassGate(sites, 0.22, 0.55),
+      // The mid tier runs sparse down to the third shelf (floor −28.5):
+      // the lip country's whisper of grass, sweep pose 11's near layer.
+      gate: grassGate(sites, 0.22, 0.55, -28.5),
       ground: seabedHeight,
       count: 9000,
       profile: "tuft",
@@ -226,7 +237,9 @@ export function buildBlue1Fill(sites: readonly Blue1StoneSite[]): Blue1FillBuild
       // 10,000 cards = 40k triangles (the piece's own budget note).
       count: 10000,
       size: [0.3, 0.62],
-      nearFade: 14,
+      // Round 2: 14 left legible 4-tri wedges at 15–25 m in the close
+      // poses — the cards are far-field ONLY (fully grown by ~36 m).
+      nearFade: 26,
     }),
     "blue1-fill-grass-far",
   );
@@ -237,7 +250,7 @@ export function buildBlue1Fill(sites: readonly Blue1StoneSite[]): Blue1FillBuild
       seed: SEED ^ FILL_SEEDS.crestGrass,
       palette: CREST_PALETTE,
       area: discArea(205),
-      gate: (x, z) => crestWeight(x, z) * steppeBase(x, z) * restFree(x, z),
+      gate: (x, z) => crestWeight(x, z) * steppeBase(x, z, -24.5) * restFree(x, z),
       ground: seabedHeight,
       count: 1600,
       profile: "blade",
@@ -255,7 +268,7 @@ export function buildBlue1Fill(sites: readonly Blue1StoneSite[]): Blue1FillBuild
       seed: SEED ^ FILL_SEEDS.crestLee,
       palette: { base: 0xa9b8c4, shade: 0x6e6886 },
       area: discArea(205),
-      gate: (x, z) => leeWeight(x, z, WIND_X, WIND_Z) * steppeBase(x, z) * restFree(x, z),
+      gate: (x, z) => leeWeight(x, z, WIND_X, WIND_Z) * steppeBase(x, z, -24.5) * restFree(x, z),
       ground: seabedHeight,
       count: 900,
       shapeSet: "gravel",
@@ -628,7 +641,9 @@ function buildDeepStars(): InstancedMesh {
   const random = new Random(SEED ^ FILL_SEEDS.deepStars);
   const geometry = starGeometry();
   const material = createWhelkMaterial();
-  const count = 16;
+  // Round 2: 16 → 30, and the last shelf draws double weight — sweep
+  // pose 11 stood on bare lip country and the stars are its floor fauna.
+  const count = 30;
   const mesh = new InstancedMesh(geometry, material, count);
   mesh.name = "blue1-fill-deep-stars";
   mesh.castShadow = false;
@@ -638,8 +653,9 @@ function buildDeepStars(): InstancedMesh {
   const tint = new Color();
   let placed = 0;
   let guard = 0;
-  while (placed < count && guard++ < 600) {
-    const step = TERRACE_STEPS[Math.floor(random.next() * TERRACE_STEPS.length)]!;
+  while (placed < count && guard++ < 900) {
+    const pick = Math.floor(random.next() * 4);
+    const step = TERRACE_STEPS[Math.min(pick, TERRACE_STEPS.length - 1)]!;
     const u = 445 + step.s + random.range(2, 22);
     const v = random.signed(120);
     const { x, z } = worldOf(u, v);
@@ -675,13 +691,15 @@ function createWhelkMaterial() {
   return createToonMaterial({ vertexColors: true });
 }
 
-/** The scree anchors: four tongues down each of the three shelf lips. */
+/** The scree anchors: six tongues down each of the three shelf lips
+ *  (round 2 added ±64 — the sweep's lip-country pose stood between the
+ *  round-1 fans and read bare). */
 function screeAnchors(): ScreeAnchor[] {
   const dir = worldOf(1, 0);
   const facing = Math.atan2(dir.z, dir.x);
   const anchors: ScreeAnchor[] = [];
   for (const step of TERRACE_STEPS) {
-    for (const v of [-96, -38, 34, 92]) {
+    for (const v of [-96, -64, -38, 34, 64, 92]) {
       const { x, z } = worldOf(445 + step.s + 1, v);
       anchors.push({ pos: [x, z], facing, spread: 7 });
     }
