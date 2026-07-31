@@ -3,6 +3,7 @@ import type { SphereCollider } from "../../CollisionField";
 import type { RegionBuild, RegionCapturePose, RegionDef } from "../RegionTypes";
 import { buildBlue1Distance } from "./Blue1Distance";
 import { FERRYMAN_SPECIES_ID, buildFerryman } from "./Blue1Ferryman";
+import { buildBlue1Fill } from "./Blue1Fill";
 import { buildBlue1Ground } from "./Blue1Ground";
 import { buildBlue1Life } from "./Blue1Life";
 import { buildBlue1Light } from "./Blue1Light";
@@ -174,6 +175,23 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "ferryman", u: 566, v: 20, lift: 0, absoluteY: -25, atU: 577, atV: 2, pitch: -0.04, settle: 8 },
   // From the lip, back across everything: terraces, stones, steppe.
   { name: "edge-lookback", u: 548, v: -8, lift: 2.4, atU: 445, atV: -14, pitch: 0.06 },
+  // ── The fill's poses (appended after every existing pose). ──
+  // Down the three Wayline stones toward the World's Edge — the region's
+  // one drawn road, walked.
+  { name: "wayline-walk", u: 470, v: 8, lift: 2.6, atU: 526, atV: 2, pitch: -0.02, settle: 3 },
+  // The scheduled spectacle: the Ferryman arriving at the Prow crossing
+  // while the migration dips over the edge beside it.
+  { name: "ferryman-crossing", u: 546, v: 34, lift: 0, absoluteY: -18, atU: 572, atV: -16, pitch: -0.06, settle: 8 },
+  // The four close poses (camera 2–4 m — the owner's judged distance):
+  // the sward with its three grass tiers…
+  { name: "close-steppe-sward", u: 356, v: 10, lift: 1.5, atU: 359, atV: 12, pitch: -0.15, settle: 3 },
+  // …a wind-combed crest bed…
+  { name: "close-crest-bed", u: 330, v: -24, lift: 1.5, atU: 336, atV: -22, pitch: -0.12, settle: 3 },
+  // …the Gnomon's collar (apron, calves, whelks, the stone rising out of
+  // frame)…
+  { name: "close-collar", u: 411.5, v: 54.5, lift: 1.6, atU: 414.3, atV: 57.4, pitch: -0.2, settle: 3 },
+  // …and a waymark cluster on the slope's shoulder gravel.
+  { name: "close-slope-road", u: 157, v: -10, lift: 1.6, atU: 160.1, atV: -13.6, pitch: -0.18, settle: 3 },
 ];
 
 function buildPoses(): RegionCapturePose[] {
@@ -240,6 +258,10 @@ export const BLUE_1: RegionDef = {
     const light = buildBlue1Light();
     const distance = buildBlue1Distance();
     const ground = buildBlue1Ground(stones.contacts);
+    // The fill builds LAST (Phase 3): every stream it opens is a fresh
+    // `^ FILL_SEEDS.*` constant appended after all existing draws, so the
+    // reroll fence holds by construction.
+    const fill = buildBlue1Fill(stones.sites);
 
     for (const mesh of [
       ...ground,
@@ -247,8 +269,10 @@ export const BLUE_1: RegionDef = {
       ...steppe.meshes,
       ...life.meshes,
       ferryman.mesh,
+      ferryman.jacks,
       ...light.meshes,
       ...distance.meshes,
+      ...fill.nodes,
     ]) {
       group.add(mesh);
     }
@@ -260,9 +284,12 @@ export const BLUE_1: RegionDef = {
       colliders,
       targets: [ferryman.target],
       update(dt, ctx): void {
+        const calm = ctx.reducedMotion ? 0.45 : 1;
         steppe.update(dt, ctx.reducedMotion);
         life.update(dt, ctx.time, ctx.reducedMotion);
         ferryman.update(ctx.time, ctx.reducedMotion);
+        light.update(ctx.time, ctx.reducedMotion);
+        fill.update(ctx.time * calm);
       },
     };
   },

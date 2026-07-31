@@ -16,6 +16,9 @@ import {
   blue1Ceiling,
   blue1TerrainTarget,
   blue1Weight,
+  dropWeight,
+  slopeChannelCenter,
+  slopeChannelHalf,
   spokeOf,
   worldOf,
 } from "../src/world/regions/blue1/Blue1Terrain";
@@ -172,11 +175,13 @@ describe("great-blue-1 build", () => {
         }
       }
     });
-    expect(draws).toBeLessThanOrEqual(120);
-    expect(triangles).toBeLessThanOrEqual(250_000);
+    // Fill round 1 (R12 budgets ≤260 / ≤1.35M): measured 90 draws /
+    // 853,315 tris after the grass tiers, collars, crest beds and life.
+    expect(draws).toBeLessThanOrEqual(140);
+    expect(triangles).toBeLessThanOrEqual(1_100_000);
     // Honest floors as well as caps: an empty region passes no bar.
-    expect(draws).toBeGreaterThan(20);
-    expect(triangles).toBeGreaterThan(120_000);
+    expect(draws).toBeGreaterThan(70);
+    expect(triangles).toBeGreaterThan(600_000);
   });
 
   it("gives every lit mesh a finite normal attribute", () => {
@@ -272,10 +277,158 @@ describe("great-blue-1 seals", () => {
   });
 });
 
+// ─── The fill's contracts (Phase 3, docs/fill-plans/great-blue-1.md) ─────────
+
+/** Reads instance world positions out of an InstancedMesh's matrices. */
+function instancePositions(mesh: InstancedMesh): { x: number; y: number; z: number }[] {
+  const out: { x: number; y: number; z: number }[] = [];
+  const m = mesh.instanceMatrix.array as Float32Array;
+  for (let i = 0; i < mesh.count; i++) {
+    out.push({ x: m[i * 16 + 12]!, y: m[i * 16 + 13]!, z: m[i * 16 + 14]! });
+  }
+  return out;
+}
+
+/** Every static fill instance in the build, tagged by its parent's name. */
+function fillInstances(build: RegionBuild): { name: string; x: number; y: number; z: number }[] {
+  const out: { name: string; x: number; y: number; z: number }[] = [];
+  (build.group as Object3D).traverse((node) => {
+    if (!(node instanceof InstancedMesh)) {
+      return;
+    }
+    // Walk up for the fill wrapper name; skip movers (shoals, fry, jacks)
+    // whose instances are posed by update, not placed on the ground.
+    let owner: Object3D | null = node;
+    while (owner && !owner.name.startsWith("blue1-fill")) {
+      owner = owner.parent;
+    }
+    if (!owner) {
+      return;
+    }
+    if (/outriders|fry-pods|jacks/.test(owner.name)) {
+      return;
+    }
+    for (const p of instancePositions(node)) {
+      if (p.y < -200) {
+        continue; // parked spare capacity
+      }
+      out.push({ name: owner.name, ...p });
+    }
+  });
+  return out;
+}
+
+describe("great-blue-1 fill", () => {
+  let build: RegionBuild;
+
+  beforeAll(() => {
+    build = BLUE_1.build(new Scene());
+  });
+
+  it("holds the reroll fence: landmarks, Ferryman, deep steps byte-unchanged", () => {
+    // Pinned against the pre-fill build (plains-final, commit e1a519d):
+    // every fill stream is `SEEDS.regionBlue1 ^ 0xf3xx`, appended after
+    // all existing draws, so these numbers cannot move.
+    const c0 = build.colliders[0]!.center;
+    expect(c0.x).toBeCloseTo(24.664018883, 9);
+    expect(c0.y).toBeCloseTo(-2.425317405, 9);
+    expect(c0.z).toBeCloseTo(-49.743805369, 9);
+
+    (build.group as Object3D).traverse((node) => {
+      if (node.name === "blue1-ferryman") {
+        const mesh = node as Mesh;
+        expect(mesh.position.x).toBeCloseTo(298.455808146, 9);
+        expect(mesh.position.y).toBeCloseTo(-25.437144069, 9);
+        expect(mesh.position.z).toBeCloseTo(-488.662174961, 9);
+      }
+      if (node.name === "blue1-deep-step-0") {
+        const p = (node as Mesh).geometry.attributes.position!;
+        expect(p.getX(0)).toBeCloseTo(201.902526855, 9);
+        expect(p.getY(0)).toBeCloseTo(-50, 9);
+        expect(p.getZ(0)).toBeCloseTo(-534.981872559, 9);
+      }
+    });
+  });
+
+  it("keeps the registered rests empty: Under-Blue, hush lane, King hollow, Prow tip", () => {
+    const king = worldOf(383.8, -102.2);
+    const prowTip = worldOf(551.4, 4);
+    const instances = fillInstances(build);
+    expect(instances.length).toBeGreaterThan(10_000);
+    for (const p of instances) {
+      const { u, v } = spokeOf(p.x, p.z);
+      // THE UNDER-BLUE: nothing below the lip's grip, ever.
+      expect(dropWeight(u - 445, v), `${p.name} over the drop at u${u.toFixed(0)}`).toBeLessThanOrEqual(0.05);
+      // The Fallen King hollow: stars and beam only.
+      expect(
+        Math.hypot(p.x - king.x, p.z - king.z),
+        `${p.name} in the King's hollow`,
+      ).toBeGreaterThan(8);
+      // The Prow tip.
+      expect(
+        Math.hypot(p.x - prowTip.x, p.z - prowTip.z),
+        `${p.name} on the Prow tip`,
+      ).toBeGreaterThan(7.5);
+      // The mid-glide hush: the channel lane stays a clean sand road.
+      if (u > 180 && u < 230) {
+        const away = Math.abs(v - slopeChannelCenter(u));
+        expect(away, `${p.name} in the hush lane at u${u.toFixed(0)}`).toBeGreaterThan(
+          slopeChannelHalf(u),
+        );
+      }
+    }
+  });
+
+  it("grows the grass tiers where the prairie is and nowhere it is not", () => {
+    let near = 0;
+    let mid = 0;
+    let far = 0;
+    for (const p of fillInstances(build)) {
+      if (p.name === "blue1-fill-grass-near") {
+        near++;
+      } else if (p.name === "blue1-fill-grass-mid") {
+        mid++;
+      } else if (p.name === "blue1-fill-grass-far") {
+        far++;
+      } else {
+        continue;
+      }
+      const { u, v } = spokeOf(p.x, p.z);
+      // Grass country: on the disc, off the slope road, off the drop.
+      expect(u, `grass on the slope at u${u.toFixed(0)}`).toBeGreaterThan(288);
+      expect(dropWeight(u - 445, v)).toBeLessThanOrEqual(0.05);
+    }
+    // The ~4× prairie: three tiers, each carrying real density.
+    expect(near).toBeGreaterThan(3500);
+    expect(mid).toBeGreaterThan(5500);
+    expect(far).toBeGreaterThan(6500);
+  });
+
+  it("gives the Ferryman its two pilot jacks", () => {
+    let jacks: InstancedMesh | undefined;
+    (build.group as Object3D).traverse((node) => {
+      if (node.name === "blue1-ferryman-jacks" && node instanceof InstancedMesh) {
+        jacks = node;
+      }
+    });
+    expect(jacks).toBeDefined();
+    expect(jacks!.count).toBe(2);
+    // Posed with the patrol from the region's own attach clock: both ride
+    // within a few metres of the mola.
+    const positions = instancePositions(jacks!);
+    for (const p of positions) {
+      const d = Math.hypot(p.x - 298.455808146, p.y - -25.437144069, p.z - -488.662174961);
+      expect(d).toBeLessThan(6);
+    }
+  });
+});
+
 describe("great-blue-1 capture poses", () => {
-  it("authors 8–12 poses that stand inside the region's own water", () => {
+  it("authors 8–18 poses that stand inside the region's own water", () => {
+    // Fill round 1 appended two authored poses (wayline-walk,
+    // ferryman-crossing) and the four close poses after the twelve.
     expect(BLUE_1.capturePoses.length).toBeGreaterThanOrEqual(8);
-    expect(BLUE_1.capturePoses.length).toBeLessThanOrEqual(12);
+    expect(BLUE_1.capturePoses.length).toBeLessThanOrEqual(18);
     for (const pose of BLUE_1.capturePoses) {
       const [x, y, z] = pose.position;
       expect(blue1Weight(x, z), pose.name).toBeGreaterThan(0.3);

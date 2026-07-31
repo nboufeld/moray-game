@@ -3,17 +3,22 @@ import {
   BufferGeometry,
   CatmullRomCurve3,
   Color,
+  DynamicDrawUsage,
   IcosahedronGeometry,
+  InstancedMesh,
   Matrix4,
   Mesh,
+  Object3D,
   Vector3,
 } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { createFishGeometry } from "../../../creatures/fish/FishGeometry";
 import type { DiscoveryTarget } from "../../../discovery/DiscoverySystem";
 import { fbm } from "../../../rendering/ProceduralTexture";
 import { smoothNormals } from "../../../rendering/SmoothNormals";
 import { createToonMaterial } from "../../../rendering/ToonShading";
 import { Random, SEEDS } from "../../../util/Random";
+import { FILL_SEEDS } from "./Blue1FillShared";
 import { smoothstep01 } from "./Blue1Shared";
 import { worldOf } from "./Blue1Terrain";
 
@@ -58,6 +63,10 @@ const PATROL: readonly [number, number, number][] = [
 
 export interface FerrymanBuild {
   readonly mesh: Mesh;
+  /** The two pilot jacks riding a metre off the flank — the great coin's
+   *  scale cue (fill plan §5). One instanced draw; they pose with the
+   *  patrol, so the pair never spends randomness in update. */
+  readonly jacks: InstancedMesh;
   readonly target: DiscoveryTarget;
   update(time: number, reducedMotion: boolean): void;
 }
@@ -90,6 +99,48 @@ export function buildFerryman(): FerrymanBuild {
     position: new Vector3(anchorAt.x, -26, anchorAt.z),
   };
 
+  // The pilot jacks: two small silver fish holding station off the flank.
+  // Their stream is fresh (appended after every existing draw), so the
+  // mola's own path jitter and phase stay byte-identical.
+  const jackRandom = new Random(SEED ^ FILL_SEEDS.jacks);
+  const jackGeometry = createFishGeometry({
+    width: 0.85,
+    height: 0.95,
+    length: 1.1,
+    tailTaper: 0.52,
+    dorsal: 0.4,
+    pectoral: 0.8,
+    tail: { reach: 1.45, lobe: 0.6, notch: 1.05 },
+  });
+  const jackMaterial = createToonMaterial({
+    vertexColors: true,
+    emissive: 0x3e6478,
+    emissiveIntensity: 0.6,
+  });
+  const jacks = new InstancedMesh(jackGeometry, jackMaterial, 2);
+  jacks.name = "blue1-ferryman-jacks";
+  jacks.castShadow = false;
+  jacks.receiveShadow = false;
+  jacks.frustumCulled = false;
+  jacks.instanceMatrix.setUsage(DynamicDrawUsage);
+  const jackTint = new Color();
+  const jackSpecs = [-1, 1].map((side, i) => {
+    jackTint.setHex(0xdceef4).multiplyScalar(jackRandom.range(0.9, 1.05));
+    jacks.setColorAt(i, jackTint);
+    return {
+      side,
+      out: jackRandom.range(1.6, 2.2),
+      lift: jackRandom.signed(0.7),
+      lead: jackRandom.range(0.6, 1.6),
+      bobPhase: jackRandom.range(0, Math.PI * 2),
+      scale: jackRandom.range(0.5, 0.68),
+    };
+  });
+  if (jacks.instanceColor) {
+    jacks.instanceColor.needsUpdate = true;
+  }
+  const jackDummy = new Object3D();
+
   const at = new Vector3();
   const ahead = new Vector3();
   const phase = random.range(0, Math.PI * 2);
@@ -110,12 +161,31 @@ export function buildFerryman(): FerrymanBuild {
     path.getPointAt((s + 0.004) % 1, ahead);
     at.y += Math.sin(time * 0.11 + phase) * 0.5;
     mesh.position.copy(at);
+    const heading = Math.atan2(ahead.x - at.x, ahead.z - at.z);
     mesh.rotation.set(
       Math.sin(time * 0.07 + phase) * 0.04,
-      Math.atan2(ahead.x - at.x, ahead.z - at.z),
+      heading,
       // The slow scull: the whole coin rocks as the fins beat.
       Math.sin(time * 0.35 + phase) * 0.07,
     );
+    // The jacks ride in the mola's own frame: a little ahead, a metre or
+    // two off each flank, bobbing on their own beat.
+    for (const [i, jack] of jackSpecs.entries()) {
+      const rightX = Math.cos(heading);
+      const rightZ = -Math.sin(heading);
+      const aheadX = Math.sin(heading);
+      const aheadZ = Math.cos(heading);
+      jackDummy.position.set(
+        at.x + rightX * jack.side * jack.out + aheadX * jack.lead,
+        at.y + jack.lift + Math.sin(time * 0.9 + jack.bobPhase) * 0.25,
+        at.z + rightZ * jack.side * jack.out + aheadZ * jack.lead,
+      );
+      jackDummy.rotation.set(0, heading, Math.sin(time * 1.3 + jack.bobPhase) * 0.08);
+      jackDummy.scale.setScalar(jack.scale);
+      jackDummy.updateMatrix();
+      jacks.setMatrixAt(i, jackDummy.matrix);
+    }
+    jacks.instanceMatrix.needsUpdate = true;
   };
 
   pose(PATROL_PHASE);
@@ -124,6 +194,7 @@ export function buildFerryman(): FerrymanBuild {
   let last: number | null = null;
   return {
     mesh,
+    jacks,
     target,
     update(time: number, reducedMotion: boolean): void {
       // Lazy first sample: `last = 0` here once made the first update jump

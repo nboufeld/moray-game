@@ -428,8 +428,9 @@ function buildSprites(): {
 
 // ─── The floor fauna ─────────────────────────────────────────────────────────
 
-/** A five-lobed cushion star, domed, tips lifted. */
-function starGeometry(): BufferGeometry {
+/** A five-lobed cushion star, domed, tips lifted. Exported for the fill:
+ *  the terrace deep-star variant reuses the drawing with its own paint. */
+export function starGeometry(): BufferGeometry {
   const geometry = new IcosahedronGeometry(0.22, 1);
   const position = geometry.attributes.position!;
   for (let i = 0; i < position.count; i++) {
@@ -500,8 +501,9 @@ function buildStars(): InstancedMesh {
   return mesh;
 }
 
-/** A banded whelk: two stacked cones with a spiral of painted bands. */
-function whelkGeometry(): BufferGeometry {
+/** A banded whelk: two stacked cones with a spiral of painted bands.
+ *  Exported for the fill: the collar trios wear the same shell. */
+export function whelkGeometry(): BufferGeometry {
   const body = new ConeGeometry(0.16, 0.24, 9).toNonIndexed();
   body.translate(0, 0.12, 0);
   const spire = new ConeGeometry(0.09, 0.18, 8).toNonIndexed();

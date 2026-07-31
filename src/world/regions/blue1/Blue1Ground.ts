@@ -1,4 +1,4 @@
-import { BufferAttribute, Mesh, type PlaneGeometry } from "three";
+import { BufferAttribute, Color, Mesh, type PlaneGeometry } from "three";
 import { fbm } from "../../../rendering/ProceduralTexture";
 import { SEEDS } from "../../../util/Random";
 import { createSandMaterial } from "../../SandMaterial";
@@ -139,77 +139,103 @@ function trimSheet(geometry: PlaneGeometry, keep: (x: number, z: number) => bool
   geometry.setIndex(kept);
 }
 
+// ─── The absolute paint (fill round 1 — pale1's ledgered lesson) ────────────
+//
+// The vertex colour multiplies the sand wash, whose levelled mean is
+// ≈ #bab08a — gold, with blue at barely half of red in linear light. The
+// pilot's multiplier bake wrote polite near-unit tints and the fill-plan
+// audit measured the result exactly: "the sward ground tint does not read
+// as green ground" — steppe-sea was 70% bare tan. No channel-alike
+// multiplier can green a gold wash. The bake below composes an ABSOLUTE
+// story colour per vertex and divides by the wash's own linear mean at
+// the end, so the screen shows the story colour and the wash's ripple
+// marks survive as value grain.
+
+/** The wash's levelled mean (#bab08a) in linear light. */
+const WASH_MEAN = new Color(0.729, 0.69, 0.541).convertSRGBToLinear();
+
+/** A story colour, authored in sRGB and converted once to linear. */
+function story(hex: number): Color {
+  return new Color(hex).convertSRGBToLinear();
+}
+
+// The palette the bake composes with — absolute paint, not multipliers.
+const SAND_STEPPE = story(0xafb9b2);
+const SAND_WARM = story(0xc9ae86);
+const TURF = story(0x4f9c80);
+const TURF_CREST = story(0x7cbc96);
+const DEPTH_VIOLET = story(0x625a96);
+const SILT_PALE = story(0x9d97c0);
+const MILKY_RIM = story(0xbdd2d4);
+
 /**
- * The region's ground paint. Every tint multiplies the sand wash, so 1 is
- * "the bowl's own sand" and the biomes pull it toward their own key.
+ * The region's ground paint: the steppe drawn as a green prairie under a
+ * high sun — turf the majority, bare sand the composed exception —
+ * crest/lee value split, the slope's warm mouth falling away, depth as
+ * the dimmer, terrace silt bands, and the milky rim.
  */
 function bakeBlue1Paint(geometry: PlaneGeometry, contacts: readonly ContactPatch[]): void {
   const position = geometry.attributes.position!;
   const colors = new Float32Array(position.count * 3);
+  const col = new Color();
 
   for (let i = 0; i < position.count; i++) {
     const x = position.getX(i);
     const z = position.getZ(i);
     const y = position.getY(i);
-    const { u } = spokeOf(x, z);
+    const { u, v } = spokeOf(x, z);
+    const s = u - 445;
 
     // Value structure from the ground's own relief: the terrain's ground
     // life read back as shade, the cheapest honest occlusion.
     const life = fbm(x * 0.026, z * 0.026, { seed: SEED ^ 0x9b01, period: 9, octaves: 2 }) - 0.5;
-    let value = 0.92 + life * 0.42;
+    let value = 0.96 + life * 0.3;
 
-    // The steppe's swells carry their own value: crests catch the high
-    // sun, troughs hold a cooler half-tone — the prairie's relief drawn
-    // into the paint so the layered silhouettes read at range.
-    const swell = steppeSwell(x, z, u);
-    const crest = smoothstep01((swell + 0.6) / 3.2);
-
-    // The sward: blue-green turf drawn in patches at two scales, never a
-    // wash (the pilot's round-2 lesson: polite tints under a warm wash
-    // read as beige — green ground means red is *cut*, hard). Round 2 here
-    // cut it harder still: the round-1 mix measured beige everywhere.
+    // The sward: the same seeded field the blades grow from (one truth,
+    // two readers), its threshold dropped so turf owns the prairie and
+    // bare sand is the composed rest between passages — the doctrine's
+    // rule 3, corrected from the audit's "70% bare tan".
     const sward = smoothstep01(
-      (fbm(x * 0.014, z * 0.014, { seed: SEED ^ 0x5aa2, period: 6, octaves: 3 }) - 0.36) / 0.22,
+      (fbm(x * 0.014, z * 0.014, { seed: SEED ^ 0x5aa2, period: 6, octaves: 3 }) - 0.31) / 0.24,
     );
     const fine = fbm(x * 0.06, z * 0.06, { seed: SEED ^ 0x5aa3, period: 14, octaves: 2 }) - 0.5;
 
-    // Steppe base: pale blue-grey sand between swards, cool teal turf on
-    // them, crests half a value lighter and a touch warmer.
-    let r = 0.88 - sward * 0.48 + crest * 0.12 + fine * 0.08;
-    let g = 1.0 - sward * 0.02 + crest * 0.07 + fine * 0.06;
-    let b = 1.0 + sward * 0.06 - crest * 0.1;
-    value += crest * 0.12 - sward * 0.03;
+    col.copy(SAND_STEPPE).lerp(TURF, Math.min(1, sward * (0.9 + fine * 0.5)));
+
+    // The crest/lee split: crests catch the high sun in a warmer green and
+    // a half-value lift; troughs hold the cooler, deeper half-tone.
+    const swell = steppeSwell(x, z, u);
+    const crest = smoothstep01((swell + 0.6) / 3.2);
+    col.lerp(TURF_CREST, crest * sward * 0.55);
+    value *= 0.9 + crest * 0.22;
 
     if (u < SLOPE_TO + 20) {
       // The slope: the reef's warm sand at the mouth, falling away to the
-      // steppe's cool key by mid-glide — the approach's whole story is
-      // this crossfade.
-      const warm = 1 - smoothstep01((u - 95) / 120);
-      const sr = 0.9 - sward * 0.3 + warm * 0.16 + fine * 0.08;
-      const sg = 0.98 - sward * 0.05 + warm * 0.04 + fine * 0.06;
-      const sb = 1.0 - warm * 0.2;
-      const fadeIn = 1 - smoothstep01((u - 262) / 46);
-      r += (sr - r) * fadeIn;
-      g += (sg - g) * fadeIn;
-      b += (sb - b) * fadeIn;
+      // steppe's cool key by mid-glide — the approach's whole story.
+      const warm = (1 - smoothstep01((u - 95) / 120)) * (1 - smoothstep01((u - 262) / 46));
+      col.lerp(SAND_WARM, warm * (1 - sward * 0.55));
     }
 
     // Depth is the dimmer: from the first terrace down, every metre takes
-    // the ground a step deeper in value and further into violet-blue. Keyed
-    // on the vertex's own height so the shelf faces and the cliff read as
-    // painted bands without any second bookkeeping.
+    // the ground deeper in value and further into violet-blue (red held
+    // above green — a colour, never a black).
     const depthK = smoothstep01((-y - 18.5) / 26);
+    const silt = fbm(x * 0.045, z * 0.045, { seed: SEED ^ 0x51f7, period: 11, octaves: 3 }) - 0.5;
     if (depthK > 0) {
-      const silt =
-        fbm(x * 0.045, z * 0.045, { seed: SEED ^ 0x51f7, period: 11, octaves: 3 }) - 0.5;
-      // Violet-blue: red held above green all the way down.
-      const dr = 0.6 + silt * 0.16;
-      const dg = 0.52 + silt * 0.14;
-      const db = 0.92 + silt * 0.08;
-      r += (dr - r) * depthK;
-      g += (dg - g) * depthK;
-      b += (db - b) * depthK;
-      value -= depthK * (0.2 - silt * 0.14);
+      col.lerp(DEPTH_VIOLET, depthK * (0.9 + silt * 0.3));
+      value -= depthK * (0.18 - silt * 0.14);
+    }
+
+    // The terrace silt bands: a pale violet drift pooled below each shelf
+    // lip, so every step reads as a painted band, not a contour line.
+    if (s > 24 && depthK < 0.85) {
+      for (const stepS of [30, 58, 84]) {
+        const band =
+          smoothstep01((s - stepS - 0.5) / 2.5) - smoothstep01((s - stepS - 9) / 6);
+        if (band > 0) {
+          col.lerp(SILT_PALE, band * (0.3 + silt * 0.3) * Math.max(0, 1 - Math.abs(v) / 150));
+        }
+      }
     }
 
     // The milky rim: distance goes bright, not dark — the rule written
@@ -217,9 +243,7 @@ function bakeBlue1Paint(geometry: PlaneGeometry, contacts: readonly ContactPatch
     const rc = Math.hypot(x - CENTER_X, z - CENTER_Z);
     const far = smoothstep01((rc - 150) / 60);
     if (far > 0 && depthK < 0.4) {
-      r += (1.0 - r) * far * 0.6;
-      g += (1.04 - g) * far * 0.6;
-      b += (1.08 - b) * far * 0.6;
+      col.lerp(MILKY_RIM, far * 0.65);
       value += far * 0.05;
     }
 
@@ -238,10 +262,13 @@ function bakeBlue1Paint(geometry: PlaneGeometry, contacts: readonly ContactPatch
       }
     }
 
+    // The one absolute step: story ÷ wash mean, channel by channel. The
+    // blue multiplier legitimately runs past 1.6 — that is the gold being
+    // cancelled, not a tint gone wild.
     const total = value * shade;
-    colors[i * 3] = Math.max(0.25, Math.min(1.25, r * total));
-    colors[i * 3 + 1] = Math.max(0.25, Math.min(1.25, g * total));
-    colors[i * 3 + 2] = Math.max(0.25, Math.min(1.25, b * total));
+    colors[i * 3] = Math.max(0.12, Math.min(2.4, (col.r / WASH_MEAN.r) * total));
+    colors[i * 3 + 1] = Math.max(0.12, Math.min(2.4, (col.g / WASH_MEAN.g) * total));
+    colors[i * 3 + 2] = Math.max(0.12, Math.min(2.4, (col.b / WASH_MEAN.b) * total));
   }
 
   geometry.setAttribute("color", new BufferAttribute(colors, 3));
