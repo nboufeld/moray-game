@@ -69,17 +69,29 @@ export interface Verdant3MesasBuild {
 
 // ─── The pillar lathe ───────────────────────────────────────────────────────
 
-const RING_TS = [0, 0.04, 0.1, 0.17, 0.26, 0.37, 0.5, 0.63, 0.75, 0.82, 0.88, 0.93, 0.965, 1] as const;
-const SEGMENTS = 18;
+// Round 2: rings and segments raised — at close range the r1 lathe
+// showed metre-wide flat facets, and a flat facet under toon light is a
+// flat value (the "plastic column" read).
+const RING_TS = [
+  0, 0.03, 0.07, 0.12, 0.18, 0.25, 0.33, 0.42, 0.51, 0.6, 0.68, 0.75, 0.81, 0.86, 0.9, 0.935,
+  0.965, 1,
+] as const;
+const SEGMENTS = 24;
 
 function angleBetween(a: number, b: number): number {
   const delta = Math.abs(a - b) % (Math.PI * 2);
   return delta > Math.PI ? Math.PI * 2 - delta : delta;
 }
 
-/** The column's silhouette: foot flare, waist, crown flare, plateau lip. */
-function mesaRadius(spec: MesaSpec, t: number): number {
+/** The column's silhouette: foot flare, waist, crown flare, plateau lip.
+ *  The `log` profile (the Fallen Mesa) is a plain tapered bole — the r1
+ *  fallen pillar wore the standing profile sideways and read as a
+ *  crumpled sheet. */
+function mesaRadius(spec: MesaSpec, t: number, log = false): number {
   const foot = spec.footR;
+  if (log) {
+    return t >= 1 ? foot * 0.42 : foot * (0.62 + 0.38 * Math.pow(1 - t, 1.2));
+  }
   let r = foot * (0.5 + 0.5 * Math.pow(1 - t, 1.7));
   r += foot * 0.05 * Math.sin(t * Math.PI);
   // The crown flare: the garden lip the drapes hang from.
@@ -95,7 +107,7 @@ function mesaRadius(spec: MesaSpec, t: number): number {
  * axis, a capped garden plateau (or an open oculus for the hollow one),
  * and — for the hollow one — a mouth cut at its foot.
  */
-function mesaGeometry(spec: MesaSpec, mouthAngle: number): BufferGeometry {
+function mesaGeometry(spec: MesaSpec, mouthAngle: number, log = false): BufferGeometry {
   const noiseSeed = SEED ^ (0x0a01 + MESAS.indexOf(spec) * 97);
   const positions: number[] = [];
   const colors: number[] = [];
@@ -113,7 +125,7 @@ function mesaGeometry(spec: MesaSpec, mouthAngle: number): BufferGeometry {
     const y = t * spec.height;
     const cx = wobble(t, 3);
     const cz = wobble(t, 11);
-    const base = mesaRadius(spec, t);
+    const base = mesaRadius(spec, t, log);
 
     for (let s = 0; s <= SEGMENTS; s++) {
       const a = (s / SEGMENTS) * Math.PI * 2;
@@ -122,33 +134,41 @@ function mesaGeometry(spec: MesaSpec, mouthAngle: number): BufferGeometry {
       const rough =
         1 +
         (fbm(nx * 1.3 + 5, nz * 1.3 + t * 7, { seed: noiseSeed, period: 5, octaves: 2 }) - 0.5) *
-          0.24;
+          0.32;
       const r = base * rough;
       positions.push(cx + nx * r, y, cz + nz * r);
 
       // ── The paint ──
       // Stone base: cool grey-green, never one value up the column.
+      // Round 2: strata amplitude and moss coverage both raised, and a
+      // fine grain jitter added — the r1 columns read as one flat wash.
       const strata = Math.max(0, Math.sin(y * 0.5 + noiseSeed % 7)) ** 2;
+      const grain =
+        (fbm(nx * 3.4 + 9, nz * 3.4 + t * 11, { seed: noiseSeed ^ 0x71, period: 9, octaves: 2 }) -
+          0.5) *
+        0.18;
       const streak = smoothstep01(
         (fbm(nx * 2.1, nz * 2.1 + t * 1.6, { seed: noiseSeed ^ 0x33, period: 6, octaves: 2 }) -
-          0.45) /
-          0.25,
+          0.4) /
+          0.24,
       );
-      let cr = 0.58 - strata * 0.07;
-      let cg = 0.62 - strata * 0.05;
-      let cb = 0.56 - strata * 0.03;
+      let cr = 0.58 - strata * 0.12 + grain;
+      let cg = 0.62 - strata * 0.09 + grain;
+      let cb = 0.56 - strata * 0.05 + grain * 0.8;
       // Moss streaks climb the shaded runnels; the foot is thick with it.
-      const moss = Math.min(1, streak * 0.8 + (1 - smoothstep01(t / 0.16)) * 0.7);
-      cr += (0.42 - cr) * moss;
+      const moss = Math.min(1, streak * 0.95 + (1 - smoothstep01(t / 0.16)) * 0.7);
+      cr += (0.38 - cr) * moss;
       cg += (0.68 - cg) * moss;
-      cb += (0.44 - cb) * moss;
+      cb += (0.42 - cb) * moss;
       // Violet under the crown flare — the overhang's shadow is a colour.
-      const under = smoothstep01((t - 0.74) / 0.1) * (1 - smoothstep01((t - 0.9) / 0.06));
+      const under = log
+        ? 0
+        : smoothstep01((t - 0.74) / 0.1) * (1 - smoothstep01((t - 0.9) / 0.06));
       cr += (0.44 - cr) * under * 0.7;
       cg += (0.38 - cg) * under * 0.7;
       cb += (0.52 - cb) * under * 0.7;
       // The milky crest at the garden lip: the distance rule, painted on.
-      const crest = smoothstep01((t - 0.92) / 0.08);
+      const crest = log ? 0 : smoothstep01((t - 0.92) / 0.08);
       cr += (0.8 - cr) * crest;
       cg += (0.9 - cg) * crest;
       cb += (0.74 - cb) * crest;
@@ -337,8 +357,8 @@ export function buildVerdant3Mesas(): Verdant3MesasBuild {
     radius: 2.1,
   });
 
-  const fallenSpec: MesaSpec = { name: "fallen", u: 0, v: 0, height: length, footR: 3.4 };
-  const fallen = mesaGeometry(fallenSpec, 0);
+  const fallenSpec: MesaSpec = { name: "fallen", u: 0, v: 0, height: length, footR: 3.2 };
+  const fallen = mesaGeometry(fallenSpec, 0, true);
   const fallenYaw = Math.atan2(head.x - tail.x, head.z - tail.z);
   const incline = Math.atan2(headY - tailY, length);
   fallen.applyMatrix4(new Matrix4().makeRotationX(Math.PI / 2 - incline));
@@ -362,20 +382,22 @@ export function buildVerdant3Mesas(): Verdant3MesasBuild {
 
   // ─── The pass waymarks ─────────────────────────────────────────────────────
   // The Deep Sentinel: the first thing of ours the fog gives up.
+  // Round 2: grown — at r1 it read as a pebble on the horizon from the
+  // threshold pose (the verdant-2 Cistern lesson at road scale).
   stand(
     pale,
     stackGeometry(
       [
-        { radius: 1.4, rise: 0.6, stretch: 1.9, lean: 0.3 },
-        { radius: 0.9, rise: 3.4, stretch: 1.7, lean: 0.8 },
+        { radius: 1.7, rise: 0.7, stretch: 2.0, lean: 0.3 },
+        { radius: 1.1, rise: 4.6, stretch: 1.8, lean: 0.8 },
       ],
       { seed: SEED ^ 0x0a41 },
     ),
     1168,
     channelCenter(1168) - 6.2,
     0.7,
-    1.4,
-    4.8,
+    1.7,
+    6.2,
   );
   // A second worn stack past the midway boulders.
   stand(
@@ -474,7 +496,7 @@ export function buildVerdant3Mesas(): Verdant3MesasBuild {
       const theta = (i / 5) * Math.PI * 2 + springIndex * 0.9;
       const u = spring.u + Math.cos(theta) * spring.radius * 1.25;
       const v = spring.v + Math.sin(theta) * spring.radius * 1.25;
-      const radius = random.range(0.7, 1.2);
+      const radius = random.range(1.0, 1.7);
       scenery(
         pale,
         boulderGeometry({

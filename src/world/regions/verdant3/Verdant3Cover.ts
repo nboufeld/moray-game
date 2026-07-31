@@ -54,10 +54,12 @@ export interface Verdant3CoverBuild {
   update(timeSec: number): void;
 }
 
-/** The drift field: gathers broad-field scatter into ~14 m drifts. */
+/** The drift field: gathers broad-field scatter into ~14 m drifts.
+ *  Round 2: floor 0.35 → 0.45 — the r1 close pose landed in a drift
+ *  gap and read the floor as bare; gaps thin the cover, never zero it. */
 function drift(x: number, z: number): number {
   const n = fbm(x * 0.048, z * 0.048, { seed: SEED ^ 0x30f0, period: 7, octaves: 2 });
-  return 0.35 + 0.65 * smoothstep01((n - 0.42) / 0.24);
+  return 0.45 + 0.55 * smoothstep01((n - 0.42) / 0.24);
 }
 
 /** The whole-domain base gate: ownership × stillness. */
@@ -108,9 +110,11 @@ export function buildVerdant3Cover(): Verdant3CoverBuild {
   const groups: Group[] = [];
 
   const discArea = { center: [CENTER_X, CENTER_Z] as [number, number], radius: 214 };
+  // Round 2: the road band tightened 34 → 26 m — the r1 close-road pose
+  // read bare because 520 blades over 6,500 m² is a rumour.
   const roadArea = {
     polyline: roadLine(),
-    width: 34,
+    width: 26,
   };
 
   const add = (build: KitBuild): void => {
@@ -124,16 +128,19 @@ export function buildVerdant3Cover(): Verdant3CoverBuild {
   // ─── T1: the deep-shade floor ─────────────────────────────────────────────
   // The region's base cover: cupped shed-rosette fronds in the deep
   // register — the primeval floor is grown over, never bare by accident.
+  // Round 2: 3,400 → 6,000 and a value step UP (r1's close pose: 1/40 m²
+  // is a rumour, and the r1 palette dropped to navy silhouettes under
+  // this water — the verdant-1 re-pass lesson, applied harder).
   addCarpet(
     buildCarpetField({
       seed: SEED ^ 0x3001,
-      palette: { base: 0x4c8a5f, tip: 0x8cc27a, shade: 0x514a70 },
+      palette: { base: 0x5f9e6a, tip: 0xa6d68c, shade: 0x565080 },
       area: discArea,
       gate: meadowGate,
       ground: seabedHeight,
-      count: 3400,
+      count: 6000,
       profile: "frond",
-      size: [0.3, 0.55],
+      size: [0.36, 0.65],
       looseShare: 0.4,
       swayAmp: 0.05,
     }),
@@ -143,32 +150,66 @@ export function buildVerdant3Cover(): Verdant3CoverBuild {
   addCarpet(
     buildCarpetField({
       seed: SEED ^ 0x3002,
-      palette: { base: 0x4f9a6e, tip: 0x9ccb7d, shade: 0x4a4468 },
+      palette: { base: 0x5aa878, tip: 0xaad488, shade: 0x514a70 },
       area: discArea,
       gate: meadowGate,
       ground: seabedHeight,
-      count: 1100,
+      count: 2000,
       profile: "blade",
-      size: [0.4, 0.8],
+      size: [0.45, 0.85],
       looseShare: 0.42,
       swayAmp: 0.08,
+    }),
+  );
+  // The tall drift stands: the region's own 1.1–1.7 m grass, clumped on
+  // purpose — the silhouette scale the open floor reads from midwater
+  // and the close poses stand among (the verdant-1 re-pass round-4
+  // move, built in from the start here).
+  addCarpet(
+    buildCarpetField({
+      seed: SEED ^ 0x3005,
+      palette: { base: 0x559a68, tip: 0xb2cf7f, shade: 0x565080 },
+      area: discArea,
+      gate: meadowGate,
+      ground: seabedHeight,
+      count: 340,
+      profile: "blade",
+      size: [1.05, 1.7],
+      looseShare: 0.3,
+      sunGlow: true,
+      swayAmp: 0.14,
     }),
   );
 
   // The road in: milky celadon blades carrying the terraces' crest
   // paint into our deep register (the 40 m palette handover, planted).
+  // Round 2: base deepened a step off the milky ground (light-on-light
+  // vanished) and the count raised for the close read.
   addCarpet(
     buildCarpetField({
       seed: SEED ^ 0x3003,
-      palette: { base: 0x9fc9a2, tip: 0xd8e8c2, shade: 0x7a8a80 },
+      palette: { base: 0x86b890, tip: 0xd8e8c2, shade: 0x6a7a80 },
       area: roadArea,
       gate: roadGate,
       ground: seabedHeight,
-      count: 520,
+      count: 1200,
       profile: "blade",
-      size: [0.28, 0.55],
+      size: [0.3, 0.62],
       looseShare: 0.45,
       swayAmp: 0.06,
+    }),
+  );
+  // Shell pebbles pacing the road — the close pose's anchor tier.
+  add(
+    buildGroundLitter({
+      seed: SEED ^ 0x3006,
+      palette: { base: 0xaab89e, tip: 0xd0d8c0, shade: 0x7a7a8c },
+      area: roadArea,
+      gate: roadGate,
+      ground: seabedHeight,
+      count: 320,
+      shapeSet: "pebble",
+      twoTone: true,
     }),
   );
   // The Boughfall's root-moss: brighter rosettes where the light still
@@ -180,9 +221,9 @@ export function buildVerdant3Cover(): Verdant3CoverBuild {
       area: { polyline: descentLine(), width: 26 },
       gate: roadGate,
       ground: seabedHeight,
-      count: 680,
+      count: 900,
       profile: "frond",
-      size: [0.3, 0.6],
+      size: [0.32, 0.62],
       looseShare: 0.4,
       swayAmp: 0.05,
     }),
@@ -210,9 +251,9 @@ export function buildVerdant3Cover(): Verdant3CoverBuild {
           return g * (1 - smoothstep01((d - mesa.footR - 5) / 6));
         },
         ground: seabedHeight,
-        count: 240,
+        count: 300,
         profile: "blade",
-        size: [0.45, 0.85],
+        size: [0.5, 0.9],
         looseShare: 0.35,
         sunGlow: true,
         swayAmp: 0.08,
@@ -241,9 +282,9 @@ export function buildVerdant3Cover(): Verdant3CoverBuild {
           return g * ring;
         },
         ground: seabedHeight,
-        count: 130,
+        count: 190,
         profile: "blade",
-        size: [0.3, 0.5],
+        size: [0.34, 0.56],
         looseShare: 0.4,
         swayAmp: 0.06,
       }),

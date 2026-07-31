@@ -46,16 +46,19 @@ export function buildVerdant3Gardens(
   const updaters: ((timeSec: number) => void)[] = [];
 
   // ─── The crown drapes ──────────────────────────────────────────────────────
+  // Round 2: anchors dropped below the lip and strands shortened — the
+  // r1 lengths let the kit's rise-and-droop arc read as ANTLERS from
+  // below; a hanging garden is a fringe skirt, not a crown of spikes.
   for (const [index, crown] of crowns.entries()) {
     const anchors: DrapeAnchor[] = [];
-    const count = 7;
-    const lipR = crown.topR * 1.35;
+    const count = 9;
+    const lipR = crown.topR * 1.3;
     for (let i = 0; i < count; i++) {
       const a = (i / count) * Math.PI * 2 + index * 0.7 + random.range(-0.15, 0.15);
       anchors.push({
         pos: [
           crown.x + Math.cos(a) * lipR,
-          crown.topY - random.range(0.8, 2.0),
+          crown.topY - random.range(2.2, 3.6),
           crown.z + Math.sin(a) * lipR,
         ],
         normal: [Math.cos(a), 0, Math.sin(a)],
@@ -65,8 +68,8 @@ export function buildVerdant3Gardens(
       seed: SEED ^ (0x2a01 + index * 7),
       palette: { base: 0x5ca06a, tip: 0xc9b45e, shade: 0x544672 },
       anchors,
-      strandsPerAnchor: 5,
-      length: random.range(4.6, 6.4),
+      strandsPerAnchor: 6,
+      length: random.range(2.6, 3.6),
       swayAmp: 0.5,
     });
     builds.push(drapes);
@@ -93,7 +96,7 @@ export function buildVerdant3Gardens(
       palette: { base: 0x549a64, tip: 0x8cc27a, shade: 0x4a4468 },
       anchors,
       strandsPerAnchor: 6,
-      length: 4.4,
+      length: 3.6,
       swayAmp: 0.6,
     });
     builds.push(curtain);
@@ -123,8 +126,8 @@ export function buildVerdant3Gardens(
       seed: SEED ^ (0x2a51 + index),
       palette: { base: 0x5ca06a, tip: 0x9ccb7d, shade: 0x544672 },
       anchors,
-      strandsPerAnchor: 4,
-      length: 3.4,
+      strandsPerAnchor: 5,
+      length: 2.3,
       swayAmp: 0.45,
     });
     builds.push(drapes);

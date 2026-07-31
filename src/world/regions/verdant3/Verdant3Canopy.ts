@@ -104,27 +104,31 @@ function trunkGeometry(seed: number, height: number, footR: number): BufferGeome
       const r = base * rough;
       positions.push(lean + nx * r, y, leanZ + nz * r);
 
-      // Bark paint: warm grey-brown-green, moss collars at seeded
-      // heights, a violet root shadow — never black anywhere.
-      const collar = Math.max(0, Math.sin(y * 0.6 + seed % 5)) ** 3;
+      // Bark paint: warm brown over green, moss collars at seeded
+      // heights, a violet root shadow — never black anywhere. Round 2:
+      // contrast doubled — the r1 trunks read as flat plastic columns.
+      const collar = Math.max(0, Math.sin(y * 0.6 + seed % 5)) ** 2;
       const streak = smoothstep01(
-        (fbm(nx * 1.8, nz * 1.8 + t, { seed: seed ^ 0x51, period: 5, octaves: 2 }) - 0.45) / 0.3,
+        (fbm(nx * 1.8, nz * 1.8 + t, { seed: seed ^ 0x51, period: 5, octaves: 2 }) - 0.42) / 0.26,
       );
-      let cr = 0.5 + streak * 0.08;
-      let cg = 0.46 + streak * 0.1;
-      let cb = 0.4 + streak * 0.06;
-      cr += (0.4 - cr) * collar * 0.8;
-      cg += (0.62 - cg) * collar * 0.8;
-      cb += (0.42 - cb) * collar * 0.8;
+      const grain =
+        (fbm(nx * 3.2 + 11, nz * 3.2 + t * 9, { seed: seed ^ 0x77, period: 8, octaves: 2 }) - 0.5) *
+        0.2;
+      let cr = 0.54 + streak * 0.14 + grain;
+      let cg = 0.46 + streak * 0.16 + grain;
+      let cb = 0.34 + streak * 0.08 + grain * 0.8;
+      cr += (0.36 - cr) * collar * 0.85;
+      cg += (0.64 - cg) * collar * 0.85;
+      cb += (0.4 - cb) * collar * 0.85;
       const root = 1 - smoothstep01(t / 0.12);
       cr += (0.42 - cr) * root * 0.6;
       cg += (0.38 - cg) * root * 0.6;
       cb += (0.5 - cb) * root * 0.6;
       // The crown collar lifts toward the light it lives in.
       const crownLift = smoothstep01((t - 0.85) / 0.15);
-      cr += (0.62 - cr) * crownLift;
-      cg += (0.72 - cg) * crownLift;
-      cb += (0.5 - cb) * crownLift;
+      cr += (0.66 - cr) * crownLift;
+      cg += (0.78 - cg) * crownLift;
+      cb += (0.52 - cb) * crownLift;
       colors.push(cr, cg, cb);
     }
   }
@@ -156,36 +160,65 @@ function trunkGeometry(seed: number, height: number, footR: number): BufferGeome
 // ─── The crown pads ─────────────────────────────────────────────────────────
 
 /**
- * One canopy pad: a squashed icosphere painted for the view from
- * below — violet-green underside, milky rim edge, gold-green top.
+ * One canopy pad: a squashed, noise-torn icosphere painted for the view
+ * from below — violet-green underside, milky rim edge, gold-green top.
+ * Round 2: the r1 pads read as flat teal mushroom-discs and flying
+ * saucers — the silhouette gains a radial fbm tear (lobed, drooped
+ * edges), the squash varies wider, and the underside drops a value
+ * toward violet so the roof reads as shaded foliage, not fog.
  */
 function padGeometry(random: Random): BufferGeometry {
   const geometry = new IcosahedronGeometry(1, 1);
-  geometry.scale(random.range(0.9, 1.25), 0.32, random.range(0.9, 1.25));
+  const noiseSeed = Math.floor(random.range(1, 1 << 20));
+  const squash = random.range(0.24, 0.42);
+  geometry.scale(random.range(0.85, 1.3), squash, random.range(0.85, 1.3));
   const position = geometry.attributes.position!;
+  // The tear: radial displacement keyed on direction, drooping the
+  // widest lobes so the crown's edge hangs like real foliage.
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i);
+    const z = position.getZ(i);
+    const radial = Math.hypot(x, z);
+    if (radial < 0.15) {
+      continue;
+    }
+    const nx = x / radial;
+    const nz = z / radial;
+    const lobe =
+      0.72 +
+      0.55 * fbm(nx * 1.4 + 7, nz * 1.4 + noiseSeed * 0.001, { seed: noiseSeed, period: 4, octaves: 2 });
+    position.setX(i, x * lobe);
+    position.setZ(i, z * lobe);
+    // Rim droop: the outer skirt bends down past the belly line.
+    const reach = Math.min(1, radial * lobe);
+    position.setY(i, position.getY(i) - reach * reach * squash * random.range(0.5, 0.8));
+  }
+  position.needsUpdate = true;
+  geometry.computeVertexNormals();
+
   const colors = new Float32Array(position.count * 3);
   for (let i = 0; i < position.count; i++) {
     const y = position.getY(i);
     const radial = Math.hypot(position.getX(i), position.getZ(i));
-    const rim = smoothstep01((radial - 0.62) / 0.34);
+    const rim = smoothstep01((radial - 0.7) / 0.5);
     let cr: number;
     let cg: number;
     let cb: number;
-    if (y > 0) {
+    if (y > -squash * 0.2) {
       // The top: gold-green in the high light.
-      cr = 0.6 + rim * 0.1;
-      cg = 0.86;
+      cr = 0.62 + rim * 0.08;
+      cg = 0.88;
       cb = 0.5;
     } else {
       // The underside: deep violet-green, a colour holding shadow.
-      cr = 0.4;
-      cg = 0.46;
-      cb = 0.5;
+      cr = 0.36;
+      cg = 0.34;
+      cb = 0.48;
     }
     // The rim: the sky-through-leaves edge, lifted toward milk.
-    cr += (0.74 - cr) * rim * 0.8;
-    cg += (0.94 - cg) * rim * 0.8;
-    cb += (0.7 - cb) * rim * 0.8;
+    cr += (0.76 - cr) * rim * 0.7;
+    cg += (0.96 - cg) * rim * 0.7;
+    cb += (0.72 - cb) * rim * 0.7;
     colors[i * 3] = cr;
     colors[i * 3 + 1] = cg;
     colors[i * 3 + 2] = cb;
@@ -283,10 +316,13 @@ export function buildVerdant3Canopy(
   };
 
   for (const tree of placed) {
-    const pads = 3 + Math.floor(padRandom.next() * 3);
+    // Round 2: one broad mother pad low over the trunk plus a ring of
+    // smaller satellites — the r1 even-sized pads read as parasols.
+    const pads = 4 + Math.floor(padRandom.next() * 3);
     for (let i = 0; i < pads; i++) {
+      const mother = i === 0;
       const a = padRandom.range(0, Math.PI * 2);
-      const reach = padRandom.range(1.5, 6);
+      const reach = mother ? padRandom.range(0, 1.5) : padRandom.range(2, 5.5);
       const px = tree.x + Math.cos(a) * reach;
       const pz = tree.z + Math.sin(a) * reach;
       // The roof parts over the Sunfall Well — approximate the pad's
@@ -298,9 +334,9 @@ export function buildVerdant3Canopy(
         chunkOf(tree.u),
         px,
         pz,
-        tree.topY + padRandom.signed(1.8),
-        padRandom.range(3.4, 6.6),
-        0.12,
+        tree.topY + (mother ? 0.4 : padRandom.signed(2.2)),
+        mother ? padRandom.range(6, 8.4) : padRandom.range(3, 5.4),
+        0.16,
       );
     }
   }

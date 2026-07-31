@@ -324,14 +324,17 @@ export function buildVerdant3Colonies(crowns: readonly MesaCrown[]): Verdant3Col
   for (const [index, spring] of WELLSPRINGS.entries()) {
     const { x, z } = worldOf(spring.u, spring.v);
     const floor = seabedHeight(x, z);
+    // Round 2: grown and brightened — the r1 columns were invisible at
+    // pose range (a 0.16 m spark at 0.5 opacity is sub-pixel past arm's
+    // length; the verdant-2 mote lesson, at the springs).
     const column = buildParticulateField({
       seed: SEED ^ (0x4301 + index),
-      tint: 0xcfe8dc,
-      count: 60,
+      tint: 0xdcf2e6,
+      count: 120,
       mode: "column",
-      volume: { center: [x, floor + 7, z], size: [spring.radius * 1.1, 14, spring.radius * 1.1] },
-      size: 0.16,
-      opacity: 0.5,
+      volume: { center: [x, floor + 8, z], size: [spring.radius * 1.0, 16, spring.radius * 1.0] },
+      size: 0.32,
+      opacity: 0.6,
     });
     builds.push(column);
     updaters.push((t) => column.update(t));

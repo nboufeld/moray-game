@@ -123,9 +123,12 @@ function bakeDeepPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
 
     // The base key: deep-shade moss, the green leaning toward blue-dark
     // — red cut hard, blue held UP (the province arc's last note).
-    let r = 0.52 - sward * 0.2;
+    // Round 2: red 0.52 → 0.44 and the sward cut deepened — the r1
+    // close pose read the open floor as warm mustard under the sand
+    // wash (the pilot's lesson, relearned in the dark register).
+    let r = 0.44 - sward * 0.18;
     let g = 0.94 - sward * 0.06;
-    let b = 0.66 - sward * 0.04;
+    let b = 0.68 - sward * 0.04;
     if (lichen > 0) {
       r += (0.68 - r) * lichen * 0.7;
       g += (1.0 - g) * lichen * 0.7;
@@ -164,9 +167,9 @@ function bakeDeepPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
     // ground — red stays above green's cut, values stay colours.
     const y = position.getY(i);
     const deep = smoothstep01((-y - 18) / 20);
-    r += (0.56 - r) * deep * 0.45;
-    g += (0.68 - g) * deep * 0.45;
-    b += (0.8 - b) * deep * 0.45;
+    r += (0.48 - r) * deep * 0.5;
+    g += (0.66 - g) * deep * 0.5;
+    b += (0.82 - b) * deep * 0.5;
 
     // The Last Rampart: the disc's fade back to dune level climbs the
     // world's final wall — stacked ledge bands by height, milky crest.

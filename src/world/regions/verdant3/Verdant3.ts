@@ -130,20 +130,26 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // The descent's foot: the Canopy Deep opening in one breath.
   { name: "deep-vista", u: 1322, v: -4, lift: 6.0, atU: 1380, atV: -10, pitch: -0.12 },
   // The Doorwarden: the first pillar portrait, crown and drapes.
-  { name: "doorwarden", u: 1352, v: 20, lift: 4.0, atU: 1334, atV: 40, pitch: 0.18 },
+  // Round 2: backed off — r1 planted the camera face-first into the
+  // column (d ≈ 20 m cannot hold a 30 m pillar).
+  { name: "doorwarden", u: 1360, v: 6, lift: 4.0, atU: 1334, atV: 41, pitch: 0.24 },
   // The Twin Court with the Ray Wheel crossing (settle rides a chunk of
   // the circuit — the wheel's phase is wall-clock, not pose-stable).
   { name: "twin-court", u: 1428, v: -16, lift: 5.0, atU: 1462, atV: -12, pitch: 0.1, settle: 8 },
   // Inside the Sunfall Well's light.
   { name: "sunfall-well", u: 1452, v: -22, lift: 3.0, atU: 1462, atV: -8, pitch: 0.15, settle: 4 },
   // The Wellspring Terrace: bubble columns over the pale pools.
-  { name: "wellsprings", u: 1378, v: -24, lift: 2.4, atU: 1392, atV: -16, pitch: -0.06, settle: 4 },
+  // Round 2: lower and closer — r1 framed the pool as a bare crater.
+  { name: "wellsprings", u: 1380, v: -27, lift: 1.9, atU: 1391, atV: -16, pitch: -0.1, settle: 4 },
   // The Kingpillar from the meadow, the tallest crown in the province.
-  { name: "kingpillar", u: 1500, v: 48, lift: 3.5, atU: 1520, atV: 64, pitch: 0.22 },
-  // Inside the Hollow Mesa: the secret's shaft, glow garden and beam.
-  { name: "hollow-mesa", u: 1416.5, v: -91, lift: 1.4, atU: HOLLOW.u + 1, atV: HOLLOW.v + 1, pitch: 0.3, settle: 6 },
+  // Round 2: backed off (the doorwarden lesson, same frame).
+  { name: "kingpillar", u: 1494, v: 42, lift: 3.5, atU: 1520, atV: 65, pitch: 0.26 },
+  // At the Hollow Mesa's mouth, looking in through the curtain's part:
+  // the glow garden, the oculus beam, the shaft rising. Round 2: the r1
+  // pose stood inside the chamber staring at eight metres of wall.
+  { name: "hollow-mesa", u: 1410.5, v: -83, lift: 1.6, atU: HOLLOW.u, atV: HOLLOW.v, pitch: 0.12, settle: 6 },
   // Along the fallen causeway, the swim-under at its chin.
-  { name: "fallen-causeway", u: 1536, v: -50, lift: 3.0, atU: 1560, atV: -30, pitch: 0.02 },
+  { name: "fallen-causeway", u: 1540, v: -56, lift: 4.0, atU: 1566, atV: -28, pitch: 0.0 },
   // The Province's End: the painted horizon that closes the line.
   { name: "provinces-end", u: 1600, v: -12, lift: 2.6, atU: 1650, atV: 0, pitch: 0.08 },
   // ── The close set (2–4 m, the owner's judged distance) ──

@@ -15,7 +15,7 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 import { fbm } from "../../../rendering/ProceduralTexture";
 import { Random, SEEDS } from "../../../util/Random";
 import { smoothstep01 } from "./Verdant3Shared";
-import { CENTER_X, CENTER_Z, VERDANT3_SLOT } from "./Verdant3Terrain";
+import { CENTER_X, CENTER_Z, VERDANT3_SLOT, worldOf } from "./Verdant3Terrain";
 
 /**
  * THE PROVINCE'S END — the Canopy Deep's painted distance, and the
@@ -44,10 +44,14 @@ interface CliffLayer {
 // Tops clear the rampart sightline from the sunken country (the
 // verdant-2 lesson: rings inked too faint and too low read as a wall of
 // fog). Farther rings stand taller — the canopy country climbs away.
+// Round 2: tops raised 12/19/26 → 20/30/40 — from the Province's End
+// rise (y ≈ −26, ~60 m inside the rampart crest) the r1 skyline sat
+// entirely BELOW the rampart's 0.41 rad sightline and the horizon
+// rendered empty.
 const LAYERS: readonly CliffLayer[] = [
-  { radius: 246, meanTop: 12, stepDepth: 5.5, fade: 0.22 },
-  { radius: 266, meanTop: 19, stepDepth: 5, fade: 0.42 },
-  { radius: 288, meanTop: 26, stepDepth: 4.5, fade: 0.6 },
+  { radius: 246, meanTop: 20, stepDepth: 5.5, fade: 0.22 },
+  { radius: 266, meanTop: 30, stepDepth: 5, fade: 0.42 },
+  { radius: 288, meanTop: 40, stepDepth: 4.5, fade: 0.6 },
 ];
 
 const SEGMENTS = 220;
@@ -113,11 +117,29 @@ export function buildVerdant3Distance(): { meshes: (Mesh | InstancedMesh)[] } {
     readonly fade: number;
     readonly hMin: number;
     readonly hMax: number;
+    /** Restrict placement to this bearing sector instead of the ring. */
+    readonly sector?: { readonly at: number; readonly half: number };
   }
   const bands: readonly CardBand[] = [
-    { rFrom: 240, rTo: 258, count: 18, fade: 0.26, hMin: 30, hMax: 44 },
-    { rFrom: 262, rTo: 286, count: 14, fade: 0.45, hMin: 34, hMax: 48 },
+    // Round 2: heights raised so the crowns break the rampart line, and
+    // a NEAR sector cluster added on the spoke's own bearing (the
+    // verdant-2 Far Balcony device: the ring bands alone all hide below
+    // the sightline from inside the bowl).
+    { rFrom: 240, rTo: 258, count: 18, fade: 0.26, hMin: 40, hMax: 56 },
+    { rFrom: 262, rTo: 286, count: 14, fade: 0.45, hMin: 44, hMax: 62 },
+    {
+      rFrom: 168,
+      rTo: 196,
+      count: 8,
+      fade: 0.3,
+      hMin: 40,
+      hMax: 52,
+      sector: { at: VERDANT3_SLOT.azimuth, half: 0.55 },
+    },
   ];
+  // The Province's End balcony keeps its clear stage: no near card may
+  // crowd the last stand itself.
+  const balcony = worldOf(1608, -8);
   const gapAt = VERDANT3_SLOT.azimuth + Math.PI;
   for (const [band, spec] of bands.entries()) {
     const material = new MeshBasicMaterial({
@@ -136,17 +158,20 @@ export function buildVerdant3Distance(): { meshes: (Mesh | InstancedMesh)[] } {
     let placed = 0;
     let guard = 0;
     while (placed < spec.count && guard++ < 400) {
-      const theta = random.range(0, Math.PI * 2);
+      const theta = spec.sector
+        ? spec.sector.at + random.signed(spec.sector.half)
+        : random.range(0, Math.PI * 2);
       const inkJitter = random.range(0.86, 1.14);
       if (angleBetween(theta, gapAt) < GAP_HALF + 0.1) {
         continue;
       }
       const r = random.range(spec.rFrom, spec.rTo);
-      dummy.position.set(
-        CENTER_X + Math.cos(theta) * r,
-        FOOT + 2,
-        CENTER_Z + Math.sin(theta) * r,
-      );
+      const px = CENTER_X + Math.cos(theta) * r;
+      const pz = CENTER_Z + Math.sin(theta) * r;
+      if (spec.sector && Math.hypot(px - balcony.x, pz - balcony.z) < 45) {
+        continue;
+      }
+      dummy.position.set(px, FOOT + 2, pz);
       dummy.rotation.set(0, random.range(0, Math.PI), random.signed(0.03));
       dummy.scale.set(
         random.range(1.0, 1.6),
@@ -186,9 +211,11 @@ export function buildVerdant3Distance(): { meshes: (Mesh | InstancedMesh)[] } {
     mesh.castShadow = false;
     mesh.receiveShadow = false;
     const theta = VERDANT3_SLOT.azimuth;
+    // Round 2: the Mother's foot lifted from the curtain floor — at
+    // FOOT+2 her whole 57 m stood below the rampart sightline.
     mesh.position.set(
       CENTER_X + Math.cos(theta) * 252,
-      FOOT + 2,
+      -18,
       CENTER_Z + Math.sin(theta) * 252,
     );
     mesh.rotation.y = -theta + Math.PI / 2;
