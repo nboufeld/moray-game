@@ -473,11 +473,13 @@ function buildCurtains(falls: readonly Sandfall[], texture: DataTexture): Mesh {
       // The bell closes the side edges; the envelope takes both ends, so
       // no edge of the ribbon ever reads as a cut.
       const bell = Math.pow(Math.max(0, Math.cos((u - 0.5) * Math.PI)), 1.3);
-      const envelope = smoothstep01((v - 0.02) / 0.16) * (1 - smoothstep01((v - 0.88) / 0.12));
-      // r2: peak alpha 0.62 → 0.5 (capped 0.45) and the lift eased — at
+      // r3: the lip dissolves earlier (0.88 → 0.78) — the last blocky
+      // remnant lived where the curtain met the dune lip at full alpha.
+      const envelope = smoothstep01((v - 0.02) / 0.16) * (1 - smoothstep01((v - 0.78) / 0.2));
+      // r2: peak alpha 0.62 → 0.5 (capped 0.42) and the lift eased — at
       // the old register the near-white veil saturated over the bright
       // backdrop and the texture's clumps read as bright blocks again.
-      const alpha = Math.min(0.45, bell * envelope * 0.5);
+      const alpha = Math.min(0.42, bell * envelope * 0.5);
       const lift = 0.78 + 0.26 * v;
       colors[i * 4] = CURTAIN_CREAM.r * lift;
       colors[i * 4 + 1] = CURTAIN_CREAM.g * lift;

@@ -66,7 +66,8 @@ function wingPoses() {
     // The doorway pose: standing over the uplift bed, reading the door.
     // r2: the ruins camera slides to the west flank — at (42.2, +1.4) it
     // stood against the half-buried round doorway's torus.
-    const doorSpot = id === "ruins-terrace" ? [40.5, -2.6] : [42.2, 1.4];
+    // r3: another metre west so the raked litter fills the near field.
+    const doorSpot = id === "ruins-terrace" ? [40.2, -3.4] : [42.2, 1.4];
     const [dx, dz] = polar(azimuth, doorSpot[0], doorSpot[1]);
     poses.push({
       name: `WING-${id}-door`,
@@ -93,31 +94,30 @@ function routePoses() {
     // r2: beside the rim loop rather than 13 m behind it — at r 18.5 the
     // fish were sub-pixel (the verdant r1 miss). The camera stands just
     // off the outbound lane, watching the gate the commute threads.
-    const [bx, bz] = polar(azimuth, 24.5, -4.6);
+    const [bx, bz] = polar(azimuth, 24.0, -4.6);
     const [gbx, gbz] = polar(azimuth, 31.2);
     poses.push({
       name: `ROUTE-${id}-bowl`,
-      // Raised to hold the whole rim loop AND the sill line in frame —
-      // the golden r5 lesson: a file that cannot leave the frame needs
-      // no phase luck.
-      position: [bx, 5.0, bz],
+      // Raised to hold the whole rim loop AND see over the sill deep
+      // into the corridor — the golden r5 lesson: a file that cannot
+      // leave the frame needs no phase luck.
+      position: [bx, 6.0, bz],
       yaw: yawToward(gbx - bx, gbz - bz),
-      pitch: -0.14,
+      pitch: -0.19,
       settle: 6,
     });
-    // From beside the doorway, looking back down the corridor toward the
-    // gate and the bowl water beyond — most of the loop in one look.
-    // r2: the west flank (the r1 east stands crowded the kelp columns
-    // and the pearl arch); ruins keeps a step more clearance from its
-    // standing colonnade.
-    const lateral = id === "calamity" ? -3.2 : -3.6;
-    const [wx, wz] = polar(azimuth, 44.5, lateral);
+    // r3: from INSIDE the swim corridor beside the doorway, looking back
+    // down the lane toward the gate — the corridor is the one lane every
+    // wing law keeps open, and the route's out-and-back legs pass either
+    // side of the camera, so most of the loop is in frame.
+    const floorY = { verdant: -2.6, golden: -2.4, pale: -1.6, smoking: -4.6, calamity: -3.8 }[id];
+    const [wx, wz] = polar(azimuth, 44.2, -1.2);
     const [gx, gz] = polar(azimuth, 30.5);
     poses.push({
       name: `ROUTE-${id}-wing`,
-      position: [wx, id === "calamity" ? -3.0 : -2.2, wz],
+      position: [wx, floorY, wz],
       yaw: yawToward(gx - wx, gz - wz),
-      pitch: -0.06,
+      pitch: -0.04,
       settle: 6,
     });
   }
