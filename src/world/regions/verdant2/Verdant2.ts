@@ -170,6 +170,24 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "mistfall-below", u: 1034, v: 20, lift: 4.5, atU: 1005.5, atV: 12, pitch: 0.18, settle: 4 },
   // The Far Balcony: balustrade, the deep, the painted cliff-lines.
   { name: "far-balcony", u: 1044, v: 38, lift: 2.2, atU: 1090, atV: 52, pitch: 0.06 },
+  // ─── R12.3 close-range poses — camera 2–4 m from its subject, judged
+  // hardest: the fill at the distance the owner judged it ("half-cut
+  // grass"). Each stands low and pitches down into a dressed floor. ─────────
+  // The threshold road's shoulder: milky→celadon blades + the new
+  // road-edge stands, at the height a swimming diver actually passes.
+  { name: "close-threshold-road", u: 700, v: 3, lift: 1.5, atU: 704, atV: 5, pitch: -0.3 },
+  // On a stair tread looking up at the riser: tread blades, the strip
+  // rows and drape bank on the face, wine scrub at the lip corner.
+  { name: "close-stair-tread", u: 806, v: -3, lift: 1.6, atU: 801, atV: -5, pitch: -0.24 },
+  // In the garden terraces among the tread meadow: blades, frond
+  // rosettes, berry bushes, split stone.
+  { name: "close-garden-tread", u: 898, v: -34, lift: 1.5, atU: 902, atV: -38, pitch: -0.26 },
+  // The Fern Vault's understory in the half-light (outside the inner
+  // shadow rest): floor rosettes, the knee-high storey, a giant's foot.
+  { name: "close-vault-floor", u: 912, v: -77, lift: 1.4, atU: 907, atV: -81, pitch: -0.2 },
+  // The basin's south flank: silt-key fronds, thigh-high blades, the
+  // rose scrub with its buds — the sweep's hardest-won ground, up close.
+  { name: "close-basin-silt", u: 1052, v: -62, lift: 1.5, atU: 1056, atV: -67, pitch: -0.26 },
 ];
 
 function buildPoses(): RegionCapturePose[] {

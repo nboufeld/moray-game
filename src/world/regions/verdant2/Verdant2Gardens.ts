@@ -366,6 +366,117 @@ export function buildVerdant2Gardens(): Verdant2GardensBuild {
     }
   }
 
+  // ─── R12.3 headroom spend (fresh streams, appended after every existing
+  // draw — the reroll fence holds; these only APPEND parts to the merged
+  // chunks) ─────────────────────────────────────────────────────────────────
+
+  // Denser riser-face garden strips: a second interleaved row on the
+  // stair risers (offset half a spacing) and on the garden contours —
+  // the vertical faces are the close poses' whole subject.
+  const stripRandom2 = new Random(SEED ^ 0xf419);
+  for (let step = 0; step < 8; step++) {
+    const lipU = stepFootU(step) - 2.6;
+    const half = stairChannelHalf(lipU) + 1;
+    for (
+      let v = stairChannelCenter(lipU) - half + 0.55;
+      v <= stairChannelCenter(lipU) + half;
+      v += 1.1
+    ) {
+      growRiserStrip(chunks["strip-pass"]!, stripRandom2, lipU + 0.5, v + stripRandom2.signed(0.3));
+    }
+  }
+  const stripGardenRandom2 = new Random(SEED ^ 0xf41a);
+  for (const edge of [10, 44, 82]) {
+    for (let k = 0; k < 110; k++) {
+      const v = -78 + (k + 0.5) * 1.42 + stripGardenRandom2.signed(0.4);
+      const u = contourU(edge, v);
+      if (u === null) {
+        continue;
+      }
+      if (cisternWeight(u, v) > 0.35 || vaultWeight(u, v) > 0.4 || mistfallDrop(u - 4, v) > 0.1) {
+        continue;
+      }
+      const chunk = v < -10 ? chunks["strip-west"]! : chunks["strip-east"]!;
+      growRiserStrip(chunk, stripGardenRandom2, u + 0.1, v);
+    }
+  }
+
+  // Richer curtain layering: a second garden-contour run hung between the
+  // fill's anchors (the contours were still open lacework at close
+  // range), an outer veil on the grotto, and heavier low-stair runs.
+  const layerRandom = new Random(SEED ^ 0xf41c);
+  for (const [t, edge] of [10, 44, 82].entries()) {
+    for (let k = 0; k < 48; k++) {
+      const v = -76 + k * 3.2 + layerRandom.signed(1.1);
+      const u = contourU(edge, v);
+      if (u === null) {
+        continue;
+      }
+      if (cisternWeight(u, v) > 0.35 || vaultWeight(u, v) > 0.4 || mistfallDrop(u - 4, v) > 0.1) {
+        continue;
+      }
+      const chunk = v < -10 ? chunks.west! : chunks.east!;
+      growCurtain(
+        chunk,
+        layerRandom,
+        u - 0.7,
+        v,
+        layerRandom.range(4.6, 8.6),
+        t % 2 === 0 ? VIRIDIAN_TONES : CURTAIN_TONES,
+      );
+    }
+  }
+  const veilRandom = new Random(SEED ^ 0xf41d);
+  for (let i = 0; i < 6; i++) {
+    const v = 26 + (i - 2.5) * 1.35;
+    if (Math.abs(v - 24.4) < 1.1) {
+      continue; // the Warden's part stays open
+    }
+    growCurtain(
+      chunks.east!,
+      veilRandom,
+      889.9 + veilRandom.signed(0.4),
+      v,
+      veilRandom.range(3.8, 5.6),
+      VIRIDIAN_TONES,
+      4.2,
+    );
+  }
+  const stairLayerRandom = new Random(SEED ^ 0xf41e);
+  for (let step = 3; step < 8; step++) {
+    const lipU = stepFootU(step) - 3.1;
+    for (let i = 0; i < 4; i++) {
+      const v =
+        stairChannelCenter(lipU) + stairLayerRandom.signed(stairChannelHalf(lipU) + 2.5);
+      growCurtain(
+        chunks.pass!,
+        stairLayerRandom,
+        lipU + stairLayerRandom.signed(0.8),
+        v,
+        stairLayerRandom.range(4.4, 7.2),
+        VIRIDIAN_TONES,
+      );
+    }
+  }
+
+  // The vault's understory deepens: eight more low ferns drifted toward
+  // the mouth (the inner shadow keeps its rest by the same gate the
+  // carpets use — these stay outside r 4 of the heart by construction).
+  const understoryRandom = new Random(SEED ^ 0xf41b);
+  for (let i = 0; i < 8; i++) {
+    const theta = understoryRandom.range(0, Math.PI * 2);
+    const d = 5 + Math.sqrt(understoryRandom.next()) * 15;
+    growFern(
+      chunks.west!,
+      understoryRandom,
+      FERN_VAULT.u + Math.cos(theta) * d,
+      FERN_VAULT.v + Math.sin(theta) * d,
+      understoryRandom.range(1.4, 2.4),
+      FERN_TONES,
+      contacts,
+    );
+  }
+
   // ─── The meshes ──────────────────────────────────────────────────────────
   const meshes: (Mesh | InstancedMesh)[] = [];
   const sunView = createSunViewUniform();

@@ -43,6 +43,16 @@ import {
  * pins. The protected rests (MASTER §1.2) are gated out by construction:
  * the Cistern bowl interior, the Fern Vault's inner shadow and the basin
  * south pocket (1060, −30) never pass a gate below.
+ *
+ * R12.3 QUALITY RE-PASS: every swimmable carpet family swaps its far-tier
+ * `"card"`/`"tuft"` profile for the kit's authored `"blade"`/`"frond"`
+ * (the owner's "half-cut grass" verdict answered with the bowl meadow's
+ * craft) — the swap re-rolls those families' own buffers, which is the
+ * point and is honest; landmarks and every other system stay
+ * byte-unchanged. Bushes opt into `fronds`/`accents`, litter runs take
+ * `grade`, and the ×3 headroom is spent on new road-edge stands, split
+ * stone, deeper vault understory and richer curtains — all on fresh
+ * `^ 0xf1xx/0xf2xx/0xf4xx` constants appended after every existing draw.
  */
 
 const SEED = SEEDS.regionVerdant2;
@@ -133,10 +143,18 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
   // southwest-approach beds — targeted cover where the sweep actually
   // failed buys more than the same triangles spread thin everywhere.
   const heart = worldOf(940, 0);
+  // R12.3: card → blade (the whole-country floor is the surface the
+  // owner judged; 4-tri wedges at 1 per 8 m² were the verdict's exact
+  // subject). Count 4000 → 2800 across two rounds pays the profile's
+  // 12× bill and funds the zone beds where the close poses stand;
+  // looseShare up so a random view cone always owns a clump (F-R2).
+  // Round 2: every deep-country key lifted a value step — the r1
+  // captures proved the swapped families render a full value darker
+  // than their hexes under this mood (the v1 re-pass lesson, pre-paid).
   builds.push(
     buildCarpetField({
       seed: SEED ^ 0xf10a,
-      palette: { base: 0x6cae7c, tip: 0x93c481, shade: 0x548a64 },
+      palette: { base: 0x7cbe8c, tip: 0xa4d492, shade: 0x639a72 },
       area: { center: [heart.x, heart.z], radius: 200 },
       gate: spokeGate((u, v) => {
         if (onFallFace(u, v)) {
@@ -145,9 +163,11 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
         return 0.85 * drift(u, v);
       }),
       ground: seabedHeight,
-      count: 4000,
-      profile: "card",
-      size: [0.22, 0.5],
+      count: 2800,
+      profile: "blade",
+      size: [0.3, 0.6],
+      sunGlow: true,
+      looseShare: 0.45,
     }),
   );
   builds.push(
@@ -162,15 +182,18 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       count: 700,
       shapeSet: "pebble",
       size: [0.08, 0.2],
+      grade: 0.55,
     }),
   );
   // The country's understory (round 4): knee-high tuft drifts and a
   // sparse bush scatter riding the same drift field — the mid-scale
   // silhouettes the open slopes had none of (the r3 sweep's flat banks).
+  // R12.3: tuft → blade, grown to knee-thigh — the stands the open
+  // country reads at swimming distance.
   builds.push(
     buildCarpetField({
       seed: SEED ^ 0xf10c,
-      palette: { base: 0x5fae74, tip: 0x93c481, shade: 0x4a7a5c },
+      palette: { base: 0x70be84, tip: 0xa4d492, shade: 0x588c6a },
       area: { center: [heart.x, heart.z], radius: 200 },
       gate: spokeGate((u, v) => {
         if (onFallFace(u, v)) {
@@ -181,15 +204,16 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       ground: seabedHeight,
       // Round 9: 870 → 840 helps fund the approach bush cluster.
       count: 840,
-      profile: "tuft",
-      size: [0.28, 0.55],
+      profile: "blade",
+      size: [0.4, 0.8],
       swayAmp: 0.06,
+      sunGlow: true,
     }),
   );
   builds.push(
     buildBushBank({
       seed: SEED ^ 0xf306,
-      palette: { base: 0x6fae5f, tip: 0x9ac96f, shade: 0x44703f },
+      palette: { base: 0x6fae5f, tip: 0x9ac96f, shade: 0x44703f, accent: 0xc4788a },
       area: { center: [heart.x, heart.z], radius: 200 },
       gate: spokeGate((u, v) => {
         if (onFallFace(u, v)) {
@@ -202,6 +226,8 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       ground: seabedHeight,
       count: 40,
       scale: 0.9,
+      fronds: 8,
+      accents: 4,
     }),
   );
 
@@ -209,33 +235,38 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
   // Milky-crest cards sampling verdant-1's Falling Edge multipliers
   // (0.98/1.02/0.92) at u < 700, handing to this region's own celadon by
   // u 740 — the doctrine's transition rule as two crossfading carpets.
+  // R12.3: both handover carpets card → blade — the road in is judged at
+  // swimming height the whole way, and the crossfade reads better when
+  // both sides of it are plants rather than chips.
   builds.push(
     buildCarpetField({
       seed: SEED ^ 0xf101,
-      palette: { base: 0xdfe2c6, tip: 0xefe9d2, shade: 0xa3ab92 },
+      palette: { base: 0xdfe2c6, tip: 0xefe9d2, shade: 0x8fa682 },
       area: spineRoad(636, 756, 30),
       gate: spokeGate((u, v) => {
         const inChannel = 1 - smoothstep01((Math.abs(v - stairChannelCenter(u)) - 9) / 8);
         return (1 - smoothstep01((u - 700) / 40)) * (0.4 + 0.6 * inChannel);
       }),
       ground: seabedHeight,
-      count: 800,
-      profile: "card",
-      size: [0.16, 0.34],
+      count: 950,
+      profile: "blade",
+      size: [0.2, 0.4],
       swayAmp: 0.05,
+      sunGlow: true,
     }),
   );
   builds.push(
     buildCarpetField({
       seed: SEED ^ 0xf102,
-      palette: { base: 0x8fd0ab, tip: 0xb2dfbe, shade: 0x5f9c80 },
+      palette: { base: 0x8fd0ab, tip: 0xb2dfbe, shade: 0x6dac8e },
       area: spineRoad(690, 780, 32),
       gate: spokeGate((u) => smoothstep01((u - 700) / 40)),
       ground: seabedHeight,
-      count: 600,
-      profile: "card",
-      size: [0.16, 0.36],
+      count: 750,
+      profile: "blade",
+      size: [0.2, 0.42],
       swayAmp: 0.05,
+      sunGlow: true,
     }),
   );
   // Shell-pebble runs drifted along the threshold road's sides.
@@ -255,13 +286,15 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       count: 400,
       shapeSet: "pebble",
       size: [0.06, 0.16],
+      grade: 0.5,
     }),
   );
-  // Pale bushes marking the waymark rhythm.
+  // Pale bushes marking the waymark rhythm. R12.3: pale buds on the
+  // crowns — the waymarks gain the close-range read the rhythm deserves.
   builds.push(
     buildBushBank({
       seed: SEED ^ 0xf301,
-      palette: { base: 0xb9c4a4, tip: 0xd8dcba, shade: 0x7a8570 },
+      palette: { base: 0xb9c4a4, tip: 0xd8dcba, shade: 0x7a8570, accent: 0xe3d5ae },
       area: spineRoad(650, 745, 26),
       gate: spokeGate((u, v) => {
         const offside = smoothstep01((Math.abs(v - stairChannelCenter(u)) - 4) / 4);
@@ -269,32 +302,37 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       }),
       ground: seabedHeight,
       count: 10,
+      fronds: 5,
+      accents: 3,
     }),
   );
 
   // ─── The Emerald Stair: tread moss + wine bushes at the lip corners ──────
+  // R12.3: card → blade — the treads are where the stair pose and the
+  // close pose both stand (r2: count restored to 1800 and the key
+  // lifted; concentration over looseShare, the treads read as clumps).
   builds.push(
     buildCarpetField({
       seed: SEED ^ 0xf103,
-      palette: { base: 0x5fb878, tip: 0x9ecb72, shade: 0x487a58 },
+      palette: { base: 0x70c688, tip: 0xaeda82, shade: 0x568a66 },
       area: spineRoad(742, 850, 34),
       gate: spokeGate((u, v) => {
         const inChannel = 1 - smoothstep01((Math.abs(v - stairChannelCenter(u)) - stairChannelHalf(u) + 1) / 4);
         return 0.9 * inChannel;
       }),
       ground: seabedHeight,
-      // Round 9: 1900 → 1800 helps fund the approach bush cluster; the
-      // stair keeps its read from the stones, the spill shoal and the motes.
       count: 1800,
-      profile: "card",
-      size: [0.2, 0.42],
+      profile: "blade",
+      size: [0.24, 0.48],
       swayAmp: 0.05,
+      sunGlow: true,
     }),
   );
+  // Wine lip-corner scrub: thorny, not leafy — sparse fronds, more knots.
   builds.push(
     buildBushBank({
       seed: SEED ^ 0xf302,
-      palette: { base: 0x84525f, tip: 0xa8707a, shade: 0x4f3a52 },
+      palette: { base: 0x84525f, tip: 0xa8707a, shade: 0x4f3a52, accent: 0xc27a88 },
       area: spineRoad(748, 848, 30),
       gate: spokeGate((u, v) => {
         // Lip corners: near a step foot, off the channel's centre line.
@@ -308,6 +346,8 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       ground: seabedHeight,
       count: 20,
       scale: 0.8,
+      fronds: 3,
+      accents: 5,
     }),
   );
 
@@ -323,34 +363,38 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
     }
     return u >= 836 && u <= 995 && v >= -85 && v <= 70 ? 1 : 0;
   };
+  // R12.3: the garden treads are the region's heart and its closest-
+  // judged ground — card → blade on the tread carpet, tuft → frond on the
+  // celadon layer (the hanging gardens are exactly where frond rosettes
+  // belong), berries on the garden bushes.
   builds.push(
     buildCarpetField({
       seed: SEED ^ 0xf104,
-      palette: { base: 0x63c084, tip: 0x9ecb72, shade: 0x44805c },
+      palette: { base: 0x74ce94, tip: 0xaeda82, shade: 0x529068 },
       area: disc(910, -8, 92),
       gate: spokeGate(
         (u, v) => gardensGate(u, v) * (0.5 + 0.5 * (1 - gardenTerraces(u, v).riser)) * drift(u, v),
       ),
       ground: seabedHeight,
-      // Round 8: 2400 → 2300 (with the vault's 100) funds the south bush
-      // cluster; the gardens keep their read from the terraces and turtles.
       count: 2300,
-      profile: "card",
-      size: [0.2, 0.44],
+      profile: "blade",
+      size: [0.24, 0.5],
       swayAmp: 0.05,
+      sunGlow: true,
     }),
   );
   builds.push(
     buildCarpetField({
       seed: SEED ^ 0xf105,
-      palette: { base: 0x84cfab, tip: 0xa9dfc0, shade: 0x5f9c80 },
+      palette: { base: 0x92dcb8, tip: 0xb9edd0, shade: 0x6dac8e },
       area: disc(890, 20, 86),
       gate: spokeGate((u, v) => gardensGate(u, v) * 0.8 * drift(u + 200, v)),
       ground: seabedHeight,
-      count: 1000,
-      profile: "tuft",
-      size: [0.2, 0.42],
+      count: 1200,
+      profile: "frond",
+      size: [0.24, 0.46],
       swayAmp: 0.06,
+      sunGlow: true,
     }),
   );
   // Round 2: moss-toned and smaller — the round-1 drift read as pale
@@ -365,33 +409,40 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       count: 420,
       shapeSet: "pebble",
       size: [0.06, 0.15],
+      grade: 0.5,
     }),
   );
   builds.push(
     buildBushBank({
       seed: SEED ^ 0xf303,
-      palette: { base: 0x6fae5f, tip: 0x9ac96f, shade: 0x44703f },
+      palette: { base: 0x6fae5f, tip: 0x9ac96f, shade: 0x44703f, accent: 0xc4788a },
       area: disc(905, -10, 92),
       gate: spokeGate((u, v) => gardensGate(u, v)),
       ground: seabedHeight,
       count: 60,
       scale: 0.9,
+      fronds: 10,
+      accents: 6,
     }),
   );
 
   // ─── The Fern Vault: deep celadon floor + fern litter ────────────────────
   // The stillness gate keeps the inner shadow bare; the half-light's
   // value gradient is baked in the ground paint (Verdant2Ground).
+  // R12.3: card → frond — a fern vault's floor is rosettes by name. The
+  // half-light register keeps sunGlow off; the value lift comes from the
+  // palette (v1 re-pass r1: under a dim sun small fronds drop toward
+  // silhouette, so the base and tip both step up).
   builds.push(
     buildCarpetField({
       seed: SEED ^ 0xf106,
-      palette: { base: 0x4f8a63, tip: 0x74b47e, shade: 0x51446a },
+      palette: { base: 0x68ac7c, tip: 0x92d49a, shade: 0x51446a },
       area: disc(FERN_VAULT.u, FERN_VAULT.v, 26),
       gate: spokeGate((u, v) => smoothstep01((vaultWeight(u, v) - 0.18) / 0.3)),
       ground: seabedHeight,
-      count: 900,
-      profile: "card",
-      size: [0.18, 0.36],
+      count: 1050,
+      profile: "frond",
+      size: [0.22, 0.44],
     }),
   );
   builds.push(
@@ -404,6 +455,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       count: 400,
       shapeSet: "shard",
       size: [0.08, 0.24],
+      grade: 0.6,
     }),
   );
 
@@ -411,7 +463,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
   builds.push(
     buildCarpetField({
       seed: SEED ^ 0xf107,
-      palette: { base: 0x6cbc7c, tip: 0x9ecb72, shade: 0x4c7a5e },
+      palette: { base: 0x7cca8c, tip: 0xaeda82, shade: 0x5a8a6c },
       area: disc(996, 8, 34),
       gate: spokeGate((u, v) => {
         const beforeLip = 1 - smoothstep01((u - (mistfallLipU(v) - 1)) / 2);
@@ -419,33 +471,40 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
         return beforeLip * (0.3 + 0.7 * offFall) * smoothstep01((u - 975) / 8);
       }),
       ground: seabedHeight,
-      count: 800,
-      profile: "card",
-      size: [0.15, 0.33],
+      count: 700,
+      profile: "blade",
+      size: [0.2, 0.4],
       swayAmp: 0.05,
+      sunGlow: true,
     }),
   );
+  // R12.3: the basin silt blooms go frond (rosettes standing off the
+  // violet floor), count 1900 → 1400 against the profile bill, and the
+  // key lifts a half step — the deep families sat a value too close to
+  // their own ground under the misty light.
   builds.push(
     buildCarpetField({
       seed: SEED ^ 0xf108,
-      palette: { base: 0x4e7a62, tip: 0x6a9a78, shade: 0x51446a },
+      palette: { base: 0x699a7c, tip: 0x8cbb96, shade: 0x5e5480 },
       area: disc(1046, 8, 52),
       gate: spokeGate((u, v) => mistfallDrop(u, v) * (u > 1008 ? 1 : 0) * drift(u, v)),
       ground: seabedHeight,
-      count: 1900,
-      profile: "card",
-      size: [0.2, 0.42],
+      count: 1400,
+      profile: "frond",
+      size: [0.24, 0.46],
     }),
   );
   builds.push(
     buildBushBank({
       seed: SEED ^ 0xf304,
-      palette: { base: 0x84525f, tip: 0xa8707a, shade: 0x4f3a52 },
+      palette: { base: 0x84525f, tip: 0xa8707a, shade: 0x4f3a52, accent: 0xc27a88 },
       area: disc(1046, 6, 46),
       gate: spokeGate((u, v) => (mistfallDrop(u, v) > 0.9 && u > 1014 ? 0.8 : 0)),
       ground: seabedHeight,
       count: 12,
       scale: 0.85,
+      fronds: 4,
+      accents: 5,
     }),
   );
 
@@ -465,13 +524,14 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
   builds.push(
     buildCarpetField({
       seed: SEED ^ 0xf10b,
-      palette: { base: 0x4e7a62, tip: 0x6a9a78, shade: 0x51446a },
+      palette: { base: 0x699a7c, tip: 0x8cbb96, shade: 0x5e5480 },
       area: disc(1082, 42, 52),
       gate: sectorGate,
       ground: seabedHeight,
-      count: 1300,
-      profile: "card",
-      size: [0.2, 0.42],
+      count: 900,
+      profile: "frond",
+      size: [0.24, 0.46],
+      looseShare: 0.4,
     }),
   );
   builds.push(
@@ -484,17 +544,20 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       count: 260,
       shapeSet: "pebble",
       size: [0.08, 0.24],
+      grade: 0.5,
     }),
   );
   builds.push(
     buildBushBank({
       seed: SEED ^ 0xf305,
-      palette: { base: 0x84525f, tip: 0xa8707a, shade: 0x4f3a52 },
+      palette: { base: 0x84525f, tip: 0xa8707a, shade: 0x4f3a52, accent: 0xc27a88 },
       area: disc(1082, 44, 44),
       gate: sectorGate,
       ground: seabedHeight,
       count: 10,
       scale: 0.85,
+      fronds: 4,
+      accents: 5,
     }),
   );
 
@@ -516,31 +579,32 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
   builds.push(
     buildCarpetField({
       seed: SEED ^ 0xf10d,
-      palette: { base: 0x4e7a62, tip: 0x6a9a78, shade: 0x51446a },
+      palette: { base: 0x699a7c, tip: 0x8cbb96, shade: 0x5e5480 },
       area: disc(1060, -80, 55),
       gate: southFlankGate,
       ground: seabedHeight,
       // Round 8: 750 → 500 funds the second bush bank — by this bed's own
       // r6 lesson the ankle cards are the least visible thing on the flank.
-      count: 500,
-      profile: "card",
-      size: [0.2, 0.42],
+      count: 800,
+      profile: "blade",
+      size: [0.24, 0.48],
+      looseShare: 0.5,
     }),
   );
   builds.push(
     buildCarpetField({
       seed: SEED ^ 0xf10e,
-      palette: { base: 0x5fae74, tip: 0x93c481, shade: 0x4a7a5c },
+      palette: { base: 0x70be84, tip: 0xa4d492, shade: 0x588c6a },
       area: disc(1060, -80, 55),
       gate: southFlankGate,
       ground: seabedHeight,
       count: 120,
-      profile: "tuft",
+      profile: "blade",
       // Round 7: knee-high → thigh-high. Frame 10 looks down this flank
       // from ~7 m up; the 0.28–0.55 tufts read as specks at that range
-      // while the same tufts pass at ground level (frame 02). Same count,
-      // same stream, zero triangle cost.
-      size: [0.36, 0.72],
+      // while the same tufts pass at ground level (frame 02). R12.3:
+      // the thigh-high band keeps its envelope on the blade profile.
+      size: [0.42, 0.8],
       swayAmp: 0.06,
     }),
   );
@@ -554,6 +618,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       count: 100,
       shapeSet: "pebble",
       size: [0.08, 0.24],
+      grade: 0.5,
     }),
   );
   // Round 6: mid-scale silhouettes for the flank — from the sweep's 4–7 m
@@ -567,12 +632,14 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
   builds.push(
     buildBushBank({
       seed: SEED ^ 0xf307,
-      palette: { base: 0xa8697a, tip: 0xd08e9a, shade: 0x5c4260 },
+      palette: { base: 0xa8697a, tip: 0xd08e9a, shade: 0x5c4260, accent: 0xe8b6c0 },
       area: disc(1060, -80, 50),
       gate: southFlankGate,
       ground: seabedHeight,
       count: 12,
       scale: 1.2,
+      fronds: 6,
+      accents: 5,
     }),
   );
   // Round 8: the position probe showed WHY the flank bushes never appear
@@ -584,13 +651,15 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
   builds.push(
     buildBushBank({
       seed: SEED ^ 0xf308,
-      palette: { base: 0xa8697a, tip: 0xd08e9a, shade: 0x5c4260 },
+      palette: { base: 0xa8697a, tip: 0xd08e9a, shade: 0x5c4260, accent: 0xe8b6c0 },
       area: disc(1058, -72, 28),
       gate: southFlankGate,
       ground: seabedHeight,
       count: 12,
       lobes: 4,
       scale: 1.1,
+      fronds: 6,
+      accents: 5,
     }),
   );
 
@@ -609,27 +678,30 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
   builds.push(
     buildCarpetField({
       seed: SEED ^ 0xf10f,
-      palette: { base: 0x6cae7c, tip: 0x93c481, shade: 0x548a64 },
+      palette: { base: 0x7cbe8c, tip: 0xa4d492, shade: 0x639a72 },
       area: disc(820, -100, 55),
       gate: approachGate,
       ground: seabedHeight,
       // Round 9: 500 → 400 helps fund the approach bush cluster below.
       count: 400,
-      profile: "card",
-      size: [0.22, 0.5],
+      profile: "blade",
+      size: [0.28, 0.55],
+      sunGlow: true,
+      looseShare: 0.5,
     }),
   );
   builds.push(
     buildCarpetField({
       seed: SEED ^ 0xf110,
-      palette: { base: 0x5fae74, tip: 0x93c481, shade: 0x4a7a5c },
+      palette: { base: 0x70be84, tip: 0xa4d492, shade: 0x588c6a },
       area: disc(820, -100, 55),
       gate: approachGate,
       ground: seabedHeight,
       count: 100,
-      profile: "tuft",
-      size: [0.28, 0.55],
+      profile: "blade",
+      size: [0.36, 0.7],
       swayAmp: 0.06,
+      sunGlow: true,
     }),
   );
   // Round 9: the last marginal sweep frame (07) hangs 8 m over this slope
@@ -647,17 +719,21 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
   builds.push(
     buildBushBank({
       seed: SEED ^ 0xf309,
-      palette: { base: 0x93c161, tip: 0xc8dd85, shade: 0x567a41 },
+      palette: { base: 0x93c161, tip: 0xc8dd85, shade: 0x567a41, accent: 0xd8c874 },
       area: disc(832, -56, 12),
       gate: approachGate,
       ground: seabedHeight,
       count: 10,
       lobes: 4,
       scale: 1.35,
+      fronds: 6,
+      accents: 4,
     }),
   );
 
   // ─── The Far Balcony: the deck's moss-joint carpet ───────────────────────
+  // R12.3: card → frond at moss scale — small rosettes growing out of the
+  // worked joints instead of loose chips lying on them.
   builds.push(
     buildCarpetField({
       seed: SEED ^ 0xf109,
@@ -666,8 +742,8 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       gate: spokeGate((u, v) => smoothstep01((balconyWeight(u, v) - 0.3) / 0.3)),
       ground: seabedHeight,
       count: 500,
-      profile: "card",
-      size: [0.12, 0.24],
+      profile: "frond",
+      size: [0.14, 0.28],
     }),
   );
 
@@ -725,6 +801,7 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
       count: 300,
       shapeSet: "pebble",
       size: [0.08, 0.26],
+      grade: 0.6,
     }),
   );
 
@@ -789,6 +866,101 @@ export function buildVerdant2Carpets(): Verdant2CarpetsBuild {
   });
   builds.push(gardenBank);
   updaters.push((t) => gardenBank.update(t));
+
+  // ─── R12.3 headroom spend (fresh seeds, appended after every existing
+  // draw — the reroll fence) ───────────────────────────────────────────────
+  // Tall blade stands lining the road edges: the pass road (threshold +
+  // stair) and the descent from the stair foot to the Mistfall lip. The
+  // shoulders of the swim line get waist-high grass the diver passes
+  // THROUGH, not specks passed over.
+  builds.push(
+    buildCarpetField({
+      seed: SEED ^ 0xf111,
+      palette: { base: 0x7cca8c, tip: 0xaeda82, shade: 0x5a8a6c },
+      area: spineRoad(650, 848, 36),
+      gate: spokeGate((u, v) => {
+        const off = Math.abs(v - stairChannelCenter(u));
+        // The shoulder band: off the swim line, inside the road's edge.
+        return off > 4 && off < 15 ? 0.9 : 0;
+      }),
+      ground: seabedHeight,
+      count: 360,
+      profile: "blade",
+      size: [0.5, 0.95],
+      swayAmp: 0.06,
+      sunGlow: true,
+      looseShare: 0.5,
+    }),
+  );
+  builds.push(
+    buildCarpetField({
+      seed: SEED ^ 0xf112,
+      palette: { base: 0x74ce94, tip: 0xaeda82, shade: 0x529068 },
+      area: spineRoad(850, 995, 32),
+      gate: spokeGate((u, v) => {
+        if (onFallFace(u, v) || cisternWeight(u, v) > 0.3 || vaultWeight(u, v) > 0.35) {
+          return 0;
+        }
+        const off = Math.abs(v - stairChannelCenter(u));
+        return off > 4 && off < 14 ? 0.85 : 0;
+      }),
+      ground: seabedHeight,
+      count: 300,
+      profile: "blade",
+      size: [0.5, 0.9],
+      swayAmp: 0.06,
+      sunGlow: true,
+      looseShare: 0.5,
+    }),
+  );
+  // The Fern Vault's deeper understory: a second frond layer gathered
+  // toward the mouth, taller than the floor carpet — the half-light
+  // gains a knee-high storey between the floor rosettes and the giants.
+  builds.push(
+    buildCarpetField({
+      seed: SEED ^ 0xf113,
+      palette: { base: 0x68ac7c, tip: 0x92d49a, shade: 0x51446a },
+      area: disc(FERN_VAULT.u, FERN_VAULT.v, 26),
+      gate: spokeGate((u, v) => smoothstep01((vaultWeight(u, v) - 0.14) / 0.3) * 0.8),
+      ground: seabedHeight,
+      count: 400,
+      profile: "frond",
+      size: [0.34, 0.62],
+    }),
+  );
+  // Split-stone runs (the kit's R12 "split" shape + grade): formed,
+  // fracture-faced foreground rock for the two most-walked floors of a
+  // country that remembers being built — the garden terrace feet and the
+  // stair treads.
+  builds.push(
+    buildGroundLitter({
+      seed: SEED ^ 0xf20b,
+      palette: { base: 0x8a9478, shade: 0x5c5470 },
+      area: disc(905, -10, 92),
+      gate: spokeGate((u, v) => gardensGate(u, v) * (0.25 + 0.75 * gardenTerraces(u, v).riser)),
+      ground: seabedHeight,
+      count: 140,
+      shapeSet: "split",
+      size: [0.12, 0.3],
+      grade: 0.6,
+    }),
+  );
+  builds.push(
+    buildGroundLitter({
+      seed: SEED ^ 0xf20c,
+      palette: { base: 0x8a9478, shade: 0x5c5470 },
+      area: spineRoad(742, 850, 30),
+      gate: spokeGate((u, v) => {
+        const off = Math.abs(v - stairChannelCenter(u));
+        return off > 3 && off < 13 ? 0.9 : 0;
+      }),
+      ground: seabedHeight,
+      count: 100,
+      shapeSet: "split",
+      size: [0.12, 0.28],
+      grade: 0.6,
+    }),
+  );
 
   let draws = 0;
   let triangles = 0;
