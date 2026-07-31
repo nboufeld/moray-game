@@ -13,6 +13,7 @@ import {
   LEE_GARDENS,
   lensFree,
   restFree,
+  slipCrestU,
 } from "./GoldenFillShared";
 import { MONOLITHS } from "./GoldenRocks";
 import { PALM_SEATS } from "./GoldenOasis";
@@ -60,6 +61,24 @@ const SEED = SEEDS.regionGolden1;
 export interface GoldenCoverBuild {
   readonly groups: Group[];
   update(timeSec: number): void;
+}
+
+/**
+ * The round-2 value pass: under this region's quarter-strength sun a
+ * palette picked for the kit demo's light renders a step too dark (the
+ * verdant fill's round-1 lesson, reproduced here verbatim by the r1
+ * captures — wire and fronds read as soot). The pilot's own answer is a
+ * small emissive on the toon material (its gold seagrass and eels do
+ * exactly this), applied region-side so the kit stays palette-pure.
+ */
+function warmMaterials(build: KitBuild | CarpetFieldBuild, hex: number, intensity: number): void {
+  build.group.traverse((node) => {
+    const material = (node as { material?: { emissive?: { setHex(h: number): void }; emissiveIntensity?: number } }).material;
+    if (material?.emissive) {
+      material.emissive.setHex(hex);
+      material.emissiveIntensity = intensity;
+    }
+  });
 }
 
 // ─── Areas ───────────────────────────────────────────────────────────────────
@@ -183,6 +202,8 @@ const saddlePebbleGate: GateFn = (x, z) => {
   return saddleness(u, v) * wingWarm(u) * restFree(x, z) * goldenWeight(x, z);
 };
 
+const crestLensU = slipCrestU();
+
 /**
  * Dune-crest wire-grass: the region's standing near layer. Leaned toward
  * windward crests (dry grass holds a dune's back), boosted along the
@@ -203,13 +224,17 @@ const duneWireGate: GateFn = (x, z) => {
   const flats = flatsWeight(u, v);
   // The flats keep their emptiness composed: a thin fringe only.
   const flatsThin = 1 - flats * 0.72;
-  const base = (0.28 + 0.72 * wind) * (1 - calm) * flatsThin;
+  const base = (0.42 + 0.58 * wind) * (1 - calm) * flatsThin;
+  // The close-wire pose's crest carries an authored stand of the same
+  // growth (the verdant saddle-mouth-stand lesson at dune scale).
+  const crestStand =
+    (1 - smoothstep01((Math.hypot(u - crestLensU, v - 14) - 2) / 5)) * 0.9;
   return (
     goldenWeight(x, z) *
     restFree(x, z) *
     lensFree(x, z) *
     flank *
-    Math.min(1, base + pocketDepth(u, v) * 0.8)
+    Math.min(1, base + pocketDepth(u, v) * 0.8 + crestStand)
   );
 };
 
@@ -316,11 +341,12 @@ const shoreGate: GateFn = (x, z) => {
 export function buildGoldenCover(finSpots: readonly FinSpot[]): GoldenCoverBuild {
   const groups: Group[] = [];
   const updaters: ((timeSec: number) => void)[] = [];
-  const keep = (build: KitBuild | CarpetFieldBuild): void => {
+  const keep = <T extends KitBuild | CarpetFieldBuild>(build: T): T => {
     groups.push(build.group);
     if ("update" in build) {
       updaters.push((timeSec) => build.update(timeSec));
     }
+    return build;
   };
 
   /** Shard aprons fan out from the fins' own feet (the audit: "the fins
@@ -344,23 +370,28 @@ export function buildGoldenCover(finSpots: readonly FinSpot[]): GoldenCoverBuild
   // Ripple-grit, two-tone: the whole desert floor's close-range texture.
   // The grid-honesty rule sends every ripple finer than 8 m HERE, into
   // instances, instead of into the 2.2 m sheet's vertex paint.
-  keep(
+  warmMaterials(
+    keep(
     buildGroundLitter({
       seed: SEED ^ FILL_SEEDS.gritCarpet,
-      palette: { base: 0xc9ae74, accent: 0xdcc890, shade: 0x8a7080 },
+      palette: { base: 0xd2ba80, accent: 0xe2d09a, shade: 0x9a8470 },
       area: discArea(),
       gate: gritGate,
       ground: seabedHeight,
       count: 5200,
       shapeSet: "grit",
-      size: [0.04, 0.11],
+      size: [0.03, 0.09],
       twoTone: true,
-      grade: 0.55,
+      grade: 0.4,
     }),
+  ),
+    0x38302a,
+    0.3,
   );
 
   // Shell-drift carpet: pale shells stranded in the lees.
-  keep(
+  warmMaterials(
+    keep(
     buildGroundLitter({
       seed: SEED ^ FILL_SEEDS.shellDrift,
       palette: { base: 0xe4d6b2, accent: 0xf1e8cc, shade: 0xa08a80 },
@@ -373,13 +404,17 @@ export function buildGoldenCover(finSpots: readonly FinSpot[]): GoldenCoverBuild
       twoTone: true,
       grade: 0.6,
     }),
+  ),
+    0x38302a,
+    0.3,
   );
 
   // The saddle's pebble runs down the honey channel.
-  keep(
+  warmMaterials(
+    keep(
     buildGroundLitter({
       seed: SEED ^ FILL_SEEDS.saddlePebbles,
-      palette: { base: 0xbfa87c, accent: 0xd2bc90, shade: 0x86688a },
+      palette: { base: 0xc8b284, accent: 0xdcc69a, shade: 0x967a94 },
       area: saddleArea(54, 288, 12),
       gate: saddlePebbleGate,
       ground: seabedHeight,
@@ -388,31 +423,39 @@ export function buildGoldenCover(finSpots: readonly FinSpot[]): GoldenCoverBuild
       twoTone: true,
       grade: 0.5,
     }),
+  ),
+    0x38302a,
+    0.3,
   );
 
   // ── T2: the standing layer ───────────────────────────────────────────────
   // Dune-crest wire-grass (kit blade profile at the desert palette —
   // R12: the near tier is authored clumps, never wedges).
-  keep(
+  warmMaterials(
+    keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.duneWire,
-      palette: { base: 0xcbb668, tip: 0xeadc92, shade: 0x8a7a60 },
+      palette: { base: 0xdcc87a, tip: 0xf6eaaa, shade: 0xa8946a },
       area: discArea(),
       gate: duneWireGate,
       ground: seabedHeight,
-      count: 980,
+      count: 1400,
       profile: "blade",
       size: [0.5, 0.95],
       swayAmp: 0.05,
       sunGlow: true,
     }),
+  ),
+    0x5a4c22,
+    0.5,
   );
 
   // The saddle's own wire-grass on the dune shoulders.
-  keep(
+  warmMaterials(
+    keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.saddleWire,
-      palette: { base: 0xc4ae66, tip: 0xe4d48c, shade: 0x847458 },
+      palette: { base: 0xd4be74, tip: 0xf0e09c, shade: 0x9a8862 },
       area: saddleArea(52, 292, 26),
       gate: saddleWireGate,
       ground: seabedHeight,
@@ -422,30 +465,38 @@ export function buildGoldenCover(finSpots: readonly FinSpot[]): GoldenCoverBuild
       swayAmp: 0.045,
       sunGlow: true,
     }),
+  ),
+    0x5a4c22,
+    0.5,
   );
 
   // Lee-garden fronds: the pockets' green-gold hearts (the T2 debut the
   // journey map schedules at u ~80 and every 20–40 m after).
-  keep(
+  warmMaterials(
+    keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.leeFronds,
-      palette: { base: 0xa8a852, tip: 0xd6ca6e, shade: 0x6e7a4a },
+      palette: { base: 0xbcb45c, tip: 0xe6da7e, shade: 0x86885a },
       area: pocketsArea(),
       gate: leeFrondGate,
       ground: seabedHeight,
-      count: 430,
+      count: 560,
       profile: "frond",
       size: [0.3, 0.55],
       swayAmp: 0.04,
       sunGlow: true,
     }),
+  ),
+    0x4c4c20,
+    0.5,
   );
 
   // Wrack strewn through the pockets — dry gold curls the current left.
-  keep(
+  warmMaterials(
+    keep(
     buildDriftDebris({
       seed: SEED ^ FILL_SEEDS.leeWrack,
-      palette: { base: 0xb09a6e, shade: 0x7a6880 },
+      palette: { base: 0xc4ae7c, shade: 0x8e7c8e },
       area: pocketsArea(),
       gate: (x, z) => {
         const { u, v } = spokeOf(x, z);
@@ -455,29 +506,37 @@ export function buildGoldenCover(finSpots: readonly FinSpot[]): GoldenCoverBuild
       count: 130,
       shapeSet: "wrack",
     }),
+  ),
+    0x3a342a,
+    0.3,
   );
 
   // The drift-lines: wrack runs angled across the road (beat u ~130, and
   // two ocean troughs) — debris strands where the current dropped it.
   for (const [index, line] of DRIFT_LINES.entries()) {
-    keep(
+    warmMaterials(
+      keep(
       buildDriftDebris({
         seed: SEED ^ (FILL_SEEDS.driftLines + index),
-        palette: { base: 0xbca878, shade: 0x807088 },
+        palette: { base: 0xccb886, shade: 0x948496 },
         area: driftLineArea(line, 5),
         gate: (x, z) => restFree(x, z) * goldenWeight(x, z),
         ground: seabedHeight,
         count: index === 0 ? 54 : 46,
         shapeSet: "wrack",
       }),
+    ),
+      0x3a342a,
+      0.3,
     );
   }
 
   // Terrace salt-lilies: pale cream-violet rosettes on the chasm benches.
-  keep(
+  warmMaterials(
+    keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.saltLilies,
-      palette: { base: 0xd2c2b4, tip: 0xf0e4cf, shade: 0x8d7a92 },
+      palette: { base: 0xdccabc, tip: 0xf6ecda, shade: 0x9c8aa0 },
       area: discAreaAt(HOURGLASS.u, HOURGLASS.v, 46),
       gate: saltLilyGate,
       ground: seabedHeight,
@@ -486,16 +545,20 @@ export function buildGoldenCover(finSpots: readonly FinSpot[]): GoldenCoverBuild
       size: [0.24, 0.44],
       swayAmp: 0.03,
     }),
+  ),
+    0x4a4034,
+    0.4,
   );
 
   // The lily bench: one authored terrace (u 435, v 27 — the close pose's
   // subject) carries a concentrated stand of the same salt-lily growth,
   // the verdant fill's saddle-mouth-stand lesson: a global scatter
   // cannot promise a close lens anything; a small authored drift can.
-  keep(
+  warmMaterials(
+    keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.lilyBench,
-      palette: { base: 0xd2c2b4, tip: 0xf0e4cf, shade: 0x8d7a92 },
+      palette: { base: 0xdccabc, tip: 0xf6ecda, shade: 0x9c8aa0 },
       area: discAreaAt(435, 27, 4.5),
       gate: (x, z) => restFree(x, z) * lensFree(x, z),
       ground: seabedHeight,
@@ -505,14 +568,18 @@ export function buildGoldenCover(finSpots: readonly FinSpot[]): GoldenCoverBuild
       swayAmp: 0.03,
       looseShare: 0.6,
     }),
+  ),
+    0x4a4034,
+    0.4,
   );
 
   // Oasis cushion bushes: the hollows' rich understory (R12's opt-in
   // fronds and berry knots — the region re-pass licence, spent here).
-  keep(
+  warmMaterials(
+    keep(
     buildBushBank({
       seed: SEED ^ FILL_SEEDS.oasisBushes,
-      palette: { base: 0xb0a050, tip: 0xd8c86a, shade: 0x6a6a44, accent: 0xd8925a },
+      palette: { base: 0xc2b25c, tip: 0xe8d87c, shade: 0x828054, accent: 0xe0a066 },
       area: discAreaAt(528, -52, 32),
       gate: oasisBushGate,
       ground: seabedHeight,
@@ -521,42 +588,54 @@ export function buildGoldenCover(finSpots: readonly FinSpot[]): GoldenCoverBuild
       fronds: 4,
       accents: 5,
     }),
+  ),
+    0x4c4422,
+    0.45,
   );
 
   // Fallen palm fronds at the trunks' feet.
-  keep(
+  warmMaterials(
+    keep(
     buildDriftDebris({
       seed: SEED ^ FILL_SEEDS.fallenFronds,
-      palette: { base: 0xa8a05c, shade: 0x6e7050 },
+      palette: { base: 0xbcb46c, shade: 0x868862 },
       area: discAreaAt(528, -52, 32),
       gate: fallenFrondGate,
       ground: seabedHeight,
       count: 60,
       shapeSet: "wrack",
     }),
+  ),
+    0x3a342a,
+    0.3,
   );
 
   // Shard aprons: fracture ground under the glass fins.
-  keep(
+  warmMaterials(
+    keep(
     buildGroundLitter({
       seed: SEED ^ FILL_SEEDS.shardAprons,
       palette: { base: 0xcfe2d4, accent: 0xeafaf0, shade: 0x7e9a8c },
       area: discAreaAt(395, -78, 64),
       gate: shardApronGate,
       ground: seabedHeight,
-      count: 340,
+      count: 460,
       shapeSet: "shard",
-      size: [0.09, 0.26],
+      size: [0.1, 0.3],
       twoTone: true,
       grade: 0.6,
     }),
+  ),
+    0x2c3a34,
+    0.35,
   );
 
   // Singing stones: split stones scattered around the monolith country.
-  keep(
+  warmMaterials(
+    keep(
     buildGroundLitter({
       seed: SEED ^ FILL_SEEDS.singingStones,
-      palette: { base: 0x9a7c6a, shade: 0x6e5476 },
+      palette: { base: 0xb0906e, shade: 0x86687a },
       area: discAreaAt(528, 84, 76),
       gate: singingStoneGate,
       ground: seabedHeight,
@@ -565,10 +644,14 @@ export function buildGoldenCover(finSpots: readonly FinSpot[]): GoldenCoverBuild
       size: [0.28, 0.62],
       grade: 0.8,
     }),
+  ),
+    0x38302a,
+    0.3,
   );
 
   // ── The Gilded Shore's decrescendo ───────────────────────────────────────
-  keep(
+  warmMaterials(
+    keep(
     buildGroundLitter({
       seed: SEED ^ FILL_SEEDS.shorePebbles,
       palette: { base: 0xd6c49a, accent: 0xe8dcbc, shade: 0x9a8698 },
@@ -581,22 +664,30 @@ export function buildGoldenCover(finSpots: readonly FinSpot[]): GoldenCoverBuild
       twoTone: true,
       grade: 0.45,
     }),
+  ),
+    0x38302a,
+    0.3,
   );
-  keep(
+  warmMaterials(
+    keep(
     buildDriftDebris({
       seed: SEED ^ FILL_SEEDS.shoreWrack,
-      palette: { base: 0xc2ac80, shade: 0x847492 },
+      palette: { base: 0xd0bc8e, shade: 0x96869e },
       area: discAreaAt(600, 10, 88),
       gate: shoreGate,
       ground: seabedHeight,
       count: 110,
       shapeSet: "wrack",
     }),
+  ),
+    0x3a342a,
+    0.3,
   );
-  keep(
+  warmMaterials(
+    keep(
     buildCarpetField({
       seed: SEED ^ FILL_SEEDS.shoreTufts,
-      palette: { base: 0xd4c68e, tip: 0xeee2b6, shade: 0x9a8a74 },
+      palette: { base: 0xe0d29a, tip: 0xf6ecc4, shade: 0xaa9a80 },
       area: discAreaAt(600, 10, 88),
       gate: (x, z) => shoreGate(x, z) * lensFree(x, z),
       ground: seabedHeight,
@@ -606,6 +697,9 @@ export function buildGoldenCover(finSpots: readonly FinSpot[]): GoldenCoverBuild
       swayAmp: 0.04,
       sunGlow: true,
     }),
+  ),
+    0x564c28,
+    0.45,
   );
 
   return {

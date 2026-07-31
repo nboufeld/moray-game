@@ -120,10 +120,12 @@ export function buildKeeper(): KeeperBuild {
     pectoral: 0.7,
     tail: { reach: 1.4, lobe: 0.55, notch: 1.0 },
   });
+  // Round 2: at 0.5 a fog-free remora rendered as a neon-orange fish at
+  // the salt-lily terrace — the caravan's own r5 lesson, one size down.
   const remoraMaterial = createToonMaterial({
     vertexColors: true,
-    emissive: 0xcab074,
-    emissiveIntensity: 0.5,
+    emissive: 0x8a7a50,
+    emissiveIntensity: 0.26,
   });
   remoraMaterial.fog = false; // they share the lantern's water
   const remoras = new InstancedMesh(remoraGeometry, remoraMaterial, REMORA_SEATS.length);
