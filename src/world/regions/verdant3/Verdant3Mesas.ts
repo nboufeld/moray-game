@@ -175,11 +175,17 @@ function mesaGeometry(spec: MesaSpec, mouthAngle: number, log = false): BufferGe
       // 0.55 → 0.9, a 0.18 floor, and the streaks at 1.2; twice now the
       // bole read pale, so the moss stops being a suggestion.
       const bands = log ? Math.max(0, Math.sin(t * 34 + noiseSeed % 9)) ** 2 * 0.9 : 0;
+      // Round 5: the moss saddle — the log lies on its side, so its READ
+      // is the lit top plane (local -nz after the fall's X-rotation), and
+      // twice the length-wise bands alone left that plane pale under the
+      // full toon band. The saddle rides the up-facing half directly.
+      const saddle = log ? Math.max(0, -nz) ** 1.4 * 0.85 : 0;
       const moss = Math.min(
         1,
         streak * (log ? 1.2 : 0.95) +
           (1 - smoothstep01(t / 0.16)) * 0.7 +
           bands +
+          saddle +
           (log ? 0.18 : 0),
       );
       cr += (0.4 - cr) * moss;

@@ -160,6 +160,38 @@ export function buildVerdant3Cover(): Verdant3CoverBuild {
       swayAmp: 0.05,
     }),
   );
+  // Round 5: THE UNDERFLOOR — a fine ankle-high tuft carpet with a
+  // near-flat gate (0.8 floor), the tier under the drifts. The r4
+  // close-shade-floor and sweep down-shots proved the arithmetic: counts
+  // spread over 144,000 m² cannot carpet a 3 m frame, so the frame's
+  // floor is carried by a cheap dense under-tier (12 tris each) while
+  // the frond/blade families keep the drift composition above it.
+  addCarpet(
+    buildCarpetField({
+      seed: SEED ^ 0x3007,
+      palette: { base: 0x5e9a6a, tip: 0x9cc482, shade: 0x565080 },
+      area: discArea,
+      gate: (x, z) => {
+        const g = baseGate(x, z);
+        if (g === 0) {
+          return 0;
+        }
+        const { u, v } = spokeOf(x, z);
+        const past = smoothstep01((u - 1305) / 20);
+        let pools = 1;
+        for (const spring of WELLSPRINGS) {
+          const d = Math.hypot(u - spring.u, v - spring.v);
+          pools *= smoothstep01((d - spring.radius * 0.9) / 3);
+        }
+        return g * past * pools * (0.8 + 0.2 * drift(x, z));
+      },
+      ground: seabedHeight,
+      count: 2400,
+      profile: "tuft",
+      size: [0.16, 0.34],
+      swayAmp: 0.04,
+    }),
+  );
   // Knee-high blade tufts riding the same drifts — the mid-scale the
   // open floor needs from midwater (the verdant-2 sweep lesson).
   addCarpet(

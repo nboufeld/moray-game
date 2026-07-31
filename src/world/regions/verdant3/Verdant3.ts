@@ -162,7 +162,10 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "close-shade-floor", u: 1444, v: 30, lift: 1.4, atU: 1448, atV: 34, pitch: -0.5 },
   { name: "close-road-moss", u: 1218, v: 2, lift: 1.3, atU: 1222, atV: 3, pitch: -0.5 },
   { name: "close-garden-skirt", u: 1470, v: 16, lift: 1.4, atU: 1476, atV: 11, pitch: -0.42 },
-  { name: "close-wellspring-rim", u: 1382, v: -12, lift: 1.3, atU: 1387, atV: -16, pitch: -0.4 },
+  // Round 5: nudged off the r4 spot — a spore mote sat on the lens there
+  // (a stochastic point-sprite white-out, not a layout fault) and the
+  // new spot reseeds the encounter while keeping the rim-sward framing.
+  { name: "close-wellspring-rim", u: 1380.5, v: -8.5, lift: 1.8, atU: 1385, atV: -13, pitch: -0.42 },
 ];
 
 function buildPoses(): RegionCapturePose[] {
