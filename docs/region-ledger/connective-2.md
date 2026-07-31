@@ -115,3 +115,24 @@ Captures per round: `visual-qa/*_conn2-r{n}.png`, before set
   audit's "still bare mid-ground"). Colour: pastel sprigs visible at
   the left wall stands well before the far end — the early-colour flag
   in the flesh; nothing on the ground tells the bone story.
+
+### r1 (first uplift, looked at)
+
+- **kelp-cathedral** — turf lands through the mid floor and the nave
+  finally has a floor… but it reads as sparse near-BLACK stubble at
+  pose range (the emerald mood takes a fifth of the light and the r1
+  palette sat too deep), and the drape bank is invisible — its 1.1–2.5 m
+  holdfasts hide behind the columns' own feet. The god shafts read soft
+  (no rectangles): **the W1 flag is confirmed fixed by the atelier's
+  sprite repaint** — verified at pose range, nothing to redo.
+  → r2: palette a value step brighter, 380 blades, taller envelope;
+  drapes lifted to 1.8–3.4 m with 1.8 m strands.
+- **vent-springs** — the scoria drift reads as true cinder on the right
+  flank and the ember polyps read as "amber held in the gloom" beside
+  the chimneys; a rust drape strap shows bottom-left. Presence still
+  thin for a fringe. → r2: 12 anchors × 5 buds, glow 0.33, scoria 640,
+  drapes lifted.
+- **ghost-reef** — the strongest first round: bone rubble textures the
+  whole mid-ground, blush fronds appear exactly where the recovery
+  lives, pale drapes read on the right wall, and the near-gate ground
+  stays bone. → r2: modest density bump only (rubble 620, turf 110).

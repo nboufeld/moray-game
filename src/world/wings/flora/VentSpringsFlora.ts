@@ -316,8 +316,10 @@ export function buildVentSpringsFlora(def: WingDef): WingFlora {
 
   const drapeRandom = new Random(SEEDS.wingVentSprings ^ 0x2c3c);
   const drapeAnchors: DrapeAnchor[] = [];
-  for (let i = 0; i < 8; i++) {
-    const r = 36 + i * 1.3 + drapeRandom.signed(0.4);
+  // r3: ten holdfasts — a merged bank costs no extra draw, and eight
+  // left the strata walls' lower bands reading flat from the pose range.
+  for (let i = 0; i < 10; i++) {
+    const r = 36 + i * 1.05 + drapeRandom.signed(0.4);
     const side = i % 2 === 0 ? -1 : 1;
     const lift = drapeRandom.range(1.3, 2.7);
     drapeAnchors.push(ventWallAnchor(def, r, side, lift));

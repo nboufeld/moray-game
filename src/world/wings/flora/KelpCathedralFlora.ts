@@ -349,8 +349,10 @@ export function buildKelpCathedralFlora(def: WingDef): WingFlora {
   // alternating flanks down the nave — the "bare walls" answer.
   const drapeRandom = new Random(SEEDS.wingKelpCathedral ^ 0x2b3c);
   const drapeAnchors: DrapeAnchor[] = [];
-  for (let i = 0; i < 8; i++) {
-    const r = 35.2 + i * 1.5 + drapeRandom.signed(0.45);
+  // r3: twelve holdfasts, six per flank — a merged bank costs no extra
+  // draw, and eight left the walls reading bare from the pose range.
+  for (let i = 0; i < 12; i++) {
+    const r = 35 + i * 1.0 + drapeRandom.signed(0.45);
     const side = i % 2 === 0 ? 1 : -1;
     // r2: holdfasts a full body's height and more up the wall — at r1's
     // 1.1–2.5 m the banks hid behind the columns' own feet.
