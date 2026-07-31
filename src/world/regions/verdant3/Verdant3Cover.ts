@@ -333,6 +333,33 @@ export function buildVerdant3Cover(): Verdant3CoverBuild {
     );
   }
 
+  // The rampart hem: a band of standing blades ringing the world's last
+  // wall — MASTER's F-R3 field note built in (rim-facing sweep cones
+  // must find their three-layer answer in the first ~35 m, and the
+  // rampart's own slopes are that answer).
+  addCarpet(
+    buildCarpetField({
+      seed: SEED ^ 0x3032,
+      palette: { base: 0x74ae7c, tip: 0xc4d494, shade: 0x655c86 },
+      area: discArea,
+      gate: (x, z) => {
+        const g = baseGate(x, z);
+        if (g === 0) {
+          return 0;
+        }
+        const rc = Math.hypot(x - CENTER_X, z - CENTER_Z);
+        const band = smoothstep01((rc - 168) / 8) * (1 - smoothstep01((rc - 198) / 8));
+        return g * band * (0.6 + 0.4 * drift(x, z));
+      },
+      ground: seabedHeight,
+      count: 560,
+      profile: "blade",
+      size: [0.7, 1.3],
+      looseShare: 0.4,
+      swayAmp: 0.1,
+    }),
+  );
+
   // ─── T1: the litter ────────────────────────────────────────────────────────
   add(
     buildGroundLitter({
