@@ -46,6 +46,5 @@ it("prints the sweep poses in spoke coordinates", () => {
         `y=${y.toFixed(1)} lumen=${lumen(u, v).toFixed(2)} → looks at u=${look.u.toFixed(0)} v=${look.v.toFixed(0)}`,
     );
   }
-  // eslint-disable-next-line no-console
   console.info(drawn.join("\n"));
 });

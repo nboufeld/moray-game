@@ -199,7 +199,6 @@ describe("pale-passage-2 build", () => {
     });
     // MASTER R12: ≤260 draws / ≤1.35M tris, bound by the headed frame
     // gate (recorded in the ledger, not assertable here).
-    // eslint-disable-next-line no-console
     console.info(`pale-passage-2 measured: ${draws} draws / ${Math.round(triangles)} triangles`);
     expect(draws).toBeLessThanOrEqual(260);
     expect(triangles).toBeLessThanOrEqual(1_350_000);
