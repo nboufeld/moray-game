@@ -337,3 +337,28 @@ ash-veil, cold-lantern, evensong hold. The region closes at 64 draws /
   median 16.7 ms / p95 17.8 ms — both under the 16.9 ms bar.
 - **Budgets:** 64 draws / 1,346,653 tris (caps 260 / 1.35 M).
 - **Tests:** 30 region tests green; full suite green at commit.
+
+## Flags for the orchestrator
+
+1. **The reciprocal rim-seal cut in smoking-2 (the seventh run of the
+   protocol).** In `smoking2/Smoking2.ts` `buildSeals()`, the rim ring
+   (rimR 206 off their centre, 94 stacks of two spheres r 9 + r 7)
+   crosses this corridor at **u ≈ 1146** and is gated only inbound
+   (`u < 750 && |v| < 27`). Add the outbound gate, mirroring it:
+   **skip stacks where `u > 1120 && |v| < 16`** — that releases the
+   1–3 stacks whose spheres (r 9) reach into the swim channel (|v| < 5,
+   asserted on our side u 1133–1315 at lifts 0.9/1.8/2.7). |v| < 16
+   gives the channel edge ≥ 2 m of clearance past the sphere reach;
+   the shoulder rows they already stand keep the flanks sealed.
+2. **No ceiling cut needed.** Our threshold ceiling authors UNDER their
+   closed far-rim ceiling across the whole overlap (3.8 m over the
+   Night Threshold, the verdant-3 precedent) — asserted by our region
+   tests.
+3. **No distance-wall cut needed.** Their walls already part over the
+   corridor (`GAP_OUT_HALF`, pre-reserved at the Night Door).
+4. **This is the spoke's terminus** — no outbound reservation on our
+   far side; our own rim ring and ceiling close the world's edge floor
+   to ceiling.
+5. The night-threshold capture pose stands in the honest pre-merge
+   state: their rim stacks still cross the corridor in-frame until the
+   cut lands (the same state every depth pass shipped in).
