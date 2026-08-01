@@ -60,6 +60,16 @@ if (!slotId || !tag) {
   process.exit(1);
 }
 
+/**
+ * `SHOT_POSE_FILTER=a,b` captures only the named poses — for re-shooting
+ * the one or two poses a round re-authored without paying for the whole
+ * set again.
+ */
+const poseFilter = (process.env.SHOT_POSE_FILTER ?? "")
+  .split(",")
+  .map((name) => name.trim())
+  .filter(Boolean);
+
 function stamp() {
   const now = new Date();
   const p = (n) => String(n).padStart(2, "0");
@@ -92,6 +102,9 @@ const poses = await page.evaluate((slot) => {
 
 const prefix = stamp();
 for (const pose of poses) {
+  if (poseFilter.length > 0 && !poseFilter.includes(pose.name)) {
+    continue;
+  }
   if (perLaunch) {
     await browser.close();
     ({ browser, page } = await openPage());
