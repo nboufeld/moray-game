@@ -333,3 +333,176 @@ sprites down a step; bush accents calmed; seven poses re-staged
 (wall-crossing past the crest, hornsgate closer/lower, morning-shelf
 nearer the Daymark, longfall-brink onto the new head, hem-lookback in
 to 80 m, morning-horizon up to −6, starwater-pans closer).
+
+### Round 2 (`gb3-r2`) — the near field lands; the horizon and the far silhouettes still owe
+
+All 25 authored poses re-captured (final set 2355) plus the sweep —
+the sweep run died after frame 10 of 12 (dev server starved under
+load); the 10 frames were all read, and the sweep re-runs in full at
+round 3. HUD note, resolved: the objective total reads 19 on corridor
+poses and 18 deep in the disc — that is the STREAMER (blue-2 in range
+adds its own myth target near the wall), not a reroll; determinism is
+not in question.
+
+**What round 2 won.** `daybreak` is now the region's best frame (the
+whale's grown fluke reads, the snow bokeh composes); `hem-lookback`
+recovered completely (Hem crest wobble + beam + glass-bead trail);
+`overbrim` passes with three layers and the whale beyond the rim;
+`shallows-ford` passes again (shoal on schedule, pan-lip domes,
+snow); `anchor` reads noble — shank, seated stock, eye, both flukes;
+`daymark` stands (paled stone, pebble apron, blade); `longfall-brink`
+has a true brink with ribs, flanking boulders and the foot beam far
+below; `close-mere-grain` passes (crisp lavender tufts over violet);
+sweep 02/03/07/10 pass outright, 06/08 marginal-pass.
+
+**The round's fails, in causal order:**
+
+1. **THE MORNING-HORIZON IS STILL EMPTY BANDS.** The arithmetic put
+   ring 1's crown above the Hem crest — but the ring CREST ROW carries
+   alpha 0 (the dissolve column fades to nothing exactly at the
+   crown), so what actually silhouettes is the opaque MID row: a dead
+   straight line, and the rose tint (authored on the crown) is
+   invisible. The world's deepest horizon is currently one hard rule
+   across a gradient. Cause is code, not composition.
+2. **Far fogged silhouettes are flat paper cutouts region-wide**
+   (`wall-crossing` mid-band, `longfall-road`'s far wall, `cradle-run`'s
+   dead-level far axis, `wide-morning`): the r2 wall paint reads at
+   30–60 m but the value swing still dies past ~90 m, and the ring
+   curtains behind carry no interior structure.
+3. **Wall-face grazes still fail the sweep** (01: bare violet face
+   filling the frame, two blades; 09: featureless violet wall). The
+   steep-face story needs a fine grain that survives at 4–15 m AND
+   sparse licensed life (scree ledges, wall tufts) so a face-cone
+   frame keeps three layers.
+4. **The stone family still carries too much hot orange**: the fallen
+   link slab (`close-chain-link`) is marbled gold-orange, the Doorstep
+   and the Wellhead crags are purple-with-orange bruise; palen 0.55
+   lightened but did not de-saturate the rock wash's warm patches.
+5. **Bare plains in the lower half of five frames**: `starwater-pans`
+   foreground, `doorstep` rise, `close-bank-blades` lower slope,
+   `wellhead` mound face, `hornsgate` shelf — "never bare ground"
+   loses to fog + smooth paint at grazing angles.
+6. **Pose misses**: `hornsgate` (one small stone on a bare plain — the
+   Horns sit behind the camera's shoulder), `chain` (the links vanish
+   at 40 m; the eye assembly silhouettes as a scribble), `wide-morning`
+   (star patches read as beige blotches; the Daybreak out of frame),
+   `morning-horizon` (above), `cradle-run`'s far axis.
+7. Detail: the whale is still blimpy side-on (its pectorals too small
+   to read at 25 m); the pearl
+   wants a rose terminator + a soft pool under it; sweeps 04/05 are
+   thin open-water frames (snow faint, nothing at mid).
+
+**Sweep verdict (10 of 12 captured): 4 pass (02/03/07/10) + 2
+marginal-pass (06/08) + 2 thin (04/05) + 2 MISSES (01/09 — both
+wall-face grazes).** The wall-graze class and the ring-crown alpha are
+the binding failures.
+
+**Round-3 orders:** rebuild the ring curtains (crown row keeps real
+alpha ≈ 0.55 with a fourth dissolve row above it, wobbled crest,
+staggered heights, the Morning Bank's rose pushed into mid + crown
+over a wider bearing, gentle bank-heads toward the morning); steep-face
+paint gains a 2–6 m fine grain octave + streak contrast that survives
+90 m, and the Longfall/Hem faces take licensed scree ledges + tuft
+patches so grazes keep three layers; palenStone learns to DESATURATE
+before it lightens (the orange patches go rose-grey, freckles stay);
+chain links up a size with a pale crest light, the heaved eye
+assembly recomposed; star-bloom under-drift halved so specks lead;
+whale's pectorals grown and swept (they vanished side-on); pearl
+gains rose terminator + seat pool;
+snow count up at the open-water band; poses re-staged: hornsgate
+(turn to face the Horns proper), chain (in to 25 m), wide-morning
+(pan left to catch the Daybreak), cradle-run (aim at the Hem's fold),
+morning-horizon (re-verified after the ring fix).
+
+### Round 3 (`gb3-r3`) — the near field is won; the horizon and the wall feet still owe, and the ochre is finally UNDERSTOOD
+
+All 25 authored poses re-captured (set 0038) plus the full 12-pose
+sweep (set 0057; frames 05/07 came back as broken captures — "authored
+assets unsettled after 10000ms", the game fell back to the base reef
+under dev-server starvation; harness, not design). Every PNG read.
+
+**What round 3 won.** `daybreak` holds as the region's proof (the
+pectorals now read in profile — the blimp is cured in every
+three-quarter frame); `overbrim` composes whale + beam + notch + snow;
+`wellhead` gained its mound texture and blade tufts and passes;
+`anchor` reads noble with litter field + finder beam; `anchor-eye`
+frames its ring against the vault; `chain` finally draws THE LINE (the
+r3 heave + size + crest light — the arc reads at 25 m);
+`wide-morning` composes (star specks lead, crater rim + whale
+silhouette at range); `shallows-ford` is the region's richest frame;
+`pearl` wears its rose terminator; `hem-lookback`, `close-mere-grain`,
+`close-bank-blades`, `morning-whale`, `daymark`, `longfall-brink`
+all pass on composition. Sweep 02/03/08/10/11 pass outright (11 is
+the round's gift — tuft meadow under beam pools at the wall), 12
+passes as the high-water rim frame, 06 marginal-passes INSIDE the
+Morning rest (licensed).
+
+**The round's fails, in causal order:**
+
+1. **THE MORNING-HORIZON IS STILL A RULE.** Root cause found by
+   arithmetic this round, not conjecture: from the Doorstep stand
+   (rc ≈ 142) ring 2 — the tallest, rosiest ring, the only one whose
+   bank crowns reach the eye line — sits at ~155 m of camera
+   distance, deep inside its own 140–157 m self-dissolve: THE POSE
+   COMPOSED FOR THE BANK CANNOT SEE IT. Rings 0/1 crowns ride 15–30 m
+   below the eye and compress into one straight band at the ground
+   crest. The r3 four-row/alpha work was right and is kept; the
+   remaining failure is stand + rise arithmetic.
+2. **The stone ochre SURVIVED the r3 shader — and the cause is now
+   measured.** A live-page probe proved the desaturation IS compiled
+   into the pale/slate programs (the injected GLSL read back from the
+   running context), yet the ford domes stayed gold: 0.55 is simply
+   below the visible threshold under the grade pass's saturation
+   lift. Raised to 0.85 and re-captured single-pose: the domes come
+   back rose-grey, freckle drawing intact. CURED (verify region-wide
+   at r4).
+3. **Wall grazes still fail** (sweep 01 at rc ≈ 172 SW, 09 at rc ≈ 181
+   on the morning side; 04 thin at rc ≈ 194 NE): measured against the
+   gates, the hem PAINT ramp `(rc − 164)/34` is only at ~5–50 % where
+   these poses stand — the wall story starts too high on the face —
+   and the wall tufts spread 2600 over the whole ring band
+   (~0.04/m²), eight blades in a graze frame.
+4. **Pose misses:** `hornsgate` (the restage overshot — the stand
+   looks OUTBOUND past the crest into open fog; the Horns are behind
+   the camera's shoulder), `morning-shelf` (still a bare tan plain —
+   the stand is 46 m from the Daymark with nothing nearer than fog),
+   `starwater-pans` (the pans read as far pale marks; the stand's own
+   foreground is a bare violet slope).
+5. Detail: `doorstep`'s r3 fleck order landed under-threshold (the
+   rise still reads smooth); `longfall-road`/`wall-crossing` far walls
+   still fog to flat where the crest line carries no light; sweep 04's
+   open half wants more marine snow.
+
+**Sweep verdict (12 captured, 2 broken by the harness): 5 pass
+(02/03/08/10/11) + 1 rim pass (12) + 1 licensed marginal (06, Morning
+rest) + 2 MISSES (01/09) + 1 thin (04) + 2 broken (05/07 — re-run).**
+The wall-foot class and the horizon arithmetic are the binding
+failures.
+
+**Round-4 orders:**
+
+1. Stone desat 0.85 (landed + single-pose verified during the r3
+   critique; confirm region-wide).
+2. The horizon: bank rises up (30 + fade·34, so ring 0's heads stand
+   near the eye line and ring 2's crowns crest above it), ring 2's
+   self-dissolve pushed out to 147–159 (from the rim stand every ring
+   is solid; walking outward the far ring now survives to the rail),
+   and `morning-horizon` RE-STAGED ONTO THE HEM'S CREST (rc ≈ 190,
+   eye −20, sightline level): the Morning Bank must stand ON the
+   horizon, rose over milk, with the Hem's outer apron falling away
+   in the foreground.
+3. The wall feet: hem paint ramp steepened to `(rc − 162)/18` (full
+   voice at the foot the sweeps actually graze), wall value swing up
+   again (fine 0.42, contour 0.26) with a crest-light band (top of
+   every standing face pales — the far wall reads as a drawn line at
+   90 m, the blue-2 slab lesson paid at the crest), a violet-grey toe
+   mottle where wall meets floor, wall tufts 2600 → 3400, scree
+   slabs 7 → 9 per anchor.
+4. Poses: `hornsgate` turned INBOUND from u 1158 (the Horns at 34 m,
+   the corridor walls framing), `morning-shelf` in to 30 m of the
+   Daymark with the buoy line beyond, `starwater-pans` down onto the
+   near pan's lip (pitch −0.2), `morning-horizon` per order 2.
+5. `doorstep` fleck threshold down/strength up (the rise must read
+   flecked); shelf pebbles 300 → 460; marine snow 1150 → 1400 for the
+   open rim band.
+6. Sweep re-run in full; 05/07 must come back as real frames.

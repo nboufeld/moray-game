@@ -223,7 +223,9 @@ const fallMossGate: GateFn = (x, z) => {
   }
   const near = 1 - smoothstep01((roadDistance(u, v) - 15) / 10);
   const comb = smoothstep01((Math.sin(v * 0.34 + u * 0.05) + 0.35) / 1.2);
-  return fillOwn(x, z) * restFree(x, z) * lensFree(x, z) * stoneFree(u, v) * band * (0.25 + 0.75 * near) * (0.4 + 0.6 * comb);
+  // Round 3: the off-road floor rises 0.25 → 0.42 — the sweep's
+  // down-look at the fall's open face found only paint.
+  return fillOwn(x, z) * restFree(x, z) * lensFree(x, z) * stoneFree(u, v) * band * (0.42 + 0.58 * near) * (0.4 + 0.6 * comb);
 };
 
 /** The deep star-tufts: sparse dark-register cover ringing the crater
@@ -249,11 +251,18 @@ const starTuftGate: GateFn = (x, z) => {
   );
 };
 
-/** The Hem's lower slope + the rim-facing flank band (F-R3). */
+/** The Hem's lower slope + the rim-facing flank band (F-R3). Round 3:
+ *  the band reaches 210 (the r2 cut at 206 left the upper face the
+ *  sweep grazes bare), and the Longfall's flank walls join. */
 const wallTuftGate: GateFn = (x, z) => {
   const { u, v } = spokeOf(x, z);
   const rc = Math.hypot(x - CENTER_X, z - CENTER_Z);
-  const wall = smoothstep01((rc - 148) / 26) * (1 - smoothstep01((rc - 206) / 12));
+  const hem = smoothstep01((rc - 148) / 26) * (1 - smoothstep01((rc - 210) / 10));
+  const flank =
+    u > 1252 && u < 1380
+      ? smoothstep01((Math.abs(v) - 36) / 10) * (1 - smoothstep01((Math.abs(v) - 62) / 12)) * 0.7
+      : 0;
+  const wall = Math.max(hem, flank);
   if (wall <= 0) {
     return 0;
   }
@@ -320,7 +329,9 @@ export function buildBlue3Cover(): Blue3CoverBuild {
       area: polylineArea(SPINE_ROAD.slice(0, 6), 44),
       gate: shelfPebbleGate,
       ground: seabedHeight,
-      count: 300,
+      // Round 4: the morning-shelf stand still read bare tan — the
+      // shelf's own T1 voice up.
+      count: 460,
       shapeSet: "pebble",
       size: [0.08, 0.2],
       twoTone: true,
@@ -357,13 +368,33 @@ export function buildBlue3Cover(): Blue3CoverBuild {
     }
     screeAnchors.push({ pos: [x, z], facing: theta + Math.PI, spread: 12 });
   }
+  // Round 3: the Longfall's flank-wall feet join — the sweep's two
+  // graze misses both stood over faces whose feet held nothing.
+  for (const [au, av] of [
+    [1296, -44],
+    [1322, -50],
+    [1348, -56],
+    [1300, 44],
+    [1330, 52],
+  ] as const) {
+    const at = worldOf(au, av);
+    const inward = worldOf(au, av - Math.sign(av) * 4);
+    if (restFree(at.x, at.z) < 0.6) {
+      continue;
+    }
+    screeAnchors.push({
+      pos: [at.x, at.z],
+      facing: Math.atan2(inward.z - at.z, inward.x - at.x),
+      spread: 10,
+    });
+  }
   const scree = keep(
     buildScreeApron({
       seed: SEED ^ B3_SEEDS.wallScree,
       palette: { base: 0xb6aecc, tip: 0xd4cede, shade: 0x6e6588 },
       ground: seabedHeight,
       anchors: screeAnchors,
-      slabsPerAnchor: 7,
+      slabsPerAnchor: 9,
     }),
   );
   duskLift(scree, 0x2c3440, 0.35);
@@ -456,7 +487,9 @@ export function buildBlue3Cover(): Blue3CoverBuild {
       area: discArea(),
       gate: wallTuftGate,
       ground: seabedHeight,
-      count: 2200,
+      // Round 4: 2600 over the whole ring band measured ~0.04/m² —
+      // eight blades in a graze frame. Up again.
+      count: 3400,
       profile: "blade",
       size: [0.36, 0.72],
       swayAmp: 0.045,

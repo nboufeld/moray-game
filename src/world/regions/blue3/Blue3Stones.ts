@@ -1,4 +1,4 @@
-import { Matrix4, TorusGeometry, Vector3, type BufferGeometry, type Mesh } from "three";
+import { Color, Matrix4, TorusGeometry, Vector3, type BufferGeometry, type Mesh } from "three";
 import { Random, SEEDS } from "../../../util/Random";
 import type { SphereCollider } from "../../CollisionField";
 import { createRockMaterial, weatherRock } from "../../RockMaterial";
@@ -64,6 +64,35 @@ export interface Blue3StonesBuild {
   readonly meshes: Mesh[];
   readonly colliders: SphereCollider[];
   readonly contacts: ContactPatch[];
+}
+
+/**
+ * A pale crest light on a part's upper reaches (in its FINAL world
+ * placement — call after the last transform): the chain's links catch
+ * the morning along their top arcs, so the drawn line reads at range.
+ */
+function crestLight(geometry: BufferGeometry, strength: number): void {
+  const position = geometry.attributes.position;
+  const colors = geometry.attributes.color;
+  if (!position || !colors) {
+    return;
+  }
+  let minY = Number.POSITIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+  for (let i = 0; i < position.count; i++) {
+    const y = position.getY(i);
+    minY = Math.min(minY, y);
+    maxY = Math.max(maxY, y);
+  }
+  const span = Math.max(0.001, maxY - minY);
+  const c = new Color();
+  const bright = new Color(0xf2ece2);
+  for (let i = 0; i < colors.count; i++) {
+    const t = (position.getY(i) - minY) / span;
+    c.setRGB(colors.getX(i), colors.getY(i), colors.getZ(i)).lerp(bright, t * t * strength);
+    colors.setXYZ(i, c.r, c.g, c.b);
+  }
+  colors.needsUpdate = true;
 }
 
 /** A weathered stone ring — the chain-link and anchor-eye family.
@@ -171,12 +200,15 @@ export function buildBlue3Stones(): Blue3StonesBuild {
   // ─── THE CHAIN ───────────────────────────────────────────────────────────
   // Five great stone links. Most lie flat, half-drowned in the silt;
   // the two nearest the Anchor heave up as the chain "rises" toward
-  // the ring — the line drawn in stone.
+  // the ring — the line drawn in stone. Round 3: links up a size with
+  // a stronger heave (the r2 links vanished at forty metres and the
+  // rise read as a scribble), and each ring's upper arc takes a pale
+  // crest light so the line catches the morning.
   const chainRandom = new Random(SEED ^ B3_SEEDS.chain);
   for (const [i, link] of CHAIN_LINKS.entries()) {
-    const radius = 2.1 + chainRandom.range(-0.2, 0.3);
-    const ring = ringGeometry(SEED ^ (B3_SEEDS.chain + i * 7), radius, 0.55);
-    const heave = i >= 3 ? 0.55 + (i - 3) * 0.35 : 0.12 + chainRandom.range(0, 0.1);
+    const radius = 2.5 + chainRandom.range(-0.2, 0.35);
+    const ring = ringGeometry(SEED ^ (B3_SEEDS.chain + i * 7), radius, 0.66);
+    const heave = i >= 3 ? 0.72 + (i - 3) * 0.42 : 0.14 + chainRandom.range(0, 0.1);
     // Flat rings pitch just off the floor; heaved ones tilt up along
     // the chain's bearing toward the Anchor.
     const bearing = Math.atan2(ANCHOR.v - link.v, ANCHOR.u - link.u);
@@ -185,6 +217,7 @@ export function buildBlue3Stones(): Blue3StonesBuild {
     const { x, z } = worldOf(link.u, link.v);
     const y = seabedHeight(x, z) + 0.25 + heave * radius * 0.9;
     ring.translate(x, y, z);
+    crestLight(ring, 0.4);
     (i % 2 === 0 ? paleParts : slateParts).push(ring);
     contacts.push({ x, z, radius: radius * 1.4, strength: 0.38 });
     colliders.push({ center: new Vector3(x, y, z), radius: radius * 0.9 });
@@ -382,14 +415,15 @@ export function buildBlue3Stones(): Blue3StonesBuild {
     }
   }
 
-  // The palen pass (blue-2's proven cure, taken from draft one and
-  // DEEPENED in round 2: our mood is brighter than the Deep Steps',
-  // and the r1 stones rendered bruised orange-purple at close range).
+  // The palen pass (blue-2's proven cure, taken from draft one,
+  // DEEPENED in round 2, and taught to DESATURATE in round 3: r2's
+  // lightening left the rock wash's warm patches as gold-orange
+  // marbling — they go rose-grey now, freckle drawing kept).
   for (const part of paleParts) {
-    palenStone(part, 0.55);
+    palenStone(part, 0.55, 0.45);
   }
   for (const part of slateParts) {
-    palenStone(part, 0.34);
+    palenStone(part, 0.34, 0.35);
   }
 
   const pale = createRockMaterial(STONE_PALE);
@@ -398,6 +432,32 @@ export function buildBlue3Stones(): Blue3StonesBuild {
   const slate = createRockMaterial(STONE_SLATE);
   slate.emissive.setHex(STONE_DUSK);
   slate.emissiveIntensity = STONE_DUSK_INTENSITY;
+  // Round 3, the ochre verdict: the r2/r3 orange marbling is IN the
+  // painted rock wash itself (its ochre patches), so no vertex-colour
+  // move can reach it — the region's stone materials desaturate the
+  // sampled wash in the shader instead. Region-scoped; the wash keeps
+  // its value drawing, its warm patches arrive rose-grey. Round 4:
+  // 0.55 measured invisible under the grade pass's saturation lift —
+  // the region's own probe compiled the injection and the ford domes
+  // stayed gold — so the wash chroma is taken nearly out (0.85) and
+  // the stone's colour is returned by tint + palen + dusk, which are
+  // all authored in the region's rose-violet register.
+  for (const material of [pale, slate]) {
+    material.onBeforeCompile = (shader) => {
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <map_fragment>",
+        /* glsl */ `
+#include <map_fragment>
+diffuseColor.rgb = mix(
+  diffuseColor.rgb,
+  vec3(dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114))),
+  0.85
+);
+`,
+      );
+    };
+    material.customProgramCacheKey = () => "blue3-stone-desat";
+  }
   meshes.push(mergedMesh(paleParts, pale, "firstsea-stone-pale"));
   meshes.push(mergedMesh(slateParts, slate, "firstsea-stone-slate"));
 

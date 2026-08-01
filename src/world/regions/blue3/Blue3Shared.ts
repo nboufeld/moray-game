@@ -79,8 +79,17 @@ totalEmissiveRadiance *= vColor;
  * key (blue-1's stone-value move, proven again by blue-2): the rock
  * pipeline bakes a warm facing tint that reads as rust under the deep
  * mood; this keeps its variety and re-keys its family.
+ *
+ * Round 3: it DESATURATES first — lightening alone (r2) left the warm
+ * patches as saturated gold-orange marbling on the pale families; a
+ * pull toward each vertex's own luminance turns them rose-grey while
+ * the value drawing survives untouched.
  */
-export function palenStone(geometry: { attributes: Record<string, unknown> }, amount: number): void {
+export function palenStone(
+  geometry: { attributes: Record<string, unknown> },
+  amount: number,
+  desaturate = 0,
+): void {
   const colors = geometry.attributes.color as
     | {
         count: number;
@@ -95,8 +104,15 @@ export function palenStone(geometry: { attributes: Record<string, unknown> }, am
     return;
   }
   const c = new Color();
+  const grey = new Color();
   for (let i = 0; i < colors.count; i++) {
-    c.setRGB(colors.getX(i), colors.getY(i), colors.getZ(i)).lerp(STAR_BRIGHT, amount);
+    c.setRGB(colors.getX(i), colors.getY(i), colors.getZ(i));
+    if (desaturate > 0) {
+      const luma = c.r * 0.299 + c.g * 0.587 + c.b * 0.114;
+      grey.setRGB(luma, luma, luma);
+      c.lerp(grey, desaturate);
+    }
+    c.lerp(STAR_BRIGHT, amount);
     colors.setXYZ(i, c.r, c.g, c.b);
   }
   colors.needsUpdate = true;

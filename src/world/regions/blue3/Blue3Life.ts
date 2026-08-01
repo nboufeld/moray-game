@@ -45,14 +45,17 @@ export function buildBlue3Life(): Blue3LifeBuild {
 
   // ── The air: snow + the two plankton bands ───────────────────────────────
   const heart = worldOf(1460, 0);
+  // Round 3: count and presence up a step — the sweep's open-water
+  // frames (04/05) read near-empty at the high stations. Round 4: up
+  // once more for the rim band's half-water grazes.
   const snow = buildParticulateField({
     seed: SEED ^ B3_SEEDS.snow,
     tint: 0xdcdaec,
-    count: 780,
+    count: 1400,
     mode: "fall",
     volume: { center: [heart.x, -26, heart.z], size: [420, 52, 420] },
-    size: 0.11,
-    opacity: 0.45,
+    size: 0.12,
+    opacity: 0.5,
   });
   groups.push(snow.group);
   updaters.push((t) => snow.update(t));
@@ -75,7 +78,7 @@ export function buildBlue3Life(): Blue3LifeBuild {
   const deepBand = buildParticulateField({
     seed: SEED ^ B3_SEEDS.planktonDeep,
     tint: 0xdcd4e6,
-    count: 1050,
+    count: 1250,
     mode: "drift",
     volume: { center: [deep.x, -43, deep.z], size: [380, 18, 380] },
     size: 0.42,

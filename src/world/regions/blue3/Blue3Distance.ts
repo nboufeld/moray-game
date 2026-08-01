@@ -39,15 +39,42 @@ interface SeaLayer {
   readonly ridgeVary: number;
   readonly fade: number;
   readonly ink: Color;
+  /** Camera-distance self-dissolve window, metres. */
+  readonly dissolve: readonly [number, number];
 }
 
 // Bases raised in round 2: the morning-horizon arithmetic (the stand
 // rides the vault at y −6; every ring crown must clear the Hem's
-// wobbled crest sightline with margin).
+// wobbled crest sightline with margin). Vary widened in round 3: the
+// r2 crowns silhouetted as dead-straight rules. Round 4: the outer
+// ring's dissolve pushed out to 147–159 — the r3 lesson was that the
+// one ring whose bank crowns reach the eye line dissolved exactly
+// where the composed pose stood.
 const LAYERS: readonly SeaLayer[] = [
-  { radius: 246, ridgeBase: 16, ridgeVary: 2.6, fade: 0.3, ink: new Color(0.74, 0.62, 0.8) },
-  { radius: 266, ridgeBase: 22, ridgeVary: 3.4, fade: 0.5, ink: new Color(0.86, 0.72, 0.86) },
-  { radius: 290, ridgeBase: 30, ridgeVary: 4.4, fade: 0.66, ink: new Color(0.96, 0.84, 0.92) },
+  {
+    radius: 246,
+    ridgeBase: 16,
+    ridgeVary: 4.2,
+    fade: 0.3,
+    ink: new Color(0.74, 0.62, 0.8),
+    dissolve: [140, 157],
+  },
+  {
+    radius: 266,
+    ridgeBase: 23,
+    ridgeVary: 5.6,
+    fade: 0.5,
+    ink: new Color(0.86, 0.72, 0.86),
+    dissolve: [143, 158],
+  },
+  {
+    radius: 290,
+    ridgeBase: 31,
+    ridgeVary: 7.2,
+    fade: 0.66,
+    ink: new Color(0.96, 0.84, 0.92),
+    dissolve: [147, 159],
+  },
 ];
 
 const SEGMENTS = 220;
@@ -61,8 +88,10 @@ const GAP_IN_HALF = 0.4;
  *  the Morning Bank's bearing the crown warms rose. */
 const FOOT_TINT: readonly [number, number, number] = [0.54, 0.52, 0.68];
 const MID_TINT: readonly [number, number, number] = [0.88, 0.83, 0.92];
+// Round 3: the rose pushed hard — under the teal-violet fog multiply
+// the r2/r3-first rose crushed to plain blue-grey.
 const CROWN_TINT: readonly [number, number, number] = [1.14, 1.1, 1.06];
-const CROWN_ROSE: readonly [number, number, number] = [1.24, 1.08, 0.98];
+const CROWN_ROSE: readonly [number, number, number] = [1.52, 1.12, 0.88];
 
 export function buildBlue3Distance(): { meshes: Mesh[] } {
   const meshes: Mesh[] = [];
@@ -95,8 +124,9 @@ export function buildBlue3Distance(): { meshes: Mesh[] } {
       transparent: true,
       depthWrite: false,
     });
-    // The self-dissolve: alpha to zero across 140–157 m of camera
-    // distance, safely inside the 160 m clip.
+    // The self-dissolve: alpha to zero across the layer's own window
+    // of camera distance, safely inside the 160 m clip.
+    const [dissolveFrom, dissolveTo] = layer.dissolve;
     material.onBeforeCompile = (shader) => {
       shader.vertexShader = shader.vertexShader
         .replace("#include <common>", "#include <common>\nvarying float vRingDist;")
@@ -108,10 +138,10 @@ export function buildBlue3Distance(): { meshes: Mesh[] } {
         .replace("#include <common>", "#include <common>\nvarying float vRingDist;")
         .replace(
           "#include <color_fragment>",
-          "#include <color_fragment>\ndiffuseColor.a *= 1.0 - smoothstep(140.0, 157.0, vRingDist);",
+          `#include <color_fragment>\ndiffuseColor.a *= 1.0 - smoothstep(${dissolveFrom.toFixed(1)}, ${dissolveTo.toFixed(1)}, vRingDist);`,
         );
     };
-    material.customProgramCacheKey = () => "blue3-distance-dissolve";
+    material.customProgramCacheKey = () => `blue3-distance-dissolve-${dissolveFrom}`;
     const geometry = seaRing(layer, SEEDS.regionBlue3 ^ (B3_SEEDS.distance + index * 131));
     const mesh = new Mesh(geometry, material);
     mesh.castShadow = false;
@@ -129,11 +159,18 @@ export function buildBlue3Distance(): { meshes: Mesh[] } {
 }
 
 /**
- * One ring: a curtain whose top edge is the open sea's own long level
- * swell — the flattest skylines in the program, because past the Hem
- * the country is water. The inbound sector is skipped with a long
- * taper; toward the outbound bearing the crown colours warm rose (the
- * Morning Bank).
+ * One ring: a curtain whose top edge is the open sea's own long
+ * gentle swell. The inbound sector is skipped with a long taper;
+ * toward the outbound bearing the crown colours warm rose and the
+ * swells gather into soft BANK HEADS (the Morning Bank).
+ *
+ * Round 3, the crown-alpha lesson: the r2 curtain's crest row carried
+ * alpha 0 — the dissolve reached nothing exactly at the crown, so the
+ * OPAQUE MID ROW silhouetted instead (a dead straight rule) and the
+ * rose never rendered. Four rows now: violet foot, lit shoulder, a
+ * SOLID crown that carries the rose, and a sky row above it where the
+ * dissolve actually happens — the visible crest line is the wobbled
+ * ridge itself.
  */
 function seaRing(layer: SeaLayer, noiseSeed: number): BufferGeometry {
   const positions: number[] = [];
@@ -147,21 +184,41 @@ function seaRing(layer: SeaLayer, noiseSeed: number): BufferGeometry {
   const ridges = new Float32Array(SEGMENTS + 1);
   for (let i = 0; i <= SEGMENTS; i++) {
     const t = i / SEGMENTS;
+    const theta = t * Math.PI * 2;
     const roll =
       fbm(t * 9, layer.radius * 0.013, { seed: noiseSeed, period: 9, octaves: 3 }) - 0.5;
-    // Open water: very long swells, near-level runs.
+    // Open water: long swells — but true swells, not rules.
     const wave =
       Math.sin(t * Math.PI * 2 * 5 + roll * 2) * 0.5 +
       Math.sin(t * Math.PI * 2 * 2 + (noiseSeed % 7)) * 0.5;
     const table = Math.min(0.62, wave) / 0.62;
     const base = layer.ridgeBase * (0.92 + 0.12 * Math.sin(t * Math.PI * 2 * 3 + (noiseSeed % 5)));
-    ridges[i] = base + (roll * 1.1 + table) * layer.ridgeVary;
+    // The Morning Bank's heads: over the outbound bearing the swells
+    // gather into soft cumulus rises — the shape of the light past
+    // the end of the sea. Round 4's arithmetic: the r3 rises grew
+    // WITH the base (22/30/40 on bases 16/23/31), which drove the
+    // farthest ring's whole bank INTO the 58 cap — a dead-straight
+    // rule, the very thing the bank was built to break. The rises now
+    // run AGAINST the base (the near ring carries the tall heads, the
+    // far rosiest ring keeps just its crowns cresting the cap-line's
+    // eye level), so every ring's bank stays under the cap except the
+    // far ring's few peaks — a massed, staggered bank instead of a
+    // rule.
+    const offMorning = angleBetween(theta, morning);
+    const bankK = 1 - smoothstep01((offMorning - 0.45) / 0.85);
+    const lobes = 0.55 + 0.45 * Math.sin(offMorning * 4.6 + (noiseSeed % 11));
+    const bankRise = 34 - layer.fade * 15;
+    const heads = bankK * Math.sqrt(bankK) * lobes * bankRise;
+    ridges[i] = Math.min(
+      58,
+      base + (roll * 1.1 + table) * layer.ridgeVary + heads,
+    );
   }
 
   // The repose relaxation: cap every column step (water's horizon is
   // the most reposeful skyline there is).
   const arc = (Math.PI * 2 * layer.radius) / SEGMENTS;
-  const maxStep = arc * 0.3;
+  const maxStep = arc * 0.42;
   for (let i = 1; i <= SEGMENTS; i++) {
     ridges[i] = Math.min(ridges[i]!, ridges[i - 1]! + maxStep);
   }
@@ -182,9 +239,11 @@ function seaRing(layer: SeaLayer, noiseSeed: number): BufferGeometry {
     const z = CENTER_Z + Math.sin(theta) * layer.radius;
 
     // The Morning Bank: crowns warm toward the dawn over the outbound
-    // bearing — strongest on the farthest, palest ring.
+    // bearing — strongest on the farthest, palest ring — and the rose
+    // reaches down into the shoulder so the warmth reads as a BANK,
+    // not a rim.
     const rose =
-      (1 - smoothstep01((angleBetween(theta, morning) - 0.25) / 0.55)) *
+      (1 - smoothstep01((angleBetween(theta, morning) - 0.55) / 0.9)) *
       (0.4 + 0.6 * layer.fade);
     const crown: [number, number, number] = [
       CROWN_TINT[0] + (CROWN_ROSE[0] - CROWN_TINT[0]) * rose,
@@ -192,20 +251,23 @@ function seaRing(layer: SeaLayer, noiseSeed: number): BufferGeometry {
       CROWN_TINT[2] + (CROWN_ROSE[2] - CROWN_TINT[2]) * rose,
     ];
     const mid: [number, number, number] = [
-      MID_TINT[0] + rose * 0.08,
-      MID_TINT[1] + rose * 0.02,
-      MID_TINT[2] - rose * 0.02,
+      MID_TINT[0] + rose * 0.16,
+      MID_TINT[1] + rose * 0.04,
+      MID_TINT[2] - rose * 0.04,
     ];
 
-    // Three rows: violet foot, lit shoulder, dissolved milky crest.
+    // Four rows: violet foot, lit shoulder, SOLID rose crown, sky.
     const top = FOOT + Math.max(1.4, ridges[i]! - FOOT) * end + 0.2;
-    const midY = FOOT + (top - FOOT) * 0.7;
-    positions.push(x, FOOT, z, x, midY, z, x, top, z);
-    colors.push(...FOOT_TINT, 0.95, ...mid, 0.85, ...crown, 0);
+    const midY = FOOT + (top - FOOT) * 0.62;
+    const sky = top + 3.5 + layer.ridgeVary * 0.5;
+    positions.push(x, FOOT, z, x, midY, z, x, top, z, x, sky, z);
+    colors.push(...FOOT_TINT, 0.95, ...mid, 0.85, ...crown, 0.62 + rose * 0.16, ...crown, 0);
     if (column > 0) {
-      const a = positions.length / 3 - 6;
-      indices.push(a, a + 1, a + 3, a + 1, a + 4, a + 3);
-      indices.push(a + 1, a + 2, a + 4, a + 2, a + 5, a + 4);
+      const a = positions.length / 3 - 8;
+      for (let row = 0; row < 3; row++) {
+        const b = a + row;
+        indices.push(b, b + 1, b + 4, b + 1, b + 5, b + 4);
+      }
     }
     column++;
   }

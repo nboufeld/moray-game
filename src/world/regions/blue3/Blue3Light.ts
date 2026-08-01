@@ -158,6 +158,15 @@ export function buildBlue3Light(): Blue3LightBuild {
           opacity: 0.07,
         },
       ],
+      // Round 3: the seat pool — the r2 orb sat in its dimple but its
+      // light stopped at its own skin.
+      pools: [
+        {
+          pos: [pearlAt.x, pearlAt.z],
+          radius: 2.6,
+          opacity: 0.13,
+        },
+      ],
     }).group,
   );
 
@@ -218,6 +227,7 @@ function buildPearlMesh(x: number, floor: number, z: number): Mesh {
   const crown = new Color(0xf2ece4);
   const under = new Color(0x9a88ae);
   const iris = new Color(0xdcc8c2);
+  const rose = new Color(0xe2b8a8);
   const shade = new Color();
   for (let i = 0; i < position.count; i++) {
     const py = position.getY(i);
@@ -225,6 +235,10 @@ function buildPearlMesh(x: number, floor: number, z: number): Mesh {
     shade.copy(under).lerp(crown, t);
     const band = Math.sin(position.getX(i) * 2.4 + py * 3.1);
     shade.lerp(iris, Math.max(0, band) * 0.22 * (1 - t * 0.5));
+    // Round 3, the rose terminator: a warm dawn band where crown
+    // meets under-shade — the r2 orb read as a pasted white ball.
+    const term = 1 - smoothstep01((Math.abs(t - 0.42) - 0.1) / 0.16);
+    shade.lerp(rose, term * 0.3);
     colors[i * 3] = shade.r;
     colors[i * 3 + 1] = shade.g;
     colors[i * 3 + 2] = shade.b;

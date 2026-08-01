@@ -181,10 +181,12 @@ function whaleGeometry(): BufferGeometry {
   position.needsUpdate = true;
 
   const pectoral = (side: number): BufferGeometry => {
+    // Round 3: grown and swept — the r2 blades vanished side-on and
+    // the body read as a blimp.
     const s = side;
     const positions = new Float32Array([
-      s * 1.5, -0.7, 2.4, s * 4.4, -1.5, 0.4, s * 1.6, -0.8, 1.0,
-      s * 1.6, -0.8, 1.0, s * 4.4, -1.5, 0.4, s * 2.4, -1.0, -0.2,
+      s * 1.5, -0.7, 2.6, s * 5.3, -2.0, -0.2, s * 1.6, -0.8, 1.0,
+      s * 1.6, -0.8, 1.0, s * 5.3, -2.0, -0.2, s * 2.6, -1.1, -0.6,
     ]);
     const fin = new BufferGeometry();
     fin.setAttribute("position", new BufferAttribute(positions, 3));

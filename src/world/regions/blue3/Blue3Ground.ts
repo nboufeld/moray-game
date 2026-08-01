@@ -113,13 +113,20 @@ function starBloom(
 ): { speck: number; drift: number } {
   const specks = fbm(x * 0.85, z * 0.85, { seed: SEED ^ B3_SEEDS.paintStars, period: 23, octaves: 2 });
   const drift = fbm(x * 0.017, z * 0.017, { seed: SEED ^ B3_SEEDS.paintSilt, period: 6, octaves: 2 });
-  const morning = 1 - smoothstep01((Math.hypot(u - 1374, v + 58) - 30) / 40);
+  // Two bright fields: the Wide Morning, and (round 3) the pans'
+  // approach — the starwater rest's own floor was reading bare.
+  const morning = Math.max(
+    1 - smoothstep01((Math.hypot(u - 1374, v + 58) - 30) / 40),
+    (1 - smoothstep01((Math.hypot(u - 1416, v + 110) - 24) / 28)) * 0.75,
+  );
   const threshold = 0.78 - drift * 0.06 - morning * 0.04;
   const speck =
     specks <= threshold
       ? 0
       : smoothstep01((specks - threshold) / 0.07) * (0.6 + morning * 0.4);
-  const under = smoothstep01((drift - 0.56) / 0.2) * (0.2 + morning * 0.15);
+  // Round 3: the under-drift halved — at 40 m the r2 drift patches
+  // read as beige blotches leading the specks instead of under them.
+  const under = smoothstep01((drift - 0.56) / 0.2) * (0.1 + morning * 0.07);
   return { speck, drift: under };
 }
 
@@ -174,7 +181,9 @@ function bakeFirstSeaPaint(geometry: PlaneGeometry, contacts: readonly ContactPa
       col.lerp(MERE_VIOLET_STORY, smoothstep01((fall - 0.55) / 0.45));
       col.lerp(SILT_DRIFT, silt * 0.3 * (1 - steepK * 0.8) * (1 - fall * 0.5));
       // The fall's face is combed and runnelled (round 2: amplitude up
-      // hard — the r1 face fogged to one flat plane from the Mere).
+      // hard — the r1 face fogged to one flat plane from the Mere.
+      // Round 3: a 2–5 m fine octave joins — the sweep's down-look
+      // graze at four metres found a face with no grain at its scale).
       if (fall > 0.02 && fall < 0.98) {
         const comb =
           fbm(v * 0.12, u * 0.014, { seed: SEED ^ B3_SEEDS.paintFall, period: 7, octaves: 2 }) -
@@ -182,7 +191,10 @@ function bakeFirstSeaPaint(geometry: PlaneGeometry, contacts: readonly ContactPa
         const runnel =
           fbm(v * 0.05, u * 0.006, { seed: SEED ^ (B3_SEEDS.paintFall + 3), period: 5, octaves: 2 }) -
           0.5;
-        value *= 1 + (comb * 0.3 + Math.max(0, runnel) * 0.24) * steepK;
+        const fine =
+          fbm(x * 0.42, z * 0.42, { seed: SEED ^ (B3_SEEDS.paintFall + 7), period: 15, octaves: 2 }) -
+          0.5;
+        value *= 1 + (comb * 0.36 + Math.max(0, runnel) * 0.24 + fine * 0.22) * steepK;
         col.lerp(SHADOW_VIOLET, Math.max(0, -runnel) * 0.6 * steepK);
         col.lerp(MILKY_SHELF, Math.max(0, runnel) * 0.3 * steepK);
       }
@@ -240,9 +252,15 @@ function bakeFirstSeaPaint(geometry: PlaneGeometry, contacts: readonly ContactPa
       const rim = smoothstep01((wd - 6) / 8) * (1 - smoothstep01((wd - 30) / 14));
       const skirt = smoothstep01((wd - 20) / 6) * (1 - smoothstep01((wd - 30) / 16));
       col.lerp(WELL_PALE, rim * 0.7 + skirt * 0.3);
-      // Concentric breath-rings on the rim, like ripples of light.
+      // Concentric breath-rings on the rim, like ripples of light —
+      // plus (round 3) a fine grain across the whole mound face: the
+      // r2 crater filled sixty percent of its portrait as one smooth
+      // tan surface.
       const ripple = Math.sin(wd * 1.5);
-      value *= 1 + rim * (0.14 + ripple * 0.07) + skirt * 0.06;
+      const mound =
+        fbm(x * 0.48, z * 0.48, { seed: SEED ^ (B3_SEEDS.paintWall + 13), period: 21, octaves: 2 }) -
+        0.5;
+      value *= 1 + rim * (0.14 + ripple * 0.07) + skirt * 0.06 + (rim + skirt) * mound * 0.24;
       const bowl = 1 - smoothstep01((wd - 5) / 6);
       if (bowl > 0) {
         col.lerp(DAYBREAK_BRIGHT, bowl * 0.9);
@@ -284,12 +302,20 @@ function bakeFirstSeaPaint(geometry: PlaneGeometry, contacts: readonly ContactPa
       value *= 1 - seat * 0.25;
     }
 
-    // The Doorstep's rise: milky, the world's last floor.
+    // The Doorstep's rise: milky, the world's last floor — flecked
+    // (round 3): the rest licenses bareness of FILL, not of paint;
+    // the r2 rise was one smooth gradient at the bench's feet.
     const doorD = Math.hypot(u - DOORSTEP.u, v - DOORSTEP.v);
     if (doorD < 30) {
       const rise = 1 - smoothstep01((doorD - 10) / 18);
+      const fleck =
+        fbm(x * 0.6, z * 0.6, { seed: SEED ^ (B3_SEEDS.paintStars + 4), period: 19, octaves: 2 }) -
+        0.5;
+      // Round 4: the r3 threshold (0.18) left the flecks under the
+      // shutter's floor — the rise still read as one smooth gradient.
       col.lerp(MILKY_SHELF, rise * 0.55);
-      value *= 1 + rise * 0.1;
+      col.lerp(STAR_BLOOM, rise * Math.max(0, fleck - 0.1) * 2.2);
+      value *= 1 + rise * (0.1 + fleck * 0.2);
     }
 
     // THE HEM and the corridor's flank walls: every standing face
@@ -298,7 +324,13 @@ function bakeFirstSeaPaint(geometry: PlaneGeometry, contacts: readonly ContactPa
     // at rc < 176 carried NO wall story and fogged to flat planes),
     // and the value swing + a fine grain go up hard — fog eats half of
     // any amplitude (the blue-2 slab lesson, paid in paint).
-    const hemK = smoothstep01((rc - 164) / 34) * smoothstep01((u - 1244) / 30);
+    // Round 4, the wall-foot verdict: the r3 hem ramp `(rc − 164)/34`
+    // left the paint at 5–50 % where the sweep grazes actually stood
+    // (rc 172–195) — the story now reaches FULL VOICE at the foot,
+    // the swing goes up again, the crest takes a light band (a far
+    // wall must read as a drawn line at 90 m), and a violet-grey toe
+    // mottle seats the wall on the floor.
+    const hemK = smoothstep01((rc - 162) / 18) * smoothstep01((u - 1244) / 30);
     const flankK =
       u > 1248 && u < 1380
         ? smoothstep01((y - (fallDrop(u, v) + 1.5)) / 9) * smoothstep01((Math.abs(v) - 38) / 12)
@@ -311,11 +343,35 @@ function bakeFirstSeaPaint(geometry: PlaneGeometry, contacts: readonly ContactPa
       const grain =
         fbm(u * 0.34, v * 0.34, { seed: SEED ^ (B3_SEEDS.paintWall + 5), period: 13, octaves: 2 }) -
         0.5;
+      // Round 3: the 1–3 m octave the graze frames were missing, and
+      // pale streak colour riding it — value alone dies under fog.
+      const fine =
+        fbm(x * 0.55, z * 0.55 + y * 0.3, {
+          seed: SEED ^ (B3_SEEDS.paintWall + 9),
+          period: 17,
+          octaves: 2,
+        }) - 0.5;
       const height = smoothstep01((y + 30) / 30);
+      const crest = smoothstep01((y + 18) / 9);
       col.lerp(HEM_MILK, wallK * (0.5 + 0.2 * height));
       col.lerp(HEM_ROSE, wallK * height * height * 0.6);
       col.lerp(SHADOW_VIOLET, wallK * Math.max(0, -runnel) * 0.9);
-      value *= 1 + wallK * (0.12 + contour * 0.18 + runnel * 0.22 + grain * 0.14);
+      col.lerp(MILKY_SHELF, wallK * (Math.max(0, fine) * 0.5 + crest * 0.5));
+      col.lerp(SHADOW_VIOLET, wallK * Math.max(0, -fine) * 0.4);
+      value *=
+        1 + wallK * (0.12 + contour * 0.26 + runnel * 0.26 + grain * 0.16 + fine * 0.42 + crest * 0.14);
+    }
+
+    // The toe: where the Hem meets the floor, a violet-grey debris
+    // mottle (1–3 m) — the junction the graze cones stand over.
+    const toe = smoothstep01((rc - 154) / 8) * (1 - smoothstep01((rc - 170) / 8));
+    if (toe > 0 && u > 1244) {
+      const mottle =
+        fbm(x * 0.5, z * 0.5, { seed: SEED ^ (B3_SEEDS.paintWall + 11), period: 15, octaves: 2 }) -
+        0.5;
+      col.lerp(MILKY_SHELF, toe * Math.max(0, mottle) * 0.45);
+      col.lerp(SHADOW_VIOLET, toe * Math.max(0, -mottle) * 0.5);
+      value *= 1 + toe * mottle * 0.22;
     }
 
     // Depth is the dimmer — but gently here: the Mere carries its own

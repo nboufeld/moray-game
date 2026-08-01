@@ -143,13 +143,17 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // drops onto the amphitheatre. Pre-connection this frame carries
   // blue-2's rim seals and closed ceiling: the honest state.)
   { name: "wall-crossing", u: 1140, v: 0, lift: 1.4, atU: 1114, atV: -4, pitch: -0.45, settle: 4 },
-  // THE HORNSGATE: on the crest, the Deep Steps' Horns framing the
-  // door the diver came through (round 2: closer and lower — at 36 m
-  // under pitch 0.2 the Horns were fog-ghosts under open sky).
-  { name: "hornsgate", u: 1150, v: -2, lift: 1.6, atU: 1126, atV: 1, pitch: 0.06 },
+  // THE HORNSGATE — recomposed AGAIN in round 4: the r3 stand looked
+  // OUTBOUND past the crest into open fog (the Horns behind the
+  // camera's shoulder, one Gatebuoy cropped in a corner). The pose
+  // now stands on the shelf side and faces the gate itself: the
+  // Horns' pair at 34 m, the corridor's slot walls flanking them.
+  { name: "hornsgate", u: 1158, v: 2, lift: 1.8, atU: 1124, atV: 0, pitch: 0.03, settle: 3 },
   // The Morning Shelf: the world's last milky threshold, the Daymark
-  // breaching the fog ahead (round 2: the r1 stand left it 68 m out).
-  { name: "morning-shelf", u: 1206, v: -6, lift: 2.2, atU: 1252, atV: -2, pitch: -0.02 },
+  // breaching the fog ahead (round 2: the r1 stand left it 68 m out;
+  // round 4: in to 30 m — at 46 the shelf's own paint and pebbles all
+  // lay past the fog's shoulder and the frame read bare tan).
+  { name: "morning-shelf", u: 1222, v: -8, lift: 2.0, atU: 1252, atV: 4, pitch: 0.02 },
   // THE DAYMARK, close: the lone waymark and its thin blade.
   { name: "daymark", u: 1240, v: 0, lift: 2.0, atU: 1252, atV: 6, pitch: 0.08, settle: 3 },
   // THE LONGFALL'S BRINK: the deepest country opens in one breath —
@@ -159,15 +163,18 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "longfall-brink", u: 1250, v: -4, lift: 2.4, atU: 1300, atV: 2, pitch: -0.22, settle: 4 },
   // Mid-fall: the world's longest road, buoy stones pacing it.
   { name: "longfall-road", u: 1296, v: 8, lift: 2.6, atU: 1334, atV: -8, pitch: -0.1, settle: 3 },
-  // THE CHAIN: the links rising toward the Anchor in the fog.
-  { name: "chain", u: 1336, v: 10, lift: 2.4, atU: 1372, atV: 48, pitch: -0.02, settle: 3 },
+  // THE CHAIN: the links rising toward the Anchor in the fog (round
+  // 3: in to 25 m — the r2 links vanished at forty).
+  { name: "chain", u: 1352, v: 24, lift: 2.6, atU: 1377, atV: 52, pitch: 0.02, settle: 3 },
   // THE ANCHOR: the great shape, portrait.
   { name: "anchor", u: 1402, v: 42, lift: 2.8, atU: 1387, atV: 58, pitch: 0.12, settle: 4 },
   // The Anchor's ring against the open water, from midwater.
   { name: "anchor-eye", u: 1368, v: 40, lift: 0, absoluteY: -44, atU: 1381, atV: 53, pitch: 0.15, settle: 3 },
   // THE WIDE MORNING: composed emptiness — the star-bloom floor, the
-  // Daybreak far, the Whale crossing. The region's Friedrich.
-  { name: "wide-morning", u: 1352, v: -40, lift: 2.2, atU: 1428, atV: -56, pitch: 0.03 },
+  // Daybreak far, the Whale crossing. The region's Friedrich. (Round
+  // 3: panned toward the Daybreak — the r2 frame missed the region's
+  // one far event and read as blotches under bands.)
+  { name: "wide-morning", u: 1352, v: -40, lift: 2.2, atU: 1470, atV: -38, pitch: 0.03 },
   // THE WELLHEAD: the spring of the sea, portrait — rim, crags,
   // breath and beam.
   { name: "wellhead", u: 1466, v: -52, lift: 3.0, atU: 1502, atV: -28, pitch: 0.06, settle: 4 },
@@ -176,24 +183,30 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "daybreak", u: 1496, v: -36, lift: 0, absoluteY: -50, atU: 1502, atV: -28, pitch: 0.35, settle: 8 },
   // THE OVERBRIM: road and newborn river sharing one doorway.
   { name: "overbrim", u: 1481, v: 2, lift: 2.2, atU: 1489, atV: -8, pitch: 0.05, settle: 4 },
-  // Riding the Cradle downstream, toward the rim mist.
-  { name: "cradle-run", u: 1436, v: 66, lift: 2.6, atU: 1424, atV: 100, pitch: -0.04, settle: 5 },
+  // Riding the Cradle downstream, toward the rim mist — and (round 3)
+  // the pitch lifts a hair so the rebuilt rings hold the far axis.
+  { name: "cradle-run", u: 1436, v: 66, lift: 2.6, atU: 1424, atV: 100, pitch: 0.03, settle: 5 },
   // THE SHALLOWS: the road wades the young river; the dawn shoal
   // crosses on schedule.
   { name: "shallows-ford", u: 1436, v: 40, lift: 2.0, atU: 1446, atV: 47, pitch: 0.02, settle: 6 },
   // THE STARWATER PANS: still dishes of held light (round 2: closer —
-  // the r1 pans were dim smears at thirty metres).
-  { name: "starwater-pans", u: 1404, v: -98, lift: 2.2, atU: 1419, atV: -113, pitch: -0.08, settle: 3 },
+  // the r1 pans were dim smears at thirty metres; round 4: onto the
+  // near pan's lip, looking DOWN into the held light — the r3 stand
+  // put a bare violet slope in the whole lower half).
+  { name: "starwater-pans", u: 1413, v: -104, lift: 3.2, atU: 1425, atV: -115, pitch: -0.2, settle: 3 },
   // THE PEARL: the secret, found.
   { name: "pearl", u: 1541, v: 90, lift: 1.8, atU: 1548, atV: 96, pitch: -0.04, settle: 4 },
   // THE SEA'S DOORSTEP: the bench, the Watchers, the last horizon.
   { name: "doorstep", u: 1586, v: 6, lift: 2.2, atU: 1603, atV: -5, pitch: 0.04, settle: 3 },
-  // From over the Doorstep, out across the Hem: the Morning Bank —
-  // the end of the sea, painted. Round 2, arithmetic redone: from
-  // y −18 the Hem's wobbled crest still occluded every ring; from −6
-  // (the vault holds +8 here) ring 1's crown clears the crest line by
-  // 0.11 rad and the rose crowns stand.
-  { name: "morning-horizon", u: 1596, v: -2, lift: 0, absoluteY: -6, atU: 1690, atV: 0, pitch: 0.02 },
+  // ON the Hem's crest, facing the Morning Bank — the end of the sea,
+  // painted. Round 4, the arithmetic finally honest: from the
+  // Doorstep (rc 142) ring 2 — the only ring whose bank crowns reach
+  // the eye line — sat at ~155 m, inside its own self-dissolve. The
+  // stand walks OUT to the rail (rc ≈ 190): every ring solid at
+  // 56/76/100 m, the near bank rolling below the eye, the far rose
+  // crowns cresting above it, the Hem's outer apron falling away
+  // underfoot.
+  { name: "morning-horizon", u: 1650, v: -2, lift: 0, absoluteY: -10, atU: 1720, atV: -2, pitch: 0.0 },
   // Back across the country from the Mere's east edge (round 2: the
   // r1 stand at 165 m fogged everything out; the Anchor silhouette
   // needs ≤ ~90 m).
