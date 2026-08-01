@@ -97,6 +97,7 @@ export const FC_SEEDS = {
   nightDoor: 0x2102,
   pillows: 0x2103,
   skate: 0x2104,
+  strandStones: 0x2105,
   baseCarpet: 0x2110,
   combGravel: 0x2111,
   washCinder: 0x2112,

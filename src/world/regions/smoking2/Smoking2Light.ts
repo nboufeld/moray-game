@@ -363,9 +363,13 @@ function buildEmberPools(): Mesh {
 /**
  * The Ladle's milk pool — the rest's own composition (R2: the r1 pose
  * found a bare bowl; the room IS pool + glimmer, so the pool must be
- * built). A single draped disc, milk-pale with a faint warm heart,
- * normal blending: painted water, not light. Licensed by the registry
- * as the rest's stated composition.
+ * built). A single draped disc, milk-pale with a faint warm heart.
+ * R5: ADDITIVE blending — the pool sprite is a halo on black, and under
+ * normal blending every black texel rendered as a 48 % dark shard
+ * wherever the drape tilted (r4's torn-cloth rim). Additive makes the
+ * black weightless: only the milk shows, the way the ember pools
+ * already work. Licensed by the registry as the rest's stated
+ * composition.
  */
 function buildLadlePool(): Mesh {
   const at = worldOf(RESTS.ladle.u, RESTS.ladle.v);
@@ -398,7 +402,8 @@ function buildLadlePool(): Mesh {
     map: poolSprite(),
     vertexColors: true,
     transparent: true,
-    opacity: 0.48,
+    opacity: 0.42,
+    blending: AdditiveBlending,
     depthWrite: false,
   });
   const mesh = new Mesh(disc, material);

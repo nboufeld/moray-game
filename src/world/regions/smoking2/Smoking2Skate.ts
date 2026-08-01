@@ -56,11 +56,15 @@ export interface SkateBuild {
  *  road's reach past the forge and back along the near bank. R3: the
  *  wash-length ellipse (±132 m) made every capture and every visit a
  *  phase lottery (connective-3's route lesson); a court loop keeps the
- *  lantern where the country's heart is. */
+ *  lantern where the country's heart is. R5: ±46 m was still a lottery —
+ *  the loop's far side sat ~100 m from any stand, past the fog's read;
+ *  three probe launches found the skate at three different reaches. At
+ *  ±26 m every point of the circuit is inside 50 m of the court's north
+ *  bank, so the pose holds the WHOLE loop and the phase stops mattering. */
 function pathAt(t: number, phase: number, out: Vector3): Vector3 {
   const theta = t * Math.PI * 2 + phase;
-  const u = 948 + 46 * Math.cos(theta);
-  const v = washCenter(u) + 9 * Math.sin(theta) + 1.4 * Math.sin(theta * 3);
+  const u = 948 + 26 * Math.cos(theta);
+  const v = washCenter(u) + 8 * Math.sin(theta) + 1.4 * Math.sin(theta * 3);
   const { x, z } = worldOf(u, v);
   const floor = seabedHeight(x, z);
   out.set(x, floor + 2.1 + 0.5 * Math.sin(theta * 2), z);
@@ -80,7 +84,9 @@ export function buildSmoking2Skate(): SkateBuild {
   const material = createToonMaterial({
     vertexColors: true,
     emissive: 0xff8c3a,
-    emissiveIntensity: 0.5,
+    // 0.62: the lantern has to read across the whole court, and the
+    // loop's far reach sits at the fog's edge from the pose's bank.
+    emissiveIntensity: 0.62,
   });
   applySeamGlow(material, "forge-ember-skate");
   const mesh = new Mesh(geometry, material);

@@ -2,6 +2,7 @@ import {
   BoxGeometry,
   BufferAttribute,
   Color,
+  CylinderGeometry,
   Mesh,
   Vector3,
   type BufferGeometry,
@@ -17,6 +18,7 @@ import {
   CRUST_PALE,
   EMBER,
   FC_SEEDS,
+  GLASS_SHEEN,
   SHADOW_VIOLET,
   applySeamGlow,
   mergedMesh,
@@ -310,6 +312,57 @@ function lintelGeometry(): { geometry: BufferGeometry; colliders: SphereCollider
   return { geometry, colliders };
 }
 
+/**
+ * The Strand Stones — the Glass Shore's own furniture (R5: the shore's
+ * pose and its sweeps had shard-litter near and the rim far, and
+ * NOTHING between; a shore needs beached hulls). Low hexagonal obsidian
+ * plates, half-sunk and tilted like cooled rafts, dark flanks under a
+ * glass-sheen top — the province's milk-bright cap carried in stone.
+ * One merged draw.
+ */
+const STRAND_STONES: readonly {
+  readonly u: number;
+  readonly v: number;
+  readonly radius: number;
+  readonly height: number;
+}[] = [
+  { u: 1066, v: -20, radius: 4.2, height: 1.5 },
+  { u: 1076, v: -34, radius: 5.6, height: 2.2 },
+  { u: 1087, v: -24, radius: 3.4, height: 1.2 },
+  { u: 1094, v: -40, radius: 4.8, height: 1.8 },
+  { u: 1071, v: -46, radius: 2.8, height: 1.0 },
+];
+
+function strandStoneGeometry(
+  spec: (typeof STRAND_STONES)[number],
+  random: Random,
+): BufferGeometry {
+  const plate = new CylinderGeometry(spec.radius * 0.82, spec.radius, spec.height, 6, 1);
+  const position = plate.attributes.position!;
+  const colors = new Float32Array(position.count * 3);
+  const flank = new Color(0x241f2e);
+  const shade = new Color();
+  for (let i = 0; i < position.count; i++) {
+    const topness = smoothstep01((position.getY(i) / spec.height + 0.5 - 0.6) / 0.4);
+    shade.copy(flank).lerp(GLASS_SHEEN, topness * 0.85);
+    // A worn pale lip on the windward rim of the cap.
+    const rim = Math.hypot(position.getX(i), position.getZ(i)) / spec.radius;
+    shade.lerp(CRUST_PALE, topness * smoothstep01((rim - 0.7) / 0.3) * 0.3);
+    colors[i * 3] = shade.r;
+    colors[i * 3 + 1] = shade.g;
+    colors[i * 3 + 2] = shade.b;
+  }
+  plate.setAttribute("color", new BufferAttribute(colors, 3));
+  plate.rotateY(random.range(0, Math.PI));
+  plate.rotateX(random.signed(0.14));
+  plate.rotateZ(random.signed(0.14));
+  const at = worldOf(spec.u, spec.v);
+  const floor = seabedHeight(at.x, at.z);
+  // Half-sunk: the plate's midline rides just above the shore sheet.
+  plate.translate(at.x, floor + spec.height * 0.28, at.z);
+  return plate;
+}
+
 export function buildSmoking2Combs(): CombsBuild {
   const random = new Random(SEED ^ FC_SEEDS.combs);
   const meshes: Mesh[] = [];
@@ -425,6 +478,21 @@ export function buildSmoking2Combs(): CombsBuild {
     });
   }
   contacts.push({ x: anvilAt.x, z: anvilAt.z, radius: 13, strength: 0.42 });
+
+  // ─── The Strand Stones (Glass Shore) ──────────────────────────────────────
+  const stoneRandom = new Random(SEED ^ FC_SEEDS.strandStones);
+  const stoneParts: BufferGeometry[] = [];
+  for (const spec of STRAND_STONES) {
+    stoneParts.push(strandStoneGeometry(spec, stoneRandom));
+    const at = worldOf(spec.u, spec.v);
+    const floor = seabedHeight(at.x, at.z);
+    colliders.push({
+      center: new Vector3(at.x, floor + spec.height * 0.3, at.z),
+      radius: spec.radius * 0.88,
+    });
+    contacts.push({ x: at.x, z: at.z, radius: spec.radius + 1.5, strength: 0.3 });
+  }
+  meshes.push(mergedMesh(stoneParts, finMaterial, "forge-strand-stones"));
 
   return { meshes, colliders, contacts, perchTops, drapeAnchors, feet };
 }

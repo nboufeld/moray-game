@@ -134,13 +134,15 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // The Anvil, from the road: the heart's forge-glow and its shimmer.
   { name: "anvil", u: 914, v: washCenter(914), lift: 2.6, atU: ANVIL.u, atV: ANVIL.v, pitch: 0.06, settle: 4 },
   // The skate's court (R3: the wash-length circuit made every pose a
-  // phase lottery — connective-3's lesson verbatim; the circuit is now
-  // the Anvil court's compact loop, and this stand holds the WHOLE
-  // ellipse in frame, so the lantern cannot be outside it. R4: aim at
-  // the ANVIL, not down the loop's axis — the skate is a discovery
-  // target, and a reticle resting on its path line auto-focuses it and
-  // fires the white discovery flash mid-capture; the bisect proved it).
-  { name: "ember-skate", u: 1012, v: washCenter(1012) + 2, lift: 6.0, atU: ANVIL.u, atV: ANVIL.v, pitch: -0.06, settle: 6 },
+  // phase lottery — connective-3's lesson verbatim. R4 aimed at the
+  // ANVIL to keep the reticle off the flight band — the discovery flash
+  // fires when the ray rests on the skate — but the r4 stand at u=1012
+  // still put the loop's far reach ~100 m out, past the fog's read; the
+  // probe found the skate there in two launches of three. R5: the loop
+  // is ±26 m and this stand is the court's own north bank — every point
+  // of the circuit is inside 50 m and inside the frame, and the aim ray
+  // to the Anvil's cap passes ≥6 m up, clear over the flight band).
+  { name: "ember-skate", u: 948, v: 27, lift: 2.4, atU: ANVIL.u, atV: ANVIL.v, pitch: 0.1, settle: 6 },
   // The Kings' Run: looking up the tallest walls' aisle (R3: 0.36 still
   // put 60 % open water in frame; hold the aisle's floor and both faces).
   { name: "kings-run", u: 908, v: 30, lift: 2.4, atU: 918, atV: 44, pitch: 0.18, settle: 4 },
@@ -153,8 +155,10 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // The Ladle itself: the rest read from its rim — composed stillness.
   { name: "the-ladle", u: 876, v: 108, lift: 6.0, atU: RESTS.ladle.u, atV: RESTS.ladle.v, pitch: -0.3 },
   // The Glass Shore: obsidian hush, the far country's cool note (R3:
-  // higher and turned onto the sheet itself — r2 read the wash gully).
-  { name: "glass-shore", u: 1044, v: -12, lift: 3.6, atU: 1092, atV: -34, pitch: -0.04 },
+  // higher and turned onto the sheet itself — r2 read the wash gully.
+  // R5: r4's 50 m stare found only fog; stand on the shore and read the
+  // Strand Stones — the beached plates are the shore's mid-ground).
+  { name: "glass-shore", u: 1054, v: -16, lift: 3.0, atU: 1076, atV: -34, pitch: -0.06 },
   // The Night Door: the reserved pass framed against parted distance.
   { name: "night-door", u: 1082, v: 2, lift: 2.6, atU: NIGHT_DOOR.u, atV: NIGHT_DOOR.v, pitch: 0.04 },
 ];
