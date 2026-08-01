@@ -73,6 +73,15 @@ function buildSeals(): SphereCollider[] {
     if (passGate(u, v) > 0.3) {
       continue;
     }
+    // R0.3 integration (the Canopy Deep's flagged gate): the depth-3 pass
+    // leaves this disc at the far pole (u ≈ 1138 on the spoke), and now
+    // that the Canopy Deep exists to catch the diver on the other side,
+    // the ring parts over that channel too — cut to the channel's width
+    // (verdant-3's own shoulder rows at |v| ≈ 16 seal the flanks), the
+    // same discipline as verdant-1's R0.2 far-pole cut.
+    if (u > 1120 && Math.abs(v) < 15) {
+      continue;
+    }
     const floor = verdant2TerrainTarget(x, z);
     seals.push(
       { center: new Vector3(x, floor + 1.5, z), radius: 9 },

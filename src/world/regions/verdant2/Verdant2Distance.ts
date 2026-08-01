@@ -69,6 +69,17 @@ const INK = new Color(0.44, 0.54, 0.43);
 /** Half-angle of the gap the rings leave over the pass's approach. */
 const GAP_HALF = 0.42;
 
+/**
+ * Half-angle of the second gap, over the OUTBOUND (depth-3) corridor —
+ * R0.3 integration of the Canopy Deep's flagged gate: the rings are
+ * opaque `fog:false` curtains, so nothing behind them exists to a camera
+ * before them; the corridor view toward the Canopy Deep (u ≈ 1186–1228
+ * where the three radii cross the spoke) needs the sector parted. Sized
+ * to the pass tongue's width at those radii (half-width 29–39 m →
+ * atan ≈ 0.12–0.14 rad) plus the edge-fade margin.
+ */
+const GAP_OUT_HALF = 0.16;
+
 export function buildVerdant2Distance(): { meshes: (Mesh | InstancedMesh)[] } {
   const random = new Random(SEEDS.regionVerdant2 ^ 0xd158);
   const meshes: (Mesh | InstancedMesh)[] = [];
@@ -276,14 +287,19 @@ function cliffRing(layer: CliffLayer, noiseSeed: number): BufferGeometry {
   let column = 0;
 
   const gapAt = VERDANT2_SLOT.azimuth + Math.PI;
+  const gapOutAt = VERDANT2_SLOT.azimuth;
   for (let i = 0; i <= SEGMENTS; i++) {
     const theta = (i / SEGMENTS) * Math.PI * 2;
     const off = angleBetween(theta, gapAt);
-    if (off < GAP_HALF) {
+    const offOut = angleBetween(theta, gapOutAt);
+    if (off < GAP_HALF || offOut < GAP_OUT_HALF) {
       column = 0;
       continue;
     }
-    const end = smoothstep01((off - GAP_HALF) / 0.14);
+    const end = Math.min(
+      smoothstep01((off - GAP_HALF) / 0.14),
+      smoothstep01((offOut - GAP_OUT_HALF) / 0.14),
+    );
     const x = CENTER_X + Math.cos(theta) * layer.radius;
     const z = CENTER_Z + Math.sin(theta) * layer.radius;
 
