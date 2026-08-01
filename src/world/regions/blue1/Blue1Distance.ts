@@ -220,6 +220,26 @@ export function buildBlue1Distance(): { meshes: (Mesh | InstancedMesh)[] } {
       placed++;
     }
     mesh.count = placed;
+    // Fill round 2, POST-filter (the placement stream above is consumed
+    // identically, so every surviving card keeps its byte-exact matrix):
+    // cards within 0.34 rad of the World's Edge gap stand where the rim
+    // has already fallen away, and a card floating over the void read as
+    // a flat grey rectangle from the ferryman-crossing pose. They
+    // collapse to nothing in place.
+    for (let i = 0; i < placed; i++) {
+      const m = new Matrix4();
+      mesh.getMatrixAt(i, m);
+      const px = m.elements[12]!;
+      const pz = m.elements[14]!;
+      const theta = Math.atan2(pz - CENTER_Z, px - CENTER_X);
+      if (angleBetween(theta, gapOutward) < GAP_EDGE + 0.34) {
+        // Collapse in place (position kept, so the instance-aware bounds
+        // stay honest about where the draw lives).
+        const collapsed = new Matrix4().makeScale(0, 0, 0);
+        collapsed.setPosition(px, m.elements[13]!, pz);
+        mesh.setMatrixAt(i, collapsed);
+      }
+    }
     mesh.instanceMatrix.needsUpdate = true;
     mesh.computeBoundingSphere();
     meshes.push(mesh);

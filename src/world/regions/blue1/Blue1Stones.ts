@@ -1,4 +1,4 @@
-import { Matrix4, Mesh, Vector3, type BufferGeometry } from "three";
+import { Color, Matrix4, Mesh, Vector3, type BufferGeometry } from "three";
 import { Random, SEEDS } from "../../../util/Random";
 import type { SphereCollider } from "../../CollisionField";
 import { createRockMaterial } from "../../RockMaterial";
@@ -34,10 +34,21 @@ export interface Blue1StonesBuild {
   readonly meshes: Mesh[];
   readonly colliders: SphereCollider[];
   readonly contacts: ContactPatch[];
+  /** Where every standing stone actually stands — the fill's collar
+   *  anchors (Phase 3). Recording them spends no randomness, so the
+   *  stones' own streams stay byte-identical. */
+  readonly sites: readonly Blue1StoneSite[];
   /** The Fallen King's foot, where the secret ring lives. */
   readonly secret: { x: number; z: number; y: number };
   /** The Prow's tip, for the Ferryman's anchor and the overlook pose. */
   readonly prow: { x: number; z: number; y: number };
+}
+
+export interface Blue1StoneSite {
+  readonly x: number;
+  readonly z: number;
+  readonly radius: number;
+  readonly kind: "gate" | "waymark" | "megalith" | "stump" | "lip" | "prow";
 }
 
 /** The standing stones: (u, v, height, girth, lean, pale?). */
@@ -71,9 +82,21 @@ export function buildBlue1Stones(): Blue1StonesBuild {
   const meshes: Mesh[] = [];
   const colliders: SphereCollider[] = [];
   const contacts: ContactPatch[] = [];
+  const sites: Blue1StoneSite[] = [];
 
-  const blueStone = createRockMaterial(STONE_BLUE);
-  const paleStone = createRockMaterial(STONE_PALE);
+  // Fill round 1 (the plan's step-5 stone value fix): the raw hexes
+  // rendered as dark muddy violet-brown under this mood's taken light —
+  // the plains-final gnomon frame measured nothing of STONE_PALE's
+  // blue-grey. The material tints are lifted toward the intended read;
+  // the geometry streams are untouched. Round 2: the round-1 lift still
+  // measured (101,96,120) on the gnomon — red above green, mud — so the
+  // lift deepened and its target cooled toward the pale sky key.
+  const liftStone = (hex: number, lift: number): number => {
+    const c = new Color(hex).lerp(new Color(0xc8dcee), lift);
+    return c.getHex();
+  };
+  const blueStone = createRockMaterial(liftStone(STONE_BLUE, 0.34));
+  const paleStone = createRockMaterial(liftStone(STONE_PALE, 0.44));
   // The gate keeps the reef's warmth: the last warm colour on the way out.
   const warmStone = createRockMaterial(0x9a8a72);
 
@@ -85,6 +108,7 @@ export function buildBlue1Stones(): Blue1StonesBuild {
     radius: number,
     height: number,
     material = blueStone,
+    kind: Blue1StoneSite["kind"] = "megalith",
   ): { x: number; z: number; y: number } => {
     const { x, z } = worldOf(u, v);
     const y = seabedHeight(x, z);
@@ -97,6 +121,7 @@ export function buildBlue1Stones(): Blue1StonesBuild {
     mesh.receiveShadow = false;
     meshes.push(mesh);
     contacts.push({ x, z, radius: radius * 1.4, strength: 0.42 });
+    sites.push({ x, z, radius, kind });
     colliders.push({ center: new Vector3(x, y + height * 0.32, z), radius: radius * 0.9 });
     if (height > radius * 2.2) {
       colliders.push({ center: new Vector3(x, y + height * 0.68, z), radius: radius * 0.62 });
@@ -122,6 +147,7 @@ export function buildBlue1Stones(): Blue1StonesBuild {
     1.5,
     5.1,
     warmStone,
+    "gate",
   );
   stand(
     stackGeometry(
@@ -137,6 +163,7 @@ export function buildBlue1Stones(): Blue1StonesBuild {
     1.3,
     4.3,
     warmStone,
+    "gate",
   );
 
   // ─── The waymarks ────────────────────────────────────────────────────────
@@ -156,6 +183,7 @@ export function buildBlue1Stones(): Blue1StonesBuild {
       radius,
       height,
       i % 3 === 0 ? paleStone : blueStone,
+      "waymark",
     );
   }
 
@@ -203,6 +231,8 @@ export function buildBlue1Stones(): Blue1StonesBuild {
     1.1,
     1.7,
     3.2,
+    blueStone,
+    "stump",
   );
   // Round 4 re-stage (the audit's "the toppled story does not read"): the
   // crown is thinner than any standing stone's girth, half-sunk in the
@@ -245,6 +275,7 @@ export function buildBlue1Stones(): Blue1StonesBuild {
         radius,
         height,
         i % 2 === 0 ? blueStone : paleStone,
+        "lip",
       );
     }
   }
@@ -287,6 +318,7 @@ export function buildBlue1Stones(): Blue1StonesBuild {
       1.2,
       4.2,
       blueStone,
+      "prow",
     );
   }
 
@@ -294,6 +326,7 @@ export function buildBlue1Stones(): Blue1StonesBuild {
     meshes,
     colliders,
     contacts,
+    sites,
     secret: {
       x: secretSpot.x,
       z: secretSpot.z,
