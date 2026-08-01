@@ -568,6 +568,40 @@ rounds 6–7 touches u 899 / v 189). Recaptured alone via
 SHOT_POSES_FILE: **identical to its round-5 pass** — comb skyline,
 milk basin, sprig near field. **Sweep verdict: 12/12.**
 
+### The no-assets pass (`pa2-r6-noassets`) — 18/18 survive
+
+All 18 authored poses recaptured with assets blocked (`SHOT_NO_ASSETS`,
+procedural fallbacks only). Every frame survives: no black frames, no
+holes, no missing forms. What the pass shows, frame by frame: the
+ground paint carries the whole lumen gradient on its own (the threshold
+milk, the gallery tan-to-white, the basin warmth all read without a
+single texture); the comb fins hold as flat chalk-less mauve slabs —
+silhouette and strata displacement intact, only the chalk grain gone;
+sward blades, hem sprigs and pearl tufts all present (vertex-painted,
+nothing to lose); litter falls back to its plain shape sets; the Lamp's
+foot, ribs and crown stand complete with the heart glowing (emissive is
+material, not map); the lantern anemones keep their warm bulbs; the
+moonmilk pools keep their luminous surfaces; distance cards lose their
+painted faces and read as pale plates — acceptable at their range, the
+skyline silhouette still composes. The region is procedurally
+self-sufficient. **PASS.**
+
+### The frame gate — headed, scale 1.00, both poses under the bar
+
+`scripts/measure-frames.mjs` with `SHOT_HEADED=1`, real GPU, window
+visible, `SHOT_REGION=pale-passage-2`, 5 s samples:
+
+- **lantern-gardens** (the densest pose: anemone garden + pearls +
+  the Lamp + the Lampwright + basin cover):
+  300 frames | **median 16.7 ms** (59.9 fps) | p95 18.6 ms |
+  settled scale **1.00**
+- **gallery-crossing** (heaviest cover flanks + fin ranks + jellies):
+  300 frames | **median 16.7 ms** (59.9 fps) | p95 18.6 ms |
+  settled scale **1.00**
+
+Both under the ≤16.9 ms bar — the machine holds vsync at 60 Hz at full
+render scale at the region's two heaviest views. Gate **PASS**.
+
 ## Flags for the orchestrator (the reciprocal cuts — NOT made here)
 
 Measured exactly, pale-1's geometry crossing OUR corridor (we may not
@@ -598,4 +632,35 @@ edit `src/world/regions/pale1/**`):
 
 ## Capture sets
 
-(appended per round)
+All under `visual-qa/`, 18 authored (`REGION-pale-passage-2-*`) + 12
+sweep (`SWEEP-pale-passage-2-*`) per full round:
+
+- `pa2-r1` — draft 1: the normals blackout (7 flat-violet frames) +
+  the value-key failure everywhere else.
+- `pa2-r2` — value rebuild: palettes lifted, ground violet halved,
+  anemones rebuilt; chalk still unpainted (no UVs), pass ground violet.
+- `pa2-r3` — UV pass (fins/needles/lamp painted), winnow-hush warmed,
+  heart rekeyed; threshold patchwork and chapel composition remain.
+- `pa2-r4` — threshold cured, Dayspring real, flank density final;
+  fails: white-chapel read, lamp-heart ellipse, garden-bed ochre,
+  sweep-08 climb.
+- `pa2-r5` — heart poles capped, chapel plateau + pose, 18/18 authored
+  pass; sweep 08 still starved (the sampling diagnosis).
+- `pa2-r6` — polyline climb strip; 18/18 authored hold, sweep 01–07 +
+  09/10/12 pass; 08 under-reads (scale), 11 boot-flake.
+- `pa2-r7-08`, `pa2-r7-11` — single-pose recaptures via
+  SHOT_POSES_FILE: 08 passes (the read fix), 11 clean (the flake
+  confirmed foreign). **Final: authored 18/18, sweep 12/12.**
+- `pa2-r6-noassets` — the 18 authored poses with assets blocked:
+  18/18 survive on procedural fallbacks.
+
+## Final verdict
+
+Four+ rounds of build → capture → read → refine (seven numbered
+passes). All 18 authored poses pass; sweep 12/12 (the standard asks
+≥11); no-assets 18/18; budgets 66 draws / 1,204,580 tris against
+≤260 / ≤1.35M; headed frame gate 16.7 ms median at settled scale 1.00
+at the two densest poses against ≤16.9 ms. Gates: typecheck, eslint
+(--max-warnings 0), full npm test green at the finishing commit. The
+depth-3 pass reservation and the reciprocal-cut flags above are the
+orchestrator's handoff.
