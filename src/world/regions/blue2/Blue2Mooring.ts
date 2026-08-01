@@ -122,7 +122,7 @@ function ribAndPaint(geometry: BufferGeometry, height: number, ribs: number, see
       .copy(pale)
       .lerp(bright, 0.18 + smoothstep01((t - 0.3) / 0.6) * 0.62)
       .lerp(violet, Math.max(0, -groove) * 0.34 * band + Math.max(0, -strata) * 0.28)
-      .multiplyScalar(1.04 + strata * 0.34 + grain * 0.34 + fine * 0.3);
+      .multiplyScalar(1.04 + strata * 0.34 + grain * 0.34 + fine * 0.38);
     // The drowned foot: the deep's own violet, never black.
     shade.lerp(violet, (1 - smoothstep01((t - 0.04) / 0.16)) * 0.42);
     colors[i * 3] = shade.r;

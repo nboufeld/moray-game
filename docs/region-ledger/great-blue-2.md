@@ -478,3 +478,53 @@ fine 0.22 → 0.30, groove-violet up); the Dark gets a dorsal hump
 off the silt (0xdcd8e2 → 0xe6ddd6); mood [0.66, 0.49, 0.82]. Tests:
 27/27 green after the restages (the wall-face stand re-probed onto
 the climb).
+
+### Round 3 (`gb2-r3`) — the flank cure lands, the sweep is clean; two frames left
+
+All 23 authored poses re-captured (the mood A/B touches every frame)
+plus the full 12-pose sweep — every PNG read.
+
+**The sweep: 12/12.** Sweep 03 — the round's binding failure — now
+carries flank meadow tufts and violet buds in the near field, a
+STRAND WATCHER standing mid-frame and plankton sparks in the water:
+three honest layers. 01/02/04/06/07/10/11/12 all pass (02 catches
+travellers + glass; 07 stands in the star-tuft field with the south
+Watch Stone). 05, 08 and 09 sit inside the Round — licensed composed
+emptiness, and 08 passes OUTRIGHT: the Moon Well's beam with the
+Gentle Dark crossing it, the design's one great event caught by a
+random camera.
+
+**Authored: 21 of 23.** The Gentle Dark is CURED — dorsal hump, wing
+dihedral and the grown vane read as a great winged shadow, 3/4 from
+above, crescent visible (`gentle-dark`, and the side profile in
+`moon-well` now reads winged, not torpedo). `close-wrack-crown` goes
+3/4 and reads as a fallen megalith with its splits. `kings-wrack`,
+`strand` (tips warmed), `skiff`, `chute` (gate stone + far beam),
+`round-hush` (beam + the Dark + Watch Stone silhouette), `spill`,
+`brink`, `othershore`, `pharos`, `wall-crest`, `edge-lookback`,
+`weir-ford`, `mooring`, `current-glass`, `close-strand-ripple`,
+`close-bank-blades` all hold or improve. The A/B verdict: the deep
+frames lean a step more violet-blue; the saddle light brightens a
+touch — kept.
+
+**Still failing.**
+1. `wall-face`: the lateral droop landed but the sheet's u ≈ 626 END
+   trim still saws the frame's left third — the droop only keyed off
+   |v|. And the composition still gives ~60% to open teal.
+2. `close-post-foot`: backed out correctly (the shaft no longer owns
+   the frame) but pitch +0.04 centred the MID-shaft — the foot, the
+   splits and the bed all sat below frame; and the fine grain still
+   reads too quiet inside 15 m.
+3. `horns-promise` (held in r2, now ordered): the pale horns are
+   fog-matched against the milky rim at 62 m — ghost smudges, not a
+   promise.
+
+**Round-4 orders**: the end-trim droop joins the lateral one (same
+3.5 m sag keyed off u < 631); `wall-face`'s ray swings onto the wall
+(at 618, −4, pitch −0.32); `close-post-foot` drops its pitch onto the
+foot (−0.14) and the post fine grain rises 0.30 → 0.38; THE HORNS
+join the slate family (violet silhouettes against the milky rim — the
+pale family was fog-camouflage) and the promise stand closes to 48 m
+(1078, lift 29, pitch 0.30). Re-shoots: the four re-authored frames +
+`mooring` as a paint control, plus the full sweep against the changed
+build.

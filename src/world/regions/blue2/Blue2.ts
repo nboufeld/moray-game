@@ -143,7 +143,9 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // by u ≈ 648, probed) — the r2 straight-down pitch framed empty teal
   // with the sheet's raw trim sawing the right edge; from the shoulder
   // the wall itself DROPS through frame into the void.
-  { name: "wall-face", u: 641, v: -10, lift: 2.2, atU: 620, atV: 6, pitch: -0.3, settle: 4 },
+  // Round 4: the look ray swings a step onto the wall's own face (the
+  // r3 frame still gave 60% to open teal) — the end trim now droops.
+  { name: "wall-face", u: 641, v: -10, lift: 2.2, atU: 618, atV: -4, pitch: -0.32, settle: 4 },
   // The far lip: standing on the Othershore looking BACK over the void
   // toward the Drop Plains — the crossing, remembered. Round 2: pitch
   // steepened — the void's drama is DOWN, and −0.06 framed open water.
@@ -188,7 +190,9 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // Round's floor the rim crest subtends 0.54 rad and hid everything —
   // the stand rises to y ≈ −17 (crest 0.25 rad; horn crowns 0.27–0.33;
   // raised ring bases behind at 0.28+).
-  { name: "horns-promise", u: 1064, v: 2, lift: 29.0, atU: 1126, atV: 2, pitch: 0.26, settle: 3 },
+  // Round 4: the stand closes to ~48 m (fog was eating the pale horns
+  // at 62; they also join the slate family so the silhouettes stand).
+  { name: "horns-promise", u: 1078, v: 2, lift: 29.0, atU: 1126, atV: 2, pitch: 0.3, settle: 3 },
   // From the Round's heart, back up every shelf at once.
   { name: "edge-lookback", u: 1008, v: -8, lift: 10.0, atU: 820, atV: 10, pitch: 0.12 },
   // ── The close-range set (R12's still-frame bar, judged at 2–4 m) ─────────
@@ -198,7 +202,9 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // blade's sawn end face); the post lens backs to ~16 m (the foot
   // flare is 9 m wide and still owned the whole r2 frame at 9 m).
   { name: "close-wrack-crown", u: 832.0, v: -37.5, lift: 1.6, atU: 825.0, atV: -33.0, pitch: -0.06, settle: 3 },
-  { name: "close-post-foot", u: 866.5, v: -27.5, lift: 1.7, atU: 874.5, atV: -38.0, pitch: 0.04, settle: 3 },
+  // Round 4: pitch drops onto the FOOT — the r3 up-pitch centred the
+  // mid-shaft and left the splits and bed below frame.
+  { name: "close-post-foot", u: 866.5, v: -27.5, lift: 1.7, atU: 874.5, atV: -38.0, pitch: -0.14, settle: 3 },
 ];
 
 function buildPoses(): RegionCapturePose[] {

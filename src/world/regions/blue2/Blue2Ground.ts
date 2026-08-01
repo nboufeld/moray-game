@@ -320,7 +320,12 @@ function droopPassEdge(geometry: PlaneGeometry): void {
     const x = position.getX(i);
     const z = position.getZ(i);
     const { u, v } = spokeOf(x, z);
-    const k = smoothstep01((Math.abs(v) - (passHalfWidth(u) + 3)) / 7);
+    // Round 4: the u ≈ 626 END trim gets the same sag — the r3 lateral
+    // droop landed but the end cut still sawed the wall-face frame.
+    const k = Math.max(
+      smoothstep01((Math.abs(v) - (passHalfWidth(u) + 3)) / 7),
+      smoothstep01((631 - u) / 5),
+    );
     if (k > 0) {
       position.setY(i, position.getY(i) - k * 3.5);
     }

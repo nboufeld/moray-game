@@ -335,7 +335,10 @@ export function buildBlue2Stones(): Blue2StonesBuild {
         ],
         { seed: SEED ^ (B2_SEEDS.horns + i * 5), rings: 28 },
       ),
-      paleParts,
+      // Round 4: the Horns join the SLATE family — pale spires against
+      // the milky rim were fog-matched and the r2/r3 promise frames
+      // read them as ghost smudges; the violet-slate silhouettes stand.
+      slateParts,
       horn.u,
       horn.v,
       hornRandom.range(0, Math.PI * 2),
