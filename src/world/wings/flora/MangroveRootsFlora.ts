@@ -12,9 +12,12 @@ import {
 } from "three";
 import { createToonMaterial } from "../../../rendering/ToonShading";
 import { Random, SEEDS } from "../../../util/Random";
+import { buildCarpetField } from "../../regions/kit/CarpetField";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
-import { wedgeHalfAt, wingCeiling } from "../WingGeometry";
+import { angleBetween, wedgeHalfAt, wingCeiling } from "../WingGeometry";
 import type { WingDef, WingFlora } from "../WingTypes";
+import { mountGateVeil } from "./GateVeilMount";
+import { TIERB_GROUP_NAME } from "./TierBUplift";
 import {
   instantiate,
   signedWingAngle,
@@ -260,11 +263,58 @@ export function buildMangroveRootsFlora(def: WingDef): WingFlora {
   }
   group.add(instantiate(tuftGeometry(), tuftMaterial, tuftParts, "w4-mangrove-tufts"));
 
+  // ── Batch 4: the Tier B uplift (MASTER §4 closure, R2 ≤ +6 / ≤ 20k) ──
+  // The T1 statement in the fort's own voice: seedling sprigs — small
+  // amber-olive cards curling out of the sediment between the knees, the
+  // mangrove's next generation under the roof's warm light. The winding
+  // lane law (0.05 rad + footprint) and the bare gate stretch (r ≥ 34.5)
+  // are kept by the gate below. Fresh `^` substream, kit-private Random,
+  // appended after every wave-8 draw.
+  const uplift = new Group();
+  uplift.name = TIERB_GROUP_NAME;
+  const seedlings = buildCarpetField({
+    seed: (SEEDS.wingMangroveRoots ^ 0xb407) >>> 0,
+    palette: { base: 0x8a7a3e, tip: 0xc8b06a, shade: 0x4c3c20 },
+    area: { center: [frame.axisX * 40.5, frame.axisZ * 40.5], radius: 6.5 },
+    gate: (x, z) => {
+      const r = Math.hypot(x, z);
+      if (r < 34.5 || r > 46.5) {
+        return 0;
+      }
+      const away = angleBetween(Math.atan2(z, x), def.azimuth);
+      if (away > wedgeHalfAt(def, r) - 0.025) {
+        return 0;
+      }
+      return away < CORRIDOR_ANGLE + 0.6 / r ? 0 : 1;
+    },
+    ground: seabedHeight,
+    count: 340,
+    profile: "card",
+    size: [0.1, 0.22],
+    swayAmp: 0.02,
+  });
+  uplift.add(seedlings.group);
+  group.add(uplift);
+
+  // The doorway: an umber-amber veil with a warm column and slow amber
+  // motes — the blanket fort's low warm light promised from the bowl.
+  const veil = mountGateVeil(def, {
+    doorR: 32,
+    width: 3.4,
+    height: 2.8,
+    palette: [0x46321c, 0x66492a, 0x8a6a42],
+    column: { tint: 0xffe4b2, opacity: 0.09 },
+    particulate: { tint: 0xf0dcae, count: 50 },
+  });
+  group.add(veil.group);
+
   // The wing's one animation: the dapple breathes, slowly.
   let clock = 0;
   const update = (dt: number, reducedMotion: boolean): void => {
     clock += dt * (reducedMotion ? 0.3 : 1);
     dappleMaterial.opacity = DAPPLE_OPACITY * (0.92 + 0.16 * Math.sin(clock * 0.6));
+    seedlings.update(clock);
+    veil.update(dt, reducedMotion);
   };
 
   return { group, contacts, update };

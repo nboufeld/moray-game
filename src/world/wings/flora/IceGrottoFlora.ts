@@ -19,9 +19,12 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 import { buildColorTexture } from "../../../rendering/ProceduralTexture";
 import { createToonMaterial } from "../../../rendering/ToonShading";
 import { Random, SEEDS } from "../../../util/Random";
+import { buildGroundLitter } from "../../regions/kit/GroundLitter";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
-import { wedgeHalfAt, wingCeiling } from "../WingGeometry";
+import { angleBetween, wedgeHalfAt, wingCeiling } from "../WingGeometry";
 import type { WingDef, WingFlora } from "../WingTypes";
+import { mountGateVeil } from "./GateVeilMount";
+import { TIERB_GROUP_NAME } from "./TierBUplift";
 
 /**
  * The Ice Grotto's flora (wave 8, `SEEDS.wingIceGrotto` + substreams):
@@ -237,6 +240,53 @@ export function buildIceGrottoFlora(def: WingDef): WingFlora {
   const glitter = buildGlitter(def);
   group.add(glitter.points);
 
+  // ── Batch 4: the Tier B uplift (MASTER §4 closure, R2 ≤ +6 / ≤ 20k) ──
+  // The T1 statement in the grotto's own hush: a hoarfrost splinter field
+  // — fine pale-violet shards dusting the shelf between the spire
+  // clusters, the crystal country's own ground state. The corridor law
+  // (0.06 rad through r 30–46, stricter over the gate) is kept with the
+  // shards' own footprint on top, vertex-proof against the W5 collector.
+  // Fresh `^` substream, kit-private Random, appended after every wave-8
+  // draw.
+  const uplift = new Group();
+  uplift.name = TIERB_GROUP_NAME;
+  const hoarfrost = buildGroundLitter({
+    seed: (SEEDS.wingIceGrotto ^ 0xb408) >>> 0,
+    palette: { base: 0xcdd4ec, shade: 0x8a86ac },
+    area: { center: [Math.cos(def.azimuth) * 41, Math.sin(def.azimuth) * 41], radius: 7 },
+    gate: (x, z) => {
+      const r = Math.hypot(x, z);
+      if (r < 35.2 || r > 47) {
+        return 0;
+      }
+      const away = angleBetween(Math.atan2(z, x), def.azimuth);
+      if (away < CORRIDOR_ACROSS + 0.012 + 0.3 / r) {
+        return 0;
+      }
+      return away > wedgeHalfAt(def, r) - 0.02 ? 0 : 1;
+    },
+    ground: seabedHeight,
+    count: 380,
+    shapeSet: "shard",
+    size: [0.04, 0.13],
+    grade: 0.35,
+  });
+  uplift.add(hoarfrost.group);
+  group.add(uplift);
+
+  // The doorway: a cool violet-white veil, a frost-pale column and a slow
+  // sparkle of frost motes — the crystalline hush promised from the bowl.
+  const veil = mountGateVeil(def, {
+    doorR: 32,
+    width: 3.6,
+    height: 3.4,
+    sillLift: -0.9,
+    palette: [0x363450, 0x504e6e, 0x74738e],
+    column: { tint: 0xe8ecfa, opacity: 0.07 },
+    particulate: { tint: 0xe0e8fa, count: 45 },
+  });
+  group.add(veil.group);
+
   let time = 0;
   return {
     group,
@@ -246,6 +296,7 @@ export function buildIceGrottoFlora(def: WingDef): WingFlora {
       // is the point. Becalmed to a quarter under reduced motion.
       time += dt * (reducedMotion ? 0.25 : 1);
       glitter.update(time);
+      veil.update(dt, reducedMotion);
     },
   };
 }

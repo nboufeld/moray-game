@@ -21,9 +21,12 @@ import { buildColorTexture } from "../../../rendering/ProceduralTexture";
 import { smoothNormals } from "../../../rendering/SmoothNormals";
 import { createToonMaterial } from "../../../rendering/ToonShading";
 import { Random, SEEDS } from "../../../util/Random";
+import { buildCarpetField } from "../../regions/kit/CarpetField";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
-import { wedgeHalfAt } from "../WingGeometry";
+import { angleBetween, wedgeHalfAt } from "../WingGeometry";
 import type { WingDef, WingFlora } from "../WingTypes";
+import { mountGateVeil } from "./GateVeilMount";
+import { TIERB_GROUP_NAME } from "./TierBUplift";
 import {
   addSwayAttributes,
   clampInsideWedge,
@@ -199,6 +202,60 @@ export function buildLumenGardenFlora(def: WingDef): WingFlora {
   const motes = buildMotes(moteRandom, def);
   group.add(motes.points);
 
+  // ── Batch 4: the Tier B uplift (MASTER §4 closure, R2 ≤ +6 / ≤ 20k) ──
+  // The T1 statement in the garden's own dark: an ink-violet frond carpet
+  // over the night floor, tips leaning toward the beds' slate-cyan — a
+  // painted echo of the living light, carrying none of its own (no
+  // emissive, no additive; the garden's sparse violet gloom is the
+  // point). Fresh `^` substream, kit-private Random, appended after every
+  // wave-8 draw; the heart law (0.065 rad, r 39–45) is held at 0.075 in
+  // the gate below and re-asserted in tests/wingsTierB.test.ts.
+  const uplift = new Group();
+  uplift.name = TIERB_GROUP_NAME;
+  const nightFronds = buildCarpetField({
+    seed: (SEEDS.wingLumenGarden ^ 0xb402) >>> 0,
+    palette: { base: 0x3a3252, tip: 0x56687a, shade: 0x241e38 },
+    area: { center: [Math.cos(def.azimuth) * 41.5, Math.sin(def.azimuth) * 41.5], radius: 7 },
+    gate: (x, z) => {
+      const r = Math.hypot(x, z);
+      if (r < 36 || r > 47.5) {
+        return 0;
+      }
+      const away = angleBetween(Math.atan2(z, x), def.azimuth);
+      if (away > wedgeHalfAt(def, r) - 0.02) {
+        return 0;
+      }
+      // The jelly's heart stays open night water; elsewhere the carpet
+      // still keeps a step off the axis so the descent lane reads.
+      const fence = r >= HEART_FROM - 0.5 && r <= HEART_TO + 0.5 ? 0.075 : 0.03;
+      return away < fence ? 0 : 1;
+    },
+    ground: seabedHeight,
+    count: 160,
+    profile: "frond",
+    size: [0.3, 0.55],
+    swayAmp: 0.02,
+  });
+  uplift.add(nightFronds.group);
+  group.add(uplift);
+
+  // The doorway: a deep indigo-violet veil, planes only — the night
+  // promised from the bowl. No column and no motes: the dark registers
+  // earn their darkness, and the garden's light belongs to its beds.
+  // r3: the r2 door frame showed the saddle crest hiding most of the
+  // veil — the base rises a metre and the planes grow so their skylines
+  // crest over the sill from the bowl stand. Radial extent unchanged:
+  // every vertex stays short of the jelly's heart (r < 39).
+  const veil = mountGateVeil(def, {
+    doorR: 31,
+    width: 2.0,
+    height: 5.2,
+    sillLift: -0.6,
+    palette: [0x241a30, 0x3a2c4c, 0x554468],
+  });
+  group.add(veil.group);
+
+  let kitTime = 0;
   return {
     group,
     contacts,
@@ -208,6 +265,9 @@ export function buildLumenGardenFlora(def: WingDef): WingFlora {
       sway.value += dt * (reducedMotion ? 0.3 : 1);
       wind.value = reducedMotion ? 0.4 : 1;
       motes.update(dt, reducedMotion);
+      kitTime += dt * (reducedMotion ? 0.3 : 1);
+      nightFronds.update(kitTime);
+      veil.update(dt, reducedMotion);
     },
   };
 }
