@@ -65,6 +65,15 @@ function buildSeals(): SphereCollider[] {
     if (u < 310 && Math.abs(v - ravineChannelCenter(uc)) < ravineChannelHalf(uc) + 12) {
       continue;
     }
+    // R0.4 integration (the Lantern Combs' flagged gate): the depth-2 pass
+    // leaves this disc at the far pole (u ≈ 651 on the spoke), and now
+    // that the Combs exist to catch the diver on the other side, the ring
+    // parts over that channel too — cut to the channel's width (the
+    // Combs' own shoulder rows seal the flanks), the same discipline as
+    // verdant-2's R0.3 far-pole cut.
+    if (u > 637 && Math.abs(v) < 18) {
+      continue;
+    }
     seals.push({
       center: new Vector3(x, paleTerrainTarget(x, z) + 1.5, z),
       radius: 9,

@@ -61,6 +61,16 @@ const INK_BLOOM = new Color(0.84, 0.6, 0.7);
 /** Half-angle of the gap the rings leave over the ravine's approach. */
 const GAP_HALF = 0.42;
 
+/**
+ * Half-angle of the second gap, over the OUTBOUND (depth-2) corridor —
+ * R0.4 integration of the Lantern Combs' flagged gate: the rings are
+ * opaque `fog:false` curtains, so the corridor view toward the Combs
+ * (u ≈ 681–731 where the three radii cross the spoke) needs the sector
+ * parted. Sized to the pass tongue's width there (half-width ≈ 18–22 m
+ * → atan ≈ 0.085 rad) plus the edge-fade margin.
+ */
+const GAP_OUT_HALF = 0.12;
+
 /** 0 on the white (gateway) side of the horizon, 1 on the far bloom side. */
 function healingAt(theta: number, gapAt: number): number {
   return smoothstep01((angleBetween(theta, gapAt) - 0.9) / 1.6);
@@ -167,6 +177,22 @@ export function buildPaleDistance(): { meshes: (Mesh | InstancedMesh)[] } {
       mesh.setMatrixAt(placed, dummy.matrix);
       placed++;
     }
+    // R0.4: the depth-2 corridor crosses these bands (u ≈ 683–725); cards
+    // inside the outbound gap sector are parked below the world rather
+    // than re-rolled — the post-filter idiom blue-1 uses at its World's
+    // Edge gap, so the random stream (and every other card) is untouched.
+    const parked = new Matrix4();
+    const gapOutAt = PALE_SLOT.azimuth;
+    for (let i = 0; i < placed; i++) {
+      mesh.getMatrixAt(i, parked);
+      const px = parked.elements[12]!;
+      const pz = parked.elements[14]!;
+      const cardTheta = Math.atan2(pz - CENTER_Z, px - CENTER_X);
+      if (angleBetween(cardTheta, gapOutAt) < GAP_OUT_HALF + 0.1) {
+        parked.elements[13] = -500;
+        mesh.setMatrixAt(i, parked);
+      }
+    }
     mesh.count = placed;
     mesh.instanceMatrix.needsUpdate = true;
     mesh.computeBoundingSphere();
@@ -263,16 +289,21 @@ function reefRing(layer: ReefLayer, noiseSeed: number, gapAt: number): BufferGeo
   let column = 0;
 
   const ink = new Color();
+  const gapOutAt = PALE_SLOT.azimuth;
   for (let i = 0; i <= SEGMENTS; i++) {
     const theta = (i / SEGMENTS) * Math.PI * 2;
     const off = angleBetween(theta, gapAt);
-    if (off < GAP_HALF) {
+    const offOut = angleBetween(theta, gapOutAt);
+    if (off < GAP_HALF || offOut < GAP_OUT_HALF) {
       column = 0;
       continue;
     }
     // A long ease: round 1's 0.14 rad cut rendered the arc ends as
     // rectangular stair-steps standing in open water.
-    const end = smoothstep01((off - GAP_HALF) / 0.4);
+    const end = Math.min(
+      smoothstep01((off - GAP_HALF) / 0.4),
+      smoothstep01((offOut - GAP_OUT_HALF) / 0.25),
+    );
     const x = CENTER_X + Math.cos(theta) * layer.radius;
     const z = CENTER_Z + Math.sin(theta) * layer.radius;
 
