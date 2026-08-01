@@ -84,8 +84,8 @@ function combWorldYaw(comb: CombSpec): number {
  */
 function finGeometry(comb: CombSpec, random: Random, baseY: number): BufferGeometry {
   const length = comb.halfLength * 2;
-  const lengthSegments = Math.max(10, Math.round(length / 2.2));
-  const heightSegments = Math.max(6, Math.round(comb.height / 1.4));
+  const lengthSegments = Math.max(14, Math.round(length / 1.6));
+  const heightSegments = Math.max(8, Math.round(comb.height / 1.1));
   const geometry = new BoxGeometry(length, comb.height, comb.thickness, lengthSegments, heightSegments, 2);
   geometry.translate(0, comb.height / 2, 0);
 
@@ -100,10 +100,14 @@ function finGeometry(comb: CombSpec, random: Random, baseY: number): BufferGeome
     const alongT = x / length + 0.5;
     const heightT = y / comb.height;
 
-    // The broken crest: a notch line eating down into the top edge.
+    // The broken crest: a notch line eating down into the top edge. The
+    // noise is sampled along a SLANTED coordinate so the notch walls lean
+    // (r1's straight-down notches read as rectangular punched holes
+    // against bright water).
+    const slant = alongT + heightT * 0.22;
     const crest =
-      fbm(alongT * 6, 0.3, { seed: noiseSeed ^ 0x01, period: 6, octaves: 2 }) * 0.9 +
-      fbm(alongT * 17, 0.7, { seed: noiseSeed ^ 0x02, period: 9, octaves: 2 }) * 0.4;
+      fbm(slant * 6, 0.3, { seed: noiseSeed ^ 0x01, period: 6, octaves: 2 }) * 0.9 +
+      fbm(slant * 17, 0.7, { seed: noiseSeed ^ 0x02, period: 9, octaves: 2 }) * 0.4;
     const crestDrop = (0.35 + crest) * comb.height * 0.28;
     const newY = y - crestDrop * smoothstep01((heightT - 0.55) / 0.45);
 
@@ -146,7 +150,7 @@ function finGeometry(comb: CombSpec, random: Random, baseY: number): BufferGeome
     // Strata bands: horizontal weathering lines a value apart.
     const band =
       Math.sin(y * 1.35 + fbm(alongT * 4, 0.2, { seed: noiseSeed ^ 0x04, period: 5, octaves: 2 }) * 3.2) *
-      0.05;
+      0.075;
     shade.offsetHSL(0, 0, band);
 
     // The pale weathered crest — the milk-bright top.
@@ -164,8 +168,9 @@ function finGeometry(comb: CombSpec, random: Random, baseY: number): BufferGeome
       (1 - smoothstep01((heightT - 0.3) / 0.25));
     shade.lerp(AMBER, stain * 0.4);
 
-    // Violet in the under-shade of the notches.
-    shade.lerp(SHADOW_VIOLET, (1 - heightT) * 0.12);
+    // Violet in the under-shade: the feet sink into their own dark, so
+    // the wall grows out of shadow instead of standing on pale ground.
+    shade.lerp(SHADOW_VIOLET, (1 - heightT) * 0.3);
 
     colors[i * 3] = shade.r;
     colors[i * 3 + 1] = shade.g;

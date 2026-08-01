@@ -26,7 +26,9 @@ export function smoothstep01(t: number): number {
 }
 
 /** Comb basalt: iron-violet, red above green, a step darker than ash. */
-export const COMB_TONES = [0x554a58, 0x64565c, 0x494050] as const;
+// R2: a full value darker — r1's fins read as pale cardboard once the
+// fog had its share; the walls must anchor the dark end of every frame.
+export const COMB_TONES = [0x413748, 0x4f434c, 0x322b3d] as const;
 /** The gravel floors' dusk grey-violet. */
 export const GRAVEL_TONES = [0x776d7c, 0x847668, 0x6a6276] as const;
 /** The pillow crowns' milk-bright mineral crust. */

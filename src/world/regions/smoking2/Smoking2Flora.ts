@@ -223,9 +223,11 @@ export function buildSmoking2Flora(combs: CombsBuild): Smoking2FloraBuild {
       area: discAreaAt(940, 0, 215),
       gate: baseStubbleGate,
       ground: seabedHeight,
-      count: 5200,
+      // R2: 5.2k over the whole disc read as an empty plain — the near
+      // band must carry blades in EVERY frame (budget headroom covers it).
+      count: 11000,
       profile: "blade",
-      size: [0.38, 0.72],
+      size: [0.42, 0.8],
       swayAmp: 0.035,
     }),
   );
@@ -239,7 +241,7 @@ export function buildSmoking2Flora(combs: CombsBuild): Smoking2FloraBuild {
       area: discAreaAt(940, 10, 215),
       gate: crustFrondGate,
       ground: seabedHeight,
-      count: 1500,
+      count: 3200,
       profile: "frond",
       size: [0.34, 0.6],
       swayAmp: 0.04,
@@ -252,11 +254,12 @@ export function buildSmoking2Flora(combs: CombsBuild): Smoking2FloraBuild {
   keep(
     buildCarpetField({
       seed: SEED ^ FC_SEEDS.duskTufts,
-      palette: { base: 0xb5a276, tip: 0xdcc890, shade: 0x80735f },
+      // R2: desaturated — r1's tufts read as yellow confetti on the plain.
+      palette: { base: 0x93835f, tip: 0xbcab7e, shade: 0x6b6053 },
       area: discAreaAt(940, 0, 215),
       gate: duskTuftGate,
       ground: seabedHeight,
-      count: 1400,
+      count: 2800,
       profile: "tuft",
       size: [0.5, 0.9],
       swayAmp: 0.045,
@@ -282,7 +285,7 @@ export function buildSmoking2Flora(combs: CombsBuild): Smoking2FloraBuild {
         return thicken * inReach * offTread * restFree(x, z);
       },
       ground: seabedHeight,
-      count: 900,
+      count: 1400,
       profile: "blade",
       size: [0.34, 0.66],
       swayAmp: 0.03,
@@ -297,7 +300,7 @@ export function buildSmoking2Flora(combs: CombsBuild): Smoking2FloraBuild {
       area: saddleArea(),
       gate: saddleGravelGate,
       ground: seabedHeight,
-      count: 1100,
+      count: 1600,
       shapeSet: "gravel",
       size: [0.1, 0.28],
       twoTone: true,
@@ -310,7 +313,7 @@ export function buildSmoking2Flora(combs: CombsBuild): Smoking2FloraBuild {
       area: washArea(760, 1075, 18),
       gate: washCinderGate,
       ground: seabedHeight,
-      count: 1300,
+      count: 1900,
       shapeSet: "gravel",
       size: [0.1, 0.3],
       twoTone: true,
@@ -323,7 +326,7 @@ export function buildSmoking2Flora(combs: CombsBuild): Smoking2FloraBuild {
       area: discAreaAt(PILLOWS.u, PILLOWS.v, 96),
       gate: pillowLitterGate,
       ground: seabedHeight,
-      count: 750,
+      count: 1100,
       shapeSet: "pebble",
       size: [0.1, 0.3],
       twoTone: true,
@@ -332,11 +335,12 @@ export function buildSmoking2Flora(combs: CombsBuild): Smoking2FloraBuild {
   keep(
     buildGroundLitter({
       seed: SEED ^ FC_SEEDS.glassShards,
-      palette: { base: 0x4f4560, accent: 0xb9aec6, shade: 0x3f3852 },
+      // R2: darker glass, brighter sheen accent — the shore's one cold light.
+      palette: { base: 0x38304a, accent: 0xc6bcd6, shade: 0x2b2540 },
       area: discAreaAt(1075, -20, 110),
       gate: glassShardGate,
       ground: seabedHeight,
-      count: 900,
+      count: 1500,
       shapeSet: "shard",
       size: [0.09, 0.26],
       twoTone: true,
@@ -349,7 +353,7 @@ export function buildSmoking2Flora(combs: CombsBuild): Smoking2FloraBuild {
       area: discAreaAt(HEARTH.u, HEARTH.v, 72),
       gate: hearthGravelGate,
       ground: seabedHeight,
-      count: 800,
+      count: 1200,
       shapeSet: "gravel",
       size: [0.08, 0.24],
       twoTone: true,
@@ -362,7 +366,7 @@ export function buildSmoking2Flora(combs: CombsBuild): Smoking2FloraBuild {
       area: discAreaAt(920, -10, 190),
       gate: combLitterGate,
       ground: seabedHeight,
-      count: 850,
+      count: 1400,
       shapeSet: "shard",
       size: [0.1, 0.28],
     }),
@@ -374,11 +378,13 @@ export function buildSmoking2Flora(combs: CombsBuild): Smoking2FloraBuild {
   keep(
     buildMatRings({
       seed: SEED ^ FC_SEEDS.matsWash,
+      // R2: two steps dimmer — r1's mats were the brightest thing in every
+      // road frame and read as lava pancakes, not thermophile felt.
       bands: [
-        { color: 0xe8d8b6, width: 1.0 },
-        { color: 0xdc9a4e, width: 1.0 },
-        { color: 0xa2583a, width: 0.9 },
-        { color: 0x6c4c5c, width: 0.7 },
+        { color: 0xc4b492, width: 1.0 },
+        { color: 0xb07c40, width: 1.0 },
+        { color: 0x84482f, width: 0.9 },
+        { color: 0x5a4152, width: 0.7 },
       ],
       ground: seabedHeight,
       anchors: [782, 812, 846, 872, 906, 940, 968, 1002, 1034, 1062].map((u, i) => ({
@@ -414,10 +420,10 @@ export function buildSmoking2Flora(combs: CombsBuild): Smoking2FloraBuild {
     buildMatRings({
       seed: SEED ^ FC_SEEDS.matsHearth,
       bands: [
-        { color: 0xecdfc0, width: 1.1 },
-        { color: 0xe0a458, width: 1.0 },
-        { color: 0xbe6c3e, width: 0.9 },
-        { color: 0x84625c, width: 0.7 },
+        { color: 0xccbc9c, width: 1.1 },
+        { color: 0xba854a, width: 1.0 },
+        { color: 0x965636, width: 0.9 },
+        { color: 0x6a5052, width: 0.7 },
       ],
       ground: seabedHeight,
       anchors: hearthAnchors,
@@ -431,9 +437,9 @@ export function buildSmoking2Flora(combs: CombsBuild): Smoking2FloraBuild {
     buildMatRings({
       seed: SEED ^ FC_SEEDS.matsSaddle,
       bands: [
-        { color: 0xd39a54, width: 1.0 },
-        { color: 0x96543c, width: 0.9 },
-        { color: 0x5e4654, width: 0.7 },
+        { color: 0xb08248, width: 1.0 },
+        { color: 0x7e4834, width: 0.9 },
+        { color: 0x523e4c, width: 0.7 },
       ],
       ground: seabedHeight,
       anchors: [652, 680, 708, 734].map((u, i) => ({
@@ -449,9 +455,9 @@ export function buildSmoking2Flora(combs: CombsBuild): Smoking2FloraBuild {
     buildMatRings({
       seed: SEED ^ FC_SEEDS.matsSaddle ^ 0x55,
       bands: [
-        { color: 0xdd8a44, width: 0.9 },
-        { color: 0x9a5436, width: 0.9 },
-        { color: 0x64485a, width: 0.6 },
+        { color: 0xb87238, width: 0.9 },
+        { color: 0x824730, width: 0.9 },
+        { color: 0x584050, width: 0.6 },
       ],
       ground: seabedHeight,
       anchors: [0, 2, 4].map((i) => ({
@@ -481,8 +487,9 @@ export function buildSmoking2Flora(combs: CombsBuild): Smoking2FloraBuild {
       seed: SEED ^ FC_SEEDS.drapesCombs,
       palette: { base: 0x8a7266, tip: 0xb59672, shade: 0x564a62 },
       anchors: combs.drapeAnchors,
-      strandsPerAnchor: 4,
-      length: 1.7,
+      // R2: the kings-run pose found bare faces — the drapes must READ.
+      strandsPerAnchor: 7,
+      length: 2.4,
       swayAmp: 0.05,
     }),
   );

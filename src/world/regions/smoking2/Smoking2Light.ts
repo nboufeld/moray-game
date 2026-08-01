@@ -89,16 +89,17 @@ export const GLOWS: readonly { u: number; v: number; radius: number; opacity: nu
   { u: HEARTH.u - 12, v: HEARTH.v + 9, radius: 3.2, opacity: 0.1 },
   { u: HEARTH.u + 11, v: HEARTH.v - 8, radius: 3.0, opacity: 0.1 },
   { u: HEARTH.u + 4, v: HEARTH.v + 14, radius: 2.6, opacity: 0.09 },
-  // The stair's riser seams, the approach's warm cadence.
-  { u: 752, v: 0, radius: 2.0, opacity: 0.08 },
-  { u: 772, v: -2, radius: 2.2, opacity: 0.08 },
-  { u: 792, v: 2, radius: 2.2, opacity: 0.08 },
+  // The stair's riser seams, the approach's warm cadence (R2: up — the
+  // stair must announce the country).
+  { u: 752, v: 0, radius: 3.0, opacity: 0.11 },
+  { u: 772, v: -2, radius: 3.2, opacity: 0.11 },
+  { u: 792, v: 2, radius: 3.2, opacity: 0.11 },
   // The saddle's seep stations.
   { u: 680, v: saddleCenter(680) - 2, radius: 1.8, opacity: 0.07 },
   { u: 708, v: saddleCenter(708) + 1.8, radius: 2.0, opacity: 0.07 },
   // The Night Door's two watch-embers, framing the reserved corridor.
-  { u: NIGHT_DOOR.u - 5, v: -11, radius: 2.2, opacity: 0.1 },
-  { u: NIGHT_DOOR.u - 3, v: 11, radius: 2.2, opacity: 0.1 },
+  { u: NIGHT_DOOR.u - 5, v: -11, radius: 2.6, opacity: 0.13 },
+  { u: NIGHT_DOOR.u - 3, v: 11, radius: 2.6, opacity: 0.13 },
 ];
 
 export interface Smoking2LightBuild {
@@ -172,6 +173,7 @@ export function buildSmoking2Light(): Smoking2LightBuild {
   }
 
   meshes.push(buildEmberPools());
+  meshes.push(buildLadlePool());
 
   // ─── The heat-shimmer columns ─────────────────────────────────────────────
   const shimmer = buildShimmerColumns();
@@ -354,6 +356,52 @@ function buildEmberPools(): Mesh {
   });
   const mesh = new Mesh(merged, material);
   mesh.name = "forge-ember-pools";
+  mesh.renderOrder = 1;
+  return mesh;
+}
+
+/**
+ * The Ladle's milk pool — the rest's own composition (R2: the r1 pose
+ * found a bare bowl; the room IS pool + glimmer, so the pool must be
+ * built). A single draped disc, milk-pale with a faint warm heart,
+ * normal blending: painted water, not light. Licensed by the registry
+ * as the rest's stated composition.
+ */
+function buildLadlePool(): Mesh {
+  const at = worldOf(RESTS.ladle.u, RESTS.ladle.v);
+  const radius = 6.5;
+  const disc = new RingGeometry(0, radius, 26, 4);
+  disc.rotateX(-Math.PI / 2);
+  // The meniscus level: just over the bowl's floor at its centre.
+  const level = seabedHeight(at.x, at.z) + 0.32;
+  const position = disc.attributes.position!;
+  const colors = new Float32Array(position.count * 3);
+  for (let i = 0; i < position.count; i++) {
+    const lx = position.getX(i);
+    const lz = position.getZ(i);
+    position.setY(i, level);
+    const t = Math.hypot(lx, lz) / radius;
+    // Milk-bright heart with the faintest amber warmth, cooling and
+    // dimming toward the rim; the sprite's wobbled halo hides the edge.
+    const value = 1 - smoothstep01((t - 0.5) / 0.5) * 0.35;
+    colors[i * 3] = 0.94 * value;
+    colors[i * 3 + 1] = 0.9 * value;
+    colors[i * 3 + 2] = 0.82 * value;
+  }
+  position.needsUpdate = true;
+  disc.setAttribute("color", new BufferAttribute(colors, 3));
+  disc.translate(at.x, 0, at.z);
+  disc.computeBoundingSphere();
+
+  const material = new MeshBasicMaterial({
+    map: poolSprite(),
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.62,
+    depthWrite: false,
+  });
+  const mesh = new Mesh(disc, material);
+  mesh.name = "forge-ladle-pool";
   mesh.renderOrder = 1;
   return mesh;
 }

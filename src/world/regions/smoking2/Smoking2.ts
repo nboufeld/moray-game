@@ -118,23 +118,31 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "saddle-crest", u: 656, v: 0, lift: 2.0, atU: 730, atV: 2, pitch: 0.0 },
   // The reveal: standing over the stair, the Forge Combs opening below.
   { name: "clinker-stair", u: 742, v: 2, lift: 2.6, atU: 800, atV: 0, pitch: -0.1 },
-  // The Doorcombs: the gate pair framing the way in.
-  { name: "doorcombs", u: 738, v: -4, lift: 2.2, atU: 772, atV: 6, pitch: 0.06 },
+  // The Doorcombs: the gate pair framing the way in (R2: backed off to
+  // read both jambs from the threshold, not between them).
+  { name: "doorcombs", u: 726, v: 0, lift: 2.4, atU: 764, atV: 2, pitch: 0.1 },
   // The Emberwash: the road drawn in heat, walls either side.
   { name: "emberwash-road", u: 806, v: washCenter(806) + 2, lift: 2.2, atU: 856, atV: washCenter(856), pitch: 0.0 },
-  // The Broken Comb: the fallen lintel over the road, the swim-under.
-  { name: "broken-comb", u: 838, v: washCenter(838) - 2, lift: 2.4, atU: 859, atV: -2, pitch: 0.06 },
+  // The Broken Comb: the fallen lintel over the road, the swim-under
+  // (R2: stand ON the road so the slab spans the frame ahead — r1 read
+  // it floating against sky from a mound top).
+  { name: "broken-comb", u: 824, v: washCenter(824), lift: 2.2, atU: 858, atV: washCenter(858), pitch: 0.1 },
   // Along the Long Gallery's face: wall, drapes, scree — the wall country.
   { name: "comb-gallery", u: 842, v: 20, lift: 2.6, atU: 862, atV: 44, pitch: 0.08 },
   // The Anvil, from the road: the heart's forge-glow and its shimmer.
   { name: "anvil", u: 914, v: washCenter(914), lift: 2.6, atU: ANVIL.u, atV: ANVIL.v, pitch: 0.06, settle: 4 },
-  // The skate's court: aim rides the circuit's closest reach so the
-  // lantern crosses the frame (settle carries a chunk of the loop).
-  { name: "ember-skate", u: 952, v: washCenter(952) + 4, lift: 2.4, atU: ANVIL.u - 6, atV: ANVIL.v - 8, pitch: 0.08, settle: 8 },
-  // The Kings' Run: looking up the tallest walls' aisle.
-  { name: "kings-run", u: 908, v: 30, lift: 2.0, atU: 916, atV: 42, pitch: 0.55, settle: 4 },
-  // The First Hearth: the junction star's basin, shimmer standing.
-  { name: "first-hearth", u: 878, v: -66, lift: 3.0, atU: HEARTH.u, atV: HEARTH.v, pitch: -0.08, settle: 5 },
+  // The skate's court (R2: a high oversight of the road's Anvil reach —
+  // the 76 s circuit's phase is wall-clock, the verdant-3 twin-court
+  // caveat, so the frame holds a LONG stretch of road; on a miss it is
+  // still the road-and-Anvil composition).
+  { name: "ember-skate", u: 985, v: washCenter(985) + 14, lift: 6.5, atU: 938, atV: washCenter(938), pitch: -0.06, settle: 8 },
+  // The Kings' Run: looking up the tallest walls' aisle (R2: pitch down
+  // from 0.55 — r1 was 80 % empty water; the faces and crowns carry it).
+  { name: "kings-run", u: 908, v: 30, lift: 2.0, atU: 917, atV: 43, pitch: 0.36, settle: 4 },
+  // The First Hearth: the junction star's basin, shimmer standing (R2:
+  // approach from the north-east — r1 planted the camera face-first
+  // into hearth-west's slab).
+  { name: "first-hearth", u: 928, v: -60, lift: 3.4, atU: HEARTH.u, atV: HEARTH.v + 3, pitch: -0.1, settle: 5 },
   // The Pillow Meadows: crusted mounds toward the Ladle's glimmer.
   { name: "pillow-meadows", u: 862, v: 76, lift: 2.8, atU: 892, atV: 112, pitch: 0.02, settle: 4 },
   // The Ladle itself: the rest read from its rim — composed stillness.

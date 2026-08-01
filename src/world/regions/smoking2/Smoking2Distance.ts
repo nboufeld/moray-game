@@ -43,10 +43,12 @@ interface WallLayer {
   readonly fade: number;
 }
 
+// R2: fades up — r1's nearest rank read as a maroon paper band against
+// the backdrop; the walls must sit IN the fog's own rose, a value apart.
 const LAYERS: readonly WallLayer[] = [
-  { radius: 246, wallBase: 8, wallVary: 2.6, fade: 0.42 },
-  { radius: 264, wallBase: 11, wallVary: 3.4, fade: 0.6 },
-  { radius: 286, wallBase: 15, wallVary: 4.4, fade: 0.76 },
+  { radius: 246, wallBase: 8, wallVary: 2.6, fade: 0.52 },
+  { radius: 264, wallBase: 11, wallVary: 3.4, fade: 0.68 },
+  { radius: 286, wallBase: 15, wallVary: 4.4, fade: 0.8 },
 ];
 
 const SEGMENTS = 220;
@@ -54,7 +56,7 @@ const SEGMENTS = 220;
 const FOOT = -26;
 
 /** Iron-amber ink: red above green, violet in the cut. */
-const INK = new Color(0.64, 0.53, 0.62);
+const INK = new Color(0.72, 0.6, 0.68);
 
 /** Half-angle of the gap the rings leave over the saddle's approach. */
 const GAP_HALF = 0.42;
@@ -115,8 +117,8 @@ export function buildSmoking2Distance(): { meshes: (Mesh | InstancedMesh)[] } {
   // cards in two ink bands, crossed blades so they read from every
   // azimuth — giants, or they are nothing.
   for (const [band, spec] of [
-    { rFrom: 242, rTo: 256, count: 18, fade: 0.46, hMin: 24, hMax: 38 },
-    { rFrom: 262, rTo: 282, count: 13, fade: 0.68, hMin: 30, hMax: 46 },
+    { rFrom: 242, rTo: 256, count: 18, fade: 0.54, hMin: 24, hMax: 38 },
+    { rFrom: 262, rTo: 282, count: 13, fade: 0.74, hMin: 30, hMax: 46 },
   ].entries()) {
     const material = new MeshBasicMaterial({
       color: new Color(0x685250),

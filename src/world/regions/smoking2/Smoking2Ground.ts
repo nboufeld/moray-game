@@ -139,12 +139,24 @@ function bakeForgePaint(geometry: PlaneGeometry, contacts: readonly ContactPatch
     let value = 0.9 + life * 0.4;
 
     // The gravel plain: dusk grey-violet at two scales — pale drift
-    // ribbons over darker clinker scatter.
+    // ribbons over darker clinker scatter. R2: a full value darker than
+    // r1 (the plain read mauve-tan and the province's dark ground was
+    // missing), clinker darks harder.
     const drifts = smoothstep01((drift(x, z) - 0.46) / 0.24);
     const clinkers = smoothstep01((clinker(x, z) - 0.58) / 0.2);
-    let r = 0.66 + drifts * 0.16 - clinkers * 0.17;
-    let g = 0.6 + drifts * 0.15 - clinkers * 0.19;
-    let b = 0.8 + drifts * 0.1 - clinkers * 0.08;
+    let r = 0.54 + drifts * 0.17 - clinkers * 0.21;
+    let g = 0.48 + drifts * 0.16 - clinkers * 0.23;
+    let b = 0.7 + drifts * 0.1 - clinkers * 0.12;
+
+    // Amber pooled in the mottle — the province's signature, laid on the
+    // open plain where the heat seeps: warm pools a value brighter,
+    // held out of the wash/hearth/glass (they carry their own keys).
+    const amberPool = smoothstep01(
+      (fbm(x * 0.021, z * 0.021, { seed: SEED ^ 0x6d07, period: 6, octaves: 2 }) - 0.6) / 0.1,
+    );
+    r += amberPool * AMBER.r * 0.4;
+    g += amberPool * AMBER.g * 0.26;
+    b -= amberPool * 0.05;
 
     // The Cinder Saddle: milky over the crest (agreeing with the
     // Smoulder's Ember Shore where the two sheets overlap), grading to
@@ -159,21 +171,21 @@ function bakeForgePaint(geometry: PlaneGeometry, contacts: readonly ContactPatch
         1 - smoothstep01((Math.abs(v - saddleCenter(u)) - saddleHalf(u)) / 8);
       const stairBand = smoothstep01((u - 730) / 24) * (1 - smoothstep01((u - (DESCENT_TO + 26)) / 18));
       const { riser } = descentDrop(u);
-      const cinderR = 0.46;
-      const cinderG = 0.4;
-      const cinderB = 0.58;
+      const cinderR = 0.4;
+      const cinderG = 0.33;
+      const cinderB = 0.5;
       const s = stairBand * inWay;
       r += (cinderR - r) * s * 0.8;
       g += (cinderG - g) * s * 0.8;
       b += (cinderB - b) * s * 0.8;
       // Ember seams on the riser faces — the stair announces the country.
       const seam = riser * smoothstep01(
-        (fbm(x * 0.09, z * 0.09, { seed: SEED ^ 0x6d05, period: 9, octaves: 2 }) - 0.42) / 0.2,
+        (fbm(x * 0.09, z * 0.09, { seed: SEED ^ 0x6d05, period: 9, octaves: 2 }) - 0.38) / 0.18,
       );
-      r += seam * EMBER.r * 0.75 * s;
-      g += seam * EMBER.g * 0.5 * s;
-      b += seam * EMBER.b * 0.2 * s;
-      value += (seam * 0.16 - riser * 0.06) * s;
+      r += seam * EMBER.r * 0.95 * s;
+      g += seam * EMBER.g * 0.62 * s;
+      b += seam * EMBER.b * 0.22 * s;
+      value += (seam * 0.2 - riser * 0.08) * s;
     }
 
     // The Emberwash: charcoal floor split by amber-ember seam veins —
@@ -181,13 +193,13 @@ function bakeForgePaint(geometry: PlaneGeometry, contacts: readonly ContactPatch
     const wash = washWeight(u, v);
     if (wash > 0) {
       const vein = washVein(u, v);
-      const charR = 0.42 + vein * (AMBER.r * 0.9 + EMBER.r * 0.35);
-      const charG = 0.36 + vein * (AMBER.g * 0.62);
-      const charB = 0.54 - vein * 0.16;
+      const charR = 0.34 + vein * (AMBER.r * 1.0 + EMBER.r * 0.4);
+      const charG = 0.28 + vein * (AMBER.g * 0.68);
+      const charB = 0.46 - vein * 0.16;
       r += (charR - r) * wash;
       g += (charG - g) * wash;
       b += (charB - b) * wash;
-      value += wash * (vein * 0.22 - 0.1);
+      value += wash * (vein * 0.26 - 0.13);
     }
 
     // The wash's lips: a pale mineral hem so the rift reads from afar.
@@ -223,10 +235,10 @@ function bakeForgePaint(geometry: PlaneGeometry, contacts: readonly ContactPatch
     const hearth = hearthWeight(u, v);
     if (hearth > 0) {
       const vein = hearthVein(u, v);
-      r += ((0.5 + vein * (0.6 + AMBER.r * 0.3)) - r) * hearth;
-      g += ((0.42 + vein * 0.32) - g) * hearth;
-      b += ((0.62 - vein * 0.2) - b) * hearth;
-      value += hearth * (vein * 0.2 - 0.12);
+      r += ((0.42 + vein * (0.66 + AMBER.r * 0.34)) - r) * hearth;
+      g += ((0.34 + vein * 0.36) - g) * hearth;
+      b += ((0.54 - vein * 0.18) - b) * hearth;
+      value += hearth * (vein * 0.24 - 0.14);
     }
 
     // The Glass Shore: obsidian dark with cold sheen glints — the one
@@ -234,12 +246,14 @@ function bakeForgePaint(geometry: PlaneGeometry, contacts: readonly ContactPatch
     const glass = glassWeight(u);
     if (glass > 0) {
       const sheen = smoothstep01(
-        (fbm(x * 0.06, z * 0.06, { seed: SEED ^ 0x6d06, period: 8, octaves: 2 }) - 0.66) / 0.1,
+        (fbm(x * 0.06, z * 0.06, { seed: SEED ^ 0x6d06, period: 8, octaves: 2 }) - 0.64) / 0.1,
       );
-      r += ((0.5 + sheen * 0.34) - r) * glass * 0.85;
-      g += ((0.44 + sheen * 0.3) - g) * glass * 0.85;
-      b += ((0.62 + sheen * 0.4) - b) * glass * 0.85;
-      value += glass * (sheen * 0.1 - 0.06);
+      // R2: r1's shore read as more tan dune — the obsidian must go
+      // properly dark, the sheen the one cold light in it.
+      r += ((0.36 + sheen * 0.42) - r) * glass * 0.95;
+      g += ((0.32 + sheen * 0.4) - g) * glass * 0.95;
+      b += ((0.5 + sheen * 0.52) - b) * glass * 0.95;
+      value += glass * (sheen * 0.12 - 0.11);
     }
 
     // The Anvil's court: worked ground, a warm halo around the block.

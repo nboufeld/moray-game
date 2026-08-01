@@ -292,32 +292,34 @@ export interface CombSpec {
   readonly thickness: number;
 }
 
+// R2: heights up a third across the board — r1's walls barely cleared
+// their own foot-welts and the country read as low plateaus, not combs.
 export const COMBS: readonly CombSpec[] = [
   // The Doorcombs: the gate pair the Clinker Stair descends between.
-  { name: "door-west", u: 758, v: -26, heading: 1.22, halfLength: 19, height: 11, thickness: 3.2 },
-  { name: "door-east", u: 764, v: 24, heading: 1.36, halfLength: 17, height: 13, thickness: 3.4 },
+  { name: "door-west", u: 758, v: -26, heading: 1.22, halfLength: 19, height: 14, thickness: 3.2 },
+  { name: "door-east", u: 764, v: 24, heading: 1.36, halfLength: 17, height: 16, thickness: 3.4 },
   // The Long Gallery: the first rank, parted by the wash.
-  { name: "gallery-north", u: 840, v: 38, heading: 1.3, halfLength: 26, height: 14, thickness: 4.2 },
-  { name: "gallery-south", u: 828, v: -40, heading: 1.24, halfLength: 24, height: 13, thickness: 4.0 },
+  { name: "gallery-north", u: 840, v: 38, heading: 1.3, halfLength: 26, height: 18, thickness: 4.2 },
+  { name: "gallery-south", u: 828, v: -40, heading: 1.24, halfLength: 24, height: 17, thickness: 4.0 },
   // The Broken Comb's two stubs, parted by the wash (which runs v ≈ 9.5
   // here) — the fallen lintel is built, not terrain.
-  { name: "broken-north", u: 863, v: 24, heading: 1.3, halfLength: 8, height: 9, thickness: 3.4 },
-  { name: "broken-south", u: 855, v: -6, heading: 1.3, halfLength: 8, height: 8.5, thickness: 3.2 },
+  { name: "broken-north", u: 863, v: 24, heading: 1.3, halfLength: 8, height: 10, thickness: 3.4 },
+  { name: "broken-south", u: 855, v: -6, heading: 1.3, halfLength: 8, height: 9, thickness: 3.2 },
   // The Kings' Run: the tallest pair, the skyline's crown.
-  { name: "king-west", u: 903, v: 40, heading: 1.4, halfLength: 30, height: 16, thickness: 5.0 },
-  { name: "king-east", u: 934, v: 26, heading: 1.32, halfLength: 22, height: 15, thickness: 4.6 },
+  { name: "king-west", u: 903, v: 40, heading: 1.4, halfLength: 30, height: 22, thickness: 5.0 },
+  { name: "king-east", u: 934, v: 26, heading: 1.32, halfLength: 22, height: 20, thickness: 4.6 },
   // The Anvil Court's southern rank.
-  { name: "court-south", u: 954, v: -54, heading: 1.2, halfLength: 28, height: 12, thickness: 4.2 },
+  { name: "court-south", u: 954, v: -54, heading: 1.2, halfLength: 28, height: 15, thickness: 4.2 },
   // The Far Comb: the last rank before the Glass Shore, parted by the wash.
-  { name: "far-north", u: 1014, v: 26, heading: 1.34, halfLength: 22, height: 13, thickness: 4.0 },
-  { name: "far-south", u: 1004, v: -52, heading: 1.28, halfLength: 18, height: 11, thickness: 3.8 },
+  { name: "far-north", u: 1014, v: 26, heading: 1.34, halfLength: 22, height: 16, thickness: 4.0 },
+  { name: "far-south", u: 1004, v: -52, heading: 1.28, halfLength: 18, height: 14, thickness: 3.8 },
   // The Hearth's two half-sunk fins, standing in the basin glow.
-  { name: "hearth-west", u: 884, v: -82, heading: 1.1, halfLength: 12, height: 8, thickness: 3.0 },
-  { name: "hearth-east", u: 926, v: -106, heading: 1.25, halfLength: 11, height: 7.5, thickness: 3.0 },
+  { name: "hearth-west", u: 884, v: -82, heading: 1.1, halfLength: 12, height: 9, thickness: 3.0 },
+  { name: "hearth-east", u: 926, v: -106, heading: 1.25, halfLength: 11, height: 8.5, thickness: 3.0 },
   // The Night Door: two narrow fins leaning together over the far pole,
   // framing the reserved depth-3 corridor.
-  { name: "night-west", u: 1116, v: -14, heading: 0.28, halfLength: 9, height: 12, thickness: 2.6 },
-  { name: "night-east", u: 1118, v: 14, heading: -0.24, halfLength: 9, height: 12.5, thickness: 2.6 },
+  { name: "night-west", u: 1116, v: -14, heading: 0.28, halfLength: 9, height: 16, thickness: 2.6 },
+  { name: "night-east", u: 1118, v: 14, heading: -0.24, halfLength: 9, height: 17, thickness: 2.6 },
 ] as const;
 
 /** Signed distances to a comb's axis: `along` the wall, `across` it. */
