@@ -373,7 +373,7 @@ function buildLadlePool(): Mesh {
   // it — a grey saucer floating over the bowl. Drape every vertex to its
   // own floor instead: milk lying ON the ground, pooled by the paint.
   const radius = 5.0;
-  const disc = new RingGeometry(0, radius, 26, 6);
+  const disc = new RingGeometry(0, radius, 48, 12);
   disc.rotateX(-Math.PI / 2);
   const position = disc.attributes.position!;
   const colors = new Float32Array(position.count * 3);

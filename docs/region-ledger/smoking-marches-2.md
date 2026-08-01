@@ -168,3 +168,64 @@ else is under the bar.
 - Artifact watch: a straight dark crease crossed sweep-01's plain
   (bottom-right) — suspect a disc tile seam or the saddle sheet edge;
   re-check in r2.
+
+### Round 2 — sm2-r2 (14 authored + 12 sweep)
+
+**Verdict: the ground reads at last — dark gravel, amber mottle, dense
+stubble; road frames (emberwash, broken-comb, anvil) pass properly.
+Honest sweep ≈ 9–10/12. Three systematic fails remain.**
+
+- **What landed:** the r1 rework did its job — emberwash-road, broken-comb
+  (ember light on the near wall face is the best frame yet), anvil,
+  clinker-stair, pillow-meadows, first-hearth all pass; sweeps 03, 05–08,
+  10–12 pass with near+mid+far all reading.
+- **doorcombs pose buried in the parent's curtain.** At u 726 the whole
+  frame was one maroon wall: the stand sat BEHIND smoking-1's outermost
+  un-cut distance ring (crossing at u ≈ 731). Not a fill problem — a
+  flag interaction. → stand past u ≈ 740 until the orchestrator's cut.
+- **Fog crushing the mid ground.** densityGain 0.011 folded everything
+  past ~50 m into one putty value — walls read as flat cardboard again
+  DESPITE the darker tones (the vertex paint survives to the eye only
+  ~40 m). → density down to 0.0085 (the Smoulder's own), blue up a step,
+  backdropFade 0.56.
+- **Bare violet flanks** (sweeps 02/04): the base stubble's hard u<742
+  cutoff left the saddle flanks naked. → ramp the gate in from u 698.
+- **the-ladle pool = grey UFO.** The single-level disc floated over the
+  pillow mounds and clipped through crests. → drape every vertex to its
+  own floor, radius 5, opacity 0.48.
+- **kings-run still 60 % open water** at pitch 0.36 → 0.18.
+- **glass-shore aims into the wash gully**, obsidian sheet out of frame →
+  re-aim onto the sheet, sheen contrast up.
+- **ember-skate: second miss.** The 76 s wash-length circuit is a phase
+  lottery for ANY frame (connective-3's route lesson, verbatim). → the
+  circuit itself is wrong: replaced with a compact Anvil-court loop
+  (u 948 ± 46, v wc ± 9) that a single stand can hold IN FULL — the
+  keeper rides the heart's reach, and no capture or visiting diver can
+  miss it.
+
+### Round 3 — sm2-r3 (14 authored + 12 sweep)
+
+**Verdict: doorcombs, kings-run now pass; fog fix carries the mid ground;
+sweeps 9–10/12 with the two misses both in the far-east band. One new
+failure mode found and root-caused: the discovery flash.**
+
+- **doorcombs**: passes — both jambs, stubble, perchers, drapes.
+- **kings-run**: passes — aisle floor + both faces + rim perchers.
+- **broken-comb / emberwash-road / anvil**: strong; the thinner fog gives
+  the walls their own value to ~90 m.
+- **the-ladle**: the pool now lies in the bowl but the coarse ring
+  (26×6) shows hard tessellation facets against mound crests → 48×12.
+- **glass-shore**: STILL reads gully-first — the re-aim helps but the
+  sheen needs the extra step (r3 paint change captures in r4).
+- **ember-skate WHITEOUT, root-caused by bisect** (playwright, per-mesh
+  hiding): the white is not a sprite at the camera — it is the DISCOVERY
+  FLASH. The skate is a findable target; the r3 stand aimed straight
+  down the loop's axis, so whenever the lantern drifted under the held
+  reticle the game began focusing it and the capture caught the flash.
+  → r4 aims the reticle at the ANVIL: the loop stays in frame, the
+  reticle rests on stone, crossings are momentary.
+- **Sweep misses (02 at 1123,0; 04 at 1128,27)**: both in the Night
+  Reach — the east rim band past the Glass Shore's hem has no near layer
+  of its own (shards fade at the seal, tufts thin at the rim). → a
+  dedicated Night Reach blade carpet (3.2k, charcoal w/ milk-pale tips,
+  u > 1032) + shards 2.1k over a wider disc.

@@ -136,8 +136,11 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // The skate's court (R3: the wash-length circuit made every pose a
   // phase lottery — connective-3's lesson verbatim; the circuit is now
   // the Anvil court's compact loop, and this stand holds the WHOLE
-  // ellipse in frame, so the lantern cannot be outside it).
-  { name: "ember-skate", u: 1012, v: washCenter(1012), lift: 6.0, atU: 946, atV: washCenter(946), pitch: -0.08, settle: 6 },
+  // ellipse in frame, so the lantern cannot be outside it. R4: aim at
+  // the ANVIL, not down the loop's axis — the skate is a discovery
+  // target, and a reticle resting on its path line auto-focuses it and
+  // fires the white discovery flash mid-capture; the bisect proved it).
+  { name: "ember-skate", u: 1012, v: washCenter(1012) + 2, lift: 6.0, atU: ANVIL.u, atV: ANVIL.v, pitch: -0.06, settle: 6 },
   // The Kings' Run: looking up the tallest walls' aisle (R3: 0.36 still
   // put 60 % open water in frame; hold the aisle's floor and both faces).
   { name: "kings-run", u: 908, v: 30, lift: 2.4, atU: 918, atV: 44, pitch: 0.18, settle: 4 },

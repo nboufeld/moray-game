@@ -269,6 +269,29 @@ export function buildSmoking2Flora(combs: CombsBuild): Smoking2FloraBuild {
     }),
   );
 
+  // The Night Reach: the east rim band past the Glass Shore's hem. R3:
+  // both recurring sweep misses stood here (u ≈ 1090–1130) on bare
+  // violet — the outer reach needs a near layer of its own, charcoal
+  // blades with milk-pale tips, the door country's quiet dress.
+  keep(
+    buildCarpetField({
+      seed: SEED ^ FC_SEEDS.duskTufts ^ 0x5e,
+      palette: { base: 0x5b4f63, tip: 0xa99a94, shade: 0x413a52 },
+      area: discAreaAt(1090, 5, 95),
+      gate: (x, z) => {
+        const { u, v } = spokeOf(x, z);
+        const reach = smoothstep01((u - 1032) / 30);
+        const open = (1 - washWeight(u, v) * 0.7) * (1 - glassWeight(u) * 0.35);
+        return reach * open * restFree(x, z) * smoking2Weight(x, z);
+      },
+      ground: seabedHeight,
+      count: 3200,
+      profile: "blade",
+      size: [0.4, 0.75],
+      swayAmp: 0.035,
+    }),
+  );
+
   // The saddle's own stubble: the road arrives dressed (sparse at the
   // Smoulder handover, thickening down the stair).
   keep(
@@ -340,10 +363,10 @@ export function buildSmoking2Flora(combs: CombsBuild): Smoking2FloraBuild {
       seed: SEED ^ FC_SEEDS.glassShards,
       // R2: darker glass, brighter sheen accent — the shore's one cold light.
       palette: { base: 0x38304a, accent: 0xc6bcd6, shade: 0x2b2540 },
-      area: discAreaAt(1075, -20, 110),
+      area: discAreaAt(1085, -15, 120),
       gate: glassShardGate,
       ground: seabedHeight,
-      count: 1500,
+      count: 2100,
       shapeSet: "shard",
       size: [0.09, 0.26],
       twoTone: true,
