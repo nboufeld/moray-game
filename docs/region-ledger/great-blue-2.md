@@ -196,6 +196,36 @@ star-specks and the Spill's glass frame it.)
 
 - Draft 1: **59 draws / 654,043 tris**; colliders > 80, all inside the
   domain by test. Headroom held for the critique rounds.
+- Final (after rounds 2–4b: flank meadows, Strand Watchers, grown
+  wrack/skiff, sized-up current glass): **61 draws / 704,775 tris** —
+  23% of the draw cap, 52% of the triangle cap. The emptiness stayed
+  composed all the way to close.
+- **Headed frame gate PASS** (`SHOT_HEADED=1 measure-frames`, real
+  GPU, scale pinned 1.00): `mooring` (the densest frame — posts, Weir,
+  Ford glints, travellers, bank meadow) **median 16.7 ms / 59.9 fps,
+  p95 18.6 ms**; `weir-ford` (the Current's own frame) **median
+  16.7 ms, p95 18.6 ms**. Both under the 16.9 ms gate — vsync cadence.
+- **No-assets pass SURVIVES** (dev server, `blockAssets` — never
+  preview, the Carillon's ledgered crash): all 23 authored poses
+  captured against the procedural fallback; every stone, post, arch,
+  beam, glint and the Gentle Dark are procedural to the bone. The
+  only shift is the documented fallback water tint.
+
+## Close (gates, all unpiped)
+
+- `npm run typecheck` — clean.
+- `npx eslint . --max-warnings 0` — clean.
+- `npm test` — **63 files / 900 tests green**, including
+  `tests/regionBlue2.test.ts` (27 cases: weight confinement, terrain
+  determinism + the wall-mirror pin, vertical range, ceiling
+  clearance, collider domain walk, resident registration,
+  byte-identical builds, rest exclusion by named kit group in world
+  space, wall-band exclusion (u > 668 for every cover instance),
+  close-lens clearance, corridor swim-line along the SPINE_ROAD
+  against OUR colliders, no-reroll updates, world-map separation) and
+  `tests/probeBlue2Poses.test.ts` (the pinned sweep probe).
+- Throwaway probes deleted with their culprits named in the rounds;
+  the tree left clean; the dev server killed.
 
 ## Seeds
 
