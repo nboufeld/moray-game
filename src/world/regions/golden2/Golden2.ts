@@ -136,7 +136,9 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // milky shore; the Hourglass Sea's own distance rings stand between
   // this camera and everything of ours past u ≈ 731 — the Emerald Gate
   // lesson says that is CORRECT: from here the rings ARE the promise.
-  { name: "shore-road", u: 658, v: 2, lift: 2.5, atU: 706, atV: 4, pitch: -0.02 },
+  // Round 3: walked forward a pace — from 658 the first waymark pair
+  // sat behind the camera and the road read as one stack in a fog.
+  { name: "shore-road", u: 668, v: 2, lift: 2.6, atU: 716, atV: 2, pitch: -0.02 },
   // The Chime Gate: the fluted jambs framing the gully's descent. The
   // camera stands PAST the pilot's outermost ring (u ≈ 731).
   { name: "chime-gate", u: 735, v: 0, lift: 2.4, atU: 754, atV: 0, pitch: -0.04 },
@@ -160,11 +162,15 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // violet walls — the region's vertical drama, composed from within.
   { name: "ribbon-depths", u: 946, v: -54, lift: 2.2, atU: 970, atV: -68, pitch: 0.12, settle: 4 },
   // The Anchorite's Cell: the registered rest, framed as composed
-  // stillness FROM INSIDE the slot (the r1 rim stand framed nothing) —
-  // over the mouth's sill into the bare round chamber, one thin blade.
-  { name: "anchorite-cell", u: 958, v: -64, lift: 1.9, atU: 962, atV: -78, pitch: 0.0, settle: 3 },
+  // stillness from INSIDE the mouth (round 3 — the r2 stand sat on the
+  // slot's spine and its sightline died in the sill that rises to −14
+  // between spine and chamber; the camera must already be over the
+  // sill): between the flank stones, into the bare round chamber.
+  { name: "anchorite-cell", u: 962.5, v: -71.5, lift: 2.1, atU: 962, atV: -80, pitch: -0.08, settle: 3 },
   // The Seep Terraces: travertine benches, pools, bubbles, gardens.
-  { name: "seep-terraces", u: 950, v: 50, lift: 3.2, atU: 972, atV: 78, pitch: -0.08, settle: 4 },
+  // Round 3: swung around to the east bench — the r2 stand framed
+  // sward with every pool out of shot left.
+  { name: "seep-terraces", u: 980, v: 46, lift: 3.4, atU: 966, atV: 86, pitch: -0.12, settle: 4 },
   // The Carillon from the road: five fluted towers rising over the
   // court — the region's proof shot.
   { name: "carillon", u: 994, v: -20, lift: 3.6, atU: 1030, atV: -18, pitch: 0.06, settle: 4 },
@@ -181,12 +187,15 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "swift-wheel", u: 1055, v: 14, lift: 6.0, atU: 1035, atV: -4, pitch: 0.1, settle: 6 },
   // The Sunset Shelf: the framing spires and the painted mesa lines —
   // the depth-3 promise. Re-aimed in round 2 OFF the outbound ring
-  // gap: the r1 aim looked straight down the reserved corridor and
-  // framed its own reservation (an empty sky).
-  { name: "sunset-shelf", u: 1076, v: -4, lift: 3.0, atU: 1104, atV: 22, pitch: -0.02 },
+  // gap; swung further in round 3 with the ring taper shortened (the
+  // r2 sightline crossed the rings inside the old 1.1 rad taper, where
+  // every column still topped out below ground).
+  { name: "sunset-shelf", u: 1076, v: -4, lift: 3.0, atU: 1104, atV: 30, pitch: -0.02 },
   // ── The close-range set (R12's still-frame bar, judged at 2–4 m) ─────────
   { name: "close-court-garden", u: 858.5, v: 9.2, lift: 1.5, atU: 862.0, atV: 12.8, pitch: -0.22, settle: 3 },
-  { name: "close-seep-rim", u: 966.5, v: 86.2, lift: 1.5, atU: 967.6, atV: 88.2, pitch: -0.26, settle: 3 },
+  // Round 3: backed off the rim — the r2 lens stood ON it and cut the
+  // pool out of its own shot.
+  { name: "close-seep-rim", u: 963.5, v: 82.5, lift: 2.2, atU: 968.5, atV: 88.5, pitch: -0.28, settle: 3 },
   { name: "close-flute-foot", u: 1040.0, v: -27.0, lift: 1.6, atU: 1044.4, atV: -31.6, pitch: -0.1, settle: 3 },
   { name: "close-arch-shards", u: 871.5, v: 52.5, lift: 1.4, atU: 869.0, atV: 55.6, pitch: -0.2, settle: 3 },
 ];

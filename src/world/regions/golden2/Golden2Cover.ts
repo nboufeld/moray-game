@@ -29,6 +29,7 @@ import {
   golden2Weight,
   gullyChannelCenter,
   gullyChannelHalf,
+  passFillOwn,
   passHalfWidth,
   ribbonDistance,
   seepPoolDish,
@@ -142,6 +143,18 @@ function shoreWarm(u: number): number {
   return 0.3 + 0.7 * smoothstep01((u - 652) / 40);
 }
 
+/**
+ * Fill ownership (round 3): on the pass tongue the region WEIGHT is a
+ * 0.14 treaty whisper so the Hourglass Sea keeps carrying terrain and
+ * mood — but rounds 1–2 multiplied that whisper into every road gate
+ * and starved the shore road to 14% of its own fill. The fill belongs
+ * to whoever owns the bounds: the tongue's raw membership, whisper or
+ * not. Identical support to the weight, so containment is unchanged.
+ */
+function fillOwn(x: number, z: number): number {
+  return Math.max(golden2Weight(x, z), passFillOwn(x, z));
+}
+
 /** In-channel weight down the shore road and gully. */
 function roadness(u: number, v: number): number {
   if (u < 644 || u > 824) {
@@ -186,7 +199,7 @@ const gritGate: GateFn = (x, z) => {
   // Grit gathers in the sand hollows and thins over bare carved rises.
   const hollow = 1 - smoothstep01(courtSwale(x, z) / 1.3) * 0.5;
   const base = u < 824 ? roadness(u, v) * shoreWarm(u) : 1 - zoneCalm(u, v) * 0.75;
-  return golden2Weight(x, z) * restFree(x, z) * base * hollow;
+  return fillOwn(x, z) * restFree(x, z) * base * hollow;
 };
 
 /** Shell drift: pale shells stranded in hollows and along the roads. */
@@ -196,7 +209,7 @@ const shellGate: GateFn = (x, z) => {
   const road = roadness(u, v) * 0.5;
   const pockets = pocketDepth(u, v) * 0.7;
   return (
-    golden2Weight(x, z) *
+    fillOwn(x, z) *
     restFree(x, z) *
     (1 - zoneCalm(u, v)) *
     Math.min(1, hollow * 0.8 + road + pockets)
@@ -207,7 +220,7 @@ const shellGate: GateFn = (x, z) => {
 const roadPebbleGate: GateFn = (x, z) => {
   const { u, v } = spokeOf(x, z);
   const near = u < 824 ? roadness(u, v) : 1 - smoothstep01((roadDistance(u, v) - 7) / 5);
-  return near * shoreWarm(Math.min(u, 700)) * restFree(x, z) * golden2Weight(x, z);
+  return near * shoreWarm(Math.min(u, 700)) * restFree(x, z) * fillOwn(x, z);
 };
 
 /** Road-shoulder wire blades: the journey's standing near layer. */
@@ -225,7 +238,7 @@ const roadWireGate: GateFn = (x, z) => {
     shoulder = smoothstep01((d - 2.5) / 2.5) * (1 - smoothstep01((d - 11) / 6));
   }
   return (
-    golden2Weight(x, z) *
+    fillOwn(x, z) *
     restFree(x, z) *
     lensFree(x, z) *
     hoodooFree(x, z) *
@@ -248,7 +261,7 @@ const courtWireGate: GateFn = (x, z) => {
   const rc = Math.hypot(x - CENTER_X, z - CENTER_Z);
   const flank = 0.68 + 0.32 * smoothstep01((rc - 125) / 55);
   const hollow = smoothstep01(-courtSwale(x, z) / 1.2);
-  const base = 0.55 + 0.45 * Math.min(1, hollow + hoodooRing(u, v));
+  const base = 0.62 + 0.38 * Math.min(1, hollow + hoodooRing(u, v));
   return (
     golden2Weight(x, z) *
     restFree(x, z) *
@@ -282,7 +295,7 @@ const pocketFrondGate: GateFn = (x, z) => {
     return 0;
   }
   return (
-    golden2Weight(x, z) *
+    fillOwn(x, z) *
     restFree(x, z) *
     lensFree(x, z) *
     hoodooFree(x, z) *
@@ -380,7 +393,9 @@ export function buildGolden2Cover(finFeet: readonly { u: number; v: number }[]):
       area: discArea(),
       gate: gritGate,
       ground: seabedHeight,
-      count: 5200,
+      // Round 3: up from 5,200 — the r2 sweep's shoulder frames held
+      // paint but no grain in the first ten metres.
+      count: 6600,
       shapeSet: "grit",
       size: [0.03, 0.09],
       twoTone: true,
@@ -447,7 +462,10 @@ export function buildGolden2Cover(finFeet: readonly { u: number; v: number }[]):
       ground: seabedHeight,
       // Round 2: 1,600 over the ~90k m² court left the mid-band bare
       // in every touring frame; the sweep's flank fails raised it again.
-      count: 3000,
+      // Round 3: the r2 sweep's remaining misses were all high open
+      // shoulders where only the broad base term reaches — up again,
+      // with the base floor raised in the gate.
+      count: 4200,
       profile: "blade",
       size: [0.42, 0.85],
       swayAmp: 0.05,
@@ -651,7 +669,7 @@ export function buildGolden2Cover(finFeet: readonly { u: number; v: number }[]):
         seed: SEED ^ (G2_SEEDS.wrackLines + index),
         palette: { base: 0xb29a72, shade: 0x8a7a8c },
         area: driftLineArea(line, 5),
-        gate: (x, z) => restFree(x, z) * golden2Weight(x, z),
+        gate: (x, z) => restFree(x, z) * fillOwn(x, z),
         ground: seabedHeight,
         count: index === 0 ? 54 : 46,
         shapeSet: "wrack",

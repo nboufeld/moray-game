@@ -107,6 +107,19 @@ export function golden2Weight(x: number, z: number): number {
   return Math.max(disc, pass * thresholdGate(u));
 }
 
+/**
+ * The tongue's raw geometric membership, for the FILL gates. The
+ * threshold whisper (0.14) is a terrain-and-mood treaty with the
+ * Hourglass Sea, not a bareness licence: round 2's shore road was
+ * near-empty because every cover gate multiplied the treaty weight and
+ * suppressed its own fill to 14%. The road's fill is ours the moment
+ * the bounds are (weight > 0 wherever this is > 0, so containment is
+ * unchanged).
+ */
+export function passFillOwn(x: number, z: number): number {
+  return tongueWeight(PASS_TONGUE, x, z);
+}
+
 /** The pass tongue's half-width at a spoke distance, for builders and seals. */
 export function passHalfWidth(u: number): number {
   const along = Math.min(

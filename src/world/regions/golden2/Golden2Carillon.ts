@@ -16,6 +16,7 @@ import {
   FLUTE_VIOLET,
   STONE_AMBER,
   STONE_BRIGHT,
+  applyVeinGlow,
   mergedMesh,
   smoothstep01,
 } from "./Golden2Shared";
@@ -134,15 +135,21 @@ function fluteAndPaint(geometry: BufferGeometry, tower: Tower, seed: number): vo
     // every groove, strata bands at full pitch, grain jitter so no
     // facet holds one toon value. Round 2: the violet terms halved and
     // the base lifted — the r1 shade sides collapsed to flat maroon.
+    // Round 3: value contrast UP and a fine close-range grain added —
+    // the r2 flat emissive floor ironed the drawing out of the shade
+    // side (the vein-glow patch below puts the emissive under the
+    // paint's control, so the paint must carry the whole drawing).
     const strata =
       fbm(t * 6.5, theta * 0.7, { seed: seed ^ 0x17, period: 5, octaves: 2 }) - 0.5;
     const grain =
       fbm(theta * 2.2, y * 0.5, { seed: seed ^ 0x2b, period: 7, octaves: 2 }) - 0.5;
+    const fine =
+      fbm(theta * 6.4, y * 2.3, { seed: seed ^ 0x3d, period: 9, octaves: 2 }) - 0.5;
     shade
       .copy(amber)
       .lerp(bright, smoothstep01((t - 0.35) / 0.6) * 0.8)
-      .lerp(violet, Math.max(0, -groove) * 0.34 * band + Math.max(0, -strata) * 0.26)
-      .multiplyScalar(1.08 + strata * 0.2 + grain * 0.18);
+      .lerp(violet, Math.max(0, -groove) * 0.38 * band + Math.max(0, -strata) * 0.26)
+      .multiplyScalar(1.06 + strata * 0.28 + grain * 0.24 + fine * 0.13);
     // The foot stands in its own contact dusk.
     shade.lerp(violet, (1 - smoothstep01((t - 0.02) / 0.1)) * 0.22);
     colors[i * 3] = shade.r;
@@ -151,6 +158,17 @@ function fluteAndPaint(geometry: BufferGeometry, tower: Tower, seed: number): vo
   }
   position.needsUpdate = true;
   geometry.setAttribute("color", new BufferAttribute(colors, 3));
+}
+
+/** Lerps a painted stone's colours toward the sunlit pale crest. */
+function palenStone(geometry: BufferGeometry): void {
+  const colors = geometry.attributes.color as BufferAttribute;
+  const c = new Color();
+  for (let i = 0; i < colors.count; i++) {
+    c.setRGB(colors.getX(i), colors.getY(i), colors.getZ(i)).lerp(STONE_BRIGHT, 0.42);
+    colors.setXYZ(i, c.r, c.g, c.b);
+  }
+  colors.needsUpdate = true;
 }
 
 export function buildCarillon(): CarillonBuild {
@@ -212,6 +230,10 @@ export function buildCarillon(): CarillonBuild {
       { u: 0, v: 0, height: h, radius: h * 0.45, ribs: 5 },
       SEED ^ (0x61c0 + i),
     );
+    // Round 3: the chime-stones step into the pale family — at the
+    // towers' feet the r2 stones wore the shafts' own amber and the
+    // two reads fused into one mass.
+    palenStone(stone);
     stone.rotateY(random.range(0, Math.PI * 2));
     stone.translate(x, seabedHeight(x, z), z);
     parts.push(stone);
@@ -219,15 +241,19 @@ export function buildCarillon(): CarillonBuild {
     colliders.push({ center: new Vector3(x, seabedHeight(x, z) + h * 0.4, z), radius: h * 0.5 });
   }
 
-  // The stone dusk-lift (round 2): the shade side of a 20 m tower under
-  // the quarter-sun crushed to eggplant; the emissive floor keeps it a
-  // warm colour, the vertex paint keeps the drawing.
+  // The stone dusk-lift (round 2), put under the paint's control in
+  // round 3: the r2 FLAT emissive floor kept the shade side a colour
+  // but ironed the drawing out of it — a 20 m shaft read as one smooth
+  // slug. The vein-glow patch multiplies the emissive by the baked
+  // vertex paint, so the grooves stay dusk-violet while the lit strata
+  // carry the lift, and the drawing survives on the shade side.
   const material = createToonMaterial({
     color: 0xdfc79a,
     vertexColors: true,
     emissive: 0x584430,
-    emissiveIntensity: 0.38,
+    emissiveIntensity: 0.55,
   });
+  applyVeinGlow(material, "golden2-tower-dusk");
   const mesh = mergedMesh(parts, material, "carillon-towers");
 
   return { meshes: [mesh], colliders, contacts, bellMouth };

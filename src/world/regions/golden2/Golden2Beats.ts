@@ -102,6 +102,11 @@ export const WIND_POCKETS: readonly WindPocket[] = [
   { u: 770, v: 44, radius: 5.5 },
   { u: 782, v: -46, radius: 5.5 },
   { u: 868, v: 124, radius: 7 },
+  // Round 3: the windows-wall pose's own near field — its camera
+  // stands 23 m off the ridge's A end on open court the pockets and
+  // the hoodoo lees never reached.
+  { u: 849, v: 18, radius: 6 },
+  { u: 836, v: 4, radius: 5.5 },
   { u: 930, v: -126, radius: 7 },
   { u: 1002, v: -136, radius: 7 },
   { u: 1066, v: 96, radius: 7 },
@@ -114,7 +119,9 @@ export const WIND_POCKETS: readonly WindPocket[] = [
  */
 export const CLOSE_LENSES: readonly { u: number; v: number }[] = [
   { u: 858.5, v: 9.2 }, // close-court-garden (in a wind pocket)
-  { u: 966.5, v: 86.2 }, // close-seep-rim
+  // Round 3: backed off the pool's rim — the r2 lens stood ON the rim
+  // and framed sward with the pool cut out of its own shot.
+  { u: 963.5, v: 82.5 }, // close-seep-rim
   // Round 2: backed off the tower — the r1 lens stood 2.4 m from a
   // 14.5 m shaft and framed a featureless wall.
   { u: 1040.0, v: -27.0 }, // close-flute-foot (a tower's foot)

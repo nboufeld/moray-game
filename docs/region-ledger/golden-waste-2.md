@@ -269,6 +269,102 @@ and should be the road's whole distance layer — attachment probed
 after the sweep; if they render, the road still needs taller waymarks
 and denser shoulder wire).
 
+**Sweep (r1, 12/12 captured and read): ~2 pass / 5 marginal / 5 fail —
+the verifier's verdict is the round's real work order,** and it is the
+Emerald Terraces' fill curve verbatim: every miss is one class. 03
+(near hoodoo + towers + tufts) and 12 (the ranked hoodoo skyline from
+the south court) pass; 01 (bare outer plinth — the calm gate swept
+r 16–40 bare when only r 14 is the licensed rest), 05 (midwater over
+the slot — plankton too sparse for a foreground), 09/10/11 marginal;
+02/04/06/07/08 FAIL on bare open flanks: the south court past
+v −90, the north shoulder at v +112, the pass shoulders at |v| ≈ 50 —
+everywhere the hoodoo field (|v| ≤ 122) and the road bands never
+reached. Answers, all landed in r2: hoodoo field 30 → 42 wider
+(±140), six flank/shoulder wind pockets, court wire 1,600 → 3,000
+with the flank floor raised, road wire band widened, plankton to the
+Terraces' PROVEN 1,600, motes 900, the plinth ring released from the
+calm gate (the rest keeps r 14 exactly).
+
+**Neighbour probe** (scratch playwright, deleted): golden-waste-1 IS
+attached beside us during captures (streamer active = both goldens)
+and its three `hourglass-distance-*` rings exist and are visible from
+the Shore Road — their above-ground portion is the alpha-faded crest
+(foot 0.95 alpha sits at −12, below ground), so at 33 m they read as
+the soft warm haze band on the r1 frame's horizon, not a wall. No
+cross-region bug; the threshold's backdrop is honestly soft.
+
+### Round 2 (`gw2-r2`) — the country reads; three poses and one law still owed
+
+Same prebuilt-bundle harness. All 20 authored poses + 12 sweep poses
+captured and read.
+
+**Passes (13/20 authored).** `chime-gate` frames the saddle between
+its two jambs with the chime-stones on the skyline — the door reads;
+`wind-gully` descends between fluted walls with wire pacing it;
+`court-reveal` opens on the ranked hoodoo skyline; `hoodoo-court`
+holds its central sentinel over a sward patch; `great-arch` is a
+carved rusty-gold door from the court side (the r1 photobomb gone);
+`ribbon-mouth` cracks the pavement under the big sentinel;
+`ribbon-depths` keeps its violet walls and shard floor;
+`close-arch-shards` PASSES (arch as doorway, shard drift, tuft bed —
+the beam now a whisper, correct); `close-court-garden` passes;
+`noon-bell` and `carillon` compose (towers ranked, Bell Ringer
+rising); `belfry` sells the wheel — the grown swifts read as golden
+deltas around the shaft; `swift-wheel` holds the whole thermal.
+
+**Fails and marginals, with diagnoses (all structural, none paint):**
+
+- **`anchorite-cell` FAIL** — the r2 stand sat on the slot's SPINE
+  (958, −64) and its sightline died in the sill: between spine and
+  chamber the carve interpolation rises to ≈ −14 m, a seven-metre wall
+  2 m from the lens. The camera must already be over the sill —
+  round 3 moves it INSIDE the mouth at (962.5, −71.5).
+- **`sunset-shelf` FAIL on its distance** — the spires now read pale
+  and the shelf carries tufts, but the painted mesa-lines are ABSENT
+  from the promise shot. Root cause found by arithmetic, not paint:
+  the outbound ring gap's taper was 1.1 rad long, so columns reach
+  full height only ~1.3 rad off the reserved corridor — but the
+  rings' self-dissolve (140–157 m) means a shelf camera can only SEE
+  ~0.45 rad off the corridor. The whole visible sector was inside the
+  taper, topping out below ground. Round 3: taper 1.1 → 0.32,
+  ridgeBase +5 per layer, aim swung to atV 30.
+- **`shore-road` FAIL on its near field** — and the diagnosis is the
+  round's law: every cover gate multiplied `golden2Weight`, which on
+  the tongue is the 0.14 TREATY whisper — the treaty is about
+  terrain and mood ownership, but the gates read it as a bareness
+  licence and starved the road's own fill to 14%. Round 3 gives the
+  gates `fillOwn` = max(weight, raw tongue membership) — identical
+  support, so containment holds. Pose also walks forward to u 668 so
+  the first waymark pair stops standing behind its own camera.
+- **`carillon`/`close-flute-foot` MARGINAL — the r2 headline.** The
+  dusk-lift WORKED (shade sides are a colour) and over-worked: a FLAT
+  emissive floor lifts every texel equally, so the drawing the paint
+  carries was ironed off the shade side — 20 m shafts read as smooth
+  slugs, and the chime-stones (same amber family) fused into the
+  tower feet. Round 3: `applyVeinGlow` on the tower material (the
+  emissive rides the baked paint — grooves stay dusk, strata carry
+  the lift), paint contrast up (strata 0.28 / grain 0.24), a fine
+  high-frequency grain term for the 2–4 m lenses, and the
+  chime-stones lerped 0.42 toward the pale crest family.
+- **`seep-terraces` MARGINAL** — every pool out of shot left; the
+  stand swings to the east bench (980, 46 → 966, 86). **
+  `close-seep-rim` MARGINAL** — the lens stood ON the rim and cut the
+  pool out of its own shot; backed to (963.5, 82.5), lens registry
+  moved with it (the seep close-bed rides the lens constant).
+- **`windows-wall` MARGINAL** — fins read on the skyline but the
+  near court is thin; two round-3 wind pockets land at (849, 18) and
+  (836, 4) in the pose's near field.
+
+**Sweep (r2, 12 read): ~4 pass / 6 marginal / 2 fail — the r1 curve
+repeats one octave quieter.** 03/07/09/10 pass outright (10 proves
+the hoodoo paint at 2 m); 01/02/05/08/11 marginal with thin
+foreground strips; 04/06 still FAIL on high open shoulders where
+only the broad base term reaches — no pocket, no hoodoo lee, no
+road. Round 3: courtWire 3,000 → 4,200 with the gate's base floor
+0.55 → 0.62, grit 5,200 → 6,600 (the shoulder frames held paint but
+no grain inside ten metres), and the road-band fill rebalance above
+(fillOwn) feeds the pass shoulders too.
+
 **Round-2 orders** (the full list lives in the r2 commit): stone
 value/hue pass (hex warm + dusk-lift emissive, flutes deepened,
 tower paint contrast up); Windows rebuilt (ridge 13 → 9 with broken

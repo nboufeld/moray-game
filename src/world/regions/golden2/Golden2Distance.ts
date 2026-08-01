@@ -42,11 +42,13 @@ interface MesaLayer {
 }
 
 const LAYERS: readonly MesaLayer[] = [
-  // Amber near…
-  { radius: 246, ridgeBase: 10, ridgeVary: 4.4, fade: 0.34, ink: new Color(0.88, 0.7, 0.44) },
-  { radius: 264, ridgeBase: 15, ridgeVary: 5.8, fade: 0.52, ink: new Color(0.74, 0.56, 0.56) },
+  // Amber near… (bases up a step in round 3: from the Sunset Shelf the
+  // partially-tapered columns near the outbound gap topped out below
+  // ground and the promise shot had no promise in it.)
+  { radius: 246, ridgeBase: 15, ridgeVary: 4.4, fade: 0.34, ink: new Color(0.88, 0.7, 0.44) },
+  { radius: 264, ridgeBase: 20, ridgeVary: 5.8, fade: 0.52, ink: new Color(0.74, 0.56, 0.56) },
   // …dusk-violet far.
-  { radius: 286, ridgeBase: 23, ridgeVary: 7.4, fade: 0.66, ink: new Color(0.6, 0.46, 0.68) },
+  { radius: 286, ridgeBase: 27, ridgeVary: 7.4, fade: 0.66, ink: new Color(0.6, 0.46, 0.68) },
 ];
 
 const SEGMENTS = 220;
@@ -178,9 +180,14 @@ function mesaRing(layer: MesaLayer, noiseSeed: number): BufferGeometry {
       column = 0;
       continue;
     }
-    // Long tapers into both gaps (short ramps read as buildings).
+    // A long taper into the inbound gap (short ramps read as
+    // buildings; the approach's own walls close that view anyway) but
+    // a SHORT taper out of the outbound gap (round 3): at 1.1 rad the
+    // taper suppressed the skyline across the Sunset Shelf's whole
+    // vista — the rings must stand back up within the dissolve
+    // window's ~0.45 rad of the reserved corridor.
     const end =
-      smoothstep01((offIn - GAP_IN_HALF) / 1.3) * smoothstep01((offOut - GAP_OUT_HALF) / 1.1);
+      smoothstep01((offIn - GAP_IN_HALF) / 1.3) * smoothstep01((offOut - GAP_OUT_HALF) / 0.32);
     const x = CENTER_X + Math.cos(theta) * layer.radius;
     const z = CENTER_Z + Math.sin(theta) * layer.radius;
 
