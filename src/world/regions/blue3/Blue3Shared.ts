@@ -47,7 +47,7 @@ export const DAWN_ROSE = new Color(0xe8d2c6);
 /** The pale worked-stone family (blue-2's proven sky-key lift kept:
  *  warm rock-wash albedo reads rust under a violet mood unless the
  *  material tint leans blue-pale). */
-export const STONE_PALE = 0xd6d8de;
+export const STONE_PALE = 0xdadce2;
 /** The violet-slate family — a step deeper, for silhouettes that must
  *  stand against the milky rim. */
 export const STONE_SLATE = 0xa8aac4;
@@ -188,6 +188,7 @@ export const B3_SEEDS = {
   // Light.
   daybreak: 0x11f1,
   daymarkBlade: 0x11f2,
+  fallFoot: 0x11f6,
   anchorPool: 0x11f3,
   pearlGlow: 0x11f4,
   doorstepRays: 0x11f5,

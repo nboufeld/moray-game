@@ -89,6 +89,27 @@ export function buildBlue3Light(): Blue3LightBuild {
     }).group,
   );
 
+  // ── The Longfall's landing (round 2): one shaft at the fall's foot,
+  // marking the descent's arrival the way a door marks a house — and
+  // giving the brink's reveal a light standing in it.
+  const foot = worldOf(1332, -4);
+  groups.push(
+    buildBeamAndPool({
+      seed: SEED ^ B3_SEEDS.fallFoot,
+      tint: 0xe8e2d8,
+      ground: seabedHeight,
+      beams: [
+        {
+          pos: [foot.x, foot.z],
+          top: seabedHeight(foot.x, foot.z) + 22,
+          width: 3.4,
+          opacity: 0.11,
+          slant: [0.06, 0.05],
+        },
+      ],
+    }).group,
+  );
+
   // ── The Anchor's finder ──────────────────────────────────────────────────
   const anchorAt = worldOf(ANCHOR.u + 2, ANCHOR.v - 2);
   groups.push(

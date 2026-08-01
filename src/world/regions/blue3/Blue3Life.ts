@@ -64,7 +64,7 @@ export function buildBlue3Life(): Blue3LifeBuild {
     count: 420,
     mode: "drift",
     volume: { center: [shelf.x, -4, shelf.z], size: [180, 12, 180] },
-    size: 0.44,
+    size: 0.4,
     opacity: 0.32,
     bias: { dir: [0.3, 0.04, -0.22], speed: 0.14 },
   });
@@ -78,7 +78,7 @@ export function buildBlue3Life(): Blue3LifeBuild {
     count: 1050,
     mode: "drift",
     volume: { center: [deep.x, -43, deep.z], size: [380, 18, 380] },
-    size: 0.46,
+    size: 0.42,
     opacity: 0.32,
     bias: { dir: [-0.22, 0.03, 0.3], speed: 0.12 },
   });

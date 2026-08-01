@@ -149,7 +149,12 @@ export function passHalfWidth(u: number): number {
  */
 export function passGate(u: number, v: number): number {
   const along = 1 - smoothstep01((u - 1306) / 26);
-  const across = 1 - smoothstep01((Math.abs(v) - (passHalfWidth(Math.min(u, 1300)) + 2)) / 14);
+  // Round 2: the corridor's flank walls WANDER — the unwobbled window
+  // rendered them as two razor-straight fogged planes down the whole
+  // Longfall.
+  const wave = 4.5 * Math.sin(u * 0.045) + 2.5 * Math.sin(u * 0.019 + 2);
+  const across =
+    1 - smoothstep01((Math.abs(v) - (passHalfWidth(Math.min(u, 1300)) + 2 + wave)) / 14);
   return along * across;
 }
 
@@ -195,11 +200,18 @@ export const FALL_FROM = 1252;
 export const FALL_TO = 1356;
 export const MERE_FLOOR = -52;
 
-/** The Longfall's drop at a spoke distance: 0 above the crest, the
- *  Mere floor below the foot — one long smooth glide, the world's last
- *  slope. Exported so builders and paint share the profile. */
-export function fallDrop(u: number): number {
-  return MERE_FLOOR * smoothstep01((u - FALL_FROM) / (FALL_TO - FALL_FROM));
+/** The Longfall's crest line wanders (round 2: a radially smooth crest
+ *  silhouetted as one flat fogged band from the whole Mere). */
+export function fallWobble(v: number): number {
+  return 6 * Math.sin(v * 0.061) + 3 * Math.sin(v * 0.027 + 1.3);
+}
+
+/** The Longfall's drop: a true BRINK — fourteen metres over the first
+ *  reach — then the long glide to the Mere floor. Exported so builders
+ *  and paint share the profile. */
+export function fallDrop(u: number, v: number): number {
+  const head = u - FALL_FROM - fallWobble(v);
+  return -14 * smoothstep01(head / 16) - 38 * smoothstep01((head - 18) / 86);
 }
 
 // ─── The landmarks the pure half must know ──────────────────────────────────
@@ -343,16 +355,19 @@ function craterShape(u: number, v: number, base: number): number {
 
 function discHeight(x: number, z: number, u: number, v: number): number {
   // The Longfall carries the descent; the Mere floor takes over.
-  let h = fallDrop(u);
+  let h = fallDrop(u, v);
 
-  // Long low swells on the Mere — never on the fall's steep face.
+  // Long low swells everywhere, and RIBS on the fall's face (round 2:
+  // a smooth 50 m face fogged to one flat plane — the ribs give the
+  // slope shoulders the light can find).
   const steep = smoothstep01((u - FALL_FROM - 10) / 30) * (1 - smoothstep01((u - FALL_TO) / 20));
   const swell =
     (fbm(x * 0.012, z * 0.012, { seed: SEED ^ B3_SEEDS.terrainMere, period: 5, octaves: 2 }) -
       0.5) *
     1.5 *
-    (1 - steep * 0.75);
+    (1 - steep * 0.45);
   h += swell;
+  h += steep * 1.5 * Math.sin(v * 0.24 + fallWobble(v) * 0.3);
 
   // The Mere's heart calms: the deepest country is the smoothest (the
   // Wide Morning's floor is nearly still water made solid).

@@ -158,23 +158,23 @@ function whaleGeometry(): BufferGeometry {
   body.deleteAttribute("uv");
   const position = body.attributes.position!;
   for (let i = 0; i < position.count; i++) {
-    let x = position.getX(i) * 0.52;
+    let x = position.getX(i) * 0.48;
     const rawY = position.getY(i);
-    // A whale's back is a long arch; the belly is fuller than a ray's
-    // but still shallower than the crown.
-    let y = rawY * (rawY > 0 ? 0.62 : 0.5);
-    let z = position.getZ(i) * 1.75; // +z is the head
+    // Round 2: longer and flatter — the r1 proportions read as a
+    // violet balloon at twenty-five metres.
+    let y = rawY * (rawY > 0 ? 0.56 : 0.44);
+    let z = position.getZ(i) * 1.95; // +z is the head
     // The head blunts into the boxy brow; the rear draws long into
     // the tailstock.
-    if (z > 4.2) {
-      z = 4.2 + (z - 4.2) * 0.35;
+    if (z > 4.7) {
+      z = 4.7 + (z - 4.7) * 0.35;
       y *= 0.92;
     }
-    if (z < -3.2) {
-      const over = -z - 3.2;
-      z = -3.2 - over * 1.15;
-      x *= Math.max(0.24, 1 - over * 0.28);
-      y *= Math.max(0.2, 1 - over * 0.26);
+    if (z < -3.6) {
+      const over = -z - 3.6;
+      z = -3.6 - over * 1.15;
+      x *= Math.max(0.24, 1 - over * 0.26);
+      y *= Math.max(0.2, 1 - over * 0.24);
     }
     position.setXYZ(i, x, y, z);
   }
@@ -203,13 +203,14 @@ function whaleGeometry(): BufferGeometry {
 
   const fluke = (): BufferGeometry => {
     // A broad twin-lobed fluke, swept back, held near-horizontal.
+    // Round 2: grown — the tail must break the lens silhouette.
     const positions = new Float32Array([
       // Right lobe.
-      0.3, 0.1, -7.4, 3.4, 0.25, -9.2, 0.2, 0.15, -8.4,
+      0.3, 0.1, -7.3, 4.4, 0.3, -9.7, 0.2, 0.15, -8.6,
       // Left lobe.
-      -0.3, 0.1, -7.4, -0.2, 0.15, -8.4, -3.4, 0.25, -9.2,
+      -0.3, 0.1, -7.3, -0.2, 0.15, -8.6, -4.4, 0.3, -9.7,
       // The notch between them.
-      0.2, 0.15, -8.4, 0.0, 0.12, -8.0, -0.2, 0.15, -8.4,
+      0.2, 0.15, -8.6, 0.0, 0.12, -8.1, -0.2, 0.15, -8.6,
     ]);
     const vane = new BufferGeometry();
     vane.setAttribute("position", new BufferAttribute(positions, 3));
@@ -239,9 +240,9 @@ function whaleGeometry(): BufferGeometry {
   // black; the specks are the floor's own star-bloom, worn.
   const pos = merged.attributes.position!;
   const colors = new Float32Array(pos.count * 3);
-  const back = new Color(0xcfc6d2);
-  const belly = new Color(0x5c527e);
-  const speck = new Color(0xf2ece2);
+  const back = new Color(0xd8d0da);
+  const belly = new Color(0x685c8a);
+  const speck = new Color(0xf4eee4);
   const finTone = new Color(0x8a7ea6);
   const shade = new Color();
   for (let i = 0; i < pos.count; i++) {
@@ -256,10 +257,14 @@ function whaleGeometry(): BufferGeometry {
       smoothstep01((-z - 6.8) / 1.2),
     );
     shade.lerp(finTone, finness * 0.8);
-    // The star-bloom, worn: seeded specks across the back only.
+    // The star-bloom, worn: seeded specks across the back, and a
+    // sparse scatter below the waterline — the morning shows from
+    // beneath too (round 2: the diver mostly meets the belly).
     const stars = fbm(x * 0.9 + 3, z * 0.55, { seed: SEED ^ 0xf1ab, period: 9, octaves: 2 });
-    if (top > 0.4 && stars > 0.66 && finness < 0.4) {
-      shade.lerp(speck, smoothstep01((stars - 0.66) / 0.12) * 0.85);
+    if (top > 0.4 && stars > 0.62 && finness < 0.4) {
+      shade.lerp(speck, smoothstep01((stars - 0.62) / 0.1) * 0.95);
+    } else if (top <= 0.4 && stars > 0.74 && finness < 0.4) {
+      shade.lerp(speck, smoothstep01((stars - 0.74) / 0.1) * 0.55);
     }
     // A pale brow blaze — the marking the codex draws.
     const blaze = Math.abs(Math.hypot(x * 1.1, (z - 5.4) * 0.7) - 0.9);

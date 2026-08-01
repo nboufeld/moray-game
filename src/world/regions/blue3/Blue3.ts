@@ -136,21 +136,27 @@ interface PoseSpec {
 }
 
 const POSE_SPECS: readonly PoseSpec[] = [
-  // On the Worldwall's crest, looking back down into the Deep Steps'
-  // amphitheatre — the crossing, seen from its lid. (Pre-connection
-  // this frame carries blue-2's rim seals and closed ceiling: the
-  // honest state; the flagged cuts open it at merge.)
-  { name: "wall-crossing", u: 1150, v: 0, lift: 1.5, atU: 1114, atV: -6, pitch: -0.3, settle: 4 },
-  // THE HORNSGATE: standing on the Morning Shelf looking back at the
-  // Deep Steps' Horns framing the door the diver came through.
-  { name: "hornsgate", u: 1162, v: -2, lift: 1.9, atU: 1126, atV: 1, pitch: 0.2 },
-  // The Morning Shelf: the world's last milky threshold.
-  { name: "morning-shelf", u: 1184, v: -6, lift: 2.2, atU: 1230, atV: 4, pitch: -0.02 },
+  // Past the Worldwall's crest, looking back down into the Deep
+  // Steps' amphitheatre — the crossing, seen from inside the duck.
+  // (Round 2: the r1 crest stand hid the drop behind the lid's own
+  // horizon — the stand steps onto the wall's shoulder and the pitch
+  // drops onto the amphitheatre. Pre-connection this frame carries
+  // blue-2's rim seals and closed ceiling: the honest state.)
+  { name: "wall-crossing", u: 1140, v: 0, lift: 1.4, atU: 1114, atV: -4, pitch: -0.45, settle: 4 },
+  // THE HORNSGATE: on the crest, the Deep Steps' Horns framing the
+  // door the diver came through (round 2: closer and lower — at 36 m
+  // under pitch 0.2 the Horns were fog-ghosts under open sky).
+  { name: "hornsgate", u: 1150, v: -2, lift: 1.6, atU: 1126, atV: 1, pitch: 0.06 },
+  // The Morning Shelf: the world's last milky threshold, the Daymark
+  // breaching the fog ahead (round 2: the r1 stand left it 68 m out).
+  { name: "morning-shelf", u: 1206, v: -6, lift: 2.2, atU: 1252, atV: -2, pitch: -0.02 },
   // THE DAYMARK, close: the lone waymark and its thin blade.
   { name: "daymark", u: 1240, v: 0, lift: 2.0, atU: 1252, atV: 6, pitch: 0.08, settle: 3 },
   // THE LONGFALL'S BRINK: the deepest country opens in one breath —
-  // the Mere glowing far below, the Daybreak standing far off.
-  { name: "longfall-brink", u: 1254, v: -4, lift: 2.6, atU: 1330, atV: 0, pitch: -0.14, settle: 4 },
+  // the head-drop falling away underfoot, the landing beam far below
+  // (round 2: the head steepened into a true brink; the Gatebuoys
+  // flank the road; the stand backs onto the crest lip).
+  { name: "longfall-brink", u: 1250, v: -4, lift: 2.4, atU: 1300, atV: 2, pitch: -0.22, settle: 4 },
   // Mid-fall: the world's longest road, buoy stones pacing it.
   { name: "longfall-road", u: 1296, v: 8, lift: 2.6, atU: 1334, atV: -8, pitch: -0.1, settle: 3 },
   // THE CHAIN: the links rising toward the Anchor in the fog.
@@ -175,19 +181,23 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // THE SHALLOWS: the road wades the young river; the dawn shoal
   // crosses on schedule.
   { name: "shallows-ford", u: 1436, v: 40, lift: 2.0, atU: 1446, atV: 47, pitch: 0.02, settle: 6 },
-  // THE STARWATER PANS: still dishes of held light.
-  { name: "starwater-pans", u: 1398, v: -92, lift: 2.4, atU: 1418, atV: -114, pitch: -0.06, settle: 3 },
+  // THE STARWATER PANS: still dishes of held light (round 2: closer —
+  // the r1 pans were dim smears at thirty metres).
+  { name: "starwater-pans", u: 1404, v: -98, lift: 2.2, atU: 1419, atV: -113, pitch: -0.08, settle: 3 },
   // THE PEARL: the secret, found.
   { name: "pearl", u: 1541, v: 90, lift: 1.8, atU: 1548, atV: 96, pitch: -0.04, settle: 4 },
   // THE SEA'S DOORSTEP: the bench, the Watchers, the last horizon.
   { name: "doorstep", u: 1586, v: 6, lift: 2.2, atU: 1603, atV: -5, pitch: 0.04, settle: 3 },
-  // From the Doorstep, out over the Hem: the Morning Bank — the end
-  // of the sea, painted. The stand rides the vault (the horns-promise
-  // arithmetic pre-paid: a floor-level camera would sit behind the
-  // Hem's own crest).
-  { name: "morning-horizon", u: 1596, v: -2, lift: 0, absoluteY: -18, atU: 1690, atV: 0, pitch: 0.08 },
-  // From the east Hem, back across the whole country at once.
-  { name: "hem-lookback", u: 1556, v: 64, lift: 0, absoluteY: -30, atU: 1390, atV: 30, pitch: 0.04 },
+  // From over the Doorstep, out across the Hem: the Morning Bank —
+  // the end of the sea, painted. Round 2, arithmetic redone: from
+  // y −18 the Hem's wobbled crest still occluded every ring; from −6
+  // (the vault holds +8 here) ring 1's crown clears the crest line by
+  // 0.11 rad and the rose crowns stand.
+  { name: "morning-horizon", u: 1596, v: -2, lift: 0, absoluteY: -6, atU: 1690, atV: 0, pitch: 0.02 },
+  // Back across the country from the Mere's east edge (round 2: the
+  // r1 stand at 165 m fogged everything out; the Anchor silhouette
+  // needs ≤ ~90 m).
+  { name: "hem-lookback", u: 1476, v: 44, lift: 0, absoluteY: -34, atU: 1394, atV: 58, pitch: 0.02 },
   // THE MORNING WHALE, met in its light.
   { name: "morning-whale", u: 1478, v: -44, lift: 0, absoluteY: -40, atU: 1502, atV: -28, pitch: 0.05, settle: 8 },
   // ── The close-range set (R12's still-frame bar, judged at 2–4 m) ─────────

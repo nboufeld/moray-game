@@ -456,7 +456,7 @@ export function buildBlue3Cover(): Blue3CoverBuild {
       area: discArea(),
       gate: wallTuftGate,
       ground: seabedHeight,
-      count: 1400,
+      count: 2200,
       profile: "blade",
       size: [0.36, 0.72],
       swayAmp: 0.045,
@@ -514,7 +514,7 @@ export function buildBlue3Cover(): Blue3CoverBuild {
   const bushes = keep(
     buildBushBank({
       seed: SEED ^ B3_SEEDS.flankBushes,
-      palette: { base: 0x8f84b2, tip: 0xc8bede, shade: 0x584e7c, accent: 0xded6ea },
+      palette: { base: 0x8f84b2, tip: 0xc8bede, shade: 0x584e7c, accent: 0xcfc8de },
       area: polylineArea(
         DRIFT_BEATS.map((beat) => [beat.u, beat.v] as const),
         18,
@@ -577,7 +577,7 @@ export function buildBlue3Cover(): Blue3CoverBuild {
       seed: B3_SEEDS.closeMereBed,
       at: { u: CLOSE_LENSES[0]!.u + 3.0, v: CLOSE_LENSES[0]!.v + 3.2 },
       radius: 4.5,
-      count: 84,
+      count: 110,
       profile: "blade",
       palette: { base: 0xb4aacb, tip: 0xe8dcd2, shade: 0x776e94 },
       warm: 0x3a3450,

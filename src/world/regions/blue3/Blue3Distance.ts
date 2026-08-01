@@ -41,10 +41,13 @@ interface SeaLayer {
   readonly ink: Color;
 }
 
+// Bases raised in round 2: the morning-horizon arithmetic (the stand
+// rides the vault at y −6; every ring crown must clear the Hem's
+// wobbled crest sightline with margin).
 const LAYERS: readonly SeaLayer[] = [
-  { radius: 246, ridgeBase: 13, ridgeVary: 2.6, fade: 0.3, ink: new Color(0.74, 0.62, 0.8) },
-  { radius: 266, ridgeBase: 19, ridgeVary: 3.4, fade: 0.5, ink: new Color(0.86, 0.72, 0.86) },
-  { radius: 290, ridgeBase: 27, ridgeVary: 4.4, fade: 0.66, ink: new Color(0.96, 0.84, 0.92) },
+  { radius: 246, ridgeBase: 16, ridgeVary: 2.6, fade: 0.3, ink: new Color(0.74, 0.62, 0.8) },
+  { radius: 266, ridgeBase: 22, ridgeVary: 3.4, fade: 0.5, ink: new Color(0.86, 0.72, 0.86) },
+  { radius: 290, ridgeBase: 30, ridgeVary: 4.4, fade: 0.66, ink: new Color(0.96, 0.84, 0.92) },
 ];
 
 const SEGMENTS = 220;

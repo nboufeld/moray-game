@@ -147,6 +147,26 @@ export function buildBlue3Stones(): Blue3StonesBuild {
       radius * 1.35,
     );
   }
+  // The Gatebuoys (round 2): a slab-and-stone pair flanking the road
+  // at the Longfall's new brink, so the crest frame has its jambs.
+  // Appended after all existing draws — the standing reroll fence.
+  for (const [i, spot] of ([
+    [1256, -10],
+    [1259, 8],
+  ] as const).entries()) {
+    const radius = buoyRandom.range(1.2, 1.7);
+    stand(
+      i === 0
+        ? slabGeometry({ seed: SEED ^ (B3_SEEDS.buoys + 90 + i), radius: radius * 1.3, height: radius * 0.7 })
+        : boulderGeometry({ seed: SEED ^ (B3_SEEDS.buoys + 90 + i), radius, height: radius * 1.3 }),
+      i === 0 ? paleParts : slateParts,
+      spot[0],
+      spot[1],
+      buoyRandom.range(0, Math.PI * 2),
+      radius * 1.2,
+      radius,
+    );
+  }
 
   // ─── THE CHAIN ───────────────────────────────────────────────────────────
   // Five great stone links. Most lie flat, half-drowned in the silt;
@@ -192,19 +212,20 @@ export function buildBlue3Stones(): Blue3StonesBuild {
     shank.translate(-2.5, -1.6, 0);
     parts.push(shank);
 
-    // The ring (the eye) at the crown.
+    // The ring (the eye), seated ON the crown.
     const eye = ringGeometry(anchorSeed ^ 0x11, 1.8, 0.5);
     eye.rotateY(Math.PI / 2);
-    eye.translate(15.1, 12.1, 0);
+    eye.translate(14.9, 11.0, 0);
     parts.push(eye);
 
-    // The stock: a crossbar under the eye, athwart the shank.
+    // The stock: a crossbar THROUGH the shank under the eye (round 2:
+    // the r1 offset left it floating beside the crown).
     const stock = stackGeometry(
       [{ radius: 0.72, rise: 0.2, stretch: 6.4, lean: 0 }],
       { seed: anchorSeed ^ 0x23, rings: 18 },
     );
     stock.rotateX(Math.PI / 2);
-    stock.translate(12.9, 10.2, 4.6);
+    stock.translate(13.0, 9.4, -3.2);
     parts.push(stock);
 
     // The raised arm and its fluke, breaking the silt like a fin.
@@ -254,16 +275,18 @@ export function buildBlue3Stones(): Blue3StonesBuild {
   // ─── The Wellhead crags ──────────────────────────────────────────────────
   // Five slate teeth on the crater's rim, clear of the Overbrim's
   // bearing (≈ 2.15 rad) and the road's rim crossing (≈ 1.75 rad).
+  // Round 2: taller and near-upright — the r1 hard leans read as
+  // floating pods when a crag's crown showed over a rim shoulder.
   const cragRandom = new Random(SEED ^ B3_SEEDS.wellCrags);
   for (const [i, bearing] of [0.35, 2.95, 3.85, 4.75, 5.65].entries()) {
-    const h = cragRandom.range(3.6, 6.4);
+    const h = cragRandom.range(5.0, 8.0);
     const cu = WELLHEAD.u + Math.cos(bearing) * (WELLHEAD.rimR + 1);
     const cv = WELLHEAD.v + Math.sin(bearing) * (WELLHEAD.rimR + 1);
     stand(
       stackGeometry(
         [
-          { radius: 1.3, rise: 0.4, stretch: 1.5, lean: cragRandom.signed(0.5) },
-          { radius: 0.85, rise: h * 0.52, stretch: (h * 0.42) / 0.85, lean: cragRandom.signed(0.9) },
+          { radius: 1.3, rise: 0.4, stretch: 1.5, lean: cragRandom.signed(0.3) },
+          { radius: 0.85, rise: h * 0.52, stretch: (h * 0.42) / 0.85, lean: cragRandom.signed(0.45) },
         ],
         { seed: SEED ^ (B3_SEEDS.wellCrags + i * 9), rings: 24 },
       ),
@@ -311,7 +334,7 @@ export function buildBlue3Stones(): Blue3StonesBuild {
         panRandom.range(0, Math.PI * 2),
         radius,
         radius * 0.5,
-        0.15,
+        0.05,
       );
     }
   }
@@ -359,14 +382,14 @@ export function buildBlue3Stones(): Blue3StonesBuild {
     }
   }
 
-  // The palen pass (blue-2's proven cure, taken from draft one): the
-  // rock wash's warm albedo reads rust under the violet mood — every
-  // part re-keys toward the star-bright sky, pale harder than slate.
+  // The palen pass (blue-2's proven cure, taken from draft one and
+  // DEEPENED in round 2: our mood is brighter than the Deep Steps',
+  // and the r1 stones rendered bruised orange-purple at close range).
   for (const part of paleParts) {
-    palenStone(part, 0.42);
+    palenStone(part, 0.55);
   }
   for (const part of slateParts) {
-    palenStone(part, 0.24);
+    palenStone(part, 0.34);
   }
 
   const pale = createRockMaterial(STONE_PALE);

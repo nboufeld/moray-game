@@ -11,12 +11,13 @@ import {
   CENTER_Z,
   DOORSTEP,
   FALL_FROM,
-  FALL_TO,
+  MERE_FLOOR,
   OVERBRIM,
   PANS,
   PEARL,
   cradleCarve,
   cradleDistance,
+  fallDrop,
   passGate,
   passHalfWidth,
   spokeOf,
@@ -82,14 +83,14 @@ function story(hex: number): Color {
 
 // The palette the bake composes with — authored for THIS region's
 // violet-rose mood (fill palettes are for the region's own light).
-const MILKY_SHELF = story(0xe2e4da);
+const MILKY_SHELF = story(0xe8e6dc);
 const FALL_ROSE = story(0xc8b8c2);
 const FALL_VIOLET = story(0x9484ae);
 const MERE_VIOLET_STORY = story(0x685c90);
 const SILT_DRIFT = story(0xc4bcce);
 const STAR_BLOOM = story(0xf0e8de);
 const CRADLE_GLASS = story(0xbfe0d2);
-const CRADLE_BANK = story(0xa9c9b8);
+const CRADLE_BANK = story(0xb2d0be);
 const WELL_PALE = story(0xe6e0d6);
 const DAYBREAK_BRIGHT = story(0xf2ece0);
 const PAN_WATER = story(0xe4dcd8);
@@ -98,20 +99,28 @@ const HEM_ROSE = story(0xe6d0c4);
 const SHADOW_VIOLET = story(0x76689a);
 
 /**
- * The star-bloom: the Mere's field of first light — pale warm specks
- * strewn across the deep violet, densest and brightest in the Wide
- * Morning. Two seeded scales so the bloom drifts in constellations,
- * never in even confetti.
+ * The star-bloom: the Mere's field of first light — small sharp pale
+ * specks strewn in seeded constellations across the deep violet,
+ * densest and brightest in the Wide Morning, over a FAINT broad
+ * under-drift. Round 2: the r1 speck scale (~3 m blobs) read as
+ * dapple pools, not stars — frequency ×2.5, threshold sharpened.
  */
-function starBloom(x: number, z: number, u: number, v: number): number {
-  const specks = fbm(x * 0.34, z * 0.34, { seed: SEED ^ B3_SEEDS.paintStars, period: 23, octaves: 2 });
+function starBloom(
+  x: number,
+  z: number,
+  u: number,
+  v: number,
+): { speck: number; drift: number } {
+  const specks = fbm(x * 0.85, z * 0.85, { seed: SEED ^ B3_SEEDS.paintStars, period: 23, octaves: 2 });
   const drift = fbm(x * 0.017, z * 0.017, { seed: SEED ^ B3_SEEDS.paintSilt, period: 6, octaves: 2 });
   const morning = 1 - smoothstep01((Math.hypot(u - 1374, v + 58) - 30) / 40);
-  const threshold = 0.74 - drift * 0.1 - morning * 0.05;
-  if (specks <= threshold) {
-    return 0;
-  }
-  return smoothstep01((specks - threshold) / 0.1) * (0.55 + morning * 0.45);
+  const threshold = 0.78 - drift * 0.06 - morning * 0.04;
+  const speck =
+    specks <= threshold
+      ? 0
+      : smoothstep01((specks - threshold) / 0.07) * (0.6 + morning * 0.4);
+  const under = smoothstep01((drift - 0.56) / 0.2) * (0.2 + morning * 0.15);
+  return { speck, drift: under };
 }
 
 /**
@@ -151,32 +160,44 @@ function bakeFirstSeaPaint(geometry: PlaneGeometry, contacts: readonly ContactPa
       col.lerp(SILT_DRIFT, silt * 0.3 * (1 - depthK));
       value *= 1 - depthK * 0.16;
     } else if (u < FALL_FROM) {
-      // The Morning Shelf: the world's last milky threshold.
+      // The Morning Shelf: the world's last milky threshold. Round 2:
+      // whitened a step — the r1 shelf read as bare warm tan.
       col.copy(MILKY_SHELF);
-      col.lerp(SILT_DRIFT, silt * 0.3);
-      value *= 1.08;
+      col.lerp(SILT_DRIFT, silt * 0.18);
+      value *= 1.14;
     } else {
-      // The fall and the floor: the story runs on depth itself — the
-      // longest gradient in the game, rose crest to violet Mere.
-      const fall = smoothstep01((u - FALL_FROM) / (FALL_TO - FALL_FROM));
+      // The fall and the floor: the story runs on the drop itself —
+      // the longest gradient in the game, rose crest to violet Mere.
+      const fall = Math.min(1, Math.max(0, fallDrop(u, v) / MERE_FLOOR));
+      const steepK = Math.min(1, 4 * fall * (1 - fall));
       col.copy(FALL_ROSE).lerp(FALL_VIOLET, smoothstep01((fall - 0.12) / 0.5));
       col.lerp(MERE_VIOLET_STORY, smoothstep01((fall - 0.55) / 0.45));
-      col.lerp(SILT_DRIFT, silt * 0.32 * (1 - fall * 0.5));
-      // The fall's face is combed: long streamlines down the slope,
-      // drawn in value so the descent reads as travel.
+      col.lerp(SILT_DRIFT, silt * 0.3 * (1 - steepK * 0.8) * (1 - fall * 0.5));
+      // The fall's face is combed and runnelled (round 2: amplitude up
+      // hard — the r1 face fogged to one flat plane from the Mere).
       if (fall > 0.02 && fall < 0.98) {
         const comb =
           fbm(v * 0.12, u * 0.014, { seed: SEED ^ B3_SEEDS.paintFall, period: 7, octaves: 2 }) -
           0.5;
-        value *= 1 + comb * 0.16 * (1 - Math.abs(fall - 0.5) * 1.2);
+        const runnel =
+          fbm(v * 0.05, u * 0.006, { seed: SEED ^ (B3_SEEDS.paintFall + 3), period: 5, octaves: 2 }) -
+          0.5;
+        value *= 1 + (comb * 0.3 + Math.max(0, runnel) * 0.24) * steepK;
+        col.lerp(SHADOW_VIOLET, Math.max(0, -runnel) * 0.6 * steepK);
+        col.lerp(MILKY_SHELF, Math.max(0, runnel) * 0.3 * steepK);
       }
-      value *= 1 - fall * 0.06;
+      value *= 1 - fall * 0.05;
 
-      // THE STAR-BLOOM: the field of first light.
-      const bloom = starBloom(x, z, u, v) * smoothstep01((fall - 0.7) / 0.3);
-      if (bloom > 0) {
-        col.lerp(STAR_BLOOM, bloom * 0.8);
-        value *= 1 + bloom * 0.22;
+      // THE STAR-BLOOM: the field of first light, waking on the fall's
+      // lower half and fully lit across the Mere.
+      const bloom = starBloom(x, z, u, v);
+      const wake = smoothstep01((fall - 0.55) / 0.3);
+      if (bloom.drift > 0) {
+        col.lerp(SILT_DRIFT, bloom.drift * wake);
+      }
+      if (bloom.speck > 0) {
+        col.lerp(STAR_BLOOM, bloom.speck * 0.95 * wake);
+        value *= 1 + bloom.speck * 0.3 * wake;
       }
     }
 
@@ -208,18 +229,20 @@ function bakeFirstSeaPaint(geometry: PlaneGeometry, contacts: readonly ContactPa
     }
     const bankStain = 1 - smoothstep01((cradleDistance(u, v).d - 7) / 12);
     if (bankStain > 0 && u > 1400 && wellD(u, v) > 24) {
-      col.lerp(CRADLE_BANK, bankStain * 0.2 * (0.5 + silt * 0.5));
+      col.lerp(CRADLE_BANK, bankStain * 0.14 * (0.5 + silt * 0.5));
     }
 
     // THE WELLHEAD: the pale crater, and the Daybreak's painted circle
-    // at the bottom of the world.
+    // at the bottom of the world. Round 2: the pale story extends down
+    // the outer skirt — the r1 flank read as tan mud.
     const wd = wellD(u, v);
-    if (wd < 46) {
+    if (wd < 48) {
       const rim = smoothstep01((wd - 6) / 8) * (1 - smoothstep01((wd - 30) / 14));
-      col.lerp(WELL_PALE, rim * 0.65);
+      const skirt = smoothstep01((wd - 20) / 6) * (1 - smoothstep01((wd - 30) / 16));
+      col.lerp(WELL_PALE, rim * 0.7 + skirt * 0.3);
       // Concentric breath-rings on the rim, like ripples of light.
       const ripple = Math.sin(wd * 1.5);
-      value *= 1 + rim * (0.1 + ripple * 0.07);
+      value *= 1 + rim * (0.14 + ripple * 0.07) + skirt * 0.06;
       const bowl = 1 - smoothstep01((wd - 5) / 6);
       if (bowl > 0) {
         col.lerp(DAYBREAK_BRIGHT, bowl * 0.9);
@@ -234,7 +257,8 @@ function bakeFirstSeaPaint(geometry: PlaneGeometry, contacts: readonly ContactPa
       value *= 1 + streak * 0.08;
     }
 
-    // THE STARWATER PANS: still dishes of held light.
+    // THE STARWATER PANS: still dishes of held light (round 2: value
+    // up — the r1 pans read as faint smears at thirty metres).
     for (const pan of PANS) {
       const pd = Math.hypot(u - pan.u, v - pan.v);
       if (pd < pan.radius * 1.8) {
@@ -242,18 +266,22 @@ function bakeFirstSeaPaint(geometry: PlaneGeometry, contacts: readonly ContactPa
         const lip =
           smoothstep01((pd - pan.radius * 0.85) / 1.5) *
           (1 - smoothstep01((pd - pan.radius * 1.4) / 2));
-        col.lerp(PAN_WATER, water * 0.85);
+        col.lerp(PAN_WATER, water * 0.92);
         col.lerp(SHADOW_VIOLET, lip * 0.25);
-        value *= 1 + water * 0.24 - lip * 0.05;
+        value *= 1 + water * 0.4 - lip * 0.05;
       }
     }
 
-    // The Pearl's fold: a soft pale bed under the secret.
+    // The Pearl's fold: a soft pale bed under the secret, and the
+    // contact shade that seats the orb (round 2: it hovered).
     const pearlD = Math.hypot(u - PEARL.u, v - PEARL.v);
     if (pearlD < 8) {
       const bed = 1 - smoothstep01((pearlD - 2) / 5);
       col.lerp(STAR_BLOOM, bed * 0.5);
       value *= 1 + bed * 0.1;
+      const seat = 1 - smoothstep01((pearlD - 0.7) / 0.9);
+      col.lerp(SHADOW_VIOLET, seat * 0.5);
+      value *= 1 - seat * 0.25;
     }
 
     // The Doorstep's rise: milky, the world's last floor.
@@ -264,18 +292,30 @@ function bakeFirstSeaPaint(geometry: PlaneGeometry, contacts: readonly ContactPa
       value *= 1 + rise * 0.1;
     }
 
-    // THE HEM: the world's outermost wall pales upward — and the
-    // morning beyond the world bleeds rose over its crest.
-    const hemK = smoothstep01((rc - 176) / 34) * smoothstep01((u - 1244) / 30);
-    if (hemK > 0) {
+    // THE HEM and the corridor's flank walls: every standing face
+    // pales upward, the morning bleeding rose over the crest. Round 2:
+    // the wall term also keys on the face itself (the corridor flanks
+    // at rc < 176 carried NO wall story and fogged to flat planes),
+    // and the value swing + a fine grain go up hard — fog eats half of
+    // any amplitude (the blue-2 slab lesson, paid in paint).
+    const hemK = smoothstep01((rc - 164) / 34) * smoothstep01((u - 1244) / 30);
+    const flankK =
+      u > 1248 && u < 1380
+        ? smoothstep01((y - (fallDrop(u, v) + 1.5)) / 9) * smoothstep01((Math.abs(v) - 38) / 12)
+        : 0;
+    const wallK = Math.max(hemK, flankK);
+    if (wallK > 0) {
       const contour = Math.sin(y * 0.9 + silt * 2);
       const runnel =
         fbm(u * 0.06, v * 0.06, { seed: SEED ^ B3_SEEDS.paintWall, period: 9, octaves: 2 }) - 0.5;
+      const grain =
+        fbm(u * 0.34, v * 0.34, { seed: SEED ^ (B3_SEEDS.paintWall + 5), period: 13, octaves: 2 }) -
+        0.5;
       const height = smoothstep01((y + 30) / 30);
-      col.lerp(HEM_MILK, hemK * (0.5 + 0.2 * height));
-      col.lerp(HEM_ROSE, hemK * height * height * 0.45);
-      col.lerp(SHADOW_VIOLET, hemK * Math.max(0, -runnel) * 0.7);
-      value *= 1 + hemK * (0.08 + contour * 0.1 + runnel * 0.12);
+      col.lerp(HEM_MILK, wallK * (0.5 + 0.2 * height));
+      col.lerp(HEM_ROSE, wallK * height * height * 0.6);
+      col.lerp(SHADOW_VIOLET, wallK * Math.max(0, -runnel) * 0.9);
+      value *= 1 + wallK * (0.12 + contour * 0.18 + runnel * 0.22 + grain * 0.14);
     }
 
     // Depth is the dimmer — but gently here: the Mere carries its own
