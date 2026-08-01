@@ -118,9 +118,11 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "saddle-crest", u: 656, v: 0, lift: 2.0, atU: 730, atV: 2, pitch: 0.0 },
   // The reveal: standing over the stair, the Forge Combs opening below.
   { name: "clinker-stair", u: 742, v: 2, lift: 2.6, atU: 800, atV: 0, pitch: -0.1 },
-  // The Doorcombs: the gate pair framing the way in (R2: backed off to
-  // read both jambs from the threshold, not between them).
-  { name: "doorcombs", u: 726, v: 0, lift: 2.4, atU: 764, atV: 2, pitch: 0.1 },
+  // The Doorcombs: the gate pair framing the way in (R3: u 726 stood
+  // BEHIND the Smoulder's outermost un-cut distance ring, whose curtain
+  // crosses at u ≈ 731 — the whole frame was its maroon back; stand
+  // past the crossing until the orchestrator's cut lands).
+  { name: "doorcombs", u: 742, v: -2, lift: 2.4, atU: 772, atV: 0, pitch: 0.08 },
   // The Emberwash: the road drawn in heat, walls either side.
   { name: "emberwash-road", u: 806, v: washCenter(806) + 2, lift: 2.2, atU: 856, atV: washCenter(856), pitch: 0.0 },
   // The Broken Comb: the fallen lintel over the road, the swim-under
@@ -131,14 +133,14 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "comb-gallery", u: 842, v: 20, lift: 2.6, atU: 862, atV: 44, pitch: 0.08 },
   // The Anvil, from the road: the heart's forge-glow and its shimmer.
   { name: "anvil", u: 914, v: washCenter(914), lift: 2.6, atU: ANVIL.u, atV: ANVIL.v, pitch: 0.06, settle: 4 },
-  // The skate's court (R2: a high oversight of the road's Anvil reach —
-  // the 76 s circuit's phase is wall-clock, the verdant-3 twin-court
-  // caveat, so the frame holds a LONG stretch of road; on a miss it is
-  // still the road-and-Anvil composition).
-  { name: "ember-skate", u: 985, v: washCenter(985) + 14, lift: 6.5, atU: 938, atV: washCenter(938), pitch: -0.06, settle: 8 },
-  // The Kings' Run: looking up the tallest walls' aisle (R2: pitch down
-  // from 0.55 — r1 was 80 % empty water; the faces and crowns carry it).
-  { name: "kings-run", u: 908, v: 30, lift: 2.0, atU: 917, atV: 43, pitch: 0.36, settle: 4 },
+  // The skate's court (R3: the wash-length circuit made every pose a
+  // phase lottery — connective-3's lesson verbatim; the circuit is now
+  // the Anvil court's compact loop, and this stand holds the WHOLE
+  // ellipse in frame, so the lantern cannot be outside it).
+  { name: "ember-skate", u: 1012, v: washCenter(1012), lift: 6.0, atU: 946, atV: washCenter(946), pitch: -0.08, settle: 6 },
+  // The Kings' Run: looking up the tallest walls' aisle (R3: 0.36 still
+  // put 60 % open water in frame; hold the aisle's floor and both faces).
+  { name: "kings-run", u: 908, v: 30, lift: 2.4, atU: 918, atV: 44, pitch: 0.18, settle: 4 },
   // The First Hearth: the junction star's basin, shimmer standing (R2:
   // approach from the north-east — r1 planted the camera face-first
   // into hearth-west's slab).
@@ -147,8 +149,9 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "pillow-meadows", u: 862, v: 76, lift: 2.8, atU: 892, atV: 112, pitch: 0.02, settle: 4 },
   // The Ladle itself: the rest read from its rim — composed stillness.
   { name: "the-ladle", u: 876, v: 108, lift: 6.0, atU: RESTS.ladle.u, atV: RESTS.ladle.v, pitch: -0.3 },
-  // The Glass Shore: obsidian hush, the far country's cool note.
-  { name: "glass-shore", u: 1032, v: -28, lift: 2.8, atU: 1080, atV: -44, pitch: 0.02 },
+  // The Glass Shore: obsidian hush, the far country's cool note (R3:
+  // higher and turned onto the sheet itself — r2 read the wash gully).
+  { name: "glass-shore", u: 1044, v: -12, lift: 3.6, atU: 1092, atV: -34, pitch: -0.04 },
   // The Night Door: the reserved pass framed against parted distance.
   { name: "night-door", u: 1082, v: 2, lift: 2.6, atU: NIGHT_DOOR.u, atV: NIGHT_DOOR.v, pitch: 0.04 },
 ];
@@ -186,7 +189,10 @@ export const SMOKING_2: RegionDef = {
     // in linear space, where 3.2 on red is what "red above green" costs),
     // slightly denser and dimmer, because this country's light comes off
     // its own ground.
-    fog: { colorScale: [3.3, 0.49, 0.37], densityGain: 0.011, backdropFade: 0.52 },
+    // R3: density down to the Smoulder's own gain and blue up a step —
+    // 0.011 crushed everything past ~50 m into one putty value; the walls
+    // must keep a value of their own to ~90 m for the wall-country to read.
+    fog: { colorScale: [3.2, 0.5, 0.43], densityGain: 0.0085, backdropFade: 0.56 },
     light: { sun: 0.19, hemisphere: 0.27, ambient: 0.15 },
   },
   moodSurface: 20,

@@ -94,7 +94,10 @@ function saddleArea(): KitArea {
 /** The base dusk stubble holds the whole plain between the named zones. */
 const baseStubbleGate: GateFn = (x, z) => {
   const { u, v } = spokeOf(x, z);
-  if (u < 742) {
+  // R3: the hard u<742 cutoff left the saddle flanks bare violet in every
+  // sweep frame that looked at them — ramp in from the threshold instead.
+  const ramp = smoothstep01((u - 698) / 40);
+  if (ramp <= 0) {
     return 0;
   }
   const open =
@@ -102,7 +105,7 @@ const baseStubbleGate: GateFn = (x, z) => {
     (1 - hearthWeight(u, v) * 0.55) *
     (1 - pillowsWeight(u, v) * 0.5) *
     (1 - glassWeight(u) * 0.7);
-  return open * restFree(x, z) * smoking2Weight(x, z);
+  return ramp * open * restFree(x, z) * smoking2Weight(x, z);
 };
 
 /** Crust fronds: pillow crowns and the wash hem — the pale register. */
@@ -220,7 +223,7 @@ export function buildSmoking2Flora(combs: CombsBuild): Smoking2FloraBuild {
     buildCarpetField({
       seed: SEED ^ FC_SEEDS.baseCarpet,
       palette: { base: 0x76677a, tip: 0x91808c, shade: 0x504661 },
-      area: discAreaAt(940, 0, 215),
+      area: discAreaAt(930, 0, 230),
       gate: baseStubbleGate,
       ground: seabedHeight,
       // R2: 5.2k over the whole disc read as an empty plain — the near

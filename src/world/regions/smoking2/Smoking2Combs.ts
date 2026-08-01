@@ -147,10 +147,11 @@ function finGeometry(comb: CombSpec, random: Random, baseY: number): BufferGeome
     shade.copy(low).lerp(mid, smoothstep01((heightT - 0.12) / 0.4));
     shade.lerp(high, smoothstep01((heightT - 0.5) / 0.4));
 
-    // Strata bands: horizontal weathering lines a value apart.
+    // Strata bands: horizontal weathering lines a value apart (R3: up
+    // again — the fog takes half of whatever the paint puts down).
     const band =
       Math.sin(y * 1.35 + fbm(alongT * 4, 0.2, { seed: noiseSeed ^ 0x04, period: 5, octaves: 2 }) * 3.2) *
-      0.075;
+      0.12;
     shade.offsetHSL(0, 0, band);
 
     // The pale weathered crest — the milk-bright top.
@@ -158,7 +159,7 @@ function finGeometry(comb: CombSpec, random: Random, baseY: number): BufferGeome
     const crustNoise = smoothstep01(
       (fbm(alongT * 9, heightT * 2, { seed: noiseSeed ^ 0x05, period: 6, octaves: 2 }) - 0.42) / 0.2,
     );
-    shade.lerp(CRUST_PALE, crestT * (0.4 + 0.45 * crustNoise));
+    shade.lerp(CRUST_PALE, crestT * (0.5 + 0.45 * crustNoise));
 
     // Amber mineral staining low on the faces, where the ground is warm.
     const stain =

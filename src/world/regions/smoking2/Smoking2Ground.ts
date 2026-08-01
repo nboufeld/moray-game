@@ -249,11 +249,12 @@ function bakeForgePaint(geometry: PlaneGeometry, contacts: readonly ContactPatch
         (fbm(x * 0.06, z * 0.06, { seed: SEED ^ 0x6d06, period: 8, octaves: 2 }) - 0.64) / 0.1,
       );
       // R2: r1's shore read as more tan dune — the obsidian must go
-      // properly dark, the sheen the one cold light in it.
-      r += ((0.36 + sheen * 0.42) - r) * glass * 0.95;
-      g += ((0.32 + sheen * 0.4) - g) * glass * 0.95;
-      b += ((0.5 + sheen * 0.52) - b) * glass * 0.95;
-      value += glass * (sheen * 0.12 - 0.11);
+      // properly dark, the sheen the one cold light in it. R3: darker
+      // still and the glints a value brighter; the fog halves everything.
+      r += ((0.3 + sheen * 0.56) - r) * glass * 0.95;
+      g += ((0.27 + sheen * 0.54) - g) * glass * 0.95;
+      b += ((0.46 + sheen * 0.62) - b) * glass * 0.95;
+      value += glass * (sheen * 0.18 - 0.15);
     }
 
     // The Anvil's court: worked ground, a warm halo around the block.

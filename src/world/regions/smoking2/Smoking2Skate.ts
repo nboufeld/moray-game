@@ -52,12 +52,15 @@ export interface SkateBuild {
   update(time: number, reducedMotion: boolean): void;
 }
 
-/** The circuit: an elongated loop riding the Emberwash from the Long
- *  Gallery to the Glass Shore's edge and home along the far bank. */
+/** The circuit: the Anvil court's compact loop — the keeper rides the
+ *  road's reach past the forge and back along the near bank. R3: the
+ *  wash-length ellipse (±132 m) made every capture and every visit a
+ *  phase lottery (connective-3's route lesson); a court loop keeps the
+ *  lantern where the country's heart is. */
 function pathAt(t: number, phase: number, out: Vector3): Vector3 {
   const theta = t * Math.PI * 2 + phase;
-  const u = 925 + 132 * Math.cos(theta);
-  const v = washCenter(u) + 4.2 * Math.sin(theta) + 1.4 * Math.sin(theta * 3);
+  const u = 948 + 46 * Math.cos(theta);
+  const v = washCenter(u) + 9 * Math.sin(theta) + 1.4 * Math.sin(theta * 3);
   const { x, z } = worldOf(u, v);
   const floor = seabedHeight(x, z);
   out.set(x, floor + 2.1 + 0.5 * Math.sin(theta * 2), z);

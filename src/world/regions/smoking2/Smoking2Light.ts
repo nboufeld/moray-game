@@ -369,17 +369,18 @@ function buildEmberPools(): Mesh {
  */
 function buildLadlePool(): Mesh {
   const at = worldOf(RESTS.ladle.u, RESTS.ladle.v);
-  const radius = 6.5;
-  const disc = new RingGeometry(0, radius, 26, 4);
+  // R3: the r2 disc sat at ONE level and the pillow mounds rose through
+  // it — a grey saucer floating over the bowl. Drape every vertex to its
+  // own floor instead: milk lying ON the ground, pooled by the paint.
+  const radius = 5.0;
+  const disc = new RingGeometry(0, radius, 26, 6);
   disc.rotateX(-Math.PI / 2);
-  // The meniscus level: just over the bowl's floor at its centre.
-  const level = seabedHeight(at.x, at.z) + 0.32;
   const position = disc.attributes.position!;
   const colors = new Float32Array(position.count * 3);
   for (let i = 0; i < position.count; i++) {
     const lx = position.getX(i);
     const lz = position.getZ(i);
-    position.setY(i, level);
+    position.setY(i, seabedHeight(at.x + lx, at.z + lz) + 0.18);
     const t = Math.hypot(lx, lz) / radius;
     // Milk-bright heart with the faintest amber warmth, cooling and
     // dimming toward the rim; the sprite's wobbled halo hides the edge.
@@ -397,7 +398,7 @@ function buildLadlePool(): Mesh {
     map: poolSprite(),
     vertexColors: true,
     transparent: true,
-    opacity: 0.62,
+    opacity: 0.48,
     depthWrite: false,
   });
   const mesh = new Mesh(disc, material);
