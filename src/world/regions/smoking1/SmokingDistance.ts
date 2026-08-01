@@ -59,6 +59,15 @@ const INK = new Color(0.66, 0.55, 0.62);
 /** Half-angle of the gap the rings leave over the gorge's approach. */
 const GAP_HALF = 0.42;
 
+/**
+ * Half-angle of the second gap, over the OUTBOUND (depth-2) corridor —
+ * R0.5 integration of the Forge Combs' flagged gate: the rings are
+ * opaque `fog:false` curtains crossing the corridor at u ≈ 691/709/731
+ * (|v| < ~35 over the Combs' Cinder Saddle). Sized per the flag:
+ * 0.14–0.16 rad plus the end fades.
+ */
+const GAP_OUT_HALF = 0.15;
+
 export function buildSmokingDistance(): { meshes: (Mesh | InstancedMesh)[] } {
   const random = new Random(SEEDS.regionSmoking1 ^ 0xd159);
   const meshes: (Mesh | InstancedMesh)[] = [];
@@ -231,16 +240,21 @@ function ridgeRing(layer: RidgeLayer, noiseSeed: number): BufferGeometry {
   let column = 0;
 
   const gapAt = SMOKING_SLOT.azimuth + Math.PI;
+  const gapOutAt = SMOKING_SLOT.azimuth;
   for (let i = 0; i <= SEGMENTS; i++) {
     const theta = (i / SEGMENTS) * Math.PI * 2;
     const off = angleBetween(theta, gapAt);
-    if (off < GAP_HALF) {
+    const offOut = angleBetween(theta, gapOutAt);
+    if (off < GAP_HALF || offOut < GAP_OUT_HALF) {
       column = 0;
       continue;
     }
     // A long taper: rounds 2–4's shorter ramps stood at the gap's edge
     // as flat-topped blocks that read as buildings.
-    const end = smoothstep01((off - GAP_HALF) / 0.55);
+    const end = Math.min(
+      smoothstep01((off - GAP_HALF) / 0.55),
+      smoothstep01((offOut - GAP_OUT_HALF) / 0.3),
+    );
     const x = CENTER_X + Math.cos(theta) * layer.radius;
     const z = CENTER_Z + Math.sin(theta) * layer.radius;
 
