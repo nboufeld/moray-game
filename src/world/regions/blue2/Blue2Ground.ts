@@ -327,7 +327,11 @@ function droopPassEdge(geometry: PlaneGeometry): void {
       smoothstep01((631 - u) / 5),
     );
     if (k > 0) {
-      position.setY(i, position.getY(i) - k * 3.5);
+      // On the wall face the ground falls ~1.5 m per metre, so a flat
+      // 3.5 m sag left the cut proud when seen from up-slope — the sag
+      // deepens across the steep band (round 4's second pass).
+      const sag = 3.5 + 5 * smoothstep01((652 - u) / 14);
+      position.setY(i, position.getY(i) - k * sag);
     }
   }
   position.needsUpdate = true;

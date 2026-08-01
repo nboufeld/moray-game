@@ -528,3 +528,46 @@ pale family was fog-camouflage) and the promise stand closes to 48 m
 (1078, lift 29, pitch 0.30). Re-shoots: the four re-authored frames +
 `mooring` as a paint control, plus the full sweep against the changed
 build.
+
+### Round 4 (`gb2-r4` / `gb2-r4b`) — the standard met; the last teeth are blue-1's
+
+The four re-authored frames re-captured twice (18:34 under load,
+18:51 clean) plus the full 12-pose sweep twice (17:49, 18:08 —
+judged on the later batch); every PNG read.
+
+**The sweep: 12/12.** 03 keeps its flank cure (meadow tufts, violet
+buds, a Strand Watcher, plankton — three honest layers). 05 catches
+the Pharos blade with the Gentle Dark passing beneath it; 08 —
+inside the Round, licensed stillness — passes OUTRIGHT again: the
+Moon Well beam with the Dark crossing it. 09 sits in the hush with
+the wrack silhouette and a mooring post on its horizon. 01/02/04/06/
+07/10/11/12 all carry near cover, mid landmarks and painted
+distance. No miss anywhere, in or out of the rests.
+
+**Authored re-shoots.**
+- `close-post-foot` PASSES: the pitch drop puts the post's foot, its
+  splits and the litter bed in frame with the glint trail behind,
+  and the 0.38 fine grain finally reads as tooled stone inside 15 m.
+- `horns-promise` PASSES: the slate horns stand as violet
+  silhouettes against the milky rim at 48 m — a promise, not a ghost.
+- `mooring` (paint control) HOLDS: posts, weir, glints and meadow
+  unchanged in register.
+- `wall-face`: the end-trim sag landed and the r3 saw is reduced to
+  a small serration low-left — and a node-toggle probe (round 4b,
+  the weir-ford probe's idiom re-aimed) settles whose it is: hiding
+  ALL of our region nodes changes the frame by nothing; hiding ALL
+  blue-1 nodes empties the entire silhouette — fin, teeth and crest
+  line alike. Every tooth left in this frame is **blue-1's rim/edge
+  geometry crossing the corridor** (the deep-step arcs and edge
+  droop skirt, flags 3–4 above), which is exactly what the flagged
+  cuts remove at merge. Our sheet's trim is buried at every angle
+  (the u-end sag deepens 3.5 → 8.5 m across the steep band, round
+  4b's second pass). Verdict: our side PASSES; the frame carries the
+  neighbour's flagged artifact until the orchestrator cuts.
+
+**Round-4 verdict: the standard is met.** 23/23 authored poses pass
+on our side (one carries blue-1's ledgered pre-connection artifact);
+sweep 12/12 with the only quiet frames inside registered, composed
+rests. The mood A/B holds: deep frames violet-blue, saddle milky.
+Remaining before close: the no-assets pass (dev server), the headed
+frame gate at the two densest poses, and the full gate suite.
