@@ -84,7 +84,9 @@ const CHAPEL_RING: readonly CombSpec[] = (() => {
       yaw: theta + Math.PI,
       arcR: 14,
       span: 0.85,
-      height: i === 3 ? 6.5 : 9 + (i % 3) * 1.8,
+      // Round 3: the ring raised a step so it reads as architecture
+      // from inside its own doorway (the repositioned chapel pose).
+      height: i === 3 ? 7 : 10.5 + (i % 3) * 2,
     });
   }
   return ring;
@@ -103,7 +105,13 @@ function finGeometry(
   const random = new Random(seed);
   const positions: number[] = [];
   const colors: number[] = [];
+  const uvs: number[] = [];
   const indices: number[] = [];
+
+  // Chalk repeats every ~6 m — round 2's finding: without a uv
+  // attribute the map sampled ONE texel and the strata never drew.
+  const uvArc = (comb.arcR * comb.span) / 6;
+  const uvRise = comb.height / 6;
 
   // The arc's centre in spoke coordinates.
   const cu = comb.u - Math.cos(comb.yaw) * comb.arcR;
@@ -159,12 +167,13 @@ function finGeometry(
     const root = 1 - smoothstep01((h - 0.02) / 0.26);
     const crest = smoothstep01((h - 0.68) / 0.28);
     const band = 0.5 + 0.5 * Math.sin(h * (st.crest - st.ground) * 0.9 + i * 0.3);
-    // Round 2: strata amplitude nearly doubled and the root shade
-    // eased — the r1 fins read one flat wash at portrait range and the
-    // roots leaned mud.
-    let r = 0.99 - root * 0.16 + crest * 0.09 + (band - 0.5) * 0.09;
-    let g = 0.98 - root * 0.22 + crest * 0.09 + (band - 0.5) * 0.09;
-    let b = 1.0 - root * 0.1 + crest * 0.12 + (band - 0.5) * 0.05;
+    // Round 3: a vertical streak voice by station on top of the
+    // horizontal strata — chalk drawn, not washed (with the uv map
+    // finally sampling, both now read at portrait range).
+    const streak = 0.5 + 0.5 * Math.sin(i * 1.9 + h * 2.2);
+    let r = 0.99 - root * 0.16 + crest * 0.13 + (band - 0.5) * 0.12 + (streak - 0.5) * 0.06;
+    let g = 0.98 - root * 0.22 + crest * 0.12 + (band - 0.5) * 0.12 + (streak - 0.5) * 0.06;
+    let b = 1.0 - root * 0.1 + crest * 0.16 + (band - 0.5) * 0.07 + (streak - 0.5) * 0.04;
     // The lamp's warmth on the basin-facing ranks, mid heights only.
     const warm = lumen(u, v) * (1 - root) * (1 - crest) * (cool ? 0.2 : 0.4);
     r += warm * 0.08;
@@ -181,6 +190,7 @@ function finGeometry(
         positions.push(x, y, z);
         const [r, g, b] = paint(i, j);
         colors.push(r, g, b);
+        uvs.push((i / STATIONS) * uvArc, (j / RINGS) * uvRise);
       }
     }
     for (let i = 0; i < STATIONS; i++) {
@@ -204,6 +214,7 @@ function finGeometry(
       positions.push(x, y + 0.05, z);
       const [r, g, b] = paint(i, RINGS);
       colors.push(r, g, b);
+      uvs.push((i / STATIONS) * uvArc, uvRise + (side === 1 ? 0 : 0.04));
     }
   }
   for (let i = 0; i < STATIONS; i++) {
@@ -262,6 +273,7 @@ function finGeometry(
   const geometry = new BufferGeometry();
   geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
   geometry.setAttribute("color", new BufferAttribute(new Float32Array(colors), 3));
+  geometry.setAttribute("uv", new BufferAttribute(new Float32Array(uvs), 2));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
   return geometry;
@@ -281,6 +293,7 @@ function needleGeometry(
   const lean = worldOf(u, v + leanV);
   const positions: number[] = [];
   const colors: number[] = [];
+  const uvs: number[] = [];
   const indices: number[] = [];
   const SIDES = 8;
   const LEVELS = 6;
@@ -296,6 +309,7 @@ function needleGeometry(
       const root = 1 - smoothstep01((h - 0.02) / 0.3);
       const crest = smoothstep01((h - 0.6) / 0.35);
       colors.push(0.98 - root * 0.22 + crest * 0.08, 0.97 - root * 0.28 + crest * 0.08, 1.0 - root * 0.14 + crest * 0.1);
+      uvs.push((s / SIDES) * 2.3, h * (height / 6));
     }
   }
   for (let j = 0; j < LEVELS; j++) {
@@ -319,6 +333,7 @@ function needleGeometry(
   const geometry = new BufferGeometry();
   geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
   geometry.setAttribute("color", new BufferAttribute(new Float32Array(colors), 3));
+  geometry.setAttribute("uv", new BufferAttribute(new Float32Array(uvs), 2));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
   return geometry;
@@ -336,16 +351,20 @@ function splinterGeometry(): BufferGeometry {
     0.34, 0, 0.14, 0.62, 0, 0.2, 0.5, 0.34, 0.16,
   ]);
   const colors = new Float32Array(positions.length);
+  const uvs = new Float32Array((positions.length / 3) * 2);
   for (let i = 0; i < positions.length / 3; i++) {
     const h = positions[i * 3 + 1]!;
     const root = 1 - smoothstep01((h - 0.05) / 0.3);
     colors[i * 3] = 0.99 - root * 0.2;
     colors[i * 3 + 1] = 0.98 - root * 0.26;
     colors[i * 3 + 2] = 1.0 - root * 0.12;
+    uvs[i * 2] = (positions[i * 3]! + 0.3) * 0.5;
+    uvs[i * 2 + 1] = h * 0.4;
   }
   const geometry = new BufferGeometry();
   geometry.setAttribute("position", new BufferAttribute(positions, 3));
   geometry.setAttribute("color", new BufferAttribute(colors, 3));
+  geometry.setAttribute("uv", new BufferAttribute(uvs, 2));
   geometry.computeVertexNormals();
   geometry.computeBoundingSphere();
   return geometry;
@@ -408,12 +427,7 @@ export function buildPale2Combs(): Pale2CombsBuild {
   splinters.receiveShadow = false;
   const dummy = new Object3D();
   let placed = 0;
-  for (let u = 645; u <= 1120 && placed < 52; u += random.range(20, 30)) {
-    const side = placed % 2 === 0 ? 1 : -1;
-    const v = roadCenter(u) + side * random.range(4.5, 8);
-    if (stationBlocked(u, v)) {
-      continue;
-    }
+  const placeSplinter = (u: number, v: number): void => {
     const { x, z } = worldOf(u, v);
     dummy.position.set(x, pale2TerrainTarget(x, z) - 0.05, z);
     dummy.rotation.set(random.signed(0.08), random.range(0, Math.PI * 2), random.signed(0.08));
@@ -422,6 +436,19 @@ export function buildPale2Combs(): Pale2CombsBuild {
     dummy.updateMatrix();
     splinters.setMatrixAt(placed, dummy.matrix);
     placed++;
+  };
+  // Round 3: an authored pair on the threshold (u 660–700) — the
+  // pass-threshold frame carried pale-1's fills but no mark of OURS
+  // before the ring curtains.
+  placeSplinter(664, roadCenter(664) - 6);
+  placeSplinter(689, roadCenter(689) + 6.5);
+  for (let u = 645; u <= 1120 && placed < 52; u += random.range(20, 30)) {
+    const side = placed % 2 === 0 ? 1 : -1;
+    const v = roadCenter(u) + side * random.range(4.5, 8);
+    if (stationBlocked(u, v)) {
+      continue;
+    }
+    placeSplinter(u, v);
   }
   splinters.count = placed;
   splinters.instanceMatrix.needsUpdate = true;

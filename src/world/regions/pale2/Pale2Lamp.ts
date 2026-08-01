@@ -80,6 +80,7 @@ export function buildPale2Lamp(): Pale2LampBuild {
     const LEVELS = 7;
     const positions: number[] = [];
     const colors: number[] = [];
+    const uvs: number[] = [];
     const indices: number[] = [];
     for (let j = 0; j <= LEVELS; j++) {
       const h = j / LEVELS;
@@ -101,6 +102,7 @@ export function buildPale2Lamp(): Pale2LampBuild {
           0.98 - root * 0.26 + (band - 0.5) * 0.05,
           1.0 - root * 0.12 + (band - 0.5) * 0.03,
         );
+        uvs.push((s / SIDES) * 6.5, h * 1.1);
       }
     }
     for (let j = 0; j < LEVELS; j++) {
@@ -113,6 +115,7 @@ export function buildPale2Lamp(): Pale2LampBuild {
     const geometry = new BufferGeometry();
     geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
     geometry.setAttribute("color", new BufferAttribute(new Float32Array(colors), 3));
+    geometry.setAttribute("uv", new BufferAttribute(new Float32Array(uvs), 2));
     geometry.setIndex(indices);
     parts.push(geometry);
   }
@@ -130,6 +133,7 @@ export function buildPale2Lamp(): Pale2LampBuild {
     }
     const positions: number[] = [];
     const colors: number[] = [];
+    const uvs: number[] = [];
     const indices: number[] = [];
     const width = 0.62;
     const depth = 0.5;
@@ -153,14 +157,16 @@ export function buildPale2Lamp(): Pale2LampBuild {
       ] as const) {
         positions.push(cx + ox, y, cz + oz);
       }
-      // Outer corners chalk; inner corners pre-lit candle gold.
+      // Outer corners chalk; inner corners pre-lit candle gold —
+      // round 3: the gold's green raised (the r2 chamber leant pink).
       const crest = smoothstep01((h - 0.75) / 0.22);
-      for (const inner of [false, false, true, true]) {
+      for (const [corner, inner] of [false, false, true, true].entries()) {
         if (inner) {
-          colors.push(1.06, 0.94, 0.74);
+          colors.push(1.05, 0.97, 0.72);
         } else {
           colors.push(0.98 + crest * 0.08, 0.97 + crest * 0.07, 1.0 + crest * 0.1);
         }
+        uvs.push(corner * 0.09, h * (cageSpan / 6));
       }
     }
     for (let j = 0; j < RIB_SEGMENTS; j++) {
@@ -174,6 +180,7 @@ export function buildPale2Lamp(): Pale2LampBuild {
     const geometry = new BufferGeometry();
     geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
     geometry.setAttribute("color", new BufferAttribute(new Float32Array(colors), 3));
+    geometry.setAttribute("uv", new BufferAttribute(new Float32Array(uvs), 2));
     geometry.setIndex(indices);
     parts.push(geometry);
 
@@ -213,6 +220,7 @@ export function buildPale2Lamp(): Pale2LampBuild {
     const LEVELS = 4;
     const positions: number[] = [];
     const colors: number[] = [];
+    const uvs: number[] = [];
     const indices: number[] = [];
     for (let j = 0; j <= LEVELS; j++) {
       const h = j / LEVELS;
@@ -222,6 +230,7 @@ export function buildPale2Lamp(): Pale2LampBuild {
         const a = (s / SIDES) * Math.PI * 2;
         positions.push(center.x + Math.cos(a) * radius, y, center.z + Math.sin(a) * radius);
         colors.push(1.04, 1.03, 1.08);
+        uvs.push((s / SIDES) * 1.6, h * 0.45);
       }
     }
     for (let j = 0; j < LEVELS; j++) {
@@ -234,6 +243,7 @@ export function buildPale2Lamp(): Pale2LampBuild {
     const geometry = new BufferGeometry();
     geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
     geometry.setAttribute("color", new BufferAttribute(new Float32Array(colors), 3));
+    geometry.setAttribute("uv", new BufferAttribute(new Float32Array(uvs), 2));
     geometry.setIndex(indices);
     parts.push(geometry);
   }
@@ -306,11 +316,13 @@ function buildHeart(x: number, y: number, z: number): Mesh {
     for (let s = 0; s <= SIDES; s++) {
       const a = (s / SIDES) * Math.PI * 2;
       positions.push(x + Math.cos(a) * radius, y0, z + Math.sin(a) * radius);
-      // Apex-lit: brightest at the top, dimming to a warm body below —
-      // the light reads as held INSIDE the paper shell.
+      // Round 3: rekeyed — r2's bottom-dark gradient showed the lamp-
+      // heart pose (which looks UP at it) a flat tan ball. The body
+      // now holds a bright base everywhere with a soft apex lift, so
+      // it reads as a light from every angle.
       const t = smoothstep01((h - 0.25) / 0.7);
-      const value = 0.3 + 0.7 * t;
-      colors.push(value, value * 0.86, value * 0.62);
+      const value = 0.56 + 0.44 * t;
+      colors.push(value, value * 0.88, value * 0.66);
     }
   }
   for (let j = 0; j < LEVELS; j++) {
@@ -329,7 +341,7 @@ function buildHeart(x: number, y: number, z: number): Mesh {
 
   const material = createToonMaterial({ color: 0xf6e2b8, vertexColors: true });
   material.emissive = new Color(0xffd9a0);
-  material.emissiveIntensity = 0.5;
+  material.emissiveIntensity = 0.62;
   material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
     shader.fragmentShader = shader.fragmentShader.replace(
       "#include <emissivemap_fragment>",

@@ -113,7 +113,9 @@ function story(hex: number): Color {
 
 // The palette the bake composes with — absolute paint, not multipliers.
 const PAPER_WARM_G = story(0xefe6d1);
-const PAPER_COOL_G = story(0xdfe1f0);
+// Round 3: the cool white warmed a step — at 0xdfe1f0 its fbm patches
+// read as flat lavender puddles at close range under the violet ambient.
+const PAPER_COOL_G = story(0xe8e8f2);
 const SHADOW_VIOLET_G = story(0xa997c6);
 const MILK_HANDOVER = story(0xece7db);
 const SWARD_GOLD = story(0xdcc793);
@@ -147,7 +149,7 @@ function bakeCombPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
     const cool = smoothstep01(
       (fbm(x * 0.014, z * 0.014, { seed: SEED ^ 0x5eaf, period: 6, octaves: 3 }) - 0.46) / 0.24,
     );
-    col.copy(PAPER_WARM_G).lerp(PAPER_COOL_G, cool);
+    col.copy(PAPER_WARM_G).lerp(PAPER_COOL_G, cool * 0.75);
 
     const k = lumen(u, v);
 
@@ -159,30 +161,37 @@ function bakeCombPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
       value += milk * 0.05;
     }
 
-    // The pass corridor: channel shadow and stepped risers.
+    // The pass corridor: channel shadow and stepped risers. Round 3:
+    // every violet halved again AND a pre-lit warmth floor over the
+    // whole band — the banks face away from the sun, fall into the
+    // toon ramp's dark band, and r2 read as a lavender wall; the paint
+    // must carry the paper INTO the shade.
     if (u < 840) {
       const s = 1 - smoothstep01((u - 812) / 28);
       const inChannel = 1 - smoothstep01((Math.abs(v - channelCenter(u)) - channelHalf(u)) / 7);
+      value += s * 0.08;
       // The Winnow Shadow rest is a COMPOSED dark: a violet held breath
       // over the slot's floor, so its licensed bareness reads authored.
       if (u > RESTS.winnowShadow.fromU - 4 && u < RESTS.winnowShadow.toU + 4) {
         const inShadow =
           smoothstep01((u - (RESTS.winnowShadow.fromU - 4)) / 5) *
           (1 - smoothstep01((u - RESTS.winnowShadow.toU) / 5));
-        col.lerp(SHADOW_VIOLET_G, inShadow * inChannel * 0.28);
-        value -= inShadow * inChannel * 0.06;
+        col.lerp(SHADOW_VIOLET_G, inShadow * inChannel * 0.24);
+        value -= inShadow * inChannel * 0.05;
       }
       const drop = descentDrop(u);
       if (drop.riser > 0) {
         // Riser faces step down in violet shade; treads stay lit.
-        col.lerp(SHADOW_VIOLET_G, drop.riser * s * 0.32);
-        value -= drop.riser * s * 0.09;
+        col.lerp(SHADOW_VIOLET_G, drop.riser * s * 0.18);
+        value -= drop.riser * s * 0.05;
       }
-      // Bank tops lean cool-white as they rise (the chalk reads as chalk).
+      // Bank tops lean warm paper as they rise (r2: cool-white here
+      // stacked lavender on lavender).
       const rise = smoothstep01((y - winnowFloor(u) - 1.2) / 3.5);
-      col.lerp(PAPER_COOL_G, rise * s * 0.3);
+      col.lerp(PAPER_WARM_G, rise * s * 0.35);
+      value += rise * s * 0.05;
       // Channel floor: a breath of violet — the walk line reads as a way.
-      col.lerp(SHADOW_VIOLET_G, inChannel * s * 0.1);
+      col.lerp(SHADOW_VIOLET_G, inChannel * s * 0.06);
     }
 
     // The gallery sward: warm gold patches arriving with the lumen —
@@ -238,7 +247,9 @@ function bakeCombPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
       const heart = 1 - smoothstep01((d - 8) / 22);
       col.lerp(BASIN_GOLD, basin * 0.75);
       col.lerp(LAMP_HEART, basin * heart * 0.65);
-      value += basin * 0.04 - basin * heart * 0.05;
+      // Round 3: the basin's value lifted a step — r2's gold sat at
+      // mid value and the garden beds read toward mud.
+      value += basin * 0.08 - basin * heart * 0.04;
     }
 
     // The Pearl Steps: nacre banding on the rising terraces.

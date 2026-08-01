@@ -92,7 +92,9 @@ export function buildPale2Light(): { groups: Group[] } {
   {
     const { x, z } = worldOf(LAMP.u, LAMP.v);
     beams.push({ pos: [x, z], top: 9, width: 7.5, opacity: 0.22 });
-    pools.push({ pos: [x, z], radius: 10, opacity: 0.14 });
+    // Round 3: pulled in — at r 10 the pool sprite crossed the lamp-
+    // heart pose's frustum edge-on as a floating bright ellipse.
+    pools.push({ pos: [x, z], radius: 7, opacity: 0.12 });
   }
 
   const build = buildBeamAndPool({

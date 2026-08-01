@@ -252,6 +252,20 @@ Sweep r1 (read in full): the same classes — mid silhouettes pass
 almost everywhere (the fin ranks carry), foregrounds fail on bare
 ground + sub-pixel dark sprigs.
 
+Sweep r1, all twelve read against the locator (offline reproduction of
+the seeded stream — `tests/pale2SweepWhere.probe.test.ts`): **2 eaten
+by the R5 blackout** (02, 04 — both frusta hold the Lamp), 3 pass-ish
+(07 gallery heart, 09 fin close-up with fans reading, 11 comb skyline
++ 12 pool flank on composition), the rest FAIL one way: **the broad
+flanks are bare** — 01/03 stand on the south-west band (u ~925–935,
+v −118..−137, INSIDE the rim hem's inner edge), 05/06 on the south-east
+quadrant beyond the basin, 08 a down-shot of naked mauve with two road
+pebble streaks, 10 the south steps flank. The authored zones cluster on
+the road band; the doctrine's rule 3 (every square metre a deliberate
+cover state) is not yet true of the flanks. Round 3 carries the density
+order; round 2 first cures the blackout and the value key (no density
+judgement is honest while every blade renders as a dark sprig).
+
 **Round-2 orders**: (1) the R5 cure + regression test; (2) value pass
 — every fill palette lifted ABOVE the ground (paper-warm tips, violet-
 WHITE shades), a warm emissive floor on the cover families (the
@@ -262,6 +276,87 @@ portraits keep paint to ~55 m; (5) anemones rebuilt as clustered
 glowing pinheads (smaller, rounder, brighter, clumped); (6) road
 pearl-pebble run + threshold milk thickened; (7) fin paint amplitudes
 up (strata banding, crest lift) so near fins read painted chalk.
+
+### Round 2 (pa2-r2) — the blackout cured; the value key half-won; the chalk unpainted
+
+All 18 authored + 12 sweep frames read. **The R5 cure holds**: every
+frame renders; the Lamp's cage reads on the skyline from half the
+region (sweep 02/04, both r1 blackout frames, now carry it as the far
+layer). The value pass moved the fills from dark sprigs to readable
+blades in the near field — the winnow banks' gold moss, the road
+band, the pool-rim rosettes and the rebuilt anemone clumps (12's
+lantern dots) all read. What still fails, frame by frame:
+
+- **The chalk is UNPAINTED at portrait range.** `great-comb` reads one
+  flat cream wall; `close-gallery-floor`'s fin flank is a flat
+  mauve-pink sheet. Root cause found in code, not paint: the fin,
+  lamp and needle geometries ship NO `uv` attribute, so
+  `chalkTexture` samples one texel — the whole map does nothing.
+  Strata amplitude tuning cannot fix a texture that never varies.
+- **The pass ground is still a violet-lavender wall** (`the-winnow`,
+  `winnow-hush`): the banks' slopes face away from the sun, fall into
+  the toon ramp's dark band, and the violet ambient owns them; my
+  riser/channel/shadow paint stacks more violet on top.
+- **The lamp heart reads as a flat tan ball** from the lamp-heart
+  pose: the gradient is keyed bottom-dark and the pose looks at the
+  bottom. The rib inner faces lean pink; a small bright ellipse
+  (the beam pool sprite edge-on) floats under the heart.
+- **Value at distance**: sward roots still render dark at range (the
+  violet shade hex is below the ground's value); the split stones
+  read as violet boxes (toon-dark faces, oversized by the grade).
+- **Fans**: the sun-through-paper reads, but too dark and too orange
+  against the paper — hinge and rim both need a value lift, the
+  emissive floor a step down.
+- **Poses**: `moonmilk-pools` looks across a ridge that hides its
+  subject; `white-chapel` stands too far out — the ring reads as
+  distant hills, not architecture; `pearl-steps`' Dayspring warmth is
+  invisible (the font cards fall outside the frame; the gap shows
+  plain horizon fade).
+- **Threshold**: pale-1's rose fills own the pass-threshold frame
+  (correct — its build margin covers u 642), but OUR side is thin:
+  the milk blades and pebbles need weight, and the frame needs a
+  waymark pair inside u 660–700.
+
+Sweep r2, all twelve read: **5/12 carry three layers** (04 marginal,
+07 gallery heart, 09 fin close-up, 11 comb skyline, 12 pool flank
+with anemone lanterns). The seven misses are ONE class: **the broad
+flanks are bare** — 01/03 SW band, 05/06 SE quadrant, 08 naked
+down-shot, 10 south steps flank, 02 threshold flank. None are
+registered rests. The doctrine's rule 3 is still not true of the
+flanks; the cover counts and gates were keyed to the road spine.
+
+**Round-3 orders** (value + paint + density, in that order):
+1. **UVs on all chalk geometry** (fins, needles, lamp foot/ribs/crown,
+   waymark splinters) so `chalkTexture` actually paints; scale ~6 m
+   per repeat, station × height parameterisation.
+2. **Pass ground de-violeted**: riser/channel/shadow lerps and value
+   drops halved again; a pre-lit warmth floor over the whole pass
+   band (value +0.08 gated on the pass story) so the toon-dark band
+   reads paper-in-shade, not lavender; the cool white warmed a step
+   and its patch lerp softened (the lavender puddles).
+3. **Mood compromise**: densityGain 0.005 → 0.006, hemisphere 0.22 →
+   0.3, sun 0.5 → 0.48 — the extra hemi softens the toon-dark band
+   that owns every away-facing slope.
+4. **Flank density** (the sweep's one systemic failure): sward count
+   5200 → 7800 and its gate floor raised with the u-door widened to
+   790; rim hem band widened inward (rc 150 → 132); grit 2200 → 3200;
+   shards 1100 → 1400; paper bushes 56 → 74 over u 790–1120; road
+   pebbles 700 → 900; threshold milk 900 → 1250 over width 26.
+5. **Shade hexes lifted above the ground's value** across all carpet
+   families (the b2a4cc family → c7bbd8 class); splits sized down
+   [0.12,0.3] → [0.1,0.22], grade 0.6 → 0.4, shade lifted.
+6. **The heart rekeyed**: base value 0.3 → 0.56, gradient softened,
+   emissive 0.5 → 0.62 — a light from EVERY angle; rib inner gold
+   less pink; the lamp beam pool pulled in (r 10 → 7, the ellipse).
+7. **Fans re-valued**: hinge 0.62 → 0.74 class, rim toward warm
+   cream, emissive floor 0.3 → 0.22.
+8. **Anemone gardens fuller**: 24 → 30 hearts, 6–10 → 7–12 per clump.
+9. **The Dayspring made real**: a warm additive veil plane deep in the
+   outbound gap + the font cards pulled into the corridor's frame
+   (angular flank band tightened, radii pulled in).
+10. **Poses**: moonmilk-pools moved onto the bowls' lip; white-chapel
+    into the ring's doorway looking in; chapel fins raised a step so
+    the ring reads as architecture from inside.
 
 ## Flags for the orchestrator (the reciprocal cuts — NOT made here)
 

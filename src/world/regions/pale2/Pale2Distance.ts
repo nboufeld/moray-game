@@ -1,4 +1,5 @@
 import {
+  AdditiveBlending,
   BufferAttribute,
   BufferGeometry,
   Color,
@@ -123,10 +124,13 @@ export function buildPale2Distance(): { meshes: (Mesh | InstancedMesh)[] } {
 
   // The card bands: comb splinters on the milk arcs; font towers
   // flanking the Dayspring gap only.
+  // Round 3: the font towers pulled INTO the corridor's frame — at
+  // angular offsets up to 0.62 they stood outside the pearl-steps
+  // pose's frustum and the Dayspring read as empty horizon.
   const bands = [
     { kind: "splinter" as const, rFrom: 238, rTo: 254, count: 20, fade: 0.44, hMin: 12, hMax: 20 },
     { kind: "splinter" as const, rFrom: 258, rTo: 278, count: 14, fade: 0.62, hMin: 16, hMax: 24 },
-    { kind: "font" as const, rFrom: 240, rTo: 268, count: 10, fade: 0.46, hMin: 22, hMax: 32 },
+    { kind: "font" as const, rFrom: 238, rTo: 258, count: 10, fade: 0.46, hMin: 22, hMax: 32 },
   ];
   for (const [bandIndex, band] of bands.entries()) {
     const ink = band.kind === "splinter" ? INK_MILK : INK_DAYSPRING;
@@ -159,7 +163,7 @@ export function buildPale2Distance(): { meshes: (Mesh | InstancedMesh)[] } {
         // Fonts flank the gap: past its edge, inside its glow — and
         // clear of the future tongue's spine by construction.
         const off = angleBetween(theta, outAt);
-        if (off < GAP_OUT_HALF + 0.04 || off > 0.62) {
+        if (off < GAP_OUT_HALF + 0.02 || off > 0.42) {
           continue;
         }
       }
@@ -185,7 +189,69 @@ export function buildPale2Distance(): { meshes: (Mesh | InstancedMesh)[] } {
     meshes.push(mesh);
   }
 
+  // THE DAYSPRING VEIL (round 3): a soft additive gold gradient deep
+  // in the outbound gap — the warmth the gap itself was missing (the
+  // ring edges' ink alone read as plain horizon fade). Additive over
+  // black-edged vertex colours: the plane dissolves at its own rim,
+  // one draw, fog:false like every curtain.
+  meshes.push(buildDayspringVeil(outAt));
+
   return { meshes };
+}
+
+/** The veil: a vertex-faded gold glow standing across the corridor. */
+function buildDayspringVeil(outAt: number): Mesh {
+  const COLS = 10;
+  const ROWS = 5;
+  const HALF_W = 62;
+  const HEIGHT = 34;
+  const R = 306;
+  const positions: number[] = [];
+  const colors: number[] = [];
+  const indices: number[] = [];
+  const cx = CENTER_X + Math.cos(outAt) * R;
+  const cz = CENTER_Z + Math.sin(outAt) * R;
+  // The plane faces back down the corridor: its width runs tangent.
+  const tx = -Math.sin(outAt);
+  const tz = Math.cos(outAt);
+  for (let j = 0; j <= ROWS; j++) {
+    const h = j / ROWS;
+    for (let i = 0; i <= COLS; i++) {
+      const t = i / COLS - 0.5;
+      positions.push(cx + tx * t * HALF_W * 2, FOOT + 4 + HEIGHT * h, cz + tz * t * HALF_W * 2);
+      // A gaussian heart, black at every rim (additive: black = gone).
+      const falloff =
+        Math.exp(-((t * 2.6) ** 2)) * Math.exp(-(((h - 0.42) / 0.42) ** 2));
+      colors.push(0.34 * falloff, 0.24 * falloff, 0.11 * falloff);
+    }
+  }
+  for (let j = 0; j < ROWS; j++) {
+    for (let i = 0; i < COLS; i++) {
+      const a = j * (COLS + 1) + i;
+      const b = a + COLS + 1;
+      indices.push(a, b, a + 1, b, b + 1, a + 1);
+    }
+  }
+  const geometry = new BufferGeometry();
+  geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
+  geometry.setAttribute("color", new BufferAttribute(new Float32Array(colors), 3));
+  geometry.setIndex(indices);
+  geometry.computeBoundingSphere();
+  const material = new MeshBasicMaterial({
+    color: new Color(1, 1, 1),
+    vertexColors: true,
+    fog: false,
+    side: DoubleSide,
+    transparent: true,
+    depthWrite: false,
+    blending: AdditiveBlending,
+    toneMapped: true,
+  });
+  const mesh = new Mesh(geometry, material);
+  mesh.name = "pale2-dayspring-veil";
+  mesh.castShadow = false;
+  mesh.receiveShadow = false;
+  return mesh;
 }
 
 /** The cards' authored height; instances scale to their drawn height. */

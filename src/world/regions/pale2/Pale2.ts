@@ -128,11 +128,15 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // The Great Comb: the tallest fin, its flank crowded with lit fans.
   { name: "great-comb", u: 874, v: -16, lift: 4.0, atU: 902, atV: 8, pitch: 0.16 },
   // The Moonmilk Pools: luminous bowls, pearl lips, frond gardens.
-  { name: "moonmilk-pools", u: 878, v: -42, lift: 3.0, atU: 897, atV: -56, pitch: -0.12, settle: 4 },
+  // Round 3: onto the first bowl's lip, higher and steeper — the r2
+  // pose looked ACROSS a ridge and the pools never entered the frame.
+  { name: "moonmilk-pools", u: 884, v: -46, lift: 6.5, atU: 902, atV: -58, pitch: -0.32, settle: 4 },
   // The Still Pool: the rest, composed — glass water, bare lip.
   { name: "still-pool", u: 860, v: -74, lift: 2.2, atU: 872, atV: -84, pitch: -0.1, settle: 4 },
-  // THE WHITE CHAPEL, through its ring's doorway: the pan, the beam.
-  { name: "white-chapel", u: 876, v: 64, lift: 2.4, atU: 905, atV: 74, pitch: 0.02, settle: 4 },
+  // THE WHITE CHAPEL, from inside its ring's doorway (the short fin's
+  // gap at theta≈3.04 faces the galleries): the pan, the beam, the
+  // far fins rising — architecture, not distant hills (round 3).
+  { name: "white-chapel", u: 883, v: 76, lift: 2.6, atU: 918, atV: 72, pitch: 0.06, settle: 4 },
   // THE LAMP from the basin rim: the whole lantern in one portrait.
   { name: "the-lamp", u: 984, v: -24, lift: 3.6, atU: 1022, atV: -4, pitch: 0.12 },
   // Inside the crater at the cage's foot, looking up through the ribs
@@ -186,11 +190,15 @@ export const PALE_2: RegionDef = {
     // Round 2: density 0.0075 → 0.005 (the comb portraits merged to
     // flat mint by ~35 m) and the scale a step milkier — the fins keep
     // their paint to ~55 m and the water reads paper, not teal.
-    fog: { colorScale: [3.7, 1.32, 1.14], densityGain: 0.005, backdropFade: 0.28 },
+    // Round 3: the compromise — density back to 0.006 (0.005 pushed
+    // the violet forward again) and the hemisphere raised so the
+    // toon-dark band that owns every away-facing slope softens toward
+    // paper-in-shade instead of saturated lavender.
+    fog: { colorScale: [3.7, 1.32, 1.14], densityGain: 0.006, backdropFade: 0.28 },
     // Paper lit flat from above, shadows violet: half the sun, the
     // level given back as violet ambient — the province's light
     // grammar, warmed a step because the lamp is near.
-    light: { sun: 0.5, hemisphere: 0.22, ambient: -0.45 },
+    light: { sun: 0.48, hemisphere: 0.3, ambient: -0.45 },
   },
   moodSurface: 16,
   moodDescent: 8,

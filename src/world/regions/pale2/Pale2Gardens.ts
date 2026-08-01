@@ -79,14 +79,16 @@ function fanGeometry(): BufferGeometry {
       for (const [x, y, z] of tri) {
         positions.push(x, y, z);
         // Violet hinge → warm lit rim; alternate pleats a half value
-        // apart so the folds draw themselves.
+        // apart so the folds draw themselves. Round 3: both ends
+        // lifted toward warm cream — the r2 fans read dark-orange
+        // butterflies against the paper.
         const spread = Math.hypot(x, y) / R;
         const lit = smoothstep01((spread - 0.15) / 0.75);
-        const pleatTone = p % 2 === 0 ? 1 : 0.86;
+        const pleatTone = p % 2 === 0 ? 1 : 0.88;
         colors.push(
-          (0.62 + 0.44 * lit) * pleatTone,
-          (0.5 + 0.42 * lit) * pleatTone,
-          (0.62 + 0.24 * lit) * pleatTone,
+          (0.74 + 0.36 * lit) * pleatTone,
+          (0.64 + 0.36 * lit) * pleatTone,
+          (0.74 + 0.2 * lit) * pleatTone,
         );
       }
     }
@@ -219,7 +221,7 @@ export function buildPale2Gardens(
   // Sun-through-paper: a soft warm floor shaped by the same vertex
   // colours that paint the tissue — rims glow, hinges stay violet.
   fanMaterial.emissive = new Color(0xe8b57e);
-  fanMaterial.emissiveIntensity = 0.3;
+  fanMaterial.emissiveIntensity = 0.22;
   fanMaterial.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
     shader.fragmentShader = shader.fragmentShader.replace(
       "#include <emissivemap_fragment>",
@@ -256,12 +258,14 @@ export function buildPale2Gardens(
   // around seeded hearts, the way candles gather on a shrine.
   const anemoneRandom = new Random(SEED ^ 0x2b01);
   const seats: { x: number; y: number; z: number; s: number }[] = [];
-  for (let heart = 0; heart < 24; heart++) {
+  // Round 3: fuller — 24 → 30 hearts, 6–10 → 7–12 per clump; the r2
+  // gardens read sparse from the lantern-gardens pose.
+  for (let heart = 0; heart < 30; heart++) {
     const a = anemoneRandom.range(0, Math.PI * 2);
     const r = 13 + 34 * Math.sqrt(anemoneRandom.next());
     const hu = LAMP_BASIN.u + Math.cos(a) * r;
     const hv = LAMP_BASIN.v + Math.sin(a) * r;
-    const per = 6 + Math.floor(anemoneRandom.next() * 5);
+    const per = 7 + Math.floor(anemoneRandom.next() * 6);
     // Fuller clumps where the lamp light feels near (the story number).
     const keep = 0.4 + lumen(hu, hv) * 0.6;
     for (let i = 0; i < per; i++) {
