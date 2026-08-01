@@ -56,11 +56,59 @@ const result = await page.evaluate((p) => {
   }
   return {
     skate: [x / attr.count, y / attr.count, z / attr.count],
+    visible: skate.visible,
     camera: p.position,
     yaw: p.yaw,
     pitch: p.pitch,
   };
 }, pose);
 
+// Let the hold loop render a few frames so the camera matrices are the
+// held frame's own, then project the skate through the live camera.
+await page.waitForTimeout(1200);
+const screen = await page.evaluate((centroid) => {
+  const camera = window.__reef.camera;
+  camera.updateMatrixWorld(true);
+  camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
+  const v = camera.position.clone();
+  v.set(centroid[0], centroid[1], centroid[2]);
+  v.project(camera);
+  const world = camera.position.clone();
+  world.setFromMatrixPosition(camera.matrixWorld);
+  // What encloses the lens? March six axis rays and report first hits.
+  const scene = window.__reef.scene;
+  const hits = [];
+  const dir = camera.position.clone();
+  for (const [dx, dy, dz] of [
+    [1, 0, 0],
+    [-1, 0, 0],
+    [0, 1, 0],
+    [0, -1, 0],
+    [0, 0, 1],
+    [0, 0, -1],
+  ]) {
+    dir.set(dx, dy, dz);
+    const ray = window.__reef.raycaster;
+    ray.set(world, dir);
+    ray.near = 0;
+    ray.far = 60;
+    const found = ray.intersectObjects(scene.children, true)[0];
+    hits.push(
+      found ? `${dx},${dy},${dz}: ${found.object.name || found.object.type} @${found.distance.toFixed(1)}` : `${dx},${dy},${dz}: -`,
+    );
+  }
+  return {
+    ndcX: v.x,
+    ndcY: v.y,
+    ndcZ: v.z,
+    cameraWorld: [world.x, world.y, world.z],
+    hits,
+  };
+}, result.skate);
+result.screen = screen;
+
 console.info(JSON.stringify(result));
+// The held frame itself, for reading the composition without a full set.
+await page.waitForTimeout(1200);
+await page.screenshot({ path: "visual-qa/probe-ember-skate.png" });
 await browser.close();

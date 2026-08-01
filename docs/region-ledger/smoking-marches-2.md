@@ -116,6 +116,8 @@ state the Canopy Deep shipped in.
 
 - Round 1: **54 draws / 661,901 tris** (caps 260 / 1.35 M). Headroom noted;
   round 2 spends some of it on near-layer density.
+- Round 5 (final geometry): **57 draws / 1,303,897 tris** (caps 260 /
+  1.35 M) — the r2 density spend plus the Strand Stones' single draw.
 
 ## The loop
 
@@ -229,3 +231,93 @@ failure mode found and root-caused: the discovery flash.**
   of its own (shards fade at the seal, tufts thin at the rim). → a
   dedicated Night Reach blade carpet (3.2k, charcoal w/ milk-pale tips,
   u > 1032) + shards 2.1k over a wider disc.
+
+### Round 4 — sm2-r4 (14 authored + 12 sweep)
+
+**Verdict: sweep 12/12 (the Night Reach carpet closed both far-east
+misses); authored 11/14. Three poses still under the bar, each
+root-caused.**
+
+- **Passing and settled:** doorcombs, saddle-crest (their curtain still
+  crosses it — flag 2 — but our side is honest), emberwash-road,
+  clinker-stair, comb-gallery, broken-comb, anvil, kings-run,
+  first-hearth, pillow-meadows, night-door (the new charcoal stubble
+  gives the door's forecourt its floor).
+- **the-ladle: dark torn-cloth shards around the pool.** Root cause in
+  the material, not the drape: `poolSprite()` is a halo on BLACK, and
+  the pool used *normal* blending — every black texel rendered as a
+  48 %-opacity dark shard wherever the draped rim tilted. The ember
+  pools never showed it because they blend additively. → additive.
+- **glass-shore: a fog wall.** The stand read 50 m across the sheet at
+  the rim and found nothing between the near shards and the far rim —
+  the shore HAS no mid-ground furniture. → the Strand Stones: five low
+  hexagonal obsidian plates, half-sunk, dark flanks under sheen tops
+  (one merged draw, colliders + contacts), and the pose stands on the
+  shore reading them.
+- **ember-skate: the lantern out of the fog's reach.** Three probe
+  launches (scripts/probe-skate.mjs, the harness's own waits) found the
+  skate at three different reaches of the ±46 m loop — two of them
+  ~100 m from the r4 stand, past what the fog lets a 3 m animal read.
+  The loop is a lottery not because of the stand but because flight
+  time counts from PAGE BOOT. → r5 shrinks the loop to ±26 m; r6 kills
+  the clock outright (below).
+
+### Round 5 — sm2-r5 (14 authored)
+
+**Verdict: the-ladle and glass-shore PASS (milk lies in the hollows;
+the Strand Stones carry the shore's mid-ground). ember-skate still
+under the bar — the ±26 m loop kept every phase in frame, but a 3 m
+skate at an unknown reach of a 52 m court is a speck among tufts; the
+pose needs the animal NEAR, which needs phase control, not framing.**
+
+- **The fix that holds: the keeper ROOSTS.** The skate now lies
+  wings-still on the warm seam road (the loop's θ₀ point) and lifts
+  into its round only when a diver first comes within 90 m of the
+  court. Flight time counts from that wake, never from page boot — so
+  a capture's settle always finds it the same seconds into the same
+  circuit, and a visiting diver gets a reveal (the ember lantern rising
+  from the road) instead of a creature mid-lap. Wall clock cannot reach
+  it: connective-3's traveller lesson answered in the animal's own
+  behaviour instead of a QA pin. Probe: two launches, bit-identical
+  position at the held frame.
+- The discovery target now rides the skate's nose (the morays' head
+  convention) instead of a fixed point of court water; the pose's aim
+  ray to the Anvil's cap passes ≥ 6 m over the flight band, so the
+  reticle never rests on the animal (r3's flash lesson held).
+- Emissive up 0.5 → 0.62: the lantern must read at the loop's far
+  reach (~50 m in the court's own haze).
+
+### Round 6 — sm2-r6 (14 authored)
+
+**Verdict: 13/14 pass — every pose but the skate's is settled. The
+roost-wake made the animal's held-frame position EXACT (u 950.1,
+v −0.5, probed bit-identical across launches), but the r6 stand around
+it was wrong twice, and both failures are now laws for the file:**
+
+- **ember-skate, the flat violet frame, root-caused by probe rays:**
+  the r6 stand floated in the road gully at road level, aiming across
+  a bend. Six probe rays from the held camera found ground 2.5–14 m on
+  ALL sides — the stand sat in a mound pocket, and the aim ray cut
+  into the near bank's shaded brow: the whole lens was close dark
+  gravel, no bug anywhere. *A road-level stand may not aim across the
+  road's own bends.* → the r7 stand is ON the road east of the court,
+  aiming straight down the swim line at the skate's exact held point;
+  probed floors along the whole ray keep ≥ 2.7 m clearance.
+- **The discovery-distance law, probed both ways:** the focus scanner
+  arms inside 14 m (`maxDistance`). A trial stand 17.4 m from the held
+  point still tripped it — the ROOST sits 7 m from that stand and the
+  rise crossed the aim cone inside focus range mid-settle; the held
+  frame carried the codex banner. The final stand keeps the animal's
+  whole flight — roost included — at ≥ 14.8 m, so the reticle can rest
+  dead ON the skate with the scanner silent. *A creature pose's stand
+  must clear 14 m against the flight path's nearest point, not the
+  framed point.*
+- **Everything else holds from r5:** the-ladle's milk lies nested in
+  the mounds (additive, 48×12 drape); glass-shore reads Strand Stones
+  → shore band → far comb; night-door's forecourt floor is carpeted
+  and both watch-embers show; saddle-crest remains honest-but-flagged
+  (the parent's uncut curtain, flag 2).
+
+### Round 7 — sm2-r7 (14 authored + 12 sweep)
+
+**Verdict: recorded after the r7 captures below.**

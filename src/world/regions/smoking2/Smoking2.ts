@@ -133,16 +133,22 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "comb-gallery", u: 842, v: 20, lift: 2.6, atU: 862, atV: 44, pitch: 0.08 },
   // The Anvil, from the road: the heart's forge-glow and its shimmer.
   { name: "anvil", u: 914, v: washCenter(914), lift: 2.6, atU: ANVIL.u, atV: ANVIL.v, pitch: 0.06, settle: 4 },
-  // The skate's court (R3: the wash-length circuit made every pose a
-  // phase lottery — connective-3's lesson verbatim. R4 aimed at the
-  // ANVIL to keep the reticle off the flight band — the discovery flash
-  // fires when the ray rests on the skate — but the r4 stand at u=1012
-  // still put the loop's far reach ~100 m out, past the fog's read; the
-  // probe found the skate there in two launches of three. R5: the loop
-  // is ±26 m and this stand is the court's own north bank — every point
-  // of the circuit is inside 50 m and inside the frame, and the aim ray
-  // to the Anvil's cap passes ≥6 m up, clear over the flight band).
-  { name: "ember-skate", u: 948, v: 27, lift: 2.4, atU: ANVIL.u, atV: ANVIL.v, pitch: 0.1, settle: 6 },
+  // The skate's court (the pose's whole history is a determinism war —
+  // r1/r2 phase-lottery misses, r3's discovery-flash whiteout, r4's
+  // fog-eaten far reach). R6 ended it twice over: the keeper ROOSTS and
+  // wakes when the diver arrives, so six seconds of settle put it at
+  // EXACTLY u 950.1, v −0.5, ~2.2 m over the road floor — probed
+  // bit-identical across launches. The stand is ON the road east of the
+  // court, aimed straight at that point: probed floor heights along the
+  // whole ray hold ≥2.7 m of clearance (a cross-bend stand at road
+  // level put the near bank's brow across the entire lens — r6's flat
+  // violet frame), and from this stand the animal's WHOLE flight — the
+  // roost at (962, −4) included — keeps ≥14.8 m of range, past the
+  // focus scanner's 14 m maxDistance, so the reticle can rest on it
+  // without ever arming the discovery flash (a 3 m closer stand probed
+  // the codex banner across the held frame: the roost sat 7 m out and
+  // the rise crossed the aim cone inside focus range).
+  { name: "ember-skate", u: 967, v: washCenter(967), lift: 4.6, atU: 950, atV: -0.5, pitch: -0.05, settle: 6 },
   // The Kings' Run: looking up the tallest walls' aisle (R3: 0.36 still
   // put 60 % open water in frame; hold the aisle's floor and both faces).
   { name: "kings-run", u: 908, v: 30, lift: 2.4, atU: 918, atV: 44, pitch: 0.18, settle: 4 },
