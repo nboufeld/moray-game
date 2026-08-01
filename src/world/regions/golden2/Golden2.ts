@@ -207,7 +207,12 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // promise dissolved itself out of its own shot; at 24° the ring sits
   // at ~129 m (opaque) and both framing spires bracket the reserved
   // gap.
-  { name: "sunset-shelf", u: 1064, v: -10, lift: 10.0, atU: 1104, atV: 8, pitch: 0.04 },
+  // Round 4b: …and the SAME arithmetic run for the taper showed the
+  // 24° column still tapered to nothing (offOut 0.20, end ≈ 0.02) —
+  // the taper (0.32 → 0.16, see Golden2Distance) and an ON-AXIS aim
+  // finish it: the reservation looked at straight, mesa flanks
+  // standing opaque both sides, both spires in frame.
+  { name: "sunset-shelf", u: 1064, v: -10, lift: 10.0, atU: 1110, atV: 0, pitch: 0.04 },
   // ── The close-range set (R12's still-frame bar, judged at 2–4 m) ─────────
   { name: "close-court-garden", u: 858.5, v: 9.2, lift: 1.5, atU: 862.0, atV: 12.8, pitch: -0.22, settle: 3 },
   // Round 3: backed off the rim — the r2 lens stood ON it and cut the

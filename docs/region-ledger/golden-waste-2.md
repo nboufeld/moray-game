@@ -462,3 +462,63 @@ axis (out of the ring's own self-dissolve window); tower profiles
 resampled to 0.8 m rows + foot bright floor 0.26; the gully
 shoulders join the country; budgets re-measured 67 draws /
 892,826 tris.
+
+### Round 4 (`gw2-r4`) — the standard met
+
+Same prebuilt-bundle harness, same PINNED sweep poses.
+
+**Authored: 19/20 pass on the first pull; 20/20 with the r4b
+re-shoot.** The r2 core holds again in full. New this round:
+`anchorite-cell` PASSES — from the back wall the rest finally reads
+against its own door (the sill's violet V opening to the lit gold
+upper walls, the lip stones hanging on the rims, the light shaft
+falling through, the bare floor in front — composed stillness, the
+licence earned); `shore-road` PASSES — the waymark stack whole at
+frame-left over its wrack and pebbles, wire pacing the right
+shoulder, the light shaft marking the road, the doorstep's thinness
+the treaty handshake it always was; `close-flute-foot` PASSES — the
+resampled rows carry banding down the shaft and the foot sits in the
+pale family, the chime-stone clean beside it; `carillon` and
+`noon-bell` are the region's hero frames (the Bell Ringer risen into
+the noon shaft); `great-arch`/`close-arch-shards` show the fin and
+arch paint richer for the same resample; `court-reveal` is the
+region's best road frame (the gully-foot pocket carpeting the
+reveal). And the gullyShoulder law showed up in every gully frame:
+`chime-gate` and `wind-gully` now carry their shoulders.
+
+- **`sunset-shelf` FAILED its first r4 pull — the taper this time.**
+  The dissolve arithmetic was right and insufficient: the 24° aim
+  crossed the ring at offOut 0.20 rad, where the 0.32 taper still
+  held the column at end ≈ 0.02 (below ground). Joint-constraint
+  arithmetic closed it: from u 1064 EVERY full-height column under
+  the 0.32 taper stood ≥ 156 m away — inside the dissolve. Taper
+  0.32 → 0.16 (full flanks at ±0.33 rad = 129–142 m, opaque; the cut
+  edge is the pass canyon's own mouth — a legislated parting has an
+  edge) and the aim brought ON-AXIS (atU 1110, atV 0): the
+  reservation looked at straight, spires bracketing the gap. Probe
+  clears 1.6 m; re-shot as `gw2-r4b` after the chain.
+
+**Sweep (r4, same pinned poses): 12/12 PASS — exceeds the ≥11/12
+standard, with no misses anywhere.** 04 (the Wind Gully's high south
+shoulder, the r3 FAIL) now carries its standing layer up the whole
+slope; 02 (the deep south flank, the r3 marginal) filled in from the
+count raise; 03 catches the Bell Ringer's glow on the skyline; 08
+holds the traveller shoal.
+
+**Headed frame gate: median 16.7 ms (59.9 fps), p95 18.6 ms,
+settled scale 1.00 at BOTH probe poses** (`noon-bell`
+1029.8,−9.6,75.2 — the densest interior — and `court-reveal`
+809.3,−7.6,87.8), measured on the shared box with a sibling capture
+chain running; 16.7 ms is the 60 Hz vsync cadence, i.e. the region
+holds refresh at full scale. Gate ≤16.9 ms: **PASS**.
+
+**`sunset-shelf` re-shoot (`gw2-r4b`): PASS — authored 20/20.** The
+0.16 taper delivers exactly what the joint-constraint arithmetic
+promised: mesa flanks standing OPAQUE at full height on both sides of
+the frame, parting over the pass mouth; both waymark spires bracket
+the gap; the on-axis aim looks the depth-3 reservation straight in
+the eye. The cut edge between the flanks reads as the canyon mouth —
+a legislated parting with an edge, not a dissolve accident. The shelf
+road runs under the stand with its sward and grit carrying the near
+field. The vista pose finally does the one job it exists for: it
+frames the promise.

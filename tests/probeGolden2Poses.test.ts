@@ -29,7 +29,7 @@ const SIGHTS: (Sight & { range?: number })[] = [
   { name: "close-seep-rim", u: 963.5, v: 82.5, lift: 2.2, atU: 968.5, atV: 88.5, pitch: -0.28 },
   { name: "shore-road", u: 663, v: 4, lift: 2.4, atU: 706, atV: -4, pitch: -0.04 },
   // The vista pose walks its ray all the way to the distance rings.
-  { name: "sunset-shelf", u: 1064, v: -10, lift: 10.0, atU: 1104, atV: 8, pitch: 0.04, range: 130 },
+  { name: "sunset-shelf", u: 1064, v: -10, lift: 10.0, atU: 1110, atV: 0, pitch: 0.04, range: 130 },
 ];
 
 describe("golden-waste-2 round-3 pose sightlines", () => {

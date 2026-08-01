@@ -186,8 +186,17 @@ function mesaRing(layer: MesaLayer, noiseSeed: number): BufferGeometry {
     // taper suppressed the skyline across the Sunset Shelf's whole
     // vista — the rings must stand back up within the dissolve
     // window's ~0.45 rad of the reserved corridor.
+    // Round 4, the joint-constraint arithmetic: from the shelf stand
+    // (u 1064) every column the 0.32 taper let stand at FULL height
+    // (offOut ≥ 0.49) is ≥ 156 m away — inside the rings' own
+    // 140–157 m dissolve. Taper and dissolve jointly excluded every
+    // standing column from the one pose that exists to see them. At
+    // 0.16 the flanks stand full at ±0.33 rad, 129–142 m from the
+    // stand — opaque — and the cut edge reads as the pass canyon's
+    // own mouth (the parting is legislated; a parted curtain has an
+    // edge).
     const end =
-      smoothstep01((offIn - GAP_IN_HALF) / 1.3) * smoothstep01((offOut - GAP_OUT_HALF) / 0.32);
+      smoothstep01((offIn - GAP_IN_HALF) / 1.3) * smoothstep01((offOut - GAP_OUT_HALF) / 0.16);
     const x = CENTER_X + Math.cos(theta) * layer.radius;
     const z = CENTER_Z + Math.sin(theta) * layer.radius;
 
