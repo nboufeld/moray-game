@@ -358,6 +358,68 @@ flanks; the cover counts and gates were keyed to the road spine.
     into the ring's doorway looking in; chapel fins raised a step so
     the ring reads as architecture from inside.
 
+### Round 3 (pa2-r3) — the chalk paints; the region arrives; two paint bugs left
+
+All 18 authored read (sweep read below, same session). **The UV cure
+is the round's headline**: the Great Comb carries horizontal strata
+down its whole bowed blade, the comb-gate fin reads painted chalk at
+portrait range, the waymark monoliths took grain, the Lamp's foot
+mottles like real material. The value orders landed: `the-winnow`'s
+right bank is warm tan with moss and litter; `gallery-crossing` is a
+pass (warm swells, jelly overhead, fin ranks layering, light blades);
+`the-lamp` is the region's proof frame — cage, glowing heart, beam,
+jelly, milk; `lamp-heart` shows a warm gold lantern ball (the rekey
+worked); `lantern-gardens` reads full (clumped lanterns, warm basin,
+Lampwright's shell in the cage); `still-pool` composes bowl + strata
+fin; `close-road-shelf` is road-as-place (milk blades, pearl pebbles,
+textured waymark); `close-gallery-floor`'s fin flank is real material.
+`white-chapel` from the doorway reads composed (pan, beam, ring at
+depth, Lamp far-left) — passable, if not yet cathedral. What fails:
+
+- **The threshold patchwork** (`pass-threshold`, `close-road-shelf`
+  lower-left): in the pale-1 overlap (u 640–705) our pass sheet pokes
+  through pale-1's coarser dune triangulation — 7 cm of sink is not
+  enough where their 2.2 m grid curves over dune crests, and our
+  MILK-bright paint makes every poke-through a white flag over their
+  tan. TWO cures, both ours: sink the sheet's overlap span deeper
+  (feathered −0.25 → −0.07 across u 660–708) and key the handover
+  milk DOWN toward pale-1's own dune tan.
+- **`winnow-hush` is still a mauve wall**: the pose at lift 2.0 fills
+  the whole frustum with one away-facing bank slope, and no paint
+  order can make one toon-dark surface a composition. The pose is
+  wrong, not (only) the paint: raise the eye, pitch up at the fins
+  and the light — the rest reads as a held breath only if the frame
+  holds what the breath is FOR.
+- **`white-lookback`**: the swell hides the comb skyline (lift too
+  low) and its away-facing slope still reads brown-mauve with dark
+  sprig-marks at range — the residual value gap between the ground
+  bake and the shade hexes at distance.
+- **The basin runs terracotta** (`close-garden-bed`): LAMP_HEART's
+  caramel at 0.65 lerp under the violet ambient reads rust-orange mud
+  up close, not candle-through-paper. Story hex lifted, lerp eased.
+- **The Dayspring is still a rumour** (`pearl-steps`): the needles
+  frame it, but the veil at (0.34,0.24,0.11) peak is a whisper against
+  the mint backdrop and the font towers at angular offsets ≤0.42
+  stand outside the frame's edges. Veil brighter and closer; fonts
+  INTO the gap's flanks (0.13–0.34, feet still |v| ≥ 27 — clear of
+  the future tongue by construction).
+- **A crimson sprig at the Still Pool's lip** (`still-pool`): legal
+  (outside the 9 m rest) but it draws the eye in the game's second-
+  strictest hush — the rest's gate radius widens to 12.5.
+- Nits: the splits still read violet-boxy up close (shade lifted
+  again); the cool-family fin flank leans saturated lavender in
+  close quarters (material colour a step up); moonmilk bowls read
+  but under-sell (pearl value bump up, pool light up).
+
+**Round-4 orders**: (1) threshold overlap sink + milk toward pale-1's
+tan; (2) winnow-hush pose raised/pitched at the light, shadow lerp
+eased a hair; (3) white-lookback lift 5 → 7.5; (4) LAMP_HEART
+0xe4b87e → 0xefd0a0, heart lerp 0.65 → 0.5; (5) veil peak ×1.6 and
+r 306 → 296, fonts into the gap flanks; (6) Still Pool rest radius
+12.5; (7) splits shade 0xd6cbe4; coolChalk 0xe3e5ee → 0xeaecf4;
+MOON_PEARL bump 0.18 → 0.24, pool lights 0.12 → 0.16; sward shade
+0xc7bbd8 → 0xd4cbe2; basin fronds shade warmed.
+
 ## Flags for the orchestrator (the reciprocal cuts — NOT made here)
 
 Measured exactly, pale-1's geometry crossing OUR corridor (we may not

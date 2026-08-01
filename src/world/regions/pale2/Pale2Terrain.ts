@@ -312,8 +312,10 @@ export const RESTS = {
   /** THE WHITE CHAPEL: nothing moves but its one beam; no fauna, no
    *  scatter, no motes inside the fin ring. */
   chapel: { u: CHAPEL.u, v: CHAPEL.v, radius: 26 },
-  /** The Still Pool: a glass-flat pearl floor; nothing. */
-  stillPool: { u: 872, v: -84, radius: 9 },
+  /** The Still Pool: a glass-flat pearl floor; nothing. Round 4: the
+   *  gate radius widened past the bowl (9 → 12.5) — a legal sunGlow
+   *  sprig stood at the lip and drew the eye in the hush. */
+  stillPool: { u: 872, v: -84, radius: 12.5 },
   /** The Winnow Shadow: the slot's dark breath — motes only. */
   winnowShadow: { fromU: 776, toU: 800 },
 } as const;

@@ -160,10 +160,12 @@ export function buildPale2Distance(): { meshes: (Mesh | InstancedMesh)[] } {
           continue;
         }
       } else {
-        // Fonts flank the gap: past its edge, inside its glow — and
-        // clear of the future tongue's spine by construction.
+        // Fonts flank the gap FROM INSIDE it (round 4: at offsets past
+        // the gap's edge they stood outside the pearl-steps frame) —
+        // their feet stay |v| ≥ 27 at these radii, clear of the future
+        // tongue's spine by construction.
         const off = angleBetween(theta, outAt);
-        if (off < GAP_OUT_HALF + 0.02 || off > 0.42) {
+        if (off < 0.13 || off > 0.34) {
           continue;
         }
       }
@@ -204,8 +206,10 @@ function buildDayspringVeil(outAt: number): Mesh {
   const COLS = 10;
   const ROWS = 5;
   const HALF_W = 62;
-  const HEIGHT = 34;
-  const R = 306;
+  const HEIGHT = 38;
+  // Round 4: closer and brighter — at r 306 / 0.34 peak the veil was
+  // a whisper against the mint backdrop.
+  const R = 296;
   const positions: number[] = [];
   const colors: number[] = [];
   const indices: number[] = [];
@@ -222,7 +226,7 @@ function buildDayspringVeil(outAt: number): Mesh {
       // A gaussian heart, black at every rim (additive: black = gone).
       const falloff =
         Math.exp(-((t * 2.6) ** 2)) * Math.exp(-(((h - 0.42) / 0.42) ** 2));
-      colors.push(0.34 * falloff, 0.24 * falloff, 0.11 * falloff);
+      colors.push(0.55 * falloff, 0.39 * falloff, 0.17 * falloff);
     }
   }
   for (let j = 0; j < ROWS; j++) {

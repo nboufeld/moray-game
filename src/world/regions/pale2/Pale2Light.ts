@@ -76,7 +76,7 @@ export function buildPale2Light(): { groups: Group[] } {
       continue;
     }
     const { x, z } = worldOf(pool.u, pool.v);
-    pools.push({ pos: [x, z], radius: pool.radius * 0.72, opacity: 0.12 });
+    pools.push({ pos: [x, z], radius: pool.radius * 0.72, opacity: 0.16 });
   }
 
   // THE WHITE CHAPEL's one beam — the rest's licensed event; its

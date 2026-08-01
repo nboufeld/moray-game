@@ -95,9 +95,12 @@ export function buildPale2Cover(
   // count up half again, the u-door widened, the shade lifted ABOVE
   // the ground's value (the verdant-2 lesson: blades must sit lighter
   // than the warm ground they stand on).
+  // Round 4: the final density step (r3 sweep still failed five flank
+  // cones on the ground layer) — count to 10000, shade a step lighter
+  // still for the range read.
   const sward = buildCarpetField({
     seed: SEED ^ 0x3001,
-    palette: { base: 0xe6d7ac, tip: 0xf7edc9, shade: 0xc7bbd8 },
+    palette: { base: 0xe6d7ac, tip: 0xf7edc9, shade: 0xd4cbe2 },
     area,
     gate: (x, z) => {
       const g = baseGate(x, z);
@@ -111,7 +114,7 @@ export function buildPale2Cover(
       return g * (0.6 + 0.4 * lumen(u, v)) * (1 - basinWeight(u, v) * 0.5);
     },
     ground,
-    count: 7800,
+    count: 10000,
     profile: "blade",
     size: [0.34, 0.66],
     swayAmp: 0.05,
@@ -240,7 +243,7 @@ export function buildPale2Cover(
   // lantern anemones — the lamp feeding its own garden.
   const basinFronds = buildCarpetField({
     seed: SEED ^ 0x3006,
-    palette: { base: 0xe6cb9e, tip: 0xf8e6bc, shade: 0xc7b6d4 },
+    palette: { base: 0xe6cb9e, tip: 0xf8e6bc, shade: 0xd0c2da },
     area,
     gate: (x, z) => {
       const g = baseGate(x, z);
@@ -263,9 +266,11 @@ export function buildPale2Cover(
   // rim-facing sweep cones meet knee-high paper blades, not bare fade.
   // Round 3: the band widened INWARD (rc 150 → 132) — sweep cones
   // standing on the flank band inside the old hem met bare fade.
+  // Round 4: inward again (118) and half as dense again — 01/03/05
+  // still stood on thin ground.
   const rimHem = buildCarpetField({
     seed: SEED ^ 0x3007,
-    palette: { base: 0xe6ddc4, tip: 0xf5eeda, shade: 0xc7bbd8 },
+    palette: { base: 0xe6ddc4, tip: 0xf5eeda, shade: 0xd4cbe2 },
     area,
     gate: (x, z) => {
       const g = baseGate(x, z);
@@ -273,13 +278,13 @@ export function buildPale2Cover(
         return 0;
       }
       const rc = Math.hypot(x - CENTER_X, z - CENTER_Z);
-      if (rc < 132 || rc > 205) {
+      if (rc < 118 || rc > 205) {
         return 0;
       }
-      return g * (1 - Math.abs(rc - 170) / 38);
+      return g * (1 - Math.abs(rc - 162) / 46);
     },
     ground,
-    count: 1300,
+    count: 2200,
     profile: "blade",
     size: [0.38, 0.74],
     swayAmp: 0.05,
@@ -289,6 +294,8 @@ export function buildPale2Cover(
   carpets.push(rimHem);
 
   // The Pearl Steps' tufts: short pearl grass on the rising terraces.
+  // Round 4: the steps' band widened and near-tripled — sweep 08 (the
+  // steps' north flank) was the sweep's one naked down-shot.
   const stepTufts = buildCarpetField({
     seed: SEED ^ 0x3008,
     palette: { base: 0xe2e8d8, tip: 0xf1f3e8, shade: 0xc6ccdc },
@@ -299,13 +306,13 @@ export function buildPale2Cover(
         return 0;
       }
       const { u, v } = spokeOf(x, z);
-      if (u < 1055 || u > 1150) {
+      if (u < 1040 || u > 1155) {
         return 0;
       }
       return g * (1 - basinWeight(u, v));
     },
     ground,
-    count: 650,
+    count: 1700,
     profile: "tuft",
     size: [0.24, 0.5],
     swayAmp: 0.04,
@@ -344,7 +351,7 @@ export function buildPale2Cover(
     area,
     gate: baseGate,
     ground,
-    count: 3200,
+    count: 4200,
     shapeSet: "grit",
     size: [0.03, 0.09],
     twoTone: true,
@@ -379,7 +386,7 @@ export function buildPale2Cover(
   // to ~0.57 m boxes whose toon-dark faces read as violet slabs.
   const splits = buildGroundLitter({
     seed: SEED ^ 0x3012,
-    palette: { base: 0xf2ecdc, shade: 0xc2b2d6 },
+    palette: { base: 0xf2ecdc, shade: 0xd6cbe4 },
     area,
     gate: (x, z) => {
       const g = baseGate(x, z);

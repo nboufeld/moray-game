@@ -117,12 +117,17 @@ const PAPER_WARM_G = story(0xefe6d1);
 // read as flat lavender puddles at close range under the violet ambient.
 const PAPER_COOL_G = story(0xe8e8f2);
 const SHADOW_VIOLET_G = story(0xa997c6);
-const MILK_HANDOVER = story(0xece7db);
+// Round 4: keyed DOWN toward pale-1's own dune tan — the bright milk
+// made every poke-through of our sunk sheet a white flag over their
+// dunes at the threshold (r3's patchwork).
+const MILK_HANDOVER = story(0xe0d9c4);
 const SWARD_GOLD = story(0xdcc793);
 const MOON_PEARL_G = story(0xdff0e3);
 const CHAPEL_WHITE = story(0xfbf8f1);
 const BASIN_GOLD = story(0xeed3a4);
-const LAMP_HEART = story(0xe4b87e);
+// Round 4: lifted from 0xe4b87e — the caramel read terracotta mud
+// under the violet ambient at close range (candle, not rust).
+const LAMP_HEART = story(0xefd0a0);
 const PEARL_BAND = story(0xe9ecdf);
 
 /**
@@ -157,8 +162,8 @@ function bakeCombPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
     // warming to our paper over ~40 m (the doctrine's 20+ m rule).
     const milk = 1 - smoothstep01((u - 700) / 40);
     if (milk > 0) {
-      col.lerp(MILK_HANDOVER, milk * 0.85);
-      value += milk * 0.05;
+      col.lerp(MILK_HANDOVER, milk * 0.7);
+      value += milk * 0.02;
     }
 
     // The pass corridor: channel shadow and stepped risers. Round 3:
@@ -176,8 +181,8 @@ function bakeCombPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
         const inShadow =
           smoothstep01((u - (RESTS.winnowShadow.fromU - 4)) / 5) *
           (1 - smoothstep01((u - RESTS.winnowShadow.toU) / 5));
-        col.lerp(SHADOW_VIOLET_G, inShadow * inChannel * 0.24);
-        value -= inShadow * inChannel * 0.05;
+        col.lerp(SHADOW_VIOLET_G, inShadow * inChannel * 0.2);
+        value -= inShadow * inChannel * 0.04;
       }
       const drop = descentDrop(u);
       if (drop.riser > 0) {
@@ -226,7 +231,8 @@ function bakeCombPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
         const bowl = 1 - smoothstep01((d - pool.radius * 0.8) / pool.radius);
         const rings = 0.5 + 0.5 * Math.sin(d * 0.5);
         col.lerp(MOON_PEARL_G, bowl);
-        value += bowl * (0.18 + rings * 0.015);
+        // Round 4: brighter — the r3 bowls read but under-sold.
+        value += bowl * (0.24 + rings * 0.015);
       }
     }
 
@@ -246,7 +252,7 @@ function bakeCombPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
       const d = Math.hypot(u - LAMP_BASIN.u, v - LAMP_BASIN.v);
       const heart = 1 - smoothstep01((d - 8) / 22);
       col.lerp(BASIN_GOLD, basin * 0.75);
-      col.lerp(LAMP_HEART, basin * heart * 0.65);
+      col.lerp(LAMP_HEART, basin * heart * 0.5);
       // Round 3: the basin's value lifted a step — r2's gold sat at
       // mid value and the garden beds read toward mud.
       value += basin * 0.08 - basin * heart * 0.04;
@@ -332,6 +338,20 @@ export function buildPale2Ground(contacts: readonly ContactPatch[]): Mesh[] {
     const { u, v } = spokeOf(x, z);
     return u >= 640 && u <= 816 && Math.abs(v) <= passHalfWidth(Math.min(u, 790)) + 12;
   });
+  // Round 4: the pale-1 overlap span sinks deeper (−0.25 feathering
+  // back to the −0.07 base by u 708) — at 7 cm our sheet poked through
+  // their coarser dune triangulation as white patchwork (r3). The
+  // gradient is centimetres over fifty metres; the baked normals hold.
+  {
+    const position = passGeometry.attributes.position!;
+    for (let i = 0; i < position.count; i++) {
+      const { u } = spokeOf(position.getX(i), position.getZ(i));
+      if (u < 708) {
+        position.setY(i, position.getY(i) - 0.18 * (1 - smoothstep01((u - 660) / 48)));
+      }
+    }
+    position.needsUpdate = true;
+  }
   bakeCombPaint(passGeometry, contacts);
   const pass = new Mesh(passGeometry, material);
   pass.name = "pale2-ground-pass";

@@ -121,8 +121,10 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // the road, subject inside 30 m).
   { name: "the-winnow", u: 758, v: -3, lift: 3.4, atU: 780, atV: 2, pitch: -0.26 },
   // In the Winnow Shadow, looking back up at the light — the rest
-  // read as a composed held breath.
-  { name: "winnow-hush", u: 795, v: 2, lift: 2.0, atU: 770, atV: -2, pitch: 0.1, settle: 4 },
+  // read as a composed held breath. Round 4: the eye raised and
+  // pitched at the gate fins and the light blades — at lift 2.0 the
+  // frame was one away-facing bank slope (r3's mauve wall).
+  { name: "winnow-hush", u: 795, v: 2, lift: 3.6, atU: 766, atV: -4, pitch: 0.22, settle: 4 },
   // The descent's foot: the comb country opens in one breath.
   { name: "gallery-crossing", u: 816, v: -4, lift: 5.0, atU: 870, atV: -10, pitch: -0.1 },
   // The Great Comb: the tallest fin, its flank crowded with lit fans.
@@ -147,7 +149,8 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // The Pearl Steps and the Far Gate: the Dayspring promise.
   { name: "pearl-steps", u: 1076, v: 6, lift: 3.2, atU: 1128, atV: 8, pitch: 0.06 },
   // Looking back the way we came: the comb skyline over the road.
-  { name: "white-lookback", u: 1002, v: 12, lift: 5.0, atU: 900, atV: 0, pitch: 0.02 },
+  // Round 4: lift 5 → 7.5 — the swell hid the skyline.
+  { name: "white-lookback", u: 1002, v: 12, lift: 7.5, atU: 900, atV: 0, pitch: 0.04 },
   // ── The close set (2–4 m, the owner's judged distance) ──
   { name: "close-gallery-floor", u: 856, v: -12, lift: 1.4, atU: 860, atV: -8, pitch: -0.5 },
   { name: "close-pool-rim", u: 904, v: -50, lift: 1.6, atU: 899, atV: -55, pitch: -0.44 },

@@ -384,7 +384,9 @@ export function buildPale2Combs(): Pale2CombsBuild {
   });
   const coolChalk = createToonMaterial({
     map: chalkTexture(),
-    color: 0xe3e5ee,
+    // Round 4: a step up from 0xe3e5ee — the cool family's away-faces
+    // leant saturated lavender in close quarters.
+    color: 0xeaecf4,
     vertexColors: true,
   });
 
