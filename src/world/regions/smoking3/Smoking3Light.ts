@@ -90,7 +90,12 @@ export const GLOWS: readonly { u: number; v: number; radius: number; opacity: nu
   { u: 1542, v: wickCenter(1542) - 1.2, radius: 2.4, opacity: 0.08 },
   { u: 1570, v: wickCenter(1570) + 1.6, radius: 2.6, opacity: 0.09 },
   { u: 1598, v: wickCenter(1598) - 1.4, radius: 2.8, opacity: 0.1 },
-  // The Nightfall Stair's riser seams — the approach's warm cadence.
+  // The Nightfall Stair's riser seams — the approach's warm cadence —
+  // and the threshold's first seeps, so the door reads the vocabulary
+  // before the reveal (R2: the r1 threshold arrived on bare glass).
+  { u: 1182, v: channelCenter(1182) + 1.5, radius: 1.8, opacity: 0.07 },
+  { u: 1212, v: channelCenter(1212) - 1.5, radius: 2.0, opacity: 0.08 },
+  { u: 1240, v: channelCenter(1240), radius: 2.4, opacity: 0.1 },
   { u: benchFootU(0) + 1, v: channelCenter(benchFootU(0)), radius: 2.8, opacity: 0.11 },
   { u: benchFootU(2) + 1, v: channelCenter(benchFootU(2)) + 1.5, radius: 3.0, opacity: 0.11 },
   { u: benchFootU(4) + 1, v: channelCenter(benchFootU(4)) - 1.5, radius: 3.0, opacity: 0.11 },
@@ -278,13 +283,13 @@ export function buildSmoking3Light(): Smoking3LightBuild {
  */
 function buildMorningColumn(): { mesh: Mesh; update(timeSec: number): void } {
   const vent = ventSpot();
-  const foot = vent.lipY - 4;
+  const foot = vent.lipY - 6;
   const top = 25.5;
   const length = top - foot;
   const parts: BufferGeometry[] = [];
   const normals: Vector3[] = [];
   for (const spin of [0, Math.PI / 2]) {
-    const blade = new PlaneGeometry(6.4, length, 4, 24);
+    const blade = new PlaneGeometry(7.5, length, 4, 24);
     // The column spreads as it rises — light unfurling.
     const position = blade.attributes.position!;
     for (let i = 0; i < position.count; i++) {
@@ -323,7 +328,7 @@ function buildMorningColumn(): { mesh: Mesh; update(timeSec: number): void } {
   const material = new MeshBasicMaterial({
     map: texture,
     transparent: true,
-    opacity: 0.16,
+    opacity: 0.18,
     blending: AdditiveBlending,
     depthWrite: false,
     side: DoubleSide,
@@ -334,7 +339,7 @@ function buildMorningColumn(): { mesh: Mesh; update(timeSec: number): void } {
   mesh.name = "vigil-morning-column";
   mesh.renderOrder = 2;
   const center = new Vector3(vent.x, (foot + top) / 2, vent.z);
-  const baseOpacity = 0.16;
+  const baseOpacity = 0.18;
   mesh.onBeforeRender = (_renderer, _scene, camera: Camera) => {
     const view = new Vector3().subVectors(center, camera.position);
     const distance = view.length();

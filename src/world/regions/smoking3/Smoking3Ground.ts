@@ -153,21 +153,26 @@ function bakeVigilPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch
 
     // The night plain: the darkest resting gravel in the province —
     // pale drift ribbons over hard cinder darks, violet held in both.
+    // R2: a step darker still, and the drifts quieter — the r1 plain
+    // read as pastel day; the night is the register the lanterns need.
     const drifts = smoothstep01((drift(x, z) - 0.46) / 0.24);
     const cinders = smoothstep01((cinder(x, z) - 0.56) / 0.2);
-    let r = 0.5 + drifts * 0.16 - cinders * 0.19;
-    let g = 0.44 + drifts * 0.15 - cinders * 0.21;
-    let b = 0.68 + drifts * 0.09 - cinders * 0.11;
+    let r = 0.45 + drifts * 0.12 - cinders * 0.2;
+    let g = 0.39 + drifts * 0.11 - cinders * 0.22;
+    let b = 0.63 + drifts * 0.07 - cinders * 0.11;
 
-    // Amber pooled in the mottle — the province's signature, at its
-    // strongest here: the night plain holds embers the way a hearth
-    // holds coals, and the fens double it below.
-    const amberPool = smoothstep01(
-      (fbm(x * 0.021, z * 0.021, { seed: SEED ^ 0x6e07, period: 6, octaves: 2 }) - 0.56) / 0.11,
-    );
-    r += amberPool * AMBER.r * 0.5;
-    g += amberPool * AMBER.g * 0.3;
-    b -= amberPool * 0.06;
+    // Amber pooled in the mottle — the province's signature: POOLS of
+    // held heat, not fields of it (R2: the r1 gain washed whole dunes
+    // orange), and none in the Ash Veil — the ash owns its own pale.
+    const veil = veilWeight(u, v);
+    const amberPool =
+      smoothstep01(
+        (fbm(x * 0.021, z * 0.021, { seed: SEED ^ 0x6e07, period: 6, octaves: 2 }) - 0.6) / 0.09,
+      ) *
+      (1 - veil);
+    r += amberPool * AMBER.r * 0.36;
+    g += amberPool * AMBER.g * 0.2;
+    b -= amberPool * 0.05;
 
     // The Night Threshold: dark glass shelf agreeing with the Combs'
     // Glass Shore where the sheets overlap, grading to cinder down the
@@ -212,7 +217,7 @@ function bakeVigilPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch
       r += (charR - r) * wick;
       g += (charG - g) * wick;
       b += (charB - b) * wick;
-      value += wick * (vein * 0.28 - 0.12);
+      value += wick * (vein * 0.34 - 0.13);
     }
 
     // The wick's lips: a pale mineral hem so the seam reads from afar.
@@ -227,16 +232,17 @@ function bakeVigilPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch
       value += hem * 0.05;
     }
 
-    // The Ember Fens: the warm dark, mottle amber doubled.
+    // The Ember Fens: the warm dark, mottle amber doubled over a
+    // deeper resting floor so the pools read as held coals.
     const fens = fensWeight(u, v);
     if (fens > 0) {
       const pool2 = smoothstep01(
-        (fbm(x * 0.03, z * 0.03, { seed: SEED ^ 0x6e09, period: 7, octaves: 2 }) - 0.5) / 0.14,
+        (fbm(x * 0.03, z * 0.03, { seed: SEED ^ 0x6e09, period: 7, octaves: 2 }) - 0.52) / 0.13,
       );
-      r += ((0.42 + pool2 * (AMBER.r * 0.7)) - r) * fens;
-      g += ((0.33 + pool2 * (AMBER.g * 0.44)) - g) * fens;
-      b += ((0.52 - pool2 * 0.1) - b) * fens;
-      value += fens * (pool2 * 0.16 - 0.1);
+      r += ((0.38 + pool2 * (AMBER.r * 0.72)) - r) * fens;
+      g += ((0.29 + pool2 * (AMBER.g * 0.44)) - g) * fens;
+      b += ((0.5 - pool2 * 0.1) - b) * fens;
+      value += fens * (pool2 * 0.18 - 0.12);
     }
 
     // The amber pools: warm hearts, vein-bright rims.
@@ -264,31 +270,32 @@ function bakeVigilPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch
 
     // The Ash Veil: milk-pale drifts — the fall's settle, brightest on
     // the drift crowns (read from the same boss field the terrain drew).
-    const veil = veilWeight(u, v);
+    // R2: milkier — the r1 veil read as tan dune, not settled ash.
     if (veil > 0) {
       const boss = Math.max(
         0,
-        fbm(x * 0.041, z * 0.041, { seed: SEED ^ 0x3c05, period: 11, octaves: 2 }) - 0.38,
+        fbm(x * 0.041, z * 0.041, { seed: SEED ^ 0x3c05, period: 11, octaves: 2 }) - 0.36,
       );
       const crown = smoothstep01((boss - 0.2) / 0.16);
       const flank = smoothstep01((boss - 0.05) / 0.12) * (1 - crown);
-      r += ((0.76 + flank * 0.12 + crown * 0.36) - r) * veil;
-      g += ((0.7 + flank * 0.11 + crown * 0.34) - g) * veil;
-      b += ((0.72 + flank * 0.05 + crown * 0.26) - b) * veil;
-      value += veil * (crown * 0.16 + flank * 0.05);
+      r += ((0.8 + flank * 0.12 + crown * 0.38) - r) * veil;
+      g += ((0.76 + flank * 0.11 + crown * 0.36) - g) * veil;
+      b += ((0.78 + flank * 0.05 + crown * 0.28) - b) * veil;
+      value += veil * (crown * 0.2 + flank * 0.06);
     }
 
     // The Cradle: the garden floor — the one warm living green-amber in
-    // the province's night, the fire's tended ground.
+    // the province's night, the fire's tended ground (R2: greener and
+    // deeper; r1 read tan).
     const cradle = cradleWeight(u, v);
     if (cradle > 0) {
       const moss = smoothstep01(
-        (fbm(x * 0.035, z * 0.035, { seed: SEED ^ 0x6e0a, period: 8, octaves: 2 }) - 0.44) / 0.18,
+        (fbm(x * 0.035, z * 0.035, { seed: SEED ^ 0x6e0a, period: 8, octaves: 2 }) - 0.42) / 0.18,
       );
-      r += ((0.52 + moss * 0.22) - r) * cradle;
-      g += ((0.5 + moss * 0.24) - g) * cradle;
-      b += ((0.42 + moss * 0.04) - b) * cradle;
-      value += cradle * (moss * 0.1 - 0.04);
+      r += ((0.44 + moss * 0.26) - r) * cradle;
+      g += ((0.48 + moss * 0.32) - g) * cradle;
+      b += ((0.38 + moss * 0.06) - b) * cradle;
+      value += cradle * (moss * 0.1 - 0.05);
     }
 
     // The Vent's forecourt: gathering seams and a worked warm halo.

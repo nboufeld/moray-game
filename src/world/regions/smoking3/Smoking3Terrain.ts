@@ -339,26 +339,26 @@ export interface LanternSpec {
 
 export const LANTERNS: readonly LanternSpec[] = [
   // The Watch Lantern: the first thing of ours the fog gives up.
-  { name: "watch", u: 1330, v: -6, height: 11, radius: 2.0, lit: true },
+  { name: "watch", u: 1330, v: -6, height: 13, radius: 2.0, lit: true },
   // The Lantern Rows, either side of the road.
-  { name: "row-west", u: 1372, v: 25, height: 13, radius: 2.2, lit: true },
-  { name: "row-east", u: 1394, v: -1, height: 15, radius: 2.4, lit: true },
+  { name: "row-west", u: 1372, v: 25, height: 15, radius: 2.2, lit: true },
+  { name: "row-east", u: 1394, v: -1, height: 17, radius: 2.4, lit: true },
   // The Choir: three lanterns around a court the road crosses.
-  { name: "choir-north", u: 1418, v: 22, height: 14, radius: 2.2, lit: true },
-  { name: "choir-south", u: 1428, v: -6, height: 17, radius: 2.5, lit: true },
-  { name: "choir-east", u: 1444, v: 28, height: 12, radius: 2.0, lit: true },
+  { name: "choir-north", u: 1418, v: 22, height: 16, radius: 2.2, lit: true },
+  { name: "choir-south", u: 1428, v: -6, height: 19, radius: 2.5, lit: true },
+  { name: "choir-east", u: 1444, v: 28, height: 14, radius: 2.0, lit: true },
   // The Evensong: the tallest lantern in the province.
-  { name: "evensong", u: 1494, v: 34, height: 19, radius: 2.8, lit: true },
+  { name: "evensong", u: 1494, v: 34, height: 22, radius: 2.8, lit: true },
   // The flank sentinels: the fens' and the veil's own lights.
-  { name: "fen-sentinel", u: 1462, v: -52, height: 13, radius: 2.3, lit: true },
-  { name: "veil-lantern", u: 1452, v: 74, height: 12, radius: 2.1, lit: true },
+  { name: "fen-sentinel", u: 1462, v: -52, height: 15, radius: 2.3, lit: true },
+  { name: "veil-lantern", u: 1452, v: 74, height: 13, radius: 2.1, lit: true },
   // The Cradle's pair, flanking the garden.
-  { name: "cradle-west", u: 1540, v: 58, height: 10, radius: 1.9, lit: true },
-  { name: "cradle-east", u: 1576, v: 30, height: 11, radius: 2.0, lit: true },
+  { name: "cradle-west", u: 1540, v: 58, height: 11, radius: 1.9, lit: true },
+  { name: "cradle-east", u: 1576, v: 30, height: 12, radius: 2.0, lit: true },
   // The Last Lantern, beside the Vent's forecourt.
-  { name: "last", u: 1600, v: -24, height: 14, radius: 2.3, lit: true },
+  { name: "last", u: 1600, v: -24, height: 16, radius: 2.3, lit: true },
   // THE COLD LANTERN — unlit, alone in the ash; its rest is registered.
-  { name: "cold", u: 1432, v: 130, height: 12, radius: 2.2, lit: false },
+  { name: "cold", u: 1432, v: 130, height: 14, radius: 2.2, lit: false },
 ] as const;
 
 /** The Spilt Light: the fallen lantern lying at the fens' north-east

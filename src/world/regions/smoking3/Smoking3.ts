@@ -122,9 +122,11 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // u ≈ 1146 — the standing orchestrator flag; captures come through
   // the QA door, the same pre-merge state every depth pass shipped in.)
   { name: "night-threshold", u: 1140, v: 0, lift: 2.0, atU: 1215, atV: 2, pitch: 0.0 },
-  // The reveal: standing over the stair, the night country opening
-  // below — the Watch Lantern's light the first thing the fog gives up.
-  { name: "nightfall-stair", u: 1246, v: 1, lift: 2.6, atU: 1310, atV: -4, pitch: -0.08 },
+  // The reveal: standing on the first bench, the night country opening
+  // below — the Watch Lantern's light the first thing the fog gives up
+  // (R2: the r1 stand at the crest read only the far plain edge-on; the
+  // reveal needs the descent IN frame and the lantern as its target).
+  { name: "nightfall-stair", u: 1258, v: 1, lift: 3.4, atU: 1330, atV: -6, pitch: -0.04 },
   // The Watch Lantern: the first portrait, from the stair's foot.
   { name: "the-watch", u: 1312, v: 6, lift: 2.2, atU: 1330, atV: -6, pitch: 0.06 },
   // The Last Wick: the road drawn in one thread of heat, lanterns
@@ -134,17 +136,23 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "the-choir", u: 1402, v: wickCenter(1402) - 2, lift: 2.6, atU: 1428, atV: 8, pitch: 0.08, settle: 4 },
   // The Evensong: the tallest lantern in the province, portrait range.
   { name: "evensong", u: 1470, v: 16, lift: 3.0, atU: 1494, atV: 34, pitch: 0.14 },
-  // The Ember Fens: pooled amber, shimmer standing over the chain.
-  { name: "ember-fens", u: 1408, v: -52, lift: 2.6, atU: 1432, atV: -98, pitch: -0.04, settle: 4 },
-  // The Spilt Light: the fallen lantern, its glow pooled at the break.
-  { name: "spilt-light", u: 1504, v: -74, lift: 2.4, atU: 1524, atV: -56, pitch: 0.04 },
-  // The Ash Veil: the pale fall over the drifts — the tender register.
-  { name: "ash-veil", u: 1452, v: 62, lift: 2.8, atU: 1480, atV: 100, pitch: 0.0, settle: 4 },
+  // The Ember Fens: pooled amber, shimmer standing over the chain (R2:
+  // moved into the fens — the r1 stand read 50 m of fog wall).
+  { name: "ember-fens", u: 1414, v: -62, lift: 2.8, atU: 1434, atV: -100, pitch: -0.02, settle: 4 },
+  // The Spilt Light: the fallen lantern, its glow pooled at the break
+  // (R2: backed off — the r1 stand was 11 m from a 13 m shell and read
+  // its wall as a torn hoop; the shell itself is also reworked).
+  { name: "spilt-light", u: 1496, v: -80, lift: 2.8, atU: 1520, atV: -60, pitch: 0.02 },
+  // The Ash Veil: the pale fall over the drifts — the tender register
+  // (R2: the r1 stand sat 12 m from the veil-lantern and it filled half
+  // the frame; stand past it, reading up the drift country).
+  { name: "ash-veil", u: 1460, v: 68, lift: 2.8, atU: 1486, atV: 106, pitch: 0.0, settle: 4 },
   // The Cold Lantern: the rest read from outside its circle — the one
   // the fire never reached, alone in the ash.
   { name: "cold-lantern", u: 1418, v: 114, lift: 3.4, atU: RESTS.coldLantern.u, atV: RESTS.coldLantern.v, pitch: 0.02 },
-  // The Cradle: the garden the fire keeps, read from its rim.
-  { name: "the-cradle", u: 1532, v: 22, lift: 2.8, atU: CRADLE.u, atV: CRADLE.v + 2, pitch: -0.06, settle: 4 },
+  // The Cradle: the garden the fire keeps, read from its rim into the
+  // bowl (R2: pitch down — the r1 frame skimmed the rim).
+  { name: "the-cradle", u: 1532, v: 22, lift: 3.2, atU: CRADLE.u, atV: CRADLE.v + 2, pitch: -0.14, settle: 4 },
   // The Lampwright's court (the Forge Combs' whole determinism war,
   // inherited as law): the keeper ROOSTS by the wick and wakes when
   // the diver arrives, so six seconds of settle put it at EXACTLY
@@ -159,9 +167,11 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // The Ember Dawn: from past the Vent, the province's final horizon —
   // the hills kneeling, the light rising beyond the rim.
   { name: "ember-dawn", u: 1600, v: 14, lift: 5.0, atU: 1660, atV: -14, pitch: 0.06 },
-  // The close floors, at the owner's distance.
-  { name: "close-wick", u: 1436, v: wickCenter(1436) - 1, lift: 1.3, atU: 1448, atV: wickCenter(1448), pitch: 0.35 },
-  { name: "close-cradle", u: 1554, v: 30, lift: 1.4, atU: 1562, atV: 42, pitch: 0.3 },
+  // The close floors, at the owner's distance (R2: the r1 close-wick
+  // buried the lens in the channel's own dark bank — a road-level
+  // stand may not stare into the road's cut; read along it instead).
+  { name: "close-wick", u: 1420, v: wickCenter(1420) + 2.5, lift: 1.7, atU: 1434, atV: wickCenter(1434), pitch: 0.22 },
+  { name: "close-cradle", u: 1556, v: 36, lift: 1.6, atU: 1566, atV: 46, pitch: 0.26 },
 ];
 
 function buildPoses(): RegionCapturePose[] {
@@ -196,12 +206,15 @@ export const SMOKING_3: RegionDef = {
   mood: {
     // The province's night: the same warm charcoal-amber family (red
     // held highest, blue taken hardest — the hook multiplies in linear
-    // space), a register deeper and bluer than the Forge Combs because
-    // this is the arc's darkness-above paid off — and the density held
-    // at the Combs' own gain (their r3 lesson: 0.011 crushed the mid
-    // ground; the lanterns must keep a value of their own to ~90 m).
-    fog: { colorScale: [3.1, 0.46, 0.5], densityGain: 0.0085, backdropFade: 0.52 },
-    light: { sun: 0.16, hemisphere: 0.25, ambient: 0.14 },
+    // space), a register deeper than the Forge Combs because this is
+    // the arc's darkness-above paid off. Density held at the Combs' own
+    // gain (their r3 lesson: 0.011 crushed the mid ground; the lanterns
+    // must keep a value of their own to ~90 m). R2: backdropFade up to
+    // 0.64 and the sun down a step — the r1 sky read as bright day and
+    // the whole register with it; the backdrop fade is what buys the
+    // night, since the fog itself is already the warm rose.
+    fog: { colorScale: [3.1, 0.46, 0.48], densityGain: 0.0085, backdropFade: 0.64 },
+    light: { sun: 0.14, hemisphere: 0.24, ambient: 0.14 },
   },
   moodSurface: 20,
   moodDescent: 10,

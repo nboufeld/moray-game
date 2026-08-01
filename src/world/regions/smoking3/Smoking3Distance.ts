@@ -60,9 +60,12 @@ const INK = new Color(0.7, 0.58, 0.7);
 /** Half-angle of the gap the rings leave over the inbound corridor. */
 const GAP_HALF = 0.42;
 
-/** The Ember Dawn's sector, about the outbound azimuth. */
-const DAWN_HALF = 0.95;
-const DAWN_RADIUS = 302;
+/** The Ember Dawn's sector, about the outbound azimuth. R2: the band
+ *  stands BETWEEN the second and third rings (r1 put it beyond every
+ *  curtain and the curtains occluded it whole), and its glow peaks
+ *  above the kneeling hill line. */
+const DAWN_HALF = 1.0;
+const DAWN_RADIUS = 276;
 
 export function buildSmoking3Distance(): { meshes: (Mesh | InstancedMesh)[] } {
   const random = new Random(SEEDS.regionSmoking3 ^ LV_SEEDS.distance);
@@ -262,7 +265,7 @@ function hillRing(layer: HillLayer, noiseSeed: number): BufferGeometry {
     );
     // The hills kneel across the dawn sector.
     const dawnOff = angleBetween(theta, dawnAt);
-    const kneel = 1 - 0.32 * (1 - smoothstep01((dawnOff - DAWN_HALF * 0.7) / 0.5));
+    const kneel = 1 - 0.45 * (1 - smoothstep01((dawnOff - DAWN_HALF * 0.7) / 0.5));
     const hill =
       (layer.hillBase + (raw * 1.4 + roll * 0.6) * layer.hillVary + tower * layer.hillBase * 0.7) *
       kneel;
@@ -296,8 +299,8 @@ function buildDawnBand(): Mesh {
   const positions: number[] = [];
   const colors: number[] = [];
   const indices: number[] = [];
-  const top = 16;
-  const rows = 6;
+  const top = 24;
+  const rows = 8;
   for (let i = 0; i <= columns; i++) {
     const t = i / columns;
     const theta = dawnAt + (t * 2 - 1) * DAWN_HALF;
@@ -308,10 +311,11 @@ function buildDawnBand(): Mesh {
       const yT = j / rows;
       const y = FOOT + (top - FOOT) * yT;
       positions.push(x, y, z);
-      // Brightest at the horizon line (~a third up), dying at both ends.
-      const band = Math.pow(Math.max(0, 1 - Math.abs(yT - 0.3) / 0.7), 2.2);
+      // Brightest just over the kneeling hill line (~+3 m), dying at
+      // both ends so the band has no edge.
+      const band = Math.pow(Math.max(0, 1 - Math.abs(yT - 0.6) / 0.45), 2.0);
       const glow = band * endFade;
-      colors.push(glow * 0.5, glow * 0.32, glow * 0.16);
+      colors.push(glow * 0.7, glow * 0.45, glow * 0.2);
     }
   }
   for (let i = 0; i < columns; i++) {

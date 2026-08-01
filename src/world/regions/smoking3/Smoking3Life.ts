@@ -258,11 +258,12 @@ export function buildSmoking3Life(
     buildParticulateField({
       seed: SEED ^ LV_SEEDS.ashFall,
       tint: 0xd8c8a8,
-      count: 700,
+      // R2: 700 read as a rumour; the Veil is named for this weather.
+      count: 1100,
       mode: "fall",
       volume: { center: [veilAt.x, 2, veilAt.z], size: [150, 26, 150] },
-      size: 0.06,
-      opacity: 0.45,
+      size: 0.075,
+      opacity: 0.5,
     }),
   );
   const heart = worldOf(1460, 0);

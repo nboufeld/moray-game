@@ -46,10 +46,12 @@ const ARM_SEGMENTS = 5;
 /** One round of the Choir, in seconds — a patient animal. */
 const LOOP_SECONDS = 64;
 
-/** Body measures, metres. */
-const MANTLE_LENGTH = 1.1;
-const MANTLE_RADIUS = 0.55;
-const ARM_REACH = 1.5;
+/** Body measures, metres. R2: grown a third — the r1 animal read as a
+ *  pale speck at the pose's 18 m; the keeper must read as a lantern
+ *  travelling, which needs presence. */
+const MANTLE_LENGTH = 1.45;
+const MANTLE_RADIUS = 0.7;
+const ARM_REACH = 1.9;
 
 /** The Choir court's centre, spoke coordinates. */
 const COURT = { u: 1430, v: 10 } as const;
@@ -251,8 +253,10 @@ function buildWrightBody(): BufferGeometry {
   const colors = new Float32Array(vertexCount * 3);
   const indices: number[] = [];
 
-  const back = new Color(0x4c3e56);
-  const flank = new Color(0x685260);
+  // R2: the body darker (the night silhouette) and the coal brighter —
+  // a dark animal carrying visible fire, not a pale moth.
+  const back = new Color(0x3e3348);
+  const flank = new Color(0x584656);
   const rim = new Color(0xe2d4b8);
   const shade = new Color();
 
@@ -265,9 +269,9 @@ function buildWrightBody(): BufferGeometry {
       // The carried coal: ember freckles cupped on the crown; the glow
       // material reads these as light.
       const freckle = smoothstep01(
-        (fbm(rowT * 5, col * 0.8, { seed: SEED ^ 0xf4ec, period: 5, octaves: 2 }) - 0.55) / 0.12,
+        (fbm(rowT * 5, col * 0.8, { seed: SEED ^ 0xf4ec, period: 5, octaves: 2 }) - 0.5) / 0.12,
       );
-      shade.lerp(EMBER, freckle * 0.7 * (1 - smoothstep01((rowT - 0.42) / 0.3)));
+      shade.lerp(EMBER, freckle * 0.85 * (1 - smoothstep01((rowT - 0.42) / 0.3)));
       const idx = row * COLS + col;
       colors[idx * 3] = shade.r;
       colors[idx * 3 + 1] = shade.g;

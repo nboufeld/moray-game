@@ -265,9 +265,11 @@ export function buildSmoking3Flora(lanterns: LanternsBuild): Smoking3FloraBuild 
       area: discAreaAt(1450, 0, 230),
       gate: nightStubbleGate,
       ground: seabedHeight,
-      count: 8500,
+      // R2: sweeps 03/06 found bare-plain cones — count and blade size
+      // both up so every open cone carries a standing near layer.
+      count: 8400,
       profile: "blade",
-      size: [0.42, 0.8],
+      size: [0.48, 0.88],
       swayAmp: 0.035,
     }),
   );
@@ -281,7 +283,7 @@ export function buildSmoking3Flora(lanterns: LanternsBuild): Smoking3FloraBuild 
       area: discAreaAt(1470, -40, 210),
       gate: emberFrondGate,
       ground: seabedHeight,
-      count: 2400,
+      count: 2800,
       profile: "frond",
       size: [0.34, 0.6],
       swayAmp: 0.04,
@@ -293,11 +295,11 @@ export function buildSmoking3Flora(lanterns: LanternsBuild): Smoking3FloraBuild 
   keep(
     buildCarpetField({
       seed: SEED ^ LV_SEEDS.ashSward,
-      palette: { base: 0xbfb298, tip: 0xe0d4b8, shade: 0x847a74 },
+      palette: { base: 0xc6b89c, tip: 0xeadfc4, shade: 0x8a8078 },
       area: discAreaAt(VEIL.u, VEIL.v, 92),
       gate: ashSwardGate,
       ground: seabedHeight,
-      count: 3200,
+      count: 3600,
       profile: "tuft",
       size: [0.4, 0.75],
       swayAmp: 0.03,
@@ -313,7 +315,7 @@ export function buildSmoking3Flora(lanterns: LanternsBuild): Smoking3FloraBuild 
       area: discAreaAt(CRADLE.u, CRADLE.v, 60),
       gate: cradleGardenGate,
       ground: seabedHeight,
-      count: 1800,
+      count: 2400,
       profile: "frond",
       size: [0.4, 0.7],
       swayAmp: 0.045,
@@ -327,7 +329,7 @@ export function buildSmoking3Flora(lanterns: LanternsBuild): Smoking3FloraBuild 
       area: discAreaAt(CRADLE.u, CRADLE.v, 60),
       gate: cradleGardenGate,
       ground: seabedHeight,
-      count: 1400,
+      count: 2000,
       profile: "blade",
       size: [0.45, 0.85],
       swayAmp: 0.04,
@@ -343,9 +345,9 @@ export function buildSmoking3Flora(lanterns: LanternsBuild): Smoking3FloraBuild 
       area: discAreaAt(1460, 0, 218),
       gate: nightBladeGate,
       ground: seabedHeight,
-      count: 2600,
+      count: 2900,
       profile: "blade",
-      size: [0.4, 0.75],
+      size: [0.45, 0.8],
       swayAmp: 0.035,
     }),
   );
@@ -446,15 +448,18 @@ export function buildSmoking3Flora(lanterns: LanternsBuild): Smoking3FloraBuild 
   );
 
   // ─── The thermophile mat rings (province signature, the night tiers) ─────
+  // R2: every band palette a step dimmer — the r1 mats read as bright
+  // bullseyes in half the frames (the Forge Combs' r1 "lava pancakes"
+  // lesson, relearned and answered the same way).
   // Wick mats: one at every second ember station, the road's warm felt.
   keep(
     buildMatRings({
       seed: SEED ^ LV_SEEDS.matsWick,
       bands: [
-        { color: 0xc0b090, width: 1.0 },
-        { color: 0xac783e, width: 1.0 },
-        { color: 0x80452e, width: 0.9 },
-        { color: 0x564050, width: 0.7 },
+        { color: 0xa89878, width: 1.0 },
+        { color: 0x94662f, width: 1.0 },
+        { color: 0x6c3c28, width: 0.9 },
+        { color: 0x4c3a48, width: 0.7 },
       ],
       ground: seabedHeight,
       anchors: [1332, 1360, 1388, 1416, 1444, 1472, 1500, 1528, 1556, 1584].map((u, i) => ({
@@ -491,14 +496,33 @@ export function buildSmoking3Flora(lanterns: LanternsBuild): Smoking3FloraBuild 
     buildMatRings({
       seed: SEED ^ LV_SEEDS.matsFens,
       bands: [
-        { color: 0xc8b898, width: 1.1 },
-        { color: 0xb6814a, width: 1.0 },
-        { color: 0x925434, width: 0.9 },
-        { color: 0x664e52, width: 0.7 },
+        { color: 0xac9c80, width: 1.1 },
+        { color: 0x9c6e3e, width: 1.0 },
+        { color: 0x7c482e, width: 0.9 },
+        { color: 0x584448, width: 0.7 },
       ],
       ground: seabedHeight,
       anchors: fenAnchors,
       tiers: 2,
+    }),
+  );
+
+  // Threshold seep mats: the vocabulary announced on the way in, a
+  // station every 25–30 m from the Night Door to the stair (the
+  // Smoulder saddle's own cadence, at the next door out).
+  keep(
+    buildMatRings({
+      seed: SEED ^ LV_SEEDS.matsWick ^ 0x77,
+      bands: [
+        { color: 0x9c8c70, width: 0.9 },
+        { color: 0x7c5432, width: 0.9 },
+        { color: 0x4e3c4a, width: 0.6 },
+      ],
+      ground: seabedHeight,
+      anchors: [1168, 1196, 1222, 1246].map((u, i) => ({
+        pos: matSpot(u, channelCenter(u) + (i % 2 === 0 ? 1.8 : -2.0)),
+        radius: 1.0 + (i % 3) * 0.4,
+      })),
     }),
   );
 
@@ -507,9 +531,9 @@ export function buildSmoking3Flora(lanterns: LanternsBuild): Smoking3FloraBuild 
     buildMatRings({
       seed: SEED ^ LV_SEEDS.matsCradle,
       bands: [
-        { color: 0xd4c8a4, width: 1.1 },
-        { color: 0xbe9660, width: 1.0 },
-        { color: 0x8a6244, width: 0.8 },
+        { color: 0xb8ac8c, width: 1.1 },
+        { color: 0xa48252, width: 1.0 },
+        { color: 0x76543c, width: 0.8 },
       ],
       ground: seabedHeight,
       anchors: [
@@ -548,10 +572,13 @@ export function buildSmoking3Flora(lanterns: LanternsBuild): Smoking3FloraBuild 
   );
 
   // ─── The night bushes ─────────────────────────────────────────────────────
+  // R2: a value brighter — the r1 bushes read as near-black blobs in
+  // the cradle frames (variety by value, and the value must survive
+  // the night fog).
   keep(
     buildBushBank({
       seed: SEED ^ LV_SEEDS.nightBushes,
-      palette: { base: 0x5e4e5c, tip: 0x8e5642, shade: 0x443a52 },
+      palette: { base: 0x6c5862, tip: 0x9c6248, shade: 0x4c4058 },
       area: discAreaAt(1420, -20, 140),
       gate: nightBushGate,
       ground: seabedHeight,
@@ -561,7 +588,7 @@ export function buildSmoking3Flora(lanterns: LanternsBuild): Smoking3FloraBuild 
   keep(
     buildBushBank({
       seed: SEED ^ LV_SEEDS.nightBushes ^ 0x99,
-      palette: { base: 0x6a6448, tip: 0x9c9058, shade: 0x4a4640 },
+      palette: { base: 0x787050, tip: 0xaca064, shade: 0x524c44 },
       area: discAreaAt(CRADLE.u, CRADLE.v, 58),
       gate: cradleGardenGate,
       ground: seabedHeight,
@@ -577,7 +604,7 @@ export function buildSmoking3Flora(lanterns: LanternsBuild): Smoking3FloraBuild 
       area: discAreaAt(1460, 0, 218),
       gate: farCardGate,
       ground: seabedHeight,
-      count: 6000,
+      count: 5000,
       size: [0.26, 0.6],
       nearFade: 14,
     }),

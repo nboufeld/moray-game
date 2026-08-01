@@ -43,13 +43,17 @@ export const SHADOW_VIOLET = new Color(0x483a54);
 
 /**
  * The emissive-by-vertex-colour patch (the province's inheritance from
- * the canyon polyps, third generation): the glow rides the baked window
- * panels and seams instead of lying flat over a whole body, so only the
- * lit glass glows and the glow is the lamp's own amber.
+ * the canyon polyps, third generation) — SQUARED: the glow rides the
+ * baked window panels and seams instead of lying flat over a whole
+ * body. R2 lesson: the linear form (`*= vColor`) left a residual
+ * emissive wash over the dark glass (0.22 luminance × 0.55 intensity
+ * turned every spire into a terracotta jug); squaring the factor takes
+ * the dark body's contribution to ~0.03 while the bright windows keep
+ * theirs — only the lit glass glows, and the glow is the lamp's own.
  */
 export const LAMP_GLOW_CHUNK = /* glsl */ `
 #include <emissivemap_fragment>
-totalEmissiveRadiance *= vColor;
+totalEmissiveRadiance *= vColor * vColor;
 `;
 
 /** Patches a toon material so its emissive follows the baked vertex colour. */

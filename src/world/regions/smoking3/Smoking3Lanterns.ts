@@ -70,20 +70,23 @@ export interface LanternsBuild {
   }[];
 }
 
-/** The lantern silhouette: [t, radius multiplier] pairs, foot → tip. */
+/** The lantern silhouette: [t, radius multiplier] pairs, foot → tip.
+ *  R2: slimmed — the r1 profile's swollen belly and stubby throat read
+ *  as terracotta jugs; a lantern is a drawn vertical with a held glass
+ *  heart, a long narrow throat and a small crowned cap. */
 const LANTERN_PROFILE: readonly (readonly [number, number])[] = [
-  [0, 1.3],
-  [0.06, 1.12],
-  [0.16, 1.05],
-  [0.3, 1.38],
-  [0.45, 1.5],
-  [0.6, 1.3],
-  [0.72, 0.9],
-  [0.8, 0.62],
-  [0.88, 0.6],
-  [0.93, 0.78],
-  [0.97, 0.5],
-  [1, 0.22],
+  [0, 1.16],
+  [0.05, 1.0],
+  [0.14, 0.92],
+  [0.28, 1.18],
+  [0.42, 1.3],
+  [0.56, 1.1],
+  [0.66, 0.72],
+  [0.76, 0.5],
+  [0.86, 0.46],
+  [0.92, 0.62],
+  [0.96, 0.4],
+  [1, 0.18],
 ] as const;
 
 /** The Vent's chimney silhouette. */
@@ -110,8 +113,11 @@ function profileAt(profile: readonly (readonly [number, number])[], t: number): 
 }
 
 /** The belly's window band, in profile t. */
-const WINDOW_FROM = 0.22;
-const WINDOW_TO = 0.64;
+const WINDOW_FROM = 0.26;
+const WINDOW_TO = 0.56;
+
+/** The slot's own fire — brighter than any lerp of the glass reaches. */
+const WINDOW_FIRE = new Color(1.22, 0.86, 0.5);
 
 /**
  * One lantern's glass: a reshaped cylinder — the profile above times
@@ -134,7 +140,7 @@ function lanternGeometry(
   const noiseSeed = SEED ^ LV_SEEDS.lanterns ^ (Math.round(worldX * 7 + worldZ * 3) | 0);
   const ribPhase = random.range(0, Math.PI * 2);
   const lean = random.signed(0.05);
-  const cut = options.broken ? 0.78 : 1;
+  const cut = options.broken ? 0.6 : 1;
 
   const position = geometry.attributes.position!;
   for (let i = 0; i < position.count; i++) {
@@ -145,9 +151,10 @@ function lanternGeometry(
     const t = y;
 
     let r = profileAt(LANTERN_PROFILE, t) * spec.radius;
-    // The six ribs stand slightly proud of the glass.
+    // The six ribs stand faintly proud of the glass (R2: 0.08 read as
+    // pumpkin lobes at portrait range).
     const rib = smoothstep01((Math.abs(Math.sin(theta * 3 + ribPhase)) - 0.78) / 0.16);
-    r += rib * spec.radius * 0.08;
+    r += rib * spec.radius * 0.035;
     // Grown glass, not turned: a slow seeded wobble.
     r *=
       1 +
@@ -183,23 +190,28 @@ function lanternGeometry(
       (fbm(theta * 1.2, t * 5, { seed: noiseSeed ^ 0x11, period: 5, octaves: 2 }) - 0.5) * 0.16;
     shade.offsetHSL(0, 0, streak);
 
-    // The windows: belly panels between the ribs, lit from inside.
+    // The windows: three narrow slots in the belly between the ribs,
+    // lit from inside (R2: the r1 panels covered most of the belly and
+    // the whole spire read as one orange wash — a lantern is DARK glass
+    // holding light in slots).
     const band =
-      smoothstep01((t - WINDOW_FROM) / 0.08) * (1 - smoothstep01((t - WINDOW_TO) / 0.08));
-    const panel = 1 - smoothstep01((Math.abs(Math.sin(theta * 3 + ribPhase)) - 0.62) / 0.24);
+      smoothstep01((t - WINDOW_FROM) / 0.05) * (1 - smoothstep01((t - WINDOW_TO) / 0.05));
+    const panel = 1 - smoothstep01((Math.abs(Math.sin(theta * 3 + ribPhase)) - 0.28) / 0.2);
     const flicker =
-      0.75 +
-      0.25 * fbm(theta * 1.6, t * 4 + 7, { seed: noiseSeed ^ 0x12, period: 6, octaves: 2 });
+      0.8 + 0.2 * fbm(theta * 1.6, t * 4 + 7, { seed: noiseSeed ^ 0x12, period: 6, octaves: 2 });
     const window = band * panel * (spec.lit ? 1 : 0) * flicker;
-    shade.lerp(LAMP, window * 0.92);
+    if (window > 0.01) {
+      shade.lerp(WINDOW_FIRE, Math.min(1, window * 1.1));
+    }
 
     // The rib lines sink toward shadow — the drawing's dark ink.
     const rib = smoothstep01((Math.abs(Math.sin(theta * 3 + ribPhase)) - 0.78) / 0.16);
     shade.lerp(SHADOW_VIOLET, rib * (1 - window) * 0.4);
 
-    // The crown: ash-pale crust, milk-bright top fed from below.
+    // The crown: ash-pale crust, milk-bright top fed from below (held
+    // moderate on lit spires: the squared emissive still warms it).
     const crown = smoothstep01((t - 0.86) / 0.1);
-    shade.lerp(ASH_PALE, crown * (spec.lit ? 0.55 : 0.4));
+    shade.lerp(ASH_PALE, crown * (spec.lit ? 0.42 : 0.4));
 
     // Amber staining at the foot, where the wick's heat seeps.
     const stain =
@@ -271,12 +283,13 @@ function ventGeometry(worldX: number, worldZ: number, baseY: number): BufferGeom
     shade.copy(body).lerp(high, smoothstep01((t - 0.3) / 0.5));
 
     // The meridian seams: the fire climbing the chimney's flanks —
-    // widest at the foot, thinning as they rise, the glow material
-    // reads them as light.
+    // THIN threads (R2: the r1 threshold cut broad diagonal bands and
+    // the chimney read as a carnival tent), widest at the foot,
+    // thinning as they rise; the glow material reads them as light.
     const seam = smoothstep01(
-      (fbm(theta * 2.2, y * 0.32, { seed: noiseSeed ^ 0x21, period: 4, octaves: 2 }) -
-        (0.6 + t * 0.16)) /
-        0.08,
+      (fbm(theta * 2.6, y * 0.5, { seed: noiseSeed ^ 0x21, period: 5, octaves: 2 }) -
+        (0.72 + t * 0.12)) /
+        0.045,
     );
     shade.multiplyScalar(1 - seam * 0.5);
     shade.r += seam * EMBER.r * (0.85 - t * 0.25);
@@ -337,27 +350,32 @@ export function buildSmoking3Lanterns(): LanternsBuild {
   }
 
   // ─── The Spilt Light: the fallen lantern ──────────────────────────────────
+  // R2: the r1 full tube tipped exactly sideways read as a torn hoop
+  // floating on the sky (an open-ended single-sided shell). Now a
+  // broken BELLY only — cut at the throat, tipped past horizontal so
+  // the mouth kisses the ground, half-sunk: a cracked glass dome with
+  // its light spilled at the break.
   const tail = worldOf(SPILT.tailU, SPILT.tailV);
   const head = worldOf(SPILT.headU, SPILT.headV);
   const lieYaw = Math.atan2(head.x - tail.x, head.z - tail.z) + Math.PI / 2;
   const spiltBase = seabedHeight((tail.x + head.x) / 2, (tail.z + head.z) / 2);
-  const spiltSpec = { height: 13, radius: 2.2, lit: true };
+  const spiltSpec = { height: 10, radius: 2.3, lit: true };
   litParts.push(
-    lanternGeometry(spiltSpec, tail.x, tail.z, spiltBase + 1.4, random, {
+    lanternGeometry(spiltSpec, tail.x, tail.z, spiltBase + 0.6, random, {
       broken: true,
-      lieAngle: -Math.PI / 2 + 0.12,
+      lieAngle: -1.92,
       lieYaw,
     }),
   );
-  // Colliders lie along the bole.
-  for (let t = 0.12; t <= 0.92; t += 0.2) {
+  // Colliders lie along the fallen belly.
+  for (let t = 0.1; t <= 0.7; t += 0.2) {
     colliders.push({
       center: new Vector3(
-        tail.x + (head.x - tail.x) * t * 0.85,
-        spiltBase + 1.4,
-        tail.z + (head.z - tail.z) * t * 0.85,
+        tail.x + (head.x - tail.x) * t * 0.7,
+        spiltBase + 1.2,
+        tail.z + (head.z - tail.z) * t * 0.7,
       ),
-      radius: 2.4,
+      radius: 2.3,
     });
   }
   contacts.push({
@@ -399,10 +417,13 @@ export function buildSmoking3Lanterns(): LanternsBuild {
   }
 
   // ─── The materials and the merges ─────────────────────────────────────────
+  // 0.42 with the squared chunk: the window slots (vColor ~1.2) land
+  // near 0.6 of emissive — bright fire, still under the bloom pass's
+  // 0.82 threshold; the dark glass contributes ~0.02.
   const litMaterial = createToonMaterial({
     vertexColors: true,
     emissive: LAMP.getHex(),
-    emissiveIntensity: 0.55,
+    emissiveIntensity: 0.42,
   });
   applyLampGlow(litMaterial, "vigil-lantern-glass");
   meshes.push(mergedMesh(litParts, litMaterial, "vigil-lanterns"));
