@@ -1,0 +1,241 @@
+# pale-passage-2 — THE LANTERN COMBS (the Pale Passage's depth-2)
+
+Region worker ledger. Slot `pale-passage-2`, province The Pale Passage,
+depth 2 — no gateway wing; the inbound connection is the depth-1 →
+depth-2 pass from the Bone Meadows' far rim. Disc centre r = 940 on
+azimuth 3.87 (world ≈ (−705.0, −621.6)), radius 220. Seed
+`SEEDS.regionPale2` (0x5a4d_0c08) and `^` substreams only. Built to the
+full R12 standard from the first draft (the Canopy Deep's way): no
+wedge era, no separate fill pass — density, quality, light and life ARE
+the build.
+
+## Concept
+
+The Bone Meadows answered "life returns"; this region answers **where
+the pale light comes from**. The province's gradient row is "paper held
+to a lamp" — depth 2 swims BEHIND the paper, toward the lamp. Past the
+Mother-Coral's colour-return the far rim goes white again — not the
+white of death this time but the white of LIGHT: a country of great
+wind-curved chalk comb-fins standing in swept ranks (a new silhouette —
+no meadows, no bone thickets), translucent paper-fan corals lit through
+their own tissue, sunken MOONMILK POOLS of luminous pale water, the
+strictest hush in the game (THE WHITE CHAPEL — a ring of inward-curved
+fins around a bare pearl pan where nothing moves but one beam), and at
+the far heart THE LAMP: a 25 m hollow chalk lantern-spire, its ribbed
+cage holding a warm light over a garden of lantern-anemones — the lamp
+the whole province's paper is held to. An ancient chalk-white nautilus,
+THE LAMPWRIGHT, tends it on a slow circuit through the ribs.
+
+The story number is `lumen(u, v)` in [0, 1] — how near the lamp the
+light feels: 0 at the threshold (the Bone Meadows' milk carried across),
+1 in the Lamp Basin. Ground warmth, fan density, anemone glow and the
+water's own warmth all read this one gradient; the White Chapel is held
+COOL by hand (its austerity is authored — pale country keeps its hush).
+
+## The depth-2 pass (the province's second inter-region connection)
+
+The Bone Meadows' disc ends at u ≈ 665 on the spoke; ours begins at
+720. The pass tongue is authored `approachTongue("pale-passage-2",
+{ fromR: 635, toR: 790, halfWidthFrom: 16, halfWidthTo: 56 })` — it
+starts **30 m inside pale-1's rim**, so the two domains genuinely
+overlap and the bounds handover has no gap (asserted in
+`tests/regionPale2.test.ts`: both weights > 0 on the spoke between 635
+and 665, and our weight > 0 continuously along the spine 637–790).
+
+Three authored bands (the verdant-2/3 pattern, third use):
+
+- **The Saddle Reach** (u 635–745): a milky crest shelf at dune level
+  over the Bone Meadows' own rim. Our weight is a whisper (0.14, the
+  threshold gate) so pale-1 keeps carrying the water, mood and terrain
+  across the overlap; we own only the bounds. The gate also hides the
+  framework's depth-boundary reject circle (`RegionField` consults a
+  depth-2 region only within `radius + 40 = 260 m` of its centre —
+  u ≥ ~680): below that our terrain target is held at dune level
+  (asserted), so the step at the reject circle is centimetres.
+- **The Winnow** (u 748–812): the pass is a place — six chalk
+  root-steps down ~20 m in a slot between the first two great comb
+  fins, light blades slanting through, the descent's dark breath (the
+  Winnow Shadow rest) held at its foot. The Comb Gate stands at
+  u ≈ 752 — deliberately past u 731: pale-1's far-side distance rings
+  cross this pass at u ≈ 681/707/731 as opaque `fog:false` curtains
+  (the Emerald Gate lesson, applied at authoring time), so nothing of
+  ours composes before that line except threshold waymarks.
+- **The country** (the disc).
+
+## Sub-biome map (spoke coordinates: u along azimuth 3.87, v lateral CCW)
+
+| Sub-biome | Where | Floor |
+|---|---|---|
+| The Saddle Reach (threshold) | u 635–745 along the pass | +0.2 → −2.2 milky shelf |
+| The Winnow | u 748–812, comb-walled slot | 6 × −3.3 steps → −19.8 |
+| The Comb Galleries | u 815–1000, fin ranks over rolling floor | ≈ −13, swells ±1.6 |
+| The Moonmilk Pools | (895,−55) r10 / (927,−34) r7.5 / (958,−64) r12 (+ the Still Pool (872,−84) r9) | −17.5 → −19.5 luminous bowls |
+| THE WHITE CHAPEL | (905, 74) r 30 fin ring | −9.5 pearl pan |
+| The Lamp Basin | (1022, −4) r 52 | −27 crater under the Lamp |
+| The Pearl Steps | u 1075–1135 toward the far gate | −13 → −6.5 terraces |
+
+Vertical range: threshold +0.2 → basin −27 (≈ 27 m of terrain; the
+combs add 22 m of standing silhouette above the gallery floor).
+Ceiling: 3.8 m at the threshold (meeting pale-1's closed far rim),
+vaulting to 12 into the Winnow, easing to 10 over the country (the
+paper-light presses close — 23–37 m of water), closing to 3.4 at the
+far rim.
+
+## Registered rests (for MASTER §1.2 — the region's contributions)
+
+| Rest | Where | Licence |
+|---|---|---|
+| THE WHITE CHAPEL | r 26 at (905, 74) | the strictest hush in the game: nothing moves but its one beam; no fauna, no scatter, no motes inside the fin ring |
+| The Still Pool | r 9 at (872, −84) | a glass-flat pearl floor; no bubbles, no fauna, no scatter; its rim fronds stop at the lip |
+| The Winnow Shadow | u 776–800, the channel's width | motes only; beam-free, scatter-free — the descent's held breath |
+
+## Landmarks (a reveal every 20–40 m)
+
+1. **The Saddle Waymarks** — comb-splinter stones pacing the shelf
+   road every ~25 m (u 645–740), the first things of ours the fog
+   gives up on the threshold (before pale-1's rings, which own
+   everything beyond until u 731).
+2. **The Comb Gate** (u ≈ 752) — two great inward-curving fins forming
+   the slot doorway into the Winnow.
+3. **The Winnow** — the six-step descent between overlapping fins,
+   slanted light blades crossing the slot.
+4. **The Gallery Crossing** (u ≈ 818) — the descent's foot: the comb
+   country opens in one breath, ranks of white fins into the fog.
+5. **The Great Comb** (u ≈ 900, v ≈ 6) — the tallest fin arc, 22 m,
+   its flank crowded with lit paper-fans.
+6. **The Moonmilk Pools** — three luminous bowls with pearl lips and
+   frond gardens (a fourth, the Still Pool, holds the hush register).
+7. **THE WHITE CHAPEL** — the fin ring around the pearl pan; one beam.
+8. **THE LAMP** — the region's landmark: the 25 m hollow lantern-spire
+   in its crater, ribbed cage glowing warm from inside, the province's
+   named light peak.
+9. **The Lantern Gardens** — anemone-lantern beds down the basin's
+   slopes, warm sparks under the Lamp.
+10. **The Pearl Steps** — chalk terraces rising toward the far gate.
+11. **The Far Gate** (u ≈ 1128, v ± 14) — the leaning needle pair
+    framing the reserved depth-3 corridor and the painted DAYSPRING
+    beyond (the forward promise: the place the light rises from).
+12. **The Lantern Drift** — the moving centrepiece: seven moon-jellies
+    on one slow closed procession along the gallery road.
+
+## Life (T4/T5 systemic, short of saturation)
+
+- **Pearl dust motes** (drift, region-wide) + **pool breath columns**
+  over the three lit moonmilk pools.
+- **The pearl file** (kit shoalRunner, ~44 pearl-white fry — the
+  province's one shoal light): walks the road threshold → galleries →
+  basin and home; life as wayfinding on the pass.
+- **THE LANTERN DRIFT** — seven moon-jellies (exclusive, instanced,
+  closed-form pulse and bob) touring gallery → pools → basin.
+- **Perchers** (kit): porcelain brittle-stars on comb feet; whelk
+  shrimps at pool lips; moth-fry hovering in the Lamp's light.
+- **Glow colonies** (kit): pearl lamps at pool rims; the Lamp's warm
+  interior garden; lantern-garden accents. (Pale is not a dark
+  register: all light here is warm paper-light — nothing burns cold.)
+- **THE LAMPWRIGHT** — the findable resident (`comb-lampwright`,
+  *Nautilus lucernifer*): an ancient chalk-white nautilus, shell
+  banded like paper over a lamp, on a slow closed circuit through the
+  Lamp's ribs; codex entry in the def's pure half; DiscoveryTarget at
+  the Lamp's mouth window, crossed twice a loop.
+
+## Density tiers (doctrine table, per zone)
+
+- **T1**: gallery sward (blade carpets, warm paper-gold over violet
+  shade, sunGlow); road blades pacing the spine; threshold milky
+  blades (pale-1's light carried across, 20+ m lerp); pool-rim and
+  basin frond rosettes (pearl-seafoam); rim-hem tufts (F-R3 flank
+  bands); step tufts; pearl grit + comb-shard litter (two-tone with
+  genuine violet-bone — the Bone Meadows' camouflage lesson pre-paid);
+  graded split-stone runs at fin feet.
+- **T2**: pale paper bushes (kit bushBank, gold tips, violet crotches,
+  blush bud accents); scree aprons at every fin foot, jamb and needle
+  (things grow FROM somewhere); pearl clusters at pool lips.
+- **T3**: ~30 comb fins in three swept ranks + gate pair + chapel ring
+  + far needles; THE LAMP; paper-fan corals (instanced, translucent
+  warm); lantern anemones.
+- **T4**: as Life above. **T5**: slanted comb-slot blades + walk-line
+  pools (kit beamAndPool), the chapel's single beam, the Lamp shaft
+  (named light peak), pool lights.
+
+## The palette (the region's own light, not the kit demo's)
+
+Warm paper-white 0xf2e9d6 / violet-cool white 0xe1e2ef on the chalk;
+shadows always violet with red above green (0x8d78ab ground family);
+the warmth family is LAMP GOLD 0xeec98e → 0xd9a86a (never orange);
+pool register pearl-seafoam 0xd8ecdc; blush accents 0xf0b6c4 kept to
+buds. Fill palettes are keyed for paper light: warm whites and violet
+shadows, never grey mush (the Bone Meadows' round-3 lesson).
+
+## The depth-3 reservation (pale-passage-3)
+
+The spoke continues: pale-passage-3 sits at centre r = 1460, azimuth
+3.87 — its future pass tongue will run `fromR ≈ 1130` (30 m inside OUR
+rim at 1160) down the same spoke, exactly as we reached into pale-1.
+Reserved and framed on our side from draft one:
+
+- **Our far-rim seal ring is PARTED over the corridor** (`farGate(u,v)`:
+  u ≥ ~1080, |v| ≤ ~22) — no orchestrator cut will be needed on our
+  seals (the verdant-2 lesson, pre-paid).
+- **Our distance rings PART over both corridors** (MASTER R4): the
+  inbound gap toward pale-1 (half-angle 0.42) and the reserved outbound
+  gap on the spoke (half-angle 0.30).
+- **The Far Gate needles** (u 1128, v ±14) and the Pearl Steps frame
+  the corridor; the painted DAYSPRING (a warm-white glow horizon with
+  flanking font-tower cards at |v| 26–40, feet clear of the future
+  tongue's half-width) makes the promise without standing in the
+  future threshold's spine.
+- Terrain and ceiling keep the standard rim shape (dune-level crest,
+  3.4 m ceiling) — the same low-crawl handover shape pale-1 gave us.
+
+## Seeds
+
+`SEEDS.regionPale2` (0x5a4d_0c08) with `^` substreams: terrain
+0x7e01–0x7e05, ground paint 0x5ae1/0x5eaf/0x70af/0x51b0/0xb1d5, combs
+0x0a01+/0x0b01 (chapel)/0x0aef, lamp 0x0c01–0x0c05, gardens
+0x2a01/0x2b01/0x2c01, cover 0x3001–0x30f0, light 0x11f9, life
+0x40a1/0x40a2/0x41a1/0x42a1/0x43a1–0x43a3/0x44a1–0x44a3/0x45a1,
+lampwright 0x0ee5, distance 0xd159/0xd210+. Runtime updates spend no
+randomness — captures settle deterministically.
+
+## Budgets
+
+Measured programmatically by the region test's own traversal; caps are
+R12's ≤260 draws / ≤1.35M tris, bound by the headed frame gate
+(≤16.9 ms median at scale 1.00 at the densest pose). Numbers per round
+below.
+
+## Critique history (silhouette → value → colour → detail, per round)
+
+(appended per round)
+
+## Flags for the orchestrator (the reciprocal cuts — NOT made here)
+
+Measured exactly, pale-1's geometry crossing OUR corridor (we may not
+edit `src/world/regions/pale1/**`):
+
+1. **Pale-1's far-rim seal ring crosses the pass corridor.** Its
+   `buildSeals()` rim ring stands at ITS rc 206 — on the spoke that is
+   u ≈ 651 — with stations every ~13.8 m (94 around) and spheres
+   r = 9 at terrain + 1.5, gated open only over its own inbound ravine
+   (u < 310 on its side). **Cut a gate over this pass tongue's width
+   (|v| ≤ ~18 at u 637–665)** when the depth-2 connection goes live —
+   the exact move fbab214 made in verdant-2 for the Canopy Deep.
+2. **Pale-1's far-side distance rings cross the corridor at
+   u ≈ 681 / 707 / 731** (its ring radii 236/262/286 from centre 445;
+   its card bands rc 238–280 → u ≈ 683–725). Its `GAP_HALF = 0.42`
+   gap faces its own ravine only (gapAt = azimuth + π). They are
+   opaque `fog:false` curtains: nothing of ours exists to a camera
+   before them — our gate composition therefore lives past u 745.
+   **Part its far ring sector + card bands over the corridor** with
+   the same gate.
+3. **The framework's depth-boundary reject circle** (`RegionField`,
+   radius + 40 = 260) truncates our terrain/mood application below
+   u ≈ 680. Authored around (threshold whisper-weight, dune-level
+   target below u 700), documented in `Pale2Terrain`, asserted in
+   tests. No action needed — recorded for the map.
+4. Our pass-shoulder seals are invisible walls over open shelf — the
+   standing trade at every rim.
+
+## Capture sets
+
+(appended per round)
