@@ -1,0 +1,425 @@
+import { BufferAttribute, Color, Mesh, type PlaneGeometry } from "three";
+import { fbm } from "../../../rendering/ProceduralTexture";
+import { SEEDS } from "../../../util/Random";
+import { createSandMaterial } from "../../SandMaterial";
+import { createSeabedGeometryAt, type ContactPatch } from "../../Seabed";
+import { chainDistance } from "./Blue3Beats";
+import { B3_SEEDS, smoothstep01 } from "./Blue3Shared";
+import {
+  ANCHOR,
+  CENTER_X,
+  CENTER_Z,
+  DOORSTEP,
+  FALL_FROM,
+  FALL_TO,
+  OVERBRIM,
+  PANS,
+  PEARL,
+  cradleCarve,
+  cradleDistance,
+  passGate,
+  passHalfWidth,
+  spokeOf,
+  wellD,
+  worldOf,
+} from "./Blue3Terrain";
+
+/**
+ * THE FIRST SEA's ground: five sheets and their authored paint.
+ *
+ * ## The tiling
+ *
+ * Four disc tiles in a 2×2 grid over the disc, plus one pass sheet
+ * running the Morning Shelf back up the Worldwall's outer face. The
+ * pass sheet begins at u ≈ 1168 — just past where the Deep Steps' own
+ * disc tiles tuck their outer trim under (their sheets keep rc ≤ 240
+ * = u ≤ 1180, trim drooped to −8 from rc 232 ≈ u 1172) — and is sunk
+ * 4 cm (the standing T-junction discipline). Nothing else is built on
+ * the wall.
+ *
+ * ## The paint
+ *
+ * The vertex colours carry the PLACE as absolute stories (story ÷ wash
+ * mean, the province's proven move). The register is the region's
+ * whole argument: the deepest floor of the world does not go darker —
+ * it turns toward morning. Milky shelf → the Longfall's long combed
+ * fall, paling rose at the crest → the Mere's deep violet strewn with
+ * THE STAR-BLOOM (pale warm specks, brightest inside the Wide
+ * Morning: the rest is the region's most beautiful floor, composed,
+ * not thin) → the Cradle's glass-green ribbon → the Wellhead's pale
+ * crater with the Daybreak's painted circle in its bowl → the pans'
+ * still starwater → the Hem paling upward with the dawn-rose bleeding
+ * over its crest. Red above green everywhere; never cobalt; the
+ * darkest floor is a colour.
+ */
+
+const SEED = SEEDS.regionBlue3;
+
+const CENTRE = worldOf(1460, 0);
+
+/** Ground kept out to here from the disc's centre. */
+const DISC_GROUND_R = 240;
+const DISC_TILE = 231;
+const DISC_SEGMENTS = 104;
+const PASS_SEGMENTS = 64;
+
+function keepGround(x: number, z: number): boolean {
+  const rc = Math.hypot(x - CENTRE.x, z - CENTRE.z);
+  if (rc <= DISC_GROUND_R) {
+    return true;
+  }
+  const { u, v } = spokeOf(x, z);
+  return u >= 1168 && u <= 1290 && Math.abs(v) <= passHalfWidth(u) + 12;
+}
+
+/** The wash's levelled mean (#bab08a) in linear light (the pilot's number). */
+const WASH_MEAN = new Color(0.729, 0.69, 0.541).convertSRGBToLinear();
+
+/** A story colour, authored in sRGB and converted once to linear. */
+function story(hex: number): Color {
+  return new Color(hex).convertSRGBToLinear();
+}
+
+// The palette the bake composes with — authored for THIS region's
+// violet-rose mood (fill palettes are for the region's own light).
+const MILKY_SHELF = story(0xe2e4da);
+const FALL_ROSE = story(0xc8b8c2);
+const FALL_VIOLET = story(0x9484ae);
+const MERE_VIOLET_STORY = story(0x685c90);
+const SILT_DRIFT = story(0xc4bcce);
+const STAR_BLOOM = story(0xf0e8de);
+const CRADLE_GLASS = story(0xbfe0d2);
+const CRADLE_BANK = story(0xa9c9b8);
+const WELL_PALE = story(0xe6e0d6);
+const DAYBREAK_BRIGHT = story(0xf2ece0);
+const PAN_WATER = story(0xe4dcd8);
+const HEM_MILK = story(0xd2d4d2);
+const HEM_ROSE = story(0xe6d0c4);
+const SHADOW_VIOLET = story(0x76689a);
+
+/**
+ * The star-bloom: the Mere's field of first light — pale warm specks
+ * strewn across the deep violet, densest and brightest in the Wide
+ * Morning. Two seeded scales so the bloom drifts in constellations,
+ * never in even confetti.
+ */
+function starBloom(x: number, z: number, u: number, v: number): number {
+  const specks = fbm(x * 0.34, z * 0.34, { seed: SEED ^ B3_SEEDS.paintStars, period: 23, octaves: 2 });
+  const drift = fbm(x * 0.017, z * 0.017, { seed: SEED ^ B3_SEEDS.paintSilt, period: 6, octaves: 2 });
+  const morning = 1 - smoothstep01((Math.hypot(u - 1374, v + 58) - 30) / 40);
+  const threshold = 0.74 - drift * 0.1 - morning * 0.05;
+  if (specks <= threshold) {
+    return 0;
+  }
+  return smoothstep01((specks - threshold) / 0.1) * (0.55 + morning * 0.45);
+}
+
+/**
+ * The region's ground paint — value first: the world's deepest floor,
+ * turning toward morning.
+ */
+function bakeFirstSeaPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[]): void {
+  const position = geometry.attributes.position!;
+  const colors = new Float32Array(position.count * 3);
+  const col = new Color();
+
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i);
+    const z = position.getZ(i);
+    const y = position.getY(i);
+    const { u, v } = spokeOf(x, z);
+    const rc = Math.hypot(x - CENTER_X, z - CENTER_Z);
+
+    // Value structure from the ground's own relief.
+    const life =
+      fbm(x * 0.026, z * 0.026, { seed: SEED ^ B3_SEEDS.paintLife, period: 9, octaves: 2 }) - 0.5;
+    let value = 0.95 + life * 0.26;
+
+    // The silt drift: pale ribbons the deep water lays down everywhere.
+    const silt = smoothstep01(
+      (fbm(x * 0.016, z * 0.016, { seed: SEED ^ B3_SEEDS.paintSilt, period: 6, octaves: 3 }) -
+        0.46) /
+        0.26,
+    );
+
+    // ── The place stories, keyed along the journey ──
+    if (u < 1178) {
+      // The Worldwall's outer face: the Deep Steps' own register
+      // continued — violet at the drowned foot, milky at the crest.
+      const depthK = smoothstep01((-y - 3) / 30);
+      col.copy(HEM_MILK).lerp(story(0x8478aa), depthK * 0.85);
+      col.lerp(SILT_DRIFT, silt * 0.3 * (1 - depthK));
+      value *= 1 - depthK * 0.16;
+    } else if (u < FALL_FROM) {
+      // The Morning Shelf: the world's last milky threshold.
+      col.copy(MILKY_SHELF);
+      col.lerp(SILT_DRIFT, silt * 0.3);
+      value *= 1.08;
+    } else {
+      // The fall and the floor: the story runs on depth itself — the
+      // longest gradient in the game, rose crest to violet Mere.
+      const fall = smoothstep01((u - FALL_FROM) / (FALL_TO - FALL_FROM));
+      col.copy(FALL_ROSE).lerp(FALL_VIOLET, smoothstep01((fall - 0.12) / 0.5));
+      col.lerp(MERE_VIOLET_STORY, smoothstep01((fall - 0.55) / 0.45));
+      col.lerp(SILT_DRIFT, silt * 0.32 * (1 - fall * 0.5));
+      // The fall's face is combed: long streamlines down the slope,
+      // drawn in value so the descent reads as travel.
+      if (fall > 0.02 && fall < 0.98) {
+        const comb =
+          fbm(v * 0.12, u * 0.014, { seed: SEED ^ B3_SEEDS.paintFall, period: 7, octaves: 2 }) -
+          0.5;
+        value *= 1 + comb * 0.16 * (1 - Math.abs(fall - 0.5) * 1.2);
+      }
+      value *= 1 - fall * 0.06;
+
+      // THE STAR-BLOOM: the field of first light.
+      const bloom = starBloom(x, z, u, v) * smoothstep01((fall - 0.7) / 0.3);
+      if (bloom > 0) {
+        col.lerp(STAR_BLOOM, bloom * 0.8);
+        value *= 1 + bloom * 0.22;
+      }
+    }
+
+    // The Chain's wear-line: a pale drag mark under the links, so the
+    // line reads as one drawn stroke from the fall's foot to the ring.
+    const chainD = chainDistance(u, v);
+    if (chainD < 6 && u > 1320) {
+      const wear = 1 - smoothstep01(chainD / 6);
+      col.lerp(SILT_DRIFT, wear * 0.4);
+      value *= 1 + wear * 0.08;
+    }
+    // The Anchor's shadow-stain: the great shape sits IN the silt.
+    const anchorD = Math.hypot(u - ANCHOR.u, v - ANCHOR.v);
+    if (anchorD < 14) {
+      const stain = 1 - smoothstep01((anchorD - 4) / 9);
+      col.lerp(SHADOW_VIOLET, stain * 0.35);
+      value *= 1 - stain * 0.08;
+    }
+
+    // The Cradle: glass-green over pale levees — the young river,
+    // painted so it reads even where the particulates rest.
+    const cradle = cradleCarve(u, v);
+    if (cradle.bed > 0) {
+      const { d: cd } = cradleDistance(u, v);
+      const centreLine = 1 - smoothstep01(cd / 3.2);
+      col.lerp(CRADLE_BANK, cradle.bed * 0.8);
+      col.lerp(CRADLE_GLASS, centreLine * 0.95);
+      value *= 1 + centreLine * 0.3;
+    }
+    const bankStain = 1 - smoothstep01((cradleDistance(u, v).d - 7) / 12);
+    if (bankStain > 0 && u > 1400 && wellD(u, v) > 24) {
+      col.lerp(CRADLE_BANK, bankStain * 0.2 * (0.5 + silt * 0.5));
+    }
+
+    // THE WELLHEAD: the pale crater, and the Daybreak's painted circle
+    // at the bottom of the world.
+    const wd = wellD(u, v);
+    if (wd < 46) {
+      const rim = smoothstep01((wd - 6) / 8) * (1 - smoothstep01((wd - 30) / 14));
+      col.lerp(WELL_PALE, rim * 0.65);
+      // Concentric breath-rings on the rim, like ripples of light.
+      const ripple = Math.sin(wd * 1.5);
+      value *= 1 + rim * (0.1 + ripple * 0.07);
+      const bowl = 1 - smoothstep01((wd - 5) / 6);
+      if (bowl > 0) {
+        col.lerp(DAYBREAK_BRIGHT, bowl * 0.9);
+        value *= 1 + bowl * 0.28;
+      }
+    }
+    // The Overbrim's spill-streak, out of the notch toward the Cradle.
+    const brimD = Math.hypot(u - OVERBRIM.u, v - OVERBRIM.v);
+    if (brimD < 12) {
+      const streak = 1 - smoothstep01((brimD - 3) / 8);
+      col.lerp(CRADLE_GLASS, streak * 0.5);
+      value *= 1 + streak * 0.08;
+    }
+
+    // THE STARWATER PANS: still dishes of held light.
+    for (const pan of PANS) {
+      const pd = Math.hypot(u - pan.u, v - pan.v);
+      if (pd < pan.radius * 1.8) {
+        const water = 1 - smoothstep01((pd - pan.radius * 0.75) / (pan.radius * 0.35));
+        const lip =
+          smoothstep01((pd - pan.radius * 0.85) / 1.5) *
+          (1 - smoothstep01((pd - pan.radius * 1.4) / 2));
+        col.lerp(PAN_WATER, water * 0.85);
+        col.lerp(SHADOW_VIOLET, lip * 0.25);
+        value *= 1 + water * 0.24 - lip * 0.05;
+      }
+    }
+
+    // The Pearl's fold: a soft pale bed under the secret.
+    const pearlD = Math.hypot(u - PEARL.u, v - PEARL.v);
+    if (pearlD < 8) {
+      const bed = 1 - smoothstep01((pearlD - 2) / 5);
+      col.lerp(STAR_BLOOM, bed * 0.5);
+      value *= 1 + bed * 0.1;
+    }
+
+    // The Doorstep's rise: milky, the world's last floor.
+    const doorD = Math.hypot(u - DOORSTEP.u, v - DOORSTEP.v);
+    if (doorD < 30) {
+      const rise = 1 - smoothstep01((doorD - 10) / 18);
+      col.lerp(MILKY_SHELF, rise * 0.55);
+      value *= 1 + rise * 0.1;
+    }
+
+    // THE HEM: the world's outermost wall pales upward — and the
+    // morning beyond the world bleeds rose over its crest.
+    const hemK = smoothstep01((rc - 176) / 34) * smoothstep01((u - 1244) / 30);
+    if (hemK > 0) {
+      const contour = Math.sin(y * 0.9 + silt * 2);
+      const runnel =
+        fbm(u * 0.06, v * 0.06, { seed: SEED ^ B3_SEEDS.paintWall, period: 9, octaves: 2 }) - 0.5;
+      const height = smoothstep01((y + 30) / 30);
+      col.lerp(HEM_MILK, hemK * (0.5 + 0.2 * height));
+      col.lerp(HEM_ROSE, hemK * height * height * 0.45);
+      col.lerp(SHADOW_VIOLET, hemK * Math.max(0, -runnel) * 0.7);
+      value *= 1 + hemK * (0.08 + contour * 0.1 + runnel * 0.12);
+    }
+
+    // Depth is the dimmer — but gently here: the Mere carries its own
+    // light. Red held above green, never cobalt.
+    const depthK = smoothstep01((-y - 30) / 26);
+    if (depthK > 0 && u >= 1178) {
+      col.lerp(MERE_VIOLET_STORY, depthK * 0.22);
+      value *= 1 - depthK * 0.06;
+    }
+
+    // Contact shade under everything that stands on the silt.
+    let shade = 1;
+    for (const contact of contacts) {
+      const dx = x - contact.x;
+      const dz = z - contact.z;
+      if (Math.abs(dx) > contact.radius || Math.abs(dz) > contact.radius) {
+        continue;
+      }
+      const distance = Math.hypot(dx, dz);
+      if (distance < contact.radius) {
+        const falloff = 1 - distance / contact.radius;
+        shade *= 1 - contact.strength * falloff * falloff;
+      }
+    }
+
+    // The one absolute step: story ÷ wash mean, channel by channel.
+    const total = value * shade;
+    colors[i * 3] = Math.max(0.12, Math.min(2.4, (col.r / WASH_MEAN.r) * total));
+    colors[i * 3 + 1] = Math.max(0.12, Math.min(2.4, (col.g / WASH_MEAN.g) * total));
+    colors[i * 3 + 2] = Math.max(0.12, Math.min(2.4, (col.b / WASH_MEAN.b) * total));
+  }
+
+  geometry.setAttribute("color", new BufferAttribute(colors, 3));
+}
+
+/**
+ * Tucks the disc tiles' outermost trim edge under the crest: a flat
+ * cut edge at dune level silhouettes as a razor line on distant
+ * horizons (the province's twice-paid lesson). Gated off the corridor,
+ * whose own sheet carries the crossing.
+ */
+function tuckTrimEdge(geometry: PlaneGeometry): void {
+  const position = geometry.attributes.position!;
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i);
+    const z = position.getZ(i);
+    const rc = Math.hypot(x - CENTRE.x, z - CENTRE.z);
+    if (rc <= 230) {
+      continue;
+    }
+    const { u, v } = spokeOf(x, z);
+    const k = smoothstep01((rc - 232) / 8) * (1 - passGate(u, v));
+    if (k > 0) {
+      position.setY(i, position.getY(i) + k * (-8 - position.getY(i)));
+    }
+  }
+  position.needsUpdate = true;
+}
+
+/**
+ * Droops the pass sheet's trim edges (blue-2's rounds 3–4 lesson,
+ * pre-paid): a raw lateral or end cut seen edge-on saws the frame.
+ * The last metres of width sag below the composed ground; the u-end
+ * sag deepens across the wall's steep band.
+ */
+function droopPassEdge(geometry: PlaneGeometry): void {
+  const position = geometry.attributes.position!;
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i);
+    const z = position.getZ(i);
+    const { u, v } = spokeOf(x, z);
+    const k = Math.max(
+      smoothstep01((Math.abs(v) - (passHalfWidth(u) + 3)) / 7),
+      smoothstep01((1173 - u) / 5),
+    );
+    if (k > 0) {
+      const sag = 3.5 + 4 * smoothstep01((1180 - u) / 12);
+      position.setY(i, position.getY(i) - k * sag);
+    }
+  }
+  position.needsUpdate = true;
+}
+
+/** Drops every triangle whose three corners all fail `keep`. */
+function trimSheet(geometry: PlaneGeometry, keep: (x: number, z: number) => boolean): void {
+  const position = geometry.attributes.position!;
+  const index = geometry.getIndex();
+  if (!index) {
+    return;
+  }
+  const kept: number[] = [];
+  for (let i = 0; i < index.count; i += 3) {
+    const a = index.getX(i);
+    const b = index.getX(i + 1);
+    const c = index.getX(i + 2);
+    if (
+      keep(position.getX(a), position.getZ(a)) ||
+      keep(position.getX(b), position.getZ(b)) ||
+      keep(position.getX(c), position.getZ(c))
+    ) {
+      kept.push(a, b, c);
+    }
+  }
+  geometry.setIndex(kept);
+}
+
+/** Builds the five painted ground sheets. */
+export function buildBlue3Ground(contacts: readonly ContactPatch[]): Mesh[] {
+  const material = createSandMaterial();
+  const meshes: Mesh[] = [];
+
+  const half = DISC_TILE / 2;
+  const centers: [number, number][] = [
+    [CENTRE.x - half, CENTRE.z - half],
+    [CENTRE.x + half, CENTRE.z - half],
+    [CENTRE.x - half, CENTRE.z + half],
+    [CENTRE.x + half, CENTRE.z + half],
+  ];
+  for (const [cx, cz] of centers) {
+    const geometry = createSeabedGeometryAt(cx, cz, DISC_TILE, DISC_SEGMENTS);
+    trimSheet(geometry, keepGround);
+    tuckTrimEdge(geometry);
+    bakeFirstSeaPaint(geometry, contacts);
+    const mesh = new Mesh(geometry, material);
+    mesh.name = "firstsea-ground-disc";
+    mesh.receiveShadow = true;
+    meshes.push(mesh);
+  }
+
+  // The pass sheet: the Morning Shelf and the Worldwall's outer face,
+  // from just past the Deep Steps' own trim tuck (their sheets droop
+  // under from rc 232 ≈ u 1172), sunk 4 cm under our disc tiles.
+  const passMid = worldOf(1228, 0);
+  const passGeometry = createSeabedGeometryAt(passMid.x, passMid.z, 132, PASS_SEGMENTS, -0.04);
+  trimSheet(passGeometry, (x, z) => {
+    const { u, v } = spokeOf(x, z);
+    return u >= 1168 && u <= 1290 && Math.abs(v) <= passHalfWidth(u) + 10;
+  });
+  droopPassEdge(passGeometry);
+  bakeFirstSeaPaint(passGeometry, contacts);
+  const pass = new Mesh(passGeometry, material);
+  pass.name = "firstsea-ground-pass";
+  pass.receiveShadow = true;
+  meshes.push(pass);
+
+  return meshes;
+}
