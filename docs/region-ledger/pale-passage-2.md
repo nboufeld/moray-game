@@ -556,6 +556,18 @@ round-6 set; 09–12 and the no-assets pass are read below as the
 round-6 chain lands them — those capture with the round-7 module
 live, which cannot show in their cones.)
 
+**Sweep 09–12**: 09 passes (the great fin's strata flank close right,
+the gate fins far, the road with its waymark and sprig cover); 10
+passes (tufted flanks, the milk basin, the mint band under the far
+crest); 12 passes (the pearl-step shelves with lantern anemones warm
+on the right, grit and sprigs near, the one needle far). 11 came back
+a FLAT TEAL with a foreign HUD ("Find the hidden moray") — the game
+booted into an event scenario and the region never streamed; a
+boot-state flake of the loaded box, not a region read (nothing in
+rounds 6–7 touches u 899 / v 189). Recaptured alone via
+SHOT_POSES_FILE: **identical to its round-5 pass** — comb skyline,
+milk basin, sprig near field. **Sweep verdict: 12/12.**
+
 ## Flags for the orchestrator (the reciprocal cuts — NOT made here)
 
 Measured exactly, pale-1's geometry crossing OUR corridor (we may not
