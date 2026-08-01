@@ -504,6 +504,58 @@ gated by the old u/rc window; stepTufts looseShare 0.75 (clump-led
 scatter starves narrow bands). Budgets after: 64 draws / 1,203,860
 tris. Full authored + sweep recapture.
 
+### Round 6 (pa2-r6) — the region settles
+
+**18/18 authored pass, every round-5 verdict held.** The threshold
+keeps its milk handover into pale-1's tan; the gate banks, Winnow
+blades and hush all hold; `white-chapel` keeps its round-5
+composition (paper pan, ring fins flanking, the beam at centre);
+`lamp-heart` confirms the pole-cap cure a second time — a solid warm
+lantern from below, no ellipse; the basin close-up keeps its accepted
+candle-gold register with the anemone pinheads and sprig cover
+reading in layers. No regressions from the climb-strip work — the
+polyline arc lives outside every authored frustum.
+
+**The sweep**: 08 improves but still under-reads — tufts and pebbles
+now stand in the near and mid field where round 5 had a couple dozen
+stones, yet the frame stays thin. A world-space census settled the
+question the eye could not: **every ordered instance landed** — 700/700
+climb pebbles, 900/900 climb tufts, 747 step tufts, plus ~950 more from
+the hem, sward and grit — ~3,300 instances on the strip (0.5/m²). The
+sampling bug is CURED; what remains is a READ failure: the pieces are
+tiny (5–15 cm pebbles, 22–46 cm tufts) and keyed pale-on-pale against
+the tan grade, so they vanish at the down-shot's range. Scale and
+contrast are the levers now, not count.
+
+**Round-7 orders (climb window only — no other frame sees it)**:
+pebbles to 9–24 cm with the shade a step deeper (0xa896c6); tufts to
+34–62 cm with a violet-bone shade (0xb2aacd); a sparse run of larger
+shards ×90 (30–80 cm, shade 0x9d8cc0) as the strip's mid-scale
+anchors. Budgets after: 66 draws / 1,204,580 tris. Recapture: sweep 08
+alone via SHOT_POSES_FILE (the exact pose reproduced by the sweep-where
+probe) — the window lives outside every authored frustum and every
+other sweep cone, so nothing else is re-judged. Note: the round-6
+chain's sweep 09–12 and the no-assets pass capture with round-7 code
+live (the window edit cannot show in any of them).
+
+### Round 7 (pa2-r7) — sweep 08 passes; the region is done
+
+Single-pose recapture of sweep 08 (SHOT_POSES_FILE, the sweep stream's
+own arithmetic). **PASS.** The near layer stands at three scales —
+pearl tufts at 34–62 cm with the violet-bone shade drawing against the
+grade, pebbles, and the new shard anchors; the mid field carries the
+litter runs, the splinters and the trodden road line; the far layer is
+the rim crest with the comb fins and open water beyond. The remaining
+bare band right of the road is the RIM FEATHER — past rc 212 the disc
+weight falls to zero and no cover may sample there (containment law);
+it is the region's authored edge, the grade climbing empty to the pass
+lip, the same trodden-bare register every rim in the program carries.
+The failure the earlier rounds rightly called — a naked NEAR field on
+a non-rest pose — is cured. (Sweep 01–07 read and passed in the
+round-6 set; 09–12 and the no-assets pass are read below as the
+round-6 chain lands them — those capture with the round-7 module
+live, which cannot show in their cones.)
+
 ## Flags for the orchestrator (the reciprocal cuts — NOT made here)
 
 Measured exactly, pale-1's geometry crossing OUR corridor (we may not

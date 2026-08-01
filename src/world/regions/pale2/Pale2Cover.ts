@@ -379,15 +379,19 @@ export function buildPale2Cover(
     }
     return g;
   };
+  // Round 7: the polyline landed every instance (a census counted all
+  // 700 + 900 on the strip) yet the down-shot still under-read — the
+  // pieces were TINY (5–15 cm) and keyed pale-on-pale against the tan
+  // grade. Scale and contrast are the levers now, not count.
   const climbPebbles = buildGroundLitter({
     seed: SEED ^ 0x3014,
-    palette: { base: 0xf0ead9, shade: 0xb9a9d2 },
+    palette: { base: 0xf0ead9, shade: 0xa896c6 },
     area: { polyline: climbStations, width: 44 },
     gate: climbGate,
     ground,
     count: 700,
     shapeSet: "pebble",
-    size: [0.05, 0.15],
+    size: [0.09, 0.24],
     twoTone: true,
     grade: 0.5,
   });
@@ -397,17 +401,34 @@ export function buildPale2Cover(
   // alone could not carry the down-shot's near layer.
   const climbTufts = buildCarpetField({
     seed: SEED ^ 0x3015,
-    palette: { base: 0xe2e8d8, tip: 0xf1f3e8, shade: 0xc6ccdc },
+    palette: { base: 0xe2e8d8, tip: 0xf1f3e8, shade: 0xb2aacd },
     area: { polyline: climbStations, width: 44 },
     gate: climbGate,
     ground,
     count: 900,
     profile: "tuft",
-    size: [0.22, 0.46],
+    size: [0.34, 0.62],
     swayAmp: 0.04,
     looseShare: 0.75,
   });
   carpets.push(climbTufts);
+
+  // Round 7: a sparse run of larger shards as the strip's mid-scale
+  // anchors — the splinter waymarks are too few to carry that register
+  // alone in the down-shot.
+  const climbShards = buildGroundLitter({
+    seed: SEED ^ 0x3016,
+    palette: { base: 0xe9e2d2, shade: 0x9d8cc0 },
+    area: { polyline: climbStations, width: 44 },
+    gate: climbGate,
+    ground,
+    count: 90,
+    shapeSet: "shard",
+    size: [0.3, 0.8],
+    twoTone: true,
+    grade: 0.5,
+  });
+  groups.push(climbShards.group);
 
   // Pearl grit region-wide, two-tone with genuine violet-bone (the
   // camouflage lesson: half the run must draw against the paper).

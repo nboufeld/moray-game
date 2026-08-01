@@ -35,15 +35,15 @@ it("prints the sweep poses in spoke coordinates", () => {
     }
     const y = floor + random.next() * Math.min(ceiling - floor, 6);
     const yaw = random.range(0, Math.PI * 2);
-    // Drawn (and discarded) to keep the stream aligned with the sweep.
-    void -random.range(0.03, 0.22);
+    const pitch = -random.range(0.03, 0.22);
     const { u, v } = spokeOf(x, z);
     const lookX = x - Math.sin(yaw) * 30;
     const lookZ = z - Math.cos(yaw) * 30;
     const look = spokeOf(lookX, lookZ);
     drawn.push(
       `${String(drawn.length + 1).padStart(2, "0")}: u=${u.toFixed(0)} v=${v.toFixed(0)} ` +
-        `y=${y.toFixed(1)} lumen=${lumen(u, v).toFixed(2)} → looks at u=${look.u.toFixed(0)} v=${look.v.toFixed(0)}`,
+        `y=${y.toFixed(1)} lumen=${lumen(u, v).toFixed(2)} → looks at u=${look.u.toFixed(0)} v=${look.v.toFixed(0)} ` +
+        `pose=${JSON.stringify({ position: [x, y, z], yaw, pitch, settle: 2 })}`,
     );
   }
   console.info(drawn.join("\n"));
