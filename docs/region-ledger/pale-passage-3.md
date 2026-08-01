@@ -453,6 +453,66 @@ print a third of `close-font-foot` at the ramp's bottom band.
    cool 0x443f42, both @ 0.5) — the violet stays the hue, the value
    comes home.
 
+## Round 5 — critique (all 18 authored + 12 sweeps read)
+
+Budget unchanged: **70 draws / 1,349,764 tris** (emissive floors are
+free).
+
+**The lift paid.** `close-blush-bed` reads as the Blushfield at last —
+rose and salmon carpet, gold buds, no violet sprig anywhere in the
+frame. `close-font-foot` keeps its violet HUE but the value came home:
+the litter reads as pale stones with shadowed halves, the scree as
+nacre slabs, the font's chalk bands print texture instead of a black
+foot. `blushfields` shows pink sprigs against the pale ground clear to
+the mid-distance; `dawn-steps`' bush lobes read pale cream with gold
+accents — the liver-brown is gone. The chalk floors did not blow the
+lit sides: `belfry-heart`, `the-belfry`, `the-fonts` and both
+close-litter poses hold their banding; nothing crossed into chalk-glow.
+
+All 18 authored poses pass. The re-aimed `suns-doorstep` and
+`still-morning` hold their r4 compositions (the lift barely registers
+at those distances, as intended).
+
+**Sweep: 11/12.** The one miss is sweep-10 again — the ceiling-height
+pose over the UNDAWN's shoulder (u 1277, v −44), whose bare mid-ground
+IS the registered rest. Same miss, same place, three rounds running;
+recorded, not excused silently. Every other sweep frame carries its
+three layers: fore carpet/litter, mid fonts or dunes, painted rings.
+
+**No further orders.** The region meets the visual standard; what
+remains is the machine bill: the no-assets pass (dev server), the
+headed frame gate at the two probe poses, and the full gate suite.
+
+### The no-assets pass (`pa3-r5-noassets`) — 18/18 survive
+
+`SHOT_NO_ASSETS=1` against the DEV server (never preview — the
+`blockAssets` route eats a preview bundle's own `/assets/` JS; two
+ledgers record the crash). All 18 authored poses captured; nine read
+closely. The font chalk loses its painted banding and reads as smooth
+pale plates (acceptable at range — the skyline still composes); the
+pearl, veil, shaft, Morning Ring, Belfry room and bell, mere mirror,
+carpets, litter and bushes are all procedural and hold their frames
+unchanged. The region is procedurally self-sufficient. **PASS.**
+
+### The frame gate — headed, scale 1.00, both poses under the bar
+
+`scripts/measure-frames.mjs` with `SHOT_HEADED=1`, real GPU, window
+visible, `SHOT_REGION=pale-passage-3`, 5 s samples, at the two
+heaviest views (world coords read from the def by
+`scripts/pale3-pose-coords.mjs`):
+
+- **daybreak** (the widest frame: the whole font country, road,
+  carpets and rings in one breath):
+  300 frames | **median 16.7 ms** (59.9 fps) | p95 17.8 ms |
+  settled scale **1.00**
+- **blushfields** (the densest cover: the 3,880-frond blush carpet +
+  gold buds + the font skyline):
+  300 frames | **median 16.7 ms** (59.9 fps) | p95 17.7 ms |
+  settled scale **1.00**
+
+Both under the ≤16.9 ms bar — vsync held at 60 Hz at full render
+scale. Gate **PASS**.
+
 ## Capture sets
 
 All under `visual-qa/`, 18 authored (`REGION-pale-passage-3-*`) + 12
@@ -468,3 +528,9 @@ sweep (`SWEEP-pale-passage-3-*`) per full round:
 - `pa3-r3` — the shade-side round: the bell hangs in the arch, the
   Dayspring passes, the sweep at 11/12 (the miss over the Undawn);
   two poses re-aimed and the last violets are the round-4 bill.
+- `pa3-r4` — poses landed (`suns-doorstep` an event, `still-morning`
+  into the mirror), the lift's arithmetic didn't; the emissive-product
+  lesson is the round-5 bill.
+- `pa3-r5` — the lift paid in full: 18/18 authored pass, sweep 11/12
+  (the standing miss over the Undawn rest), no regressions from the
+  chalk floors. The visual loop closes here.
