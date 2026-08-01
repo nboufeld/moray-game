@@ -320,4 +320,36 @@ it was wrong twice, and both failures are now laws for the file:**
 
 ### Round 7 — sm2-r7 (14 authored + 12 sweep)
 
-**Verdict: recorded after the r7 captures below.**
+**Verdict: 14/14 authored PASS; sweep 12/12. The standard is met.**
+
+- **ember-skate finally passes**: the animal rests dead on the reticle,
+  dark wings and milk-pale rim silhouetted against the pale comb wall,
+  ember pools on the road beneath it, the broken lintel and haze
+  beyond — and the HUD stayed 0/N (the scanner never armed; the whole
+  flight holds ≥ 14.8 m from the stand). The frame matched the probe's
+  screenshot pixel-for-pixel — the roost-wake determinism is real
+  across launches.
+- All other authored frames bit-identical to their r6 passes
+  (spot-checked anvil + the-ladle against r6 — deterministic build
+  confirmed frame-for-frame).
+- **Sweep 12/12** with three-layer law: the weakest two (02, a
+  downward Night Reach slope; 10, a hazy mottle plain) still carry
+  near litter + blades, mid crest structure, and a far skyline or
+  water band. No miss landed in a rest.
+
+## Gates (all unpiped, exit codes real)
+
+- `npm run typecheck` — clean.
+- `npx eslint . --max-warnings 0` — clean.
+- `npm test` — 60 files / 869 tests, all green (includes
+  `tests/regionSmoking2.test.ts`: containment walking kit groups to
+  child meshes in world space, rest emptiness, determinism/no-reroll,
+  world-map separation, corridor swim-line, wash-shoal honest water,
+  skate registration + deterministic updates).
+- **Headed frame gate at scale 1.00** (SHOT_HEADED, 5 s samples,
+  301 frames each):
+  - anvil court (densest): **median 16.7 ms** (59.9 fps), p95 18.4 ms.
+  - emberwash road: **median 16.7 ms** (59.9 fps), p95 18.6 ms.
+  - Both under the 16.9 ms law.
+- **No-assets pass**: full authored set captured with assets blocked
+  (`sm2-r7-noassets`) — procedural fallbacks survive; verdicts below.
