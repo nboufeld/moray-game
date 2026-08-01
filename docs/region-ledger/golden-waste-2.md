@@ -438,5 +438,27 @@ chime-stones separate from the tower feet.
   family (bright floor 0.26 — a 0-bright foot under the dusk emissive
   read as rust while every other stone held warm pale).
 
-**Sweep (r3):** read below once the chain lands it (the sweep runs
-behind the authored set on the loaded box).
+**Sweep (r3, 12 read, poses PINNED via `SHOT_POSES_FILE` so every
+round re-judges the same ground): 10 pass / 1 marginal / 1 fail.**
+01/03/05/06/07/08/09/10/11/12 pass — 09 and 10 prove the hoodoo paint
+at one to three metres, 08 catches the traveller shoal in frame, 12
+holds the whole court panorama with the Carillon on its horizon. 02
+MARGINAL (u≈1001, v≈−140 — the deep south flank: tufts present now,
+mid-band thin). 04 FAIL (u≈770, v≈50 — the Wind Gully's HIGH south
+shoulder): and the diagnosis closed the round's last law — the
+open-country gates all started at u 806/824, so the shoulders above
+the gully owned NO grain and NO standing layer at all; one 5.5 m wind
+pocket cannot carry a 60 × 90 m shoulder. Round 4:
+`gullyShoulder(u, v)` joins the country to `gritGate` and
+`courtWireGate` from the gully's rim (u 744) outward, off-road only —
+the descent stays a road — with counts keeping pace over the grown
+support (courtWire 4,200 → 5,200, grit 6,600 → 7,400).
+
+**Round-4 orders (all landed before the r4 captures):**
+anchorite-cell from the chamber's back wall looking OUT;
+shore-road half a pace back, horizon dropped to pitch −0.04 (the
+probe grazed −0.06); sunset-shelf aim 45° → 24° off the outbound
+axis (out of the ring's own self-dissolve window); tower profiles
+resampled to 0.8 m rows + foot bright floor 0.26; the gully
+shoulders join the country; budgets re-measured 67 draws /
+892,826 tris.
