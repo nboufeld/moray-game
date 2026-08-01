@@ -66,10 +66,11 @@ import {
 function buildSeals(): SphereCollider[] {
   const seals: SphereCollider[] = [];
 
-  // The rim ring, gated only over the inbound pass corridor. The
-  // reserved depth-3 corridor stays SEALED until golden-waste-3 opens
-  // it (the reservation is ledgered; the orchestrator cuts this ring
-  // the way MASTER R4 cut verdant-1's).
+  // The rim ring, gated over the inbound pass corridor and — now that
+  // the Vesper Strand exists to catch the diver — over the depth-3
+  // corridor at the far pole too (R0.7 integration of its flagged
+  // gate: the Strand's own shoulder seals stand at |v| = 15 over
+  // u 1136–1248, so the flanks stay sealed the moment this opens).
   const rimR = 206;
   const count = 94;
   for (let i = 0; i < count; i++) {
@@ -78,6 +79,9 @@ function buildSeals(): SphereCollider[] {
     const z = CENTER_Z + Math.sin(theta) * rimR;
     const { u, v } = spokeOf(x, z);
     if (passGate(u, v) > 0.25) {
+      continue;
+    }
+    if (u > 1130 && Math.abs(v) < 15) {
       continue;
     }
     seals.push({
