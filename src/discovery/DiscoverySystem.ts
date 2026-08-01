@@ -33,6 +33,7 @@ export class DiscoverySystem {
   private readonly discovered = new Set<string>();
   private readonly toTarget = new Vector3();
   private readonly targets: DiscoveryTarget[];
+  private readonly planned = new Set<string>();
 
   constructor(
     targets: readonly DiscoveryTarget[],
@@ -60,8 +61,27 @@ export class DiscoverySystem {
     }
   }
 
+  /**
+   * Species that exist in the world but whose regions have not built yet
+   * (region residents are known from the always-live defs). Reserving them
+   * keeps the objective total stable from boot instead of wobbling with the
+   * streaming radius; when the region builds, `addTargets` supplies the
+   * real target under the same id.
+   */
+  reserveSpecies(ids: Iterable<string>): void {
+    for (const id of ids) {
+      this.planned.add(id);
+    }
+  }
+
   get totalCount(): number {
-    return this.targets.length;
+    let pending = 0;
+    for (const id of this.planned) {
+      if (!this.scanners.has(id)) {
+        pending++;
+      }
+    }
+    return this.targets.length + pending;
   }
 
   get discoveredCount(): number {

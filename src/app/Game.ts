@@ -244,6 +244,10 @@ export class Game {
       targets.push(...build.targets);
     }
     this.discovery = new DiscoverySystem(targets);
+    // The whole world's roster from boot: region residents are known from
+    // the always-live defs, so the objective total never wobbles with the
+    // streaming radius (the Dayspring's flag).
+    this.discovery.reserveSpecies(this.regionCodex.keys());
 
     this.dive = new DiveController({ startPosition: new Vector3(0, 2, 22) });
     this.rig = new CameraRig(this.camera);

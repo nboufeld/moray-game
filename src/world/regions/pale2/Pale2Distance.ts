@@ -10,6 +10,7 @@ import {
   Mesh,
   MeshBasicMaterial,
   Object3D,
+  Vector3,
   type Scene,
 } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
@@ -255,6 +256,16 @@ function buildDayspringVeil(outAt: number): Mesh {
   mesh.name = "pale2-dayspring-veil";
   mesh.castShadow = false;
   mesh.receiveShadow = false;
+  // R0.7 (the Dayspring's flag): the veil stands at u ≈ 1236 — inside the
+  // depth-3 threshold country — so a diver actually walking the corridor
+  // meets it near-on as a hard-edged additive pane. It fades with camera
+  // distance, dissolving over the last 80 m of approach; every authored
+  // pose on both sides views it from ~99 m or further and keeps its
+  // shipped read.
+  const veilCenter = new Vector3(cx, FOOT + 4 + HEIGHT * 0.42, cz);
+  mesh.onBeforeRender = (_renderer, _scene, camera) => {
+    material.opacity = smoothstep01((camera.position.distanceTo(veilCenter) - 45) / 35);
+  };
   return mesh;
 }
 
