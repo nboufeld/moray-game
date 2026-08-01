@@ -52,8 +52,8 @@ import {
 // just inside the disc's rim (where the ceiling has already closed to
 // 3.4 m), gated over the pass corridor — whose flanks the shoulder rows
 // seal, from the Smoulder overlap down to the stair's foot (the
-// verdant-3 pattern). The far pole keeps its ring closed: the Night
-// Door's corridor is reserved, not yet open.
+// verdant-3 pattern). The far pole's ring parts over the Night Door's
+// corridor since the Lantern Vigil landed (R0.8).
 
 function buildSeals(): SphereCollider[] {
   const seals: SphereCollider[] = [];
@@ -68,6 +68,13 @@ function buildSeals(): SphereCollider[] {
     const z = center.z + Math.sin(theta) * rimR;
     const { u, v } = spokeOf(x, z);
     if (u < 750 && Math.abs(v) < 27 && passGate(u, v) > 0.3) {
+      continue;
+    }
+    // R0.8 integration (the Lantern Vigil's flagged gate): the Night
+    // Door's corridor is open now that the Vigil exists to catch the
+    // diver — the ring parts at the far pole (u ≈ 1146 crossing), the
+    // Vigil's own shoulder rows sealing the flanks.
+    if (u > 1120 && Math.abs(v) < 16) {
       continue;
     }
     const floor = smoking2TerrainTarget(x, z);
