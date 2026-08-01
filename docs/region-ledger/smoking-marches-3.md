@@ -172,3 +172,41 @@ are JUGS. Honest sweep ≈ 4–5/7 clean frames.**
   the mutual feather (both weights ~0.3 there — seam physics), and the
   corridor gap means no distance layer dead ahead. Dressed via the
   threshold cadence; judged again in r2.
+
+### Round 2 — sm3-r2 (16 authored + 12 clean sweep)
+
+**Verdict: the two big r1 misses are ANSWERED — the lanterns read as
+glass lanterns (dark bellies, one lit slot, elegant profiles, ash
+crowns) and the country reads a register darker. But the SKY is still
+bright teal day, which the region's whole idea forbids, and two poses
+came up empty. Honest sweep ≈ 8–9/12.**
+
+- **Landed:** the-watch, wick-road, the-choir, evensong, nightfall-stair,
+  morning-vent, cold-lantern, close-wick, close-cradle all pass — the
+  lantern ranks read as ranks, the lit slots read as held fire, the
+  wick road frames with the drifting Lampwright, the Vent reads as a
+  chimney with the column faint above it, the garden reads lush. The
+  squared-emissive chunk was the whole cure for the "jug" read; the
+  Spilt Light's cracked-dome rework reads as a broken lantern now, not
+  a floating hoop. Ember Dawn glows at the horizon in morning-vent and
+  sweep 11.
+- **The register is still DAY.** backdropFade 0.64 darkened the sky's
+  intensity but the water column overhead still reads bright turquoise;
+  the fog is warm-rose at the ground but the frame's top third is a
+  bright teal field. This region is the province's darkness-above
+  arriving in full — the sky must go night. → backdropFade 0.64 → 0.8,
+  fog blue 0.48 → 0.42, sun 0.14 → 0.13.
+- **ember-fens read a flat empty plain.** The pools were 2 m sinks with
+  small dim halos — nothing read from a standing pose. → pool depths
+  −20.x → −22.x (deeper bowls), ember-pool halos radius ×1.05 /
+  opacity 0.17, and the pose lowered onto the pool chain at (1400,−84)
+  looking straight down it.
+- **lampwright came up EMPTY** (dark water, no choir, no animal) —
+  the r2 stand's aim missed the court's own backdrop. → stand moved to
+  (1460, 0) aiming at the court centre (1432, 10) so the three Choir
+  lanterns fill the frame behind the animal; the whole flight still
+  holds ≥ 14.8 m (asserted).
+- Sweeps: the near/mid layers carry (the r1 bare-cone fix held —
+  03/05/06/09/12 all have standing blades + mid relief + a far
+  silhouette or dawn band); the one weakness is the bright sky, same
+  register fix as above.

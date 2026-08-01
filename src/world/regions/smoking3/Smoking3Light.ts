@@ -99,12 +99,14 @@ export const GLOWS: readonly { u: number; v: number; radius: number; opacity: nu
   { u: benchFootU(0) + 1, v: channelCenter(benchFootU(0)), radius: 2.8, opacity: 0.11 },
   { u: benchFootU(2) + 1, v: channelCenter(benchFootU(2)) + 1.5, radius: 3.0, opacity: 0.11 },
   { u: benchFootU(4) + 1, v: channelCenter(benchFootU(4)) - 1.5, radius: 3.0, opacity: 0.11 },
-  // The Ember Fens' pool hearts.
+  // The Ember Fens' pool hearts — the warm coals the fens are named
+  // for (R3: brighter and wider; the r2 pools didn't read from a
+  // standing pose because the halos were small and dim).
   ...POOLS.filter((pool) => !pool.cradle).map((pool) => ({
     u: pool.u,
     v: pool.v,
-    radius: pool.radius * 0.8,
-    opacity: 0.12,
+    radius: pool.radius * 1.05,
+    opacity: 0.17,
   })),
   // The Vent's forecourt: the fire arriving at its own door.
   { u: VENT.u - 6, v: VENT.v + 1, radius: 5.0, opacity: 0.13 },

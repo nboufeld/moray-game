@@ -136,9 +136,11 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "the-choir", u: 1402, v: wickCenter(1402) - 2, lift: 2.6, atU: 1428, atV: 8, pitch: 0.08, settle: 4 },
   // The Evensong: the tallest lantern in the province, portrait range.
   { name: "evensong", u: 1470, v: 16, lift: 3.0, atU: 1494, atV: 34, pitch: 0.14 },
-  // The Ember Fens: pooled amber, shimmer standing over the chain (R2:
-  // moved into the fens — the r1 stand read 50 m of fog wall).
-  { name: "ember-fens", u: 1414, v: -62, lift: 2.8, atU: 1434, atV: -100, pitch: -0.02, settle: 4 },
+  // The Ember Fens: pooled amber, shimmer over the chain (R3: lower and
+  // right on the pool cluster — the r2 stand read a flat plain because
+  // the pools were 2 m sinks with dim halos; deepened + brightened, and
+  // the stand now looks straight down the pool chain).
+  { name: "ember-fens", u: 1400, v: -84, lift: 2.4, atU: 1432, atV: -102, pitch: -0.05, settle: 4 },
   // The Spilt Light: the fallen lantern, its glow pooled at the break
   // (R2: backed off — the r1 stand was 11 m from a 13 m shell and read
   // its wall as a torn hoop; the shell itself is also reworked).
@@ -160,7 +162,7 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // animal's WHOLE round — roost included — at ≥ 14.8 m, past the
   // focus scanner's 14 m maxDistance, so the reticle can rest on it
   // without arming the discovery flash.
-  { name: "lampwright", u: 1462, v: 6, lift: 3.0, atU: 1440.8, atV: 15.0, pitch: 0.0, settle: 6 },
+  { name: "lampwright", u: 1460, v: 0, lift: 2.8, atU: 1432, atV: 10, pitch: 0.0, settle: 6 },
   // The Morning Vent: the arrival — the road ending at the chimney,
   // the column rising, the dawn beyond.
   { name: "morning-vent", u: 1580, v: wickCenter(1580) + 1, lift: 2.6, atU: VENT.u, atV: VENT.v, pitch: 0.1, settle: 4 },
@@ -209,12 +211,13 @@ export const SMOKING_3: RegionDef = {
     // space), a register deeper than the Forge Combs because this is
     // the arc's darkness-above paid off. Density held at the Combs' own
     // gain (their r3 lesson: 0.011 crushed the mid ground; the lanterns
-    // must keep a value of their own to ~90 m). R2: backdropFade up to
-    // 0.64 and the sun down a step — the r1 sky read as bright day and
-    // the whole register with it; the backdrop fade is what buys the
-    // night, since the fog itself is already the warm rose.
-    fog: { colorScale: [3.1, 0.46, 0.48], densityGain: 0.0085, backdropFade: 0.64 },
-    light: { sun: 0.14, hemisphere: 0.24, ambient: 0.14 },
+    // must keep a value of their own to ~90 m). R3: backdropFade to
+    // 0.8 — the r2 sky was still bright teal DAY, and this region's
+    // whole idea is the darkness-above finally arriving; the fade is
+    // what darkens the water column overhead, and blue a step lower
+    // deepens the fog toward true night without losing the warm rose.
+    fog: { colorScale: [3.1, 0.46, 0.42], densityGain: 0.0088, backdropFade: 0.8 },
+    light: { sun: 0.13, hemisphere: 0.23, ambient: 0.13 },
   },
   moodSurface: 20,
   moodDescent: 10,

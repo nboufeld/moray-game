@@ -312,11 +312,11 @@ export interface PoolSpec {
 }
 
 export const POOLS: readonly PoolSpec[] = [
-  { u: 1408, v: -78, radius: 6, depth: -20.6 },
-  { u: 1432, v: -102, radius: 7, depth: -21.2 },
-  { u: 1454, v: -82, radius: 5.5, depth: -20.4 },
-  { u: 1420, v: -124, radius: 5, depth: -20.6 },
-  { u: 1446, v: -58, radius: 4.5, depth: -20.0 },
+  { u: 1408, v: -78, radius: 6.5, depth: -22.4 },
+  { u: 1432, v: -102, radius: 7.5, depth: -23.2 },
+  { u: 1454, v: -82, radius: 6, depth: -22.0 },
+  { u: 1420, v: -124, radius: 5.5, depth: -22.2 },
+  { u: 1446, v: -58, radius: 5, depth: -21.6 },
   { u: 1552, v: 32, radius: 5, depth: -25.8, cradle: true },
   { u: 1570, v: 52, radius: 6, depth: -26.0, cradle: true },
 ] as const;
