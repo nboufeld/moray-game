@@ -138,7 +138,9 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // THE WHITE CHAPEL, from inside its ring's doorway (the short fin's
   // gap at theta≈3.04 faces the galleries): the pan, the beam, the
   // far fins rising — architecture, not distant hills (round 3).
-  { name: "white-chapel", u: 883, v: 76, lift: 2.6, atU: 918, atV: 72, pitch: 0.06, settle: 4 },
+  // Round 5: a step in off the doorway (883 → 890) — the far ring at
+  // 48 m was fog-mint hills; at ~41 m it stands as fins.
+  { name: "white-chapel", u: 890, v: 75, lift: 2.6, atU: 918, atV: 72, pitch: 0.06, settle: 4 },
   // THE LAMP from the basin rim: the whole lantern in one portrait.
   { name: "the-lamp", u: 984, v: -24, lift: 3.6, atU: 1022, atV: -4, pitch: 0.12 },
   // Inside the crater at the cage's foot, looking up through the ribs

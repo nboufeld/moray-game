@@ -127,7 +127,9 @@ const CHAPEL_WHITE = story(0xfbf8f1);
 const BASIN_GOLD = story(0xeed3a4);
 // Round 4: lifted from 0xe4b87e — the caramel read terracotta mud
 // under the violet ambient at close range (candle, not rust).
-const LAMP_HEART = story(0xefd0a0);
+// Round 5: one more step (0xefd0a0 →) — the deepest band still leant
+// ochre at arm's length in close-garden-bed; the wide shots were right.
+const LAMP_HEART = story(0xf0d8b0);
 const PEARL_BAND = story(0xe9ecdf);
 
 /**

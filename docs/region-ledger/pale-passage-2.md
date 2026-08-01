@@ -420,6 +420,61 @@ r 306 → 296, fonts into the gap flanks; (6) Still Pool rest radius
 MOON_PEARL bump 0.18 → 0.24, pool lights 0.12 → 0.16; sward shade
 0xc7bbd8 → 0xd4cbe2; basin fronds shade warmed.
 
+### Round 4 (pa2-r4) — the orders land; three small marks left
+
+All 18 authored read. **The threshold patchwork is cured**: the sunk,
+tan-keyed handover sheet hands pale-1's dunes over without a white
+flag (`pass-threshold` clean; `close-road-shelf` keeps only faint
+low-contrast seam traces where pale-1's 2.2 m triangulation crosses —
+the reciprocal cut, flag 1 below, retires those too). `winnow-hush`
+is a composition at last — slot walls, fins and the light blades
+above, the shadowed floor a base note instead of the whole frame.
+`still-pool` holds a clean hush (the sprig is outside the widened
+gate and out of frame). `great-comb`, `the-lamp`, `lantern-gardens`
+(basin now candle-gold, lanterns clumped, Lampwright in frame),
+`pearl-steps` (Dayspring veil finally a visible warm column between
+the gate horns; font cards on the flanks), `white-lookback` (raised
+eye clears the swell; comb skyline + jellies + anemone gold),
+`comb-gate`, `gallery-crossing`, `the-winnow`, `close-pool-rim`,
+`close-gallery-floor` — all pass. What remains:
+
+- **`white-chapel` still under-reads** (the round's one fail): from
+  the doorway the pan runs warm tan (chapelWeight is only ~0.7 at the
+  camera's feet — the plateau ends at d 16 while the ring stands at
+  26) and the far fins at 48 m are fog-mint hills, not architecture.
+  Cure: widen the white plateau to the ring's own radius and step the
+  camera in off the doorway so the far ring stands ~35 m out.
+- **`lamp-heart`'s blue ellipse identified**: the heart lathe is OPEN
+  at both poles (profile starts at r ≈ 0.46, no caps) — looking up
+  from the cage foot you see the water column straight through the
+  bottom hole. Cure: cap both poles with triangle fans.
+- **The basin's deepest band still leans ochre** at close range
+  (`close-garden-bed`) — one more gentle lift of the heart band, the
+  wide shots are already right.
+- Soft notes, accepted: the moonmilk bowls read as pearl sheen rather
+  than pooled light from the lip pose (in register for the hush
+  country); the splits still read a touch boxy at 1 m.
+
+**The sweep**: 11/12 pass. 02/04/07/09 are the strong frames (04: the
+Lamp's cage with the Lampwright inside it on the skyline; 09: road,
+waymark, Great Comb wall, beam). 01/03/05/06 pass on the R4 hem and
+sward steps — thin but composed. **08 fails again** (u 1119, v 39,
+down-shot at the gate climb's north flank) — and the R4 order could
+never have cured it: the visible slope runs rc 190–215, where the hem
+falloff gave ≤ 0.17 strength, the tuft band stopped at u 1155 — and
+above all the carpet SAMPLE AREA is a 196 m disc, so the hem's rc 205
+gate span past 196 was never seeded at all. Not a rest; must be fixed.
+
+**Round-5 orders (targeted)**: (1) heart pole caps (the lathe was open
+at both poles — the lamp-heart ellipse was the water seen through the
+bottom hole); (2) chapelWeight plateau 16 → 24, white-chapel camera
+u 883 → 890 (far ring 48 → 41 m); (3) LAMP_HEART 0xefd0a0 → 0xf0d8b0;
+(4) sweep 08's climb: rimArea radius 214 for the rim bands (the
+sampling bug), hem gate rc ≤ 212 with falloff |rc−165|/55, step tufts
+to u 1162 count 2400, and a climb-pebble strip (u 1080–1162,
+rc 172–212, 520 two-tone). Full authored + sweep recapture on final
+code.
+
 ## Flags for the orchestrator (the reciprocal cuts — NOT made here)
 
 Measured exactly, pale-1's geometry crossing OUR corridor (we may not

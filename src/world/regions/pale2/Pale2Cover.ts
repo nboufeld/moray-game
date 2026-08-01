@@ -84,6 +84,10 @@ export function buildPale2Cover(
   const groups: Group[] = [];
   const carpets: CarpetFieldBuild[] = [];
   const area = { center: [CENTER_X, CENTER_Z] as [number, number], radius: 196 };
+  // Round 5: the rim bands sample past the shared disc — the hem's
+  // gate reached rc 205 but the 196 m sample area could never seed it
+  // (sweep 08's naked climb was HALF a sampling bug).
+  const rimArea = { center: [CENTER_X, CENTER_Z] as [number, number], radius: 214 };
 
   // ── T1 carpets ─────────────────────────────────────────────────────
 
@@ -271,17 +275,20 @@ export function buildPale2Cover(
   const rimHem = buildCarpetField({
     seed: SEED ^ 0x3007,
     palette: { base: 0xe6ddc4, tip: 0xf5eeda, shade: 0xd4cbe2 },
-    area,
+    area: rimArea,
     gate: (x, z) => {
       const g = baseGate(x, z);
       if (g === 0) {
         return 0;
       }
       const rc = Math.hypot(x - CENTER_X, z - CENTER_Z);
-      if (rc < 118 || rc > 205) {
+      // Round 5: the outer shoulder extended and the falloff flattened
+      // — sweep 08's down-shot at rc 190–215 (the gate climb's north
+      // flank) met hem strength ≤ 0.17 and read naked.
+      if (rc < 118 || rc > 212) {
         return 0;
       }
-      return g * (1 - Math.abs(rc - 162) / 46);
+      return g * (1 - Math.abs(rc - 165) / 55);
     },
     ground,
     count: 2200,
@@ -299,20 +306,22 @@ export function buildPale2Cover(
   const stepTufts = buildCarpetField({
     seed: SEED ^ 0x3008,
     palette: { base: 0xe2e8d8, tip: 0xf1f3e8, shade: 0xc6ccdc },
-    area,
+    area: rimArea,
     gate: (x, z) => {
       const g = baseGate(x, z);
       if (g === 0) {
         return 0;
       }
       const { u, v } = spokeOf(x, z);
-      if (u < 1040 || u > 1155) {
+      // Round 5: to the gate lip (1155 → 1162) and denser again — the
+      // r4 count spread over the whole band left the climb thin.
+      if (u < 1040 || u > 1162) {
         return 0;
       }
       return g * (1 - basinWeight(u, v));
     },
     ground,
-    count: 1700,
+    count: 2400,
     profile: "tuft",
     size: [0.24, 0.5],
     swayAmp: 0.04,
@@ -342,6 +351,34 @@ export function buildPale2Cover(
     grade: 0.5,
   });
   groups.push(roadPebbles.group);
+
+  // Round 5: pearl pebbles shed down the gate climb — sweep 08's
+  // down-shot at the steps' north flank met bare grade between the
+  // hem and the tuft band; the climb needed litter of its own.
+  const climbPebbles = buildGroundLitter({
+    seed: SEED ^ 0x3014,
+    palette: { base: 0xf0ead9, shade: 0xb9a9d2 },
+    area: rimArea,
+    gate: (x, z) => {
+      const g = baseGate(x, z);
+      if (g === 0) {
+        return 0;
+      }
+      const { u } = spokeOf(x, z);
+      const rc = Math.hypot(x - CENTER_X, z - CENTER_Z);
+      if (u < 1080 || u > 1162 || rc < 172 || rc > 212) {
+        return 0;
+      }
+      return g;
+    },
+    ground,
+    count: 520,
+    shapeSet: "pebble",
+    size: [0.05, 0.15],
+    twoTone: true,
+    grade: 0.5,
+  });
+  groups.push(climbPebbles.group);
 
   // Pearl grit region-wide, two-tone with genuine violet-bone (the
   // camouflage lesson: half the run must draw against the paper).

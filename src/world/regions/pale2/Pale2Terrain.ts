@@ -381,7 +381,10 @@ export function combMound(u: number, v: number): number {
 /** How much of the chapel pan owns a spoke point, in [0, 1]. */
 export function chapelWeight(u: number, v: number): number {
   const d = Math.hypot(u - CHAPEL.u, v - CHAPEL.v);
-  return 1 - smoothstep01((d - 16) / 18);
+  // Round 5: the white plateau widened to the ring's own radius — from
+  // the doorway pose the pan's edge ran warm tan underfoot (weight was
+  // only ~0.7 where the camera stood, at d ≈ 22 of the ring's 26).
+  return 1 - smoothstep01((d - 24) / 14);
 }
 
 /** How much of the Lamp Basin owns a spoke point, in [0, 1]. */

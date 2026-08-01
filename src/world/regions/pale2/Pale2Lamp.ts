@@ -332,6 +332,20 @@ function buildHeart(x: number, y: number, z: number): Mesh {
       indices.push(a, b, a + 1, b, b + 1, a + 1);
     }
   }
+  // Round 5: cap both poles. The lathe profile starts at r ≈ 0.46, and
+  // the open bottom hole read as a bright water-blue ellipse from the
+  // lamp-heart pose (which looks straight up through it).
+  const bottomCenter = positions.length / 3;
+  positions.push(x, y - H / 2, z);
+  colors.push(0.56, 0.56 * 0.88, 0.56 * 0.66);
+  const topCenter = positions.length / 3;
+  positions.push(x, y + H / 2, z);
+  colors.push(1, 0.88, 0.66);
+  for (let s = 0; s < SIDES; s++) {
+    indices.push(bottomCenter, s, s + 1);
+    const t = LEVELS * (SIDES + 1) + s;
+    indices.push(topCenter, t + 1, t);
+  }
   const geometry = new BufferGeometry();
   geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
   geometry.setAttribute("color", new BufferAttribute(new Float32Array(colors), 3));
