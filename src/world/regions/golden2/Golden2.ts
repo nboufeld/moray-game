@@ -147,19 +147,22 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "court-reveal", u: 814, v: 1, lift: 3.4, atU: 856, atV: -10, pitch: -0.06, settle: 4 },
   // Among the ranks: hoodoos, long violet shadows, the road threading.
   { name: "hoodoo-court", u: 872, v: -30, lift: 2.7, atU: 910, atV: -4, pitch: 0.0, settle: 4 },
-  // The Windows wall from the court: pierced fins against the water.
-  { name: "windows-wall", u: 850, v: 28, lift: 2.8, atU: 864, atV: 54, pitch: -0.02 },
-  // The Great Arch: the swim-through doorway, framed from the seep side
-  // looking back through at the hoodoo ranks.
-  { name: "great-arch", u: 876, v: 70, lift: 2.3, atU: 866, atV: 60.5, pitch: 0.0, settle: 4 },
+  // The Windows wall taken ALONG its own crest (round 2 — the r1
+  // frontal stand met a smooth dune flank): fins overlapping into a
+  // broken colonnade, windows of water between.
+  { name: "windows-wall", u: 846, v: 14, lift: 4.5, atU: 872, atV: 66, pitch: 0.0 },
+  // The Great Arch from the court side: the doorway of light with the
+  // seep gardens' green through it (the r1 stand sat on the fin line).
+  { name: "great-arch", u: 856, v: 46, lift: 2.4, atU: 866, atV: 60.5, pitch: 0.04, settle: 4 },
   // The Ribbon's mouth: the pavement cracking open, lip slabs pacing it.
   { name: "ribbon-mouth", u: 898, v: -20, lift: 2.8, atU: 924, atV: -46, pitch: -0.14 },
   // Inside the slot at the Light Well: amber blades falling between
   // violet walls — the region's vertical drama, composed from within.
   { name: "ribbon-depths", u: 946, v: -54, lift: 2.2, atU: 970, atV: -68, pitch: 0.12, settle: 4 },
   // The Anchorite's Cell: the registered rest, framed as composed
-  // stillness — bare carved stone and one thin blade.
-  { name: "anchorite-cell", u: 954, v: -70, lift: 1.9, atU: 962, atV: -78, pitch: -0.05, settle: 3 },
+  // stillness FROM INSIDE the slot (the r1 rim stand framed nothing) —
+  // over the mouth's sill into the bare round chamber, one thin blade.
+  { name: "anchorite-cell", u: 958, v: -64, lift: 1.9, atU: 962, atV: -78, pitch: 0.0, settle: 3 },
   // The Seep Terraces: travertine benches, pools, bubbles, gardens.
   { name: "seep-terraces", u: 950, v: 50, lift: 3.2, atU: 972, atV: 78, pitch: -0.08, settle: 4 },
   // The Carillon from the road: five fluted towers rising over the
@@ -169,19 +172,22 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // all around — the rest, framed on purpose.
   { name: "noon-bell", u: 1032, v: -35, lift: 2.3, atU: 1030, atV: -14, pitch: 0.1, settle: 4 },
   // The Belfry: looking up the tallest tower at the bell mouth — the
-  // Bell Ringer rises through this frame once a breath.
-  { name: "belfry", u: 1025, v: -8, lift: 2.2, atU: 1033, atV: 1, pitch: 0.52, settle: 8 },
+  // Bell Ringer rises through this frame once a breath. Backed out in
+  // round 2: at 10 m the whole frame was the shaft's shade side.
+  { name: "belfry", u: 1018, v: -14, lift: 2.4, atU: 1033, atV: 1, pitch: 0.42, settle: 8 },
   // The swift wheel, watched from outside the towers: the whole
   // thermal fits the frame (a centrepiece that cannot leave the frame
   // needs no phase luck).
   { name: "swift-wheel", u: 1055, v: 14, lift: 6.0, atU: 1035, atV: -4, pitch: 0.1, settle: 6 },
   // The Sunset Shelf: the framing spires and the painted mesa lines —
-  // the depth-3 promise, reserved for golden-waste-3.
-  { name: "sunset-shelf", u: 1078, v: 2, lift: 3.0, atU: 1102, atV: 4, pitch: -0.02 },
+  // the depth-3 promise. Re-aimed in round 2 OFF the outbound ring
+  // gap: the r1 aim looked straight down the reserved corridor and
+  // framed its own reservation (an empty sky).
+  { name: "sunset-shelf", u: 1076, v: -4, lift: 3.0, atU: 1104, atV: 22, pitch: -0.02 },
   // ── The close-range set (R12's still-frame bar, judged at 2–4 m) ─────────
   { name: "close-court-garden", u: 858.5, v: 9.2, lift: 1.5, atU: 862.0, atV: 12.8, pitch: -0.22, settle: 3 },
-  { name: "close-seep-rim", u: 966.5, v: 86.2, lift: 1.5, atU: 968.6, atV: 88.8, pitch: -0.24, settle: 3 },
-  { name: "close-flute-foot", u: 1042.5, v: -30.5, lift: 1.6, atU: 1044.9, atV: -32.7, pitch: -0.12, settle: 3 },
+  { name: "close-seep-rim", u: 966.5, v: 86.2, lift: 1.5, atU: 967.6, atV: 88.2, pitch: -0.26, settle: 3 },
+  { name: "close-flute-foot", u: 1040.0, v: -27.0, lift: 1.6, atU: 1044.4, atV: -31.6, pitch: -0.1, settle: 3 },
   { name: "close-arch-shards", u: 871.5, v: 52.5, lift: 1.4, atU: 869.0, atV: 55.6, pitch: -0.2, settle: 3 },
 ];
 
@@ -219,7 +225,7 @@ export const GOLDEN_2: RegionDef = {
     // amber). The pilot's measured numbers are the starting point —
     // red high in linear space, blue cut hard, density paid for the
     // warm sky (its rounds 1–4 proved 0.0045→0.007 leaves raw cyan).
-    fog: { colorScale: [3.5, 0.6, 0.28], densityGain: 0.009, backdropFade: 0.68 },
+    fog: { colorScale: [3.5, 0.6, 0.28], densityGain: 0.009, backdropFade: 0.65 },
     light: { sun: 0.25, hemisphere: 0.27, ambient: 0.14 },
   },
   moodSurface: 20,

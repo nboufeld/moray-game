@@ -15,14 +15,16 @@
  * every future sweep of the same slot.
  */
 import { chromium } from "@playwright/test";
-import { mkdir } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { blockAssets, noAssets, waitForAssets } from "./wait-for-assets.mjs";
 
 const BASE_URL = process.env.SHOT_URL ?? "http://localhost:5173";
 const OUT_DIR = path.resolve("visual-qa");
 const VIEWPORT = { width: 1600, height: 900 };
-const NAV_TIMEOUT_MS = 180_000;
+/** See region-shots.mjs: env overrides for starved-machine sessions. */
+const NAV_TIMEOUT_MS = Number(process.env.SHOT_NAV_TIMEOUT ?? 180_000);
+const COMPILE_WAIT_MS = Number(process.env.SHOT_COMPILE_WAIT ?? 900);
 const POSES = 12;
 
 const slotId = process.argv[2];
@@ -62,8 +64,14 @@ await page.goto(`${BASE_URL}/?reset=1`, { waitUntil: "load" });
 await page.waitForFunction(() => "__reef" in window);
 
 // Draw the twelve poses inside the running module graph, so the sweep and
-// the game cannot disagree about the domain.
-const poses = await page.evaluate(
+// the game cannot disagree about the domain. The in-page draw imports
+// /src TypeScript, which only a dev server can transform — a preview
+// bundle cannot serve it (the Canopy Deep close-out's finding, and why
+// round 4's sweep 10–12 never landed). `SHOT_POSES_FILE` hands the same
+// stream in as JSON, drawn offline by the identical arithmetic.
+const poses = process.env.SHOT_POSES_FILE
+  ? JSON.parse(await readFile(process.env.SHOT_POSES_FILE, "utf8"))
+  : await page.evaluate(
   async ([slot, count]) => {
     const [{ REGIONS }, { regionSlot, slotCenter }, { Random }, { KIT_SWEEP_SALT }] =
       await Promise.all([
@@ -129,7 +137,7 @@ for (const [index, pose] of poses.entries()) {
   await waitForAssets(page);
   await page.evaluate((p) => window.__reef.capture(p), pose);
   // 900 ms: outwait first-use shader compilation (the flat-violet race).
-  await page.waitForTimeout(900);
+  await page.waitForTimeout(COMPILE_WAIT_MS);
 
   const name = `SWEEP-${slotId}-${String(index + 1).padStart(2, "0")}`;
   const file = path.join(OUT_DIR, `${prefix}_${name}_${tag}.png`);

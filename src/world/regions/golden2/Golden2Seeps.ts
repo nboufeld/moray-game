@@ -48,14 +48,16 @@ export function buildSeeps(): SeepsBuild {
   const columns: ParticulateFieldBuild[] = SEEP_POOLS.map((pool, i) => {
     const { x, z } = worldOf(pool.u, pool.v);
     const floor = seabedHeight(x, z);
+    // Calmed in round 2: 0.3 m sparks at 0.55 read as white puffballs
+    // at the close pose — a spring breathes, it does not boil.
     return buildParticulateField({
       seed: SEED ^ (G2_SEEDS.seepBubbles + i * 17),
       tint: 0xdef0e6,
-      count: 42,
+      count: 34,
       mode: "column",
       volume: { center: [x, floor + 3.2, z], size: [pool.radius * 0.9, 6, pool.radius * 0.9] },
-      size: 0.3,
-      opacity: 0.55,
+      size: 0.2,
+      opacity: 0.45,
     });
   });
   for (const column of columns) {

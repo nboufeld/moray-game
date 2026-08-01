@@ -29,7 +29,9 @@ import {
  */
 
 export const PAVEMENT_REST = { u: CARILLON.u, v: CARILLON.v, radius: PAVEMENT_RADIUS } as const;
-export const CELL_REST = { u: CELL.u, v: CELL.v, radius: CELL.radius } as const;
+/** The rest is the chamber's INTERIOR (r 5.5); the carve keeps r 7 so
+ *  the mouth's two flank stones stand outside the licence. */
+export const CELL_REST = { u: CELL.u, v: CELL.v, radius: 5.5 } as const;
 
 /**
  * 1 everywhere a fill instance may stand, easing to exactly 0 inside
@@ -95,6 +97,14 @@ export const WIND_POCKETS: readonly WindPocket[] = [
   { u: 1052, v: 14, radius: 6 },
   { u: 1076, v: -32, radius: 6.5 },
   { u: 1098, v: 10, radius: 6 },
+  // Round 2 (the sweep's verdict): the open flanks and the pass
+  // shoulders — beats for the frames nobody composes for.
+  { u: 770, v: 44, radius: 5.5 },
+  { u: 782, v: -46, radius: 5.5 },
+  { u: 868, v: 124, radius: 7 },
+  { u: 930, v: -126, radius: 7 },
+  { u: 1002, v: -136, radius: 7 },
+  { u: 1066, v: 96, radius: 7 },
 ] as const;
 
 /**
@@ -105,7 +115,9 @@ export const WIND_POCKETS: readonly WindPocket[] = [
 export const CLOSE_LENSES: readonly { u: number; v: number }[] = [
   { u: 858.5, v: 9.2 }, // close-court-garden (in a wind pocket)
   { u: 966.5, v: 86.2 }, // close-seep-rim
-  { u: 1042.5, v: -30.5 }, // close-flute-foot (a tower's foot)
+  // Round 2: backed off the tower — the r1 lens stood 2.4 m from a
+  // 14.5 m shaft and framed a featureless wall.
+  { u: 1040.0, v: -27.0 }, // close-flute-foot (a tower's foot)
   { u: 871.5, v: 52.5 }, // close-arch-shards (below the Windows wall)
 ] as const;
 

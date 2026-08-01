@@ -72,7 +72,7 @@ export function buildGolden2Life(): Golden2LifeBuild {
   const motes = buildParticulateField({
     seed: SEED ^ G2_SEEDS.motes,
     tint: 0xf6dc9a,
-    count: 700,
+    count: 900,
     mode: "drift",
     volume: { center: [heart.x, -2, heart.z], size: [400, 16, 400] },
     size: 0.11,
@@ -81,10 +81,13 @@ export function buildGolden2Life(): Golden2LifeBuild {
   groups.push(motes.group);
   updaters.push((t) => motes.update(t));
 
+  // 1,600 is the Emerald Terraces' PROVEN midwater density (its fill
+  // r10: below that, a random midwater camera's 15 m readable bubble
+  // is empty a third of the time).
   const plankton = buildParticulateField({
     seed: SEED ^ G2_SEEDS.plankton,
     tint: 0xf2e2b0,
-    count: 1100,
+    count: 1600,
     mode: "drift",
     volume: { center: [heart.x, 3, heart.z], size: [420, 20, 420] },
     size: 0.4,
@@ -323,8 +326,8 @@ function buildTowerSwifts(): { group: Group; update: (timeSec: number) => void }
   const material = createToonMaterial({
     vertexColors: true,
     side: 2,
-    emissive: 0x9a7c3a,
-    emissiveIntensity: 0.6,
+    emissive: 0xa8853e,
+    emissiveIntensity: 0.72,
   });
   material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
     shader.uniforms.uSway = sway;
@@ -357,7 +360,9 @@ function buildTowerSwifts(): { group: Group; update: (timeSec: number) => void }
   const tint = new Color();
   const scales: number[] = [];
   for (let i = 0; i < count; i++) {
-    scales.push(random.range(0.62, 0.85));
+    // Grown in round 2: 0.62–0.85 read as specks at the wheel poses'
+    // 30–45 m — the centrepiece was invisible in its own frame.
+    scales.push(random.range(1.05, 1.35));
     tint.setScalar(random.range(0.9, 1.08));
     mesh.setColorAt(i, tint);
   }

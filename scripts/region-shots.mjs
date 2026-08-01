@@ -20,7 +20,19 @@ const OUT_DIR = path.resolve("visual-qa");
 const SEED = "seed1";
 const QUALITY = "hi";
 const VIEWPORT = { width: 1600, height: 900 };
-const NAV_TIMEOUT_MS = 180_000;
+/**
+ * Under sibling-worker load a prebuilt-bundle page load can still exceed
+ * 180 s (measured 342 s on the dev server at load 21–29; the preview
+ * bundle blew the same ceiling at load 25). `SHOT_NAV_TIMEOUT` raises the
+ * ceiling for starved sessions; the default is unchanged.
+ */
+const NAV_TIMEOUT_MS = Number(process.env.SHOT_NAV_TIMEOUT ?? 180_000);
+/**
+ * The post-capture wait outlasting first-use shader compilation (the
+ * flat-violet race). 900 ms is calibrated for a quiet box; on a starved
+ * one compilation itself is starved, so `SHOT_COMPILE_WAIT` scales it.
+ */
+const COMPILE_WAIT_MS = Number(process.env.SHOT_COMPILE_WAIT ?? 900);
 /**
  * `SHOT_PER_LAUNCH=1` relaunches Chromium for every pose. Long runs on a
  * loaded machine crash the browser reliably (the Calamity fill's finding);
@@ -103,7 +115,7 @@ for (const pose of poses) {
   // 900 ms, not 250: a pose that introduces still-uncompiled shader
   // programs can otherwise screenshot mid-compile as a flat-violet frame
   // (the Smoulder fill's documented race).
-  await page.waitForTimeout(900);
+  await page.waitForTimeout(COMPILE_WAIT_MS);
 
   const file = path.join(
     OUT_DIR,

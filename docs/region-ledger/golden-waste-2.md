@@ -201,4 +201,85 @@ connective-3 traveller-phase lesson: every mover is closed-form off
 
 ## Critique history (silhouette → value → colour → detail, per round)
 
-(rounds appended below as they land)
+### Round 1 (`gw2-r1`) — the country composes; the stone is a value problem
+
+Captured against the prebuilt bundle on :5206 (`npm run build` + `vite
+preview` + `SHOT_PER_LAUNCH=1 SHOT_NAV_TIMEOUT=900000
+SHOT_COMPILE_WAIT=5000` — the verdant-3 load-wall workaround, needed
+from the first session: the dev server blew the 180 s nav ceiling at
+1-min load 28–33 with two sibling workers live). All 21 authored poses
+captured and READ; the sweep (12 seeded poses via `SHOT_POSES_FILE`,
+drawn offline by the identical arithmetic) ran after.
+
+**Silhouette.** The region EXISTS: `court-reveal` opens on a genuine
+ranked hoodoo skyline with caps; `ribbon-mouth` cracks the pavement
+under a towering capped sentinel; `ribbon-depths` is the round's best
+frame — violet slot walls, three gold light-well blades, shed blocks;
+`carillon`/`noon-bell` rank five towers around the swept Pavement with
+the Noon Bell striking it AND the Bell Ringer visibly rising over the
+Belfry in both frames; `close-arch-shards` frames the Great Arch as a
+door of rusty gold. Fails, by size: **`windows-wall` is a smooth dune
+flank** (the 13 m terrain ridge at the 2.2 m grid reads as a soft
+mountain, fins buried behind its crest — the "pierced wall" identity
+lives entirely in the fins, so the ridge must come down and the fins
+must grow); **`great-arch` is photobombed by a fin at 2 m** (the pose
+stands on the fin line; the arch is a distant mound); **`belfry` is a
+flat maroon wall** (10 m from a 23 m tower, whole shaft in toon shade);
+**`close-flute-foot` is one featureless maroon frame** (2.4 m from the
+same shade side — camera inside the subject); **`anchorite-cell` looks
+down the slot from above and frames nothing** (the cell is invisible
+from the rim; the pose must go INSIDE); **`sunset-shelf` frames the
+promise straight down the outbound ring GAP** — the reserved corridor
+parts the rings exactly where this pose looks, so the "painted mesa
+lines" are absent from their own promise shot (aim must swing off-gap
+so the flanking rings carry the vista); the swifts are INVISIBLE in
+`swift-wheel` (0.62–0.85 scale reads as specks at 40 m) and read as
+torn orange paper at close range in `belfry`.
+
+**Value — the round's headline, the province's own lesson relearned on
+towers.** Every vertical stone's shade side collapses to flat MAROON:
+the near tower in `carillon`, the whole frame of `close-flute-foot`,
+the caprock boulders (`wind-gully`), the sentinel in `ribbon-mouth`,
+the Sunset Spires. Sun-side stone reads warm and right (`swift-wheel`'s
+two towers are the proof). The toon ramp under the region's
+quarter-sun multiplies the whole shade side down and the violet-warm
+paint terms push it to eggplant — the golden-1 stone-warming lesson
+plus the verdant re-pass dusk-lift lesson, both due at once: warm the
+family hexes AND give the stone materials a small emissive floor so
+the shade side stays a colour.
+
+**Colour.** The honey reads at the horizon band and on the ground
+(paint is right: gully honey stain, joint seams, hoodoo shadows all
+carry); the zenith is the dimmed painted backdrop at backdropFade
+0.68 — the same arithmetic the Hourglass Sea ships at 0.66, one shade
+darker here; nudge 0.68 → 0.65 and verify against a same-session
+golden-1 control. The wrack drift-lines read as PALE PAPER SCRAPS
+(value above their ground — down a step). Seep greens read true.
+
+**Detail.** `close-court-garden` nearly passes draft one (pocket
+fronds read as painted plants; graded splits and pebbles anchor);
+`close-seep-rim` passes with notes (hover fry charming; bubbles are
+white PUFFBALLS — size 0.3 → 0.2, opacity down); the seep pools
+themselves hide under bushes that grew ON the rims (gate must exclude
+the pool discs); the mid-band of the open court is thin (courtWire
+1600 over ~90k m² — the sweep will say it louder); `shore-road` is
+near-empty and the Hourglass Sea's far-side distance rings are
+MISSING from its backdrop (they cross the corridor at u 691/709/731
+and should be the road's whole distance layer — attachment probed
+after the sweep; if they render, the road still needs taller waymarks
+and denser shoulder wire).
+
+**Round-2 orders** (the full list lives in the r2 commit): stone
+value/hue pass (hex warm + dusk-lift emissive, flutes deepened,
+tower paint contrast up); Windows rebuilt (ridge 13 → 9 with broken
+crest, fins 8 taller/tighter, arch grown); five poses re-authored
+(great-arch → court side, windows-wall → along the wall, belfry
+backed out, anchorite-cell → inside the slot at the cell mouth,
+close-flute-foot backed out, sunset-shelf re-aimed off-gap +
+spires grown/warmed); swifts grown to 1.0–1.3 and brightened; seep
+bushes off the rims, sward/frond counts up, bubbles calmed; court
+wire 1600 → 2400 + bushes 30 → 42; wrack re-valued down; two
+authored hoodoos planted in `hoodoo-court`'s near field; slot-wall
+flute striping; lip slabs leaned off the "manhole" read; waymarks
+grown; Anchorite's Cell rest radius trimmed to 5.5 so the mouth can
+take its two flank stones (the carve keeps r 7).

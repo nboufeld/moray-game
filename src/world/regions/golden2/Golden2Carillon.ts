@@ -121,17 +121,19 @@ function fluteAndPaint(geometry: BufferGeometry, tower: Tower, seed: number): vo
     const theta = Math.atan2(z, x);
     const t = Math.min(1, Math.max(0, y / tower.height));
     // The flutes: ribs deepen through the wind-worked middle, fade at
-    // the foot flare and the crown. Groove depth rides the sine.
+    // the foot flare and the crown. Groove depth rides the sine —
+    // deepened in round 2 (0.085 read as a smooth slug at pose range).
     const groove = Math.sin(theta * tower.ribs + t * 1.6);
     const band = smoothstep01((t - 0.06) / 0.12) * (1 - smoothstep01((t - 0.82) / 0.14));
-    const flute = 1 + groove * 0.085 * band;
+    const flute = 1 + groove * 0.14 * band;
     if (radius > 0.02) {
       position.setX(i, x * flute);
       position.setZ(i, z * flute);
     }
     // Paint: lit amber rising to bright at the crown, violet pooled in
     // every groove, strata bands at full pitch, grain jitter so no
-    // facet holds one toon value.
+    // facet holds one toon value. Round 2: the violet terms halved and
+    // the base lifted — the r1 shade sides collapsed to flat maroon.
     const strata =
       fbm(t * 6.5, theta * 0.7, { seed: seed ^ 0x17, period: 5, octaves: 2 }) - 0.5;
     const grain =
@@ -139,10 +141,10 @@ function fluteAndPaint(geometry: BufferGeometry, tower: Tower, seed: number): vo
     shade
       .copy(amber)
       .lerp(bright, smoothstep01((t - 0.35) / 0.6) * 0.8)
-      .lerp(violet, Math.max(0, -groove) * 0.5 * band + Math.max(0, -strata) * 0.42)
-      .multiplyScalar(1 + strata * 0.16 + grain * 0.14);
+      .lerp(violet, Math.max(0, -groove) * 0.34 * band + Math.max(0, -strata) * 0.26)
+      .multiplyScalar(1.08 + strata * 0.2 + grain * 0.18);
     // The foot stands in its own contact dusk.
-    shade.lerp(violet, (1 - smoothstep01((t - 0.02) / 0.1)) * 0.35);
+    shade.lerp(violet, (1 - smoothstep01((t - 0.02) / 0.1)) * 0.22);
     colors[i * 3] = shade.r;
     colors[i * 3 + 1] = shade.g;
     colors[i * 3 + 2] = shade.b;
@@ -217,7 +219,15 @@ export function buildCarillon(): CarillonBuild {
     colliders.push({ center: new Vector3(x, seabedHeight(x, z) + h * 0.4, z), radius: h * 0.5 });
   }
 
-  const material = createToonMaterial({ color: 0xdfc79a, vertexColors: true });
+  // The stone dusk-lift (round 2): the shade side of a 20 m tower under
+  // the quarter-sun crushed to eggplant; the emissive floor keeps it a
+  // warm colour, the vertex paint keeps the drawing.
+  const material = createToonMaterial({
+    color: 0xdfc79a,
+    vertexColors: true,
+    emissive: 0x584430,
+    emissiveIntensity: 0.38,
+  });
   const mesh = mergedMesh(parts, material, "carillon-towers");
 
   return { meshes: [mesh], colliders, contacts, bellMouth };

@@ -40,10 +40,17 @@ export const SEEP_GREEN = new Color(0xa8b06a);
 export const TRAVERTINE = new Color(0xe8ddbe);
 /** The pale carved-stone family (warm, red held over blue — the
  * pilot's round-5 lesson: under a violet ambient the red/blue ratio is
- * the lever, not the value). */
-export const CARVED_PALE = 0xc6a468;
+ * the lever, not the value). Lifted again in round 2: the r1 stones'
+ * shade sides collapsed to maroon under the quarter-sun. */
+export const CARVED_PALE = 0xceac6e;
 /** The caprock family — darker, violet-warm, the balanced hats. */
-export const CAPROCK_STONE = 0x96765e;
+export const CAPROCK_STONE = 0xa4886a;
+/** The stone dusk-lift (the verdant re-pass lesson applied to rock):
+ * a small emissive floor so a tower's toon-shade side stays a COLOUR
+ * instead of crushing to eggplant. Region-side; materials stay minted
+ * per build. */
+export const STONE_DUSK = 0x584430;
+export const STONE_DUSK_INTENSITY = 0.25;
 
 /**
  * The emissive-by-vertex-colour patch (the canyon polyps' trick, the

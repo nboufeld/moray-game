@@ -25,7 +25,6 @@ import {
   CENTER_Z,
   PAVEMENT_RADIUS,
   SEEP_POOLS,
-  carillonWeight,
   courtSwale,
   golden2Weight,
   gullyChannelCenter,
@@ -153,10 +152,13 @@ function roadness(u: number, v: number): number {
   return 1 - smoothstep01((away - half) / 8);
 }
 
-/** The calm zones that own their own floors (broad cover thins there). */
+/** The calm zones that own their own floors (broad cover thins there).
+ *  Round 2: the Carillon term dropped to the PAVEMENT rest alone — the
+ *  outer plinth (r 16–40) swept bare in the r1 sweep's frame 01, and
+ *  bare-by-accident is the doctrine's one forbidden state. */
 function zoneCalm(u: number, v: number): number {
   return Math.max(
-    carillonWeight(u, v) * 0.85,
+    (1 - smoothstep01((Math.hypot(u - CARILLON.u, v - CARILLON.v) - PAVEMENT_RADIUS) / 6)) * 0.9,
     seepsWeight(u, v) * 0.6,
     windowsRidge(u, v).w * 0.9,
     1 - smoothstep01((ribbonDistance(u, v).d - 4) / 5), // the slot walls
@@ -215,7 +217,9 @@ const roadWireGate: GateFn = (x, z) => {
   if (u < 824) {
     const away = Math.abs(v - gullyChannelCenter(u));
     const half = u < 748 ? 10 : gullyChannelHalf(u);
-    shoulder = smoothstep01((away - half * 0.35) / 3) * (1 - smoothstep01((away - half - 9) / 7));
+    // Widened in round 2: the sweep's pass-shoulder frames stood past
+    // the old band's edge on bare tongue.
+    shoulder = smoothstep01((away - half * 0.35) / 3) * (1 - smoothstep01((away - half - 16) / 9));
   } else {
     const d = roadDistance(u, v);
     shoulder = smoothstep01((d - 2.5) / 2.5) * (1 - smoothstep01((d - 11) / 6));
@@ -238,13 +242,13 @@ const roadWireGate: GateFn = (x, z) => {
  */
 const courtWireGate: GateFn = (x, z) => {
   const { u, v } = spokeOf(x, z);
-  if (u < 812) {
+  if (u < 806) {
     return 0;
   }
   const rc = Math.hypot(x - CENTER_X, z - CENTER_Z);
-  const flank = 0.55 + 0.45 * smoothstep01((rc - 125) / 55);
+  const flank = 0.68 + 0.32 * smoothstep01((rc - 125) / 55);
   const hollow = smoothstep01(-courtSwale(x, z) / 1.2);
-  const base = 0.5 + 0.5 * Math.min(1, hollow + hoodooRing(u, v));
+  const base = 0.55 + 0.45 * Math.min(1, hollow + hoodooRing(u, v));
   return (
     golden2Weight(x, z) *
     restFree(x, z) *
@@ -392,7 +396,7 @@ export function buildGolden2Cover(finFeet: readonly { u: number; v: number }[]):
       area: discArea(),
       gate: shellGate,
       ground: seabedHeight,
-      count: 2200,
+      count: 2600,
       shapeSet: "pebble",
       size: [0.09, 0.22],
       twoTone: true,
@@ -421,10 +425,10 @@ export function buildGolden2Cover(finFeet: readonly { u: number; v: number }[]):
     buildCarpetField({
       seed: SEED ^ G2_SEEDS.roadWire,
       palette: { base: 0xdcc87a, tip: 0xf6eaaa, shade: 0xa8946a },
-      area: journeyArea(26),
+      area: journeyArea(30),
       gate: roadWireGate,
       ground: seabedHeight,
-      count: 1050,
+      count: 1300,
       profile: "blade",
       size: [0.46, 0.88],
       swayAmp: 0.05,
@@ -441,7 +445,9 @@ export function buildGolden2Cover(finFeet: readonly { u: number; v: number }[]):
       area: discArea(),
       gate: courtWireGate,
       ground: seabedHeight,
-      count: 1600,
+      // Round 2: 1,600 over the ~90k m² court left the mid-band bare
+      // in every touring frame; the sweep's flank fails raised it again.
+      count: 3000,
       profile: "blade",
       size: [0.42, 0.85],
       swayAmp: 0.05,
@@ -491,7 +497,7 @@ export function buildGolden2Cover(finFeet: readonly { u: number; v: number }[]):
       area: discAreaAt(975, 72, 56),
       gate: seepSwardGate,
       ground: seabedHeight,
-      count: 900,
+      count: 1300,
       profile: "blade",
       size: [0.34, 0.64],
       swayAmp: 0.05,
@@ -508,7 +514,7 @@ export function buildGolden2Cover(finFeet: readonly { u: number; v: number }[]):
       area: discAreaAt(972, 72, 40),
       gate: seepFrondGate,
       ground: seabedHeight,
-      count: 640,
+      count: 880,
       profile: "frond",
       size: [0.28, 0.52],
       swayAmp: 0.04,
@@ -519,12 +525,25 @@ export function buildGolden2Cover(finFeet: readonly { u: number; v: number }[]):
 
   // Scrub banks: gold cushion bushes in the seep gardens, olive scrub
   // at the Windows' foot, dry gold banks along the court's pockets.
+  // Round 2: the bushes grew ON the pool rims and hid the pools — the
+  // gate now keeps them a stride beyond every travertine ring.
+  const poolClear: GateFn = (x, z) => {
+    const { u, v } = spokeOf(x, z);
+    let clear = 1;
+    for (const pool of SEEP_POOLS) {
+      clear = Math.min(
+        clear,
+        smoothstep01((Math.hypot(u - pool.u, v - pool.v) - pool.radius - 2.2) / 1.6),
+      );
+    }
+    return clear;
+  };
   const seepBushes = keep(
     buildBushBank({
       seed: SEED ^ G2_SEEDS.seepBushes,
       palette: { base: 0x9aa856, tip: 0xd6d688, shade: 0x5c6a4a, accent: 0xf0e6a0 },
       area: discAreaAt(975, 72, 46),
-      gate: seepSwardGate,
+      gate: (x, z) => seepSwardGate(x, z) * poolClear(x, z),
       ground: seabedHeight,
       count: 26,
       fronds: 8,
@@ -564,7 +583,7 @@ export function buildGolden2Cover(finFeet: readonly { u: number; v: number }[]):
         );
       },
       ground: seabedHeight,
-      count: 30,
+      count: 42,
       fronds: 5,
       accents: 4,
       looseShare: 0.35,
@@ -580,7 +599,7 @@ export function buildGolden2Cover(finFeet: readonly { u: number; v: number }[]):
       area: discArea(),
       gate: splitStoneGate,
       ground: seabedHeight,
-      count: 340,
+      count: 420,
       shapeSet: "split",
       size: [0.1, 0.3],
       twoTone: true,
@@ -624,11 +643,13 @@ export function buildGolden2Cover(finFeet: readonly { u: number; v: number }[]):
   warmMaterials(slotBlocks, 0x40324a, 0.35);
 
   // The wrack drift-lines: freight the wind dropped across the roads.
+  // Round 2: the r1 wrack read as pale paper scraps — a value DOWN, so
+  // the curls sit on their ground instead of floating over it.
   for (const [index, line] of DRIFT_LINES.entries()) {
     const wrack = keep(
       buildDriftDebris({
         seed: SEED ^ (G2_SEEDS.wrackLines + index),
-        palette: { base: 0xccb886, shade: 0x948496 },
+        palette: { base: 0xb29a72, shade: 0x8a7a8c },
         area: driftLineArea(line, 5),
         gate: (x, z) => restFree(x, z) * golden2Weight(x, z),
         ground: seabedHeight,

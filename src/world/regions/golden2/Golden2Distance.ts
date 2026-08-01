@@ -55,8 +55,11 @@ const FOOT = -14;
 
 /** Half-angle of the gap over the inbound Shore Road corridor. */
 const GAP_IN_HALF = 0.4;
-/** Half-angle of the gap reserving the outbound depth-3 corridor. */
-const GAP_OUT_HALF = 0.3;
+/** Half-angle of the gap reserving the outbound depth-3 corridor.
+ *  Narrowed in round 2: 0.3 rad parts ~72 m of skyline at the ring —
+ *  the whole Sunset Shelf vista fell into its own reservation. 0.17
+ *  still clears the future tongue's width with margin. */
+const GAP_OUT_HALF = 0.17;
 
 export function buildGolden2Distance(): { meshes: Mesh[] } {
   const meshes: Mesh[] = [];

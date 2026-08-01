@@ -173,12 +173,14 @@ export function buildGolden2Light(): Golden2LightBuild {
       tint: 0xffe0a4,
       ground: seabedHeight,
       beams: [
+        // Softened in round 2: the r1 quad read as a glowing tree trunk
+        // through the arch — lower, narrower, more slanted.
         {
           pos: [archAt.x, archAt.z],
-          top: seabedHeight(archAt.x, archAt.z) + 10,
-          width: 2.8,
-          opacity: 0.12,
-          slant: [-0.05, 0.07],
+          top: seabedHeight(archAt.x, archAt.z) + 8,
+          width: 2.2,
+          opacity: 0.09,
+          slant: [-0.09, 0.11],
         },
       ],
     }).group,

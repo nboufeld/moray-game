@@ -5,7 +5,14 @@ import { createRockMaterial } from "../../RockMaterial";
 import { boulderGeometry, slabGeometry, stackGeometry } from "../../RockShapes";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
 import { CLOSE_LENSES, insideRest, roadDistance } from "./Golden2Beats";
-import { CAPROCK_STONE, CARVED_PALE, mergedMesh, smoothstep01 } from "./Golden2Shared";
+import {
+  CAPROCK_STONE,
+  CARVED_PALE,
+  STONE_DUSK,
+  STONE_DUSK_INTENSITY,
+  mergedMesh,
+  smoothstep01,
+} from "./Golden2Shared";
 import {
   ARCH_AT,
   CARILLON,
@@ -57,9 +64,12 @@ function drawHoodooField(): Hoodoo[] {
   const random = new Random(SEED ^ 0x0a31);
   const field: Hoodoo[] = [];
   let guard = 0;
-  while (field.length < 30 && guard++ < 4000) {
-    const u = random.range(820, 1085);
-    const v = random.signed(122);
+  // Grown 30 → 42 and widened to |v| ≤ 140 in round 2: the sweep's
+  // failing frames all stood on open flanks the field never reached —
+  // the hoodoos ARE this region's middle distance, everywhere.
+  while (field.length < 42 && guard++ < 6000) {
+    const u = random.range(818, 1100);
+    const v = random.signed(140);
     if (roadDistance(u, v) < 8) {
       continue;
     }
@@ -82,7 +92,7 @@ function drawHoodooField(): Hoodoo[] {
       continue;
     }
     // Breathing room: hoodoos rank, they do not huddle.
-    if (field.some((h) => Math.hypot(h.u - u, h.v - v) < 16)) {
+    if (field.some((h) => Math.hypot(h.u - u, h.v - v) < 15)) {
       continue;
     }
     const height = random.range(4.2, 9.4);
@@ -100,6 +110,12 @@ function drawHoodooField(): Hoodoo[] {
     { u: 836, v: 20, height: 11.5, shadow: 36, cap: 2.1 },
     { u: 924, v: -26, height: 12.5, shadow: 39, cap: 2.2 },
     { u: 996, v: 26, height: 11, shadow: 34, cap: 2.0 },
+    // Round 2: the hoodoo-court pose's own near rank — the r1 frame
+    // held only far cutouts, and painted stone needs a stone within
+    // ~20 m to read as painted (appended AFTER the seeded field, so
+    // nothing above re-rolls).
+    { u: 886, v: -22, height: 7, shadow: 22, cap: 1.7 },
+    { u: 904, v: -12, height: 5.5, shadow: 17, cap: 1.45 },
   );
   return field;
 }
@@ -152,7 +168,9 @@ export function buildGolden2Rocks(): Golden2RocksBuild {
   for (const [i, u] of [652, 678, 704, 730].entries()) {
     const side = i % 2 === 0 ? 1 : -1;
     const v = side * wayRandom.range(9, 12);
-    const h = wayRandom.range(3.4, 4.6);
+    // Grown in round 2: 3.4–4.6 m stones read as pebbles down a road
+    // whose frames stand 25–50 m off.
+    const h = wayRandom.range(4.4, 5.8);
     stand(
       stackGeometry(
         [
@@ -293,56 +311,93 @@ export function buildGolden2Rocks(): Golden2RocksBuild {
     if (seepsWeight(su, sv) > 0.1 || insideRest(su, sv)) {
       continue;
     }
-    const radius = lipRandom.range(1.4, 2.3);
+    const radius = lipRandom.range(1.5, 2.4);
+    // Leaned up off the ground (round 2: a flat slab seen from above
+    // read as a manhole cover) and in the pale family.
+    const slab = slabGeometry({ seed: SEED ^ (0x0d00 + i), radius, height: radius * 0.55 });
+    slab.rotateZ(side * lipRandom.range(0.14, 0.24));
     stand(
-      slabGeometry({ seed: SEED ^ (0x0d00 + i), radius, height: radius * 0.5 }),
-      capParts,
+      slab,
+      paleParts,
       su,
       sv,
       Math.atan2(nv, nu) + lipRandom.signed(0.3),
       radius,
-      radius * 0.5,
+      radius * 0.55,
     );
   }
+
+  // ─── The Anchorite's Cell mouth ──────────────────────────────────────────
+  // Two kneeling stones flanking the way in (outside the rest's r 5.5;
+  // the chamber itself keeps its licensed bareness).
+  const cellRandom = new Random(SEED ^ 0x0a91);
+  stand(
+    boulderGeometry({ seed: SEED ^ 0x0a92, radius: 1.0, height: 1.5 }),
+    capParts,
+    958,
+    -73,
+    cellRandom.range(0, Math.PI * 2),
+    1.0,
+    1.5,
+  );
+  stand(
+    boulderGeometry({ seed: SEED ^ 0x0a93, radius: 0.8, height: 1.2 }),
+    capParts,
+    967,
+    -73,
+    cellRandom.range(0, Math.PI * 2),
+    0.8,
+    1.2,
+  );
 
   // ─── The Sunset Spires ───────────────────────────────────────────────────
   // Two leaning stacks framing the reserved depth-3 pass azimuth (the
   // spoke itself, v ≈ 0 past u 1100) — this region passing the torch
   // exactly the way the Gilded Shore stacks passed it here.
+  // Grown, tightened to the road and moved into the pale family in
+  // round 2 — the r1 pair read as two maroon knobs.
   stand(
     stackGeometry(
       [
-        { radius: 1.7, rise: 0.8, stretch: 2.1, lean: 0.7 },
-        { radius: 1.05, rise: 4.6, stretch: 1.9, lean: 1.5 },
+        { radius: 1.7, rise: 0.8, stretch: 2.6, lean: 0.7 },
+        { radius: 1.05, rise: 5.8, stretch: 2.5, lean: 1.5 },
       ],
       { seed: SEED ^ 0x0a81 },
     ),
-    capParts,
-    1102,
-    16,
+    paleParts,
+    1101,
+    13,
     1.3,
     1.7,
-    6.6,
+    8.4,
   );
   stand(
     stackGeometry(
       [
-        { radius: 1.45, rise: 0.7, stretch: 1.9, lean: -0.5 },
-        { radius: 0.95, rise: 3.8, stretch: 1.7, lean: -1.2 },
+        { radius: 1.45, rise: 0.7, stretch: 2.4, lean: -0.5 },
+        { radius: 0.95, rise: 4.8, stretch: 2.4, lean: -1.2 },
       ],
       { seed: SEED ^ 0x0a82 },
     ),
-    capParts,
-    1098,
-    -12,
+    paleParts,
+    1097,
+    -9,
     -0.6,
     1.5,
-    5.6,
+    7.1,
   );
 
-  // Two merged draws for every stone above.
-  meshes.push(mergedMesh(paleParts, createRockMaterial(CARVED_PALE), "carillon-stone-pale"));
-  meshes.push(mergedMesh(capParts, createRockMaterial(CAPROCK_STONE), "carillon-stone-cap"));
+  // Two merged draws for every stone above — with the stone dusk-lift
+  // (round 2: the r1 shade sides read flat maroon; the emissive floor
+  // keeps them a warm colour under the quarter-sun).
+  const pale = createRockMaterial(CARVED_PALE);
+  pale.emissive.setHex(STONE_DUSK);
+  pale.emissiveIntensity = STONE_DUSK_INTENSITY;
+  const cap = createRockMaterial(CAPROCK_STONE);
+  cap.emissive.setHex(0x4a3a34);
+  cap.emissiveIntensity = STONE_DUSK_INTENSITY;
+  meshes.push(mergedMesh(paleParts, pale, "carillon-stone-pale"));
+  meshes.push(mergedMesh(capParts, cap, "carillon-stone-cap"));
 
   return { meshes, colliders, contacts };
 }

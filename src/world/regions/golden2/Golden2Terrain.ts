@@ -351,16 +351,19 @@ function discHeight(x: number, z: number, u: number, v: number): number {
   // calm zones below lerp over it where they own the floor).
   h += Math.sin(u * 0.11 + Math.sin(v * 0.06) * 1.8) * 0.5;
 
-  // The Windows ridge: a stone wall rising from the pavement, dipping
-  // to a doorway around the Great Arch's stand.
+  // The Windows ridge: a stone rampart rising from the pavement,
+  // dipping to a doorway around the Great Arch's stand. Round 2: 13 m
+  // at the 2.2 m grid read as a smooth dune mountain — the rampart
+  // comes down to 9 with a broken crest, and the WALL identity lives
+  // in the built fins standing on it.
   const ridge = windowsRidge(u, v);
   if (ridge.w > 0) {
     const archD = Math.hypot(u - ARCH_AT.u, v - ARCH_AT.v);
     const doorway = 1 - smoothstep01((archD - 5) / 6);
     const crest =
-      13 *
+      9 *
       ridge.w *
-      (0.82 + 0.18 * Math.sin(ridge.t * 19 + 1.3)) *
+      (0.72 + 0.2 * Math.sin(ridge.t * 19 + 1.3) + 0.14 * Math.sin(ridge.t * 47 + 0.6)) *
       (1 - doorway);
     h += crest;
   }

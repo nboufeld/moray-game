@@ -4,7 +4,7 @@ import type { SphereCollider } from "../../CollisionField";
 import { createRockMaterial } from "../../RockMaterial";
 import { archGeometry, stackGeometry } from "../../RockShapes";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
-import { CARVED_PALE, mergedMesh } from "./Golden2Shared";
+import { CARVED_PALE, STONE_DUSK, STONE_DUSK_INTENSITY, mergedMesh } from "./Golden2Shared";
 import { ARCH_AT, WINDOWS_A, WINDOWS_B, worldOf } from "./Golden2Terrain";
 
 /**
@@ -43,17 +43,18 @@ export function buildWindows(): WindowsBuild {
   const ridgeYaw = -Math.atan2(ridgeWorld.z, ridgeWorld.x);
 
   // ─── The fins ────────────────────────────────────────────────────────────
-  // Seven flattened teeth along the crest, skipping the arch's doorway.
+  // Eight flattened teeth along the crest, skipping the arch's doorway.
   // Each is a weathered lathe squashed thin across the ridge axis, so
   // the row reads as one broken wall with windows of water between.
-  const seats = [0.1, 0.24, 0.38, 0.62, 0.75, 0.87, 0.97] as const;
+  // Grown in round 2 (the r1 wall read as a dune with buried teeth).
+  const seats = [0.05, 0.16, 0.27, 0.37, 0.63, 0.74, 0.85, 0.96] as const;
   for (const [i, t] of seats.entries()) {
     const u = WINDOWS_A.u + du * t + random.signed(1.5);
     const v = WINDOWS_A.v + dv * t + random.signed(1.5);
-    if (Math.hypot(u - ARCH_AT.u, v - ARCH_AT.v) < 9) {
+    if (Math.hypot(u - ARCH_AT.u, v - ARCH_AT.v) < 8) {
       continue;
     }
-    const height = random.range(3.6, 6.8);
+    const height = random.range(5.4, 9.2);
     const fin = stackGeometry(
       [
         { radius: 2.0, rise: 0.4, stretch: (height * 0.55) / 2.0, lean: random.signed(0.3) },
@@ -77,13 +78,15 @@ export function buildWindows(): WindowsBuild {
   // ─── THE GREAT ARCH ──────────────────────────────────────────────────────
   // Standing in the ridge's doorway, legs on the dip's shoulders, the
   // beam framing whichever country the diver has not seen yet.
+  // Grown in round 2: beside a 9 m rampart a 5.8 m arch read as a
+  // culvert; the door is now the wall's biggest statement.
   const arch = archGeometry({
     seed: SEED ^ 0x62a3,
-    span: 9.5,
-    legHeight: 5.8,
-    legRadius: 1.5,
-    beamRadius: 1.35,
-    rise: 1.6,
+    span: 12,
+    legHeight: 7.2,
+    legRadius: 1.7,
+    beamRadius: 1.5,
+    rise: 2.0,
   });
   arch.applyMatrix4(new Matrix4().makeRotationY(ridgeYaw));
   const archAt = worldOf(ARCH_AT.u, ARCH_AT.v);
@@ -95,21 +98,24 @@ export function buildWindows(): WindowsBuild {
   const ridgeLen = Math.hypot(ridgeWorld.x, ridgeWorld.z);
   const legDir = new Vector3(ridgeWorld.x / ridgeLen, 0, ridgeWorld.z / ridgeLen);
   {
-    const a = worldOf(ARCH_AT.u + 4.75 * (du / Math.hypot(du, dv)), ARCH_AT.v + 4.75 * (dv / Math.hypot(du, dv)));
-    const b = worldOf(ARCH_AT.u - 4.75 * (du / Math.hypot(du, dv)), ARCH_AT.v - 4.75 * (dv / Math.hypot(du, dv)));
+    const a = worldOf(ARCH_AT.u + 6 * (du / Math.hypot(du, dv)), ARCH_AT.v + 6 * (dv / Math.hypot(du, dv)));
+    const b = worldOf(ARCH_AT.u - 6 * (du / Math.hypot(du, dv)), ARCH_AT.v - 6 * (dv / Math.hypot(du, dv)));
     for (const leg of [a, b]) {
-      contacts.push({ x: leg.x, z: leg.z, radius: 2.0, strength: 0.42 });
-      colliders.push({ center: new Vector3(leg.x, archY + 1.6, leg.z), radius: 1.7 });
-      colliders.push({ center: new Vector3(leg.x, archY + 4.2, leg.z), radius: 1.4 });
+      contacts.push({ x: leg.x, z: leg.z, radius: 2.2, strength: 0.42 });
+      colliders.push({ center: new Vector3(leg.x, archY + 1.8, leg.z), radius: 1.9 });
+      colliders.push({ center: new Vector3(leg.x, archY + 5.0, leg.z), radius: 1.6 });
     }
     // The beam: three spheres over the swim-through, leaving the
-    // doorway itself open (clearance ≈ 4.5 m under the beam's crown).
-    const mid = new Vector3((a.x + b.x) / 2, archY + 7.2, (a.z + b.z) / 2);
-    colliders.push({ center: mid, radius: 1.6 });
-    colliders.push({ center: mid.clone().addScaledVector(legDir, 1.9), radius: 1.5 });
-    colliders.push({ center: mid.clone().addScaledVector(legDir, -1.9), radius: 1.5 });
+    // doorway itself open (clearance ≈ 6.5 m under the beam's crown).
+    const mid = new Vector3((a.x + b.x) / 2, archY + 9.0, (a.z + b.z) / 2);
+    colliders.push({ center: mid, radius: 1.8 });
+    colliders.push({ center: mid.clone().addScaledVector(legDir, 2.3), radius: 1.6 });
+    colliders.push({ center: mid.clone().addScaledVector(legDir, -2.3), radius: 1.6 });
   }
 
-  const mesh = mergedMesh(parts, createRockMaterial(CARVED_PALE), "carillon-windows");
+  const material = createRockMaterial(CARVED_PALE);
+  material.emissive.setHex(STONE_DUSK);
+  material.emissiveIntensity = STONE_DUSK_INTENSITY;
+  const mesh = mergedMesh(parts, material, "carillon-windows");
   return { meshes: [mesh], colliders, contacts, finFeet };
 }

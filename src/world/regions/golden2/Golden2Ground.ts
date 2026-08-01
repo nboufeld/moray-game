@@ -231,13 +231,20 @@ function bakeCarillonPaint(geometry: PlaneGeometry, contacts: readonly ContactPa
         const runnel = smoothstep01(
           (fbm(rd.t * 9, y * 0.1, { seed: SEED ^ 0x5a07, period: 4, octaves: 2 }) - 0.56) / 0.16,
         );
-        const tr = 1.0 - depthT * 0.52 + runnel * 0.34;
-        const tg = 0.86 - depthT * 0.5 + runnel * 0.22;
-        const tb = 0.54 + depthT * 0.42 - runnel * 0.1;
+        // Round 2: vertical flute stripes down the slot walls (~8 m
+        // period along the spine — grid-honest), so the carved stone
+        // reads carved at swimming range instead of smooth.
+        const stripe =
+          Math.max(0, Math.sin(rd.t * 100)) ** 2 *
+          smoothstep01((depthT - 0.1) / 0.25) *
+          0.6;
+        const tr = 1.0 - depthT * 0.52 + runnel * 0.34 - stripe * 0.14;
+        const tg = 0.86 - depthT * 0.5 + runnel * 0.22 - stripe * 0.14;
+        const tb = 0.54 + depthT * 0.42 - runnel * 0.1 + stripe * 0.12;
         r += (tr - r) * ribbon.wall;
         g += (tg - g) * ribbon.wall;
         b += (tb - b) * ribbon.wall;
-        value += ribbon.wall * (runnel * 0.12 - depthT * 0.16);
+        value += ribbon.wall * (runnel * 0.12 - depthT * 0.16 - stripe * 0.08);
       }
     }
 
