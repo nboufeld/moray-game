@@ -74,8 +74,11 @@ export function buildBlue2Life(): Blue2LifeBuild {
     count: 950,
     mode: "drift",
     volume: { center: [heart.x, -13, heart.z], size: [400, 20, 400] },
-    size: 0.4,
-    opacity: 0.3,
+    // Round 3: sized up a step — the shelf band is the only midwater
+    // foreground the open flanks have, and at 0.4 it vanished from the
+    // r2 sweep's flank frame.
+    size: 0.46,
+    opacity: 0.32,
     bias: { dir: [0.32, 0.04, -0.2], speed: 0.14 },
   });
   groups.push(shelfBand.group);

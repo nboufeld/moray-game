@@ -152,7 +152,10 @@ function darkGeometry(): BufferGeometry {
   const position = body.attributes.position!;
   for (let i = 0; i < position.count; i++) {
     let x = position.getX(i) * 0.62;
-    let y = position.getY(i) * 0.24;
+    // Round 3: the r2 lens profile read torpedo-like from the side —
+    // the back deepens into a dorsal hump while the belly stays shallow.
+    const rawY = position.getY(i);
+    let y = rawY * (rawY > 0 ? 0.38 : 0.22);
     let z = position.getZ(i) * 1.2; // +z is the head
     // The head blunts; the rear tapers toward the tail root.
     if (z > 2.6) {
@@ -190,13 +193,24 @@ function darkGeometry(): BufferGeometry {
     if (!merged) {
       throw new Error("blue2 gentle dark wing could not be merged");
     }
+    // Round 3: dihedral droop — the tips fall away from the body so the
+    // blades read as WINGS from the side, not as a lens's thin edge.
+    const droopPos = merged.attributes.position!;
+    for (let i = 0; i < droopPos.count; i++) {
+      const wx = droopPos.getX(i);
+      const droop = Math.max(0, Math.abs(wx) - 1.5) * 0.14;
+      droopPos.setY(i, droopPos.getY(i) - droop);
+    }
+    droopPos.needsUpdate = true;
     return merged;
   };
 
   const tail = (): BufferGeometry => {
+    // Round 3: the vane grows — the side silhouette needs the tail's
+    // rise to break the torpedo line.
     const positions = new Float32Array([
-      0.3, 0.05, -2.6, -0.3, 0.05, -2.6, 0.06, 0.4, -5.4,
-      -0.3, 0.05, -2.6, -0.06, 0.4, -5.4, 0.06, 0.4, -5.4,
+      0.34, 0.05, -2.6, -0.34, 0.05, -2.6, 0.06, 0.62, -6.3,
+      -0.34, 0.05, -2.6, -0.06, 0.62, -6.3, 0.06, 0.62, -6.3,
     ]);
     const vane = new BufferGeometry();
     vane.setAttribute("position", new BufferAttribute(positions, 3));

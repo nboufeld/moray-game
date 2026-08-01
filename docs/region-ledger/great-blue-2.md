@@ -373,6 +373,27 @@ rectangular slabs on several westward horizons (mooring/weir frames)
 Worldwall, the sheet trim) fails the distance arithmetic; round 2
 opens with a node-toggle probe before any retune.
 
+**The slab probe** (round 2 opened with it, before any retune): a
+throwaway node-toggle script (`scripts/probe-blue2-slabs.mjs`, the
+Drop Plains' diagnostic idiom) posed the weir-ford camera and hid
+candidate families one at a time. Verdict: hiding my distance rings
+changed NOTHING, and blue-1's rings/arcs/cards were not even attached
+at this depth (its streamer entry detaches 220+ m from its edge) —
+**the slabs ARE the Worldwall**: the rim terrain's fogged upper face,
+flat because its crest line was radially uniform and its paint died
+under fog in this region's deliberately CLEAR water (densityGain
+−0.004 — the vastness argument shows machinery denser moods hide).
+Answered in-kind: the crest line now undulates (an angular wobble on
+the rim-fade radius), the wall paint doubles its contour contrast and
+gains violet runnels, and the disc tiles' outer trim edge tucks to −8
+(blue-1's sawtooth lesson, one generation on). The SAME probe run
+re-shot after the stone re-tint also proved the rust-ochre mottle
+lives in the rock wash's own ALBEDO — vertex palen alone cannot cancel
+it; the material tints now lerp toward blue-1's sky key 0xc8dcee (its
+megaliths' exact cure), and the residual warm patching reads as the
+same gold lichen blue-1's ledger accepted — right, since the Kings'
+Wrack IS that region's stone family, fallen.
+
 **Round-2 orders** (all landed before the r2 captures): stone palen
 pass (hexes + baked-colour lift, Weir → pale family, splits at the
 Pharos' foot); wrack fragments grown ×1.35 and raised proud of the
@@ -384,3 +405,76 @@ rotation; the Dark darkened and grown; six poses re-staged
 (wall-face, wall-crest, kings-wrack, chute, mooring backed off the
 Weir it accidentally framed, both failing closes + their lens/bed
 registry); mood red 0.66.
+
+### Round 2 (`gb2-r2`) — the stone cure holds; the flanks are bare and three lenses still miss
+
+All 23 authored poses re-captured (dev :5209, `SHOT_PER_LAUNCH=1`),
+the full 12-pose sweep, and the three blue-1 neighbour controls —
+every PNG read.
+
+**What the round won.** The stone palen pass WORKS: the Pharos, the
+Brink slabs, the wrack and the Weir all read in the pale/violet-slate
+families now, and the residual warm patching reads as the gold lichen
+blue-1's own ledger accepted (right — the Wrack IS that stone family,
+fallen). `kings-wrack` finally exists to the eye: fragments proud of
+the silt, the fallen blade entering the strand frame with pale lichen
+texture. `skiff` reads boat-long and pale. `weir-ford` is the
+region's proof-frame: violet mood, pale-violet arch, glass sparks up,
+the travellers arriving at the Ford ON SCHEDULE (the station rotation
+worked first try — held even though the head sits a station's breadth
+off dead centre). `horns-promise` cleared its arithmetic: stand at
+lift 29 sees crest, horn crowns and raised rings. The Worldwall's
+crest now undulates and its paint carries value; `mooring` (re-staged)
+centres the second post with the first and third flanking. `strand`,
+`stairfall`, `spill`, `round-hush`, `moon-well`, `edge-lookback`,
+`close-strand-ripple`, `close-bank-blades` (near strip now dressed,
+count 130) all pass.
+
+**What still fails, and why.**
+1. `wall-face`: the steep pitch framed mostly EMPTY teal — and the
+   pass sheet's raw lateral trim silhouetted as a sawtooth staircase
+   at the right edge (the sheet's cut edge seen edge-on from above:
+   blue-1's razor-edge family, one sheet later).
+2. `close-wrack-crown`: the lens found its fragment this time — dead
+   on its SAWN END FACE: a flat lichen disc filling the frame, too
+   clean and circular, reading man-cut rather than fallen.
+3. `close-post-foot`: still one flat violet wall. Arithmetic, redone:
+   the post's root flare is r×1.5 = 4.5 m — NINE metres wide — so at
+   9 m the foot owns a ~52° slab of a 70° frame; and the r2
+   fine-grain bump is still too quiet at that range, the shade side
+   crushing to one violet.
+4. The Gentle Dark wears its colour now (violet-slate, crescent
+   visible) but the SIDE profile reads torpedo: uniform 0.24 y-scale
+   gives no dorsal line, the wings' thin edges vanish side-on, the
+   tail vane is too small to break the line.
+5. **Sweep 11/12 — but the miss is NOT in a rest**: sweep 03
+   (836, 112, north Strand flank) shows bare silt + smooth wall +
+   empty teal. Root cause measured: the flank sits at stepD ≈ 252,
+   the BAND-GAP between `strandBand` (dies at 252) and `currentBand`
+   (born at 262) — the flank drift-beats' gate multiplies a shelf
+   band that is ZERO there, so the beats never seated. Sweeps 05, 08,
+   09 sit in the Round/Hush and read composed — licensed. 10 and 12
+   pass on tufted slopes.
+6. The A/B question the moon-well frame asked: at full mood the water
+   column still reads teal against the violet floor. Green edges down
+   0.50 → 0.49 and blue up 0.80 → 0.82 for round 3 (blue stays under
+   the 0.86 cobalt ceiling).
+
+**Round-3 orders** (all landed before the r3 captures): the flank
+cure — two authored FLANK MEADOWS with their own gates (844, 116,
+r 26 / 830, −116, r 24: silt-bank tuft stands living in the band-gap,
+not gardens), THE STRAND WATCHERS (two lone flank stones, 854, 124
+and 822, −122 — one stone, a long nothing, one stone), bushes 30 → 42
+so the flank beats seat, shelf plankton 0.40 → 0.46; the pass sheet's
+lateral trim DROOPS 3.5 m under the wall's curvature (the sawtooth
+answered in geometry); `wall-face` re-staged off-axis just under the
+crest (641, −10, floor −5.5 — probed: the wall is crested by u 648);
+`close-wrack-crown` goes 3/4 (832, −37.5 looking across flank + root
+edge); `close-post-foot` backs to ~16 m (866.5, −27.5) and the post
+paint widens its value swing (strata 0.28 → 0.34, grain 0.30 → 0.34,
+fine 0.22 → 0.30, groove-violet up); the Dark gets a dorsal hump
+(back y-scale 0.38 / belly 0.22), wing dihedral droop (tips fall
+0.14/m past half-span) and a grown tail vane; strand tuft tips warm
+off the silt (0xdcd8e2 → 0xe6ddd6); mood [0.66, 0.49, 0.82]. Tests:
+27/27 green after the restages (the wall-face stand re-probed onto
+the climb).

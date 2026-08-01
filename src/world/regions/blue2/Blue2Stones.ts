@@ -262,6 +262,39 @@ export function buildBlue2Stones(): Blue2StonesBuild {
     );
   }
 
+  // ─── The Strand Watchers (round 3) ───────────────────────────────────────
+  // Two lone stones on the Strand's open flanks: the r2 sweep found
+  // the flank band bare of any mid-scale silhouette (the band-gap
+  // between the shelf bands) — the flank meadows carry the ground and
+  // these carry the skyline, in the province's own register: one
+  // stone, then a long nothing, then one stone.
+  const watcherRandom = new Random(SEED ^ B2_SEEDS.watchers);
+  for (const [i, spot] of ([
+    [854, 124, 4.6],
+    [822, -122, 3.8],
+  ] as const).entries()) {
+    stand(
+      stackGeometry(
+        [
+          { radius: 1.4, rise: 0.5, stretch: 1.5, lean: watcherRandom.signed(0.4) },
+          {
+            radius: 0.9,
+            rise: spot[2] * 0.55,
+            stretch: (spot[2] * 0.42) / 0.9,
+            lean: watcherRandom.signed(0.7),
+          },
+        ],
+        { seed: SEED ^ (B2_SEEDS.watchers + i * 13), rings: 24 },
+      ),
+      i === 0 ? slateParts : paleParts,
+      spot[0],
+      spot[1],
+      watcherRandom.range(0, Math.PI * 2),
+      1.5,
+      spot[2],
+    );
+  }
+
   // ─── The Watch Stones ────────────────────────────────────────────────────
   const sleeperRandom = new Random(SEED ^ B2_SEEDS.sleeper);
   for (const [i, spot] of ([

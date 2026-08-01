@@ -376,7 +376,9 @@ export function buildBlue2Cover(): Blue2CoverBuild {
   const strandTufts = keep(
     buildCarpetField({
       seed: SEED ^ B2_SEEDS.strandTufts,
-      palette: { base: 0xb9b2ce, tip: 0xdcd8e2, shade: 0x7c7496 },
+      // Round 3: the tips warm a step off the ground's own bone-violet
+      // so the tufts separate from the silt they stand on.
+      palette: { base: 0xb9b2ce, tip: 0xe6ddd6, shade: 0x7c7496 },
       area: discArea(),
       gate: strandTuftGate,
       ground: seabedHeight,
@@ -470,6 +472,50 @@ export function buildBlue2Cover(): Blue2CoverBuild {
   );
   duskLift(wallTufts, 0x3a3450, 0.5);
 
+  // The flank meadows (round 3): the Strand's open flanks fall in the
+  // band-gap between the strand and current shelf bands (stepD
+  // ~250–265), so the r2 sweep found bare silt at (836, 112) — a
+  // three-layer miss OUTSIDE any registered rest. Two authored meadow
+  // discs with their own gates carry the flanks: silt-bank tuft
+  // stands, not gardens.
+  const meadows: readonly { seed: number; u: number; v: number; radius: number; count: number }[] =
+    [
+      { seed: B2_SEEDS.flankMeadowN, u: 844, v: 116, radius: 26, count: 520 },
+      { seed: B2_SEEDS.flankMeadowS, u: 830, v: -116, radius: 24, count: 460 },
+    ];
+  for (const meadow of meadows) {
+    const field = keep(
+      buildCarpetField({
+        seed: SEED ^ meadow.seed,
+        palette: { base: 0xb9b2ce, tip: 0xe6ddd6, shade: 0x7c7496 },
+        area: discAreaAt(meadow.u, meadow.v, meadow.radius),
+        gate: (x, z) => {
+          const { u, v } = spokeOf(x, z);
+          const d = Math.hypot(u - meadow.u, v - meadow.v);
+          const disc = 1 - smoothstep01((d - meadow.radius * 0.7) / (meadow.radius * 0.3));
+          const drift = smoothstep01((Math.sin(d * 0.7 + u * 0.05) + 0.5) / 1.1);
+          return (
+            fillOwn(x, z) *
+            restFree(x, z) *
+            lensFree(x, z) *
+            stoneFree(u, v) *
+            bedFree(u, v) *
+            disc *
+            (0.35 + 0.65 * drift)
+          );
+        },
+        ground: seabedHeight,
+        count: meadow.count,
+        profile: "blade",
+        size: [0.34, 0.68],
+        swayAmp: 0.045,
+        sunGlow: true,
+        looseShare: 0.5,
+      }),
+    );
+    duskLift(field, 0x3a3450, 0.5);
+  }
+
   // Flank bushes: silver-violet cushions at the drift beats — the
   // mid-scale silhouettes the open shelves need (the Terraces' sweep
   // lesson pre-paid).
@@ -493,7 +539,10 @@ export function buildBlue2Cover(): Blue2CoverBuild {
         );
       },
       ground: seabedHeight,
-      count: 30,
+      // Round 3: 30 → 42 — the open-flank beats need their mid-scale
+      // silhouettes to actually seat (the r2 sweep's flank frame had
+      // none in view).
+      count: 42,
       fronds: 5,
       accents: 4,
       looseShare: 0.35,
@@ -531,7 +580,7 @@ export function buildBlue2Cover(): Blue2CoverBuild {
       radius: 4.5,
       count: 84,
       profile: "blade",
-      palette: { base: 0xb9b2ce, tip: 0xdcd8e2, shade: 0x7c7496 },
+      palette: { base: 0xb9b2ce, tip: 0xe6ddd6, shade: 0x7c7496 },
       warm: 0x3a3450,
     },
     {
@@ -545,8 +594,8 @@ export function buildBlue2Cover(): Blue2CoverBuild {
     },
     {
       seed: B2_SEEDS.closeWrackBed,
-      // On the look ray toward the fallen blade (round 2 restage).
-      at: { u: CLOSE_LENSES[2]!.u - 2.4, v: CLOSE_LENSES[2]!.v - 2.4 },
+      // On the 3/4 look ray toward the fallen blade (round 3 restage).
+      at: { u: CLOSE_LENSES[2]!.u - 2.5, v: CLOSE_LENSES[2]!.v + 1.6 },
       radius: 4,
       count: 78,
       profile: "frond",
@@ -555,8 +604,8 @@ export function buildBlue2Cover(): Blue2CoverBuild {
     },
     {
       seed: B2_SEEDS.closePostBed,
-      // Between the backed-out lens and the post's foot (round 2).
-      at: { u: CLOSE_LENSES[3]!.u + 2.4, v: CLOSE_LENSES[3]!.v - 3.2 },
+      // Between the backed-out lens and the post's foot (round 3).
+      at: { u: CLOSE_LENSES[3]!.u + 2.0, v: CLOSE_LENSES[3]!.v - 2.6 },
       radius: 4,
       count: 72,
       profile: "blade",

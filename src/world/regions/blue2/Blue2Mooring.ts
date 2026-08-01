@@ -113,14 +113,16 @@ function ribAndPaint(geometry: BufferGeometry, height: number, ribs: number, see
     // strata bands, grain jitter and violet pooled in every groove.
     const strata = fbm(t * 7.2, theta * 0.7, { seed: seed ^ 0x17, period: 5, octaves: 2 }) - 0.5;
     const grain = fbm(theta * 2.4, y * 0.45, { seed: seed ^ 0x2b, period: 7, octaves: 2 }) - 0.5;
-    // Round 2: fine grain amplitude up — at a 2–4 m lens one ~5 m
-    // strata band fills the whole frame and the shaft read flat.
+    // Rounds 2–3: fine grain amplitude up twice — at a close lens one
+    // ~5 m strata band fills the whole frame and the shaft read flat;
+    // the r3 pass also widens the value swing so the shade side keeps
+    // its drawing instead of crushing to one violet.
     const fine = fbm(theta * 6.1, y * 2.1, { seed: seed ^ 0x3d, period: 9, octaves: 2 }) - 0.5;
     shade
       .copy(pale)
       .lerp(bright, 0.18 + smoothstep01((t - 0.3) / 0.6) * 0.62)
-      .lerp(violet, Math.max(0, -groove) * 0.34 * band + Math.max(0, -strata) * 0.24)
-      .multiplyScalar(1.04 + strata * 0.28 + grain * 0.3 + fine * 0.22);
+      .lerp(violet, Math.max(0, -groove) * 0.34 * band + Math.max(0, -strata) * 0.28)
+      .multiplyScalar(1.04 + strata * 0.34 + grain * 0.34 + fine * 0.3);
     // The drowned foot: the deep's own violet, never black.
     shade.lerp(violet, (1 - smoothstep01((t - 0.04) / 0.16)) * 0.42);
     colors[i * 3] = shade.r;

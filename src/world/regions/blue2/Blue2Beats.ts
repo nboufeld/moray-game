@@ -182,11 +182,13 @@ export function beatDepth(u: number, v: number): number {
 export const CLOSE_LENSES: readonly { u: number; v: number }[] = [
   { u: 816.0, v: -18.5 }, // close-strand-ripple
   { u: 887.0, v: 3.0 }, // close-bank-blades (the Current's levee)
-  // Round 2: onto a real fragment (the r1 lens's stone was out of its
-  // own frame) and off the post's shaft (the r1 lens stood inside its
-  // subject — the golden2 close-flute-foot lesson).
-  { u: 830.5, v: -29.5 }, // close-wrack-crown (the great fallen blade)
-  { u: 870.5, v: -32.5 }, // close-post-foot (the first Mooring post)
+  // Round 3: the r2 crown lens stared straight down the blade's sawn
+  // end face (a lichen disc filled the frame) — the stand steps to the
+  // south flank for a 3/4 view of flank + root edge; the r2 post lens
+  // still drowned in the shaft (the foot flare is 9 m wide) — backed
+  // to ~16 m so foot, splits, bed and water all read.
+  { u: 832.0, v: -37.5 }, // close-wrack-crown (the great fallen blade, 3/4)
+  { u: 866.5, v: -27.5 }, // close-post-foot (the first Mooring post)
 ] as const;
 
 /** 1 clear of every close lens, 0 within a metre of one. */

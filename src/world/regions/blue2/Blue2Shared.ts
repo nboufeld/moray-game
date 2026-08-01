@@ -134,6 +134,7 @@ export const B2_SEEDS = {
   horns: 0x0a61,
   chuteStones: 0x0a71,
   sleeper: 0x0a81,
+  watchers: 0x0a91,
   // The Mooring and the Weir.
   mooring: 0x61a1,
   mooringPaint: 0x61b0,
@@ -158,6 +159,8 @@ export const B2_SEEDS = {
   stairMoss: 0xf00b,
   driftWrack: 0xf00c,
   flankBushes: 0xf00d,
+  flankMeadowN: 0xf00e,
+  flankMeadowS: 0xf00f,
   closeStrandBed: 0xf011,
   closeBankBed: 0xf012,
   closeWrackBed: 0xf013,

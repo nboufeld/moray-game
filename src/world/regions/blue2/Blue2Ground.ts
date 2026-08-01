@@ -306,6 +306,28 @@ function tuckTrimEdge(geometry: PlaneGeometry): void {
   position.needsUpdate = true;
 }
 
+/**
+ * Droops the pass sheet's lateral trim edges under the wall (round 3):
+ * seen edge-on from the wall band, the raw lateral cut zigzagged as a
+ * sawtooth silhouette across the wall-face frame — the same razor-edge
+ * family as the disc trim, one sheet later. The last metres of width
+ * sag below the composed ground, so the cut edge tucks under the
+ * wall's own curvature instead of standing on it.
+ */
+function droopPassEdge(geometry: PlaneGeometry): void {
+  const position = geometry.attributes.position!;
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i);
+    const z = position.getZ(i);
+    const { u, v } = spokeOf(x, z);
+    const k = smoothstep01((Math.abs(v) - (passHalfWidth(u) + 3)) / 7);
+    if (k > 0) {
+      position.setY(i, position.getY(i) - k * 3.5);
+    }
+  }
+  position.needsUpdate = true;
+}
+
 /** Drops every triangle whose three corners all fail `keep`. */
 function trimSheet(geometry: PlaneGeometry, keep: (x: number, z: number) => boolean): void {
   const position = geometry.attributes.position!;
@@ -361,6 +383,7 @@ export function buildBlue2Ground(contacts: readonly ContactPatch[]): Mesh[] {
     const { u, v } = spokeOf(x, z);
     return u >= 626 && u <= 742 && Math.abs(v) <= passHalfWidth(u) + 10;
   });
+  droopPassEdge(passGeometry);
   bakeDeepStepsPaint(passGeometry, contacts);
   const pass = new Mesh(passGeometry, material);
   pass.name = "deepsteps-ground-pass";
