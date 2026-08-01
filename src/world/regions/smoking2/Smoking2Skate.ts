@@ -8,11 +8,11 @@ import {
 } from "three";
 import { fbm } from "../../../rendering/ProceduralTexture";
 import { createToonMaterial } from "../../../rendering/ToonShading";
-import { Random, SEEDS } from "../../../util/Random";
+import { SEEDS } from "../../../util/Random";
 import type { DiscoveryTarget } from "../../../discovery/DiscoverySystem";
 import { seabedHeight } from "../../Seabed";
-import { EMBER, FC_SEEDS, applySeamGlow, smoothstep01 } from "./Smoking2Shared";
-import { ANVIL, washCenter, worldOf } from "./Smoking2Terrain";
+import { EMBER, applySeamGlow, smoothstep01 } from "./Smoking2Shared";
+import { washCenter, worldOf } from "./Smoking2Terrain";
 
 /**
  * The Ember Skate — the region's findable resident: a broad-winged skate
@@ -26,7 +26,9 @@ import { ANVIL, washCenter, worldOf } from "./Smoking2Terrain";
  * spread flat): a rows × columns grid whose *positions* are rewritten
  * each frame along a closed path over the wash, wings flapping in a slow
  * deep beat, plus a trailing tail strip. Everything is closed-form off
- * simulated time — capture-safe, no wall clock.
+ * FLIGHT time — which counts from the moment a diver first reaches the
+ * court and wakes the roosting keeper, never from page boot. Capture-
+ * safe by behaviour, not by pinning.
  */
 
 const SEED = SEEDS.regionSmoking2;
@@ -49,7 +51,11 @@ const HALF_SPAN = 1.5;
 export interface SkateBuild {
   readonly meshes: Mesh[];
   readonly target: DiscoveryTarget;
-  update(time: number, reducedMotion: boolean): void;
+  update(
+    time: number,
+    reducedMotion: boolean,
+    diverPosition: { readonly x: number; readonly z: number },
+  ): void;
 }
 
 /** The circuit: the Anvil court's compact loop — the keeper rides the
@@ -58,16 +64,27 @@ export interface SkateBuild {
  *  phase lottery (connective-3's route lesson); a court loop keeps the
  *  lantern where the country's heart is. R5: ±46 m was still a lottery —
  *  the loop's far side sat ~100 m from any stand, past the fog's read;
- *  three probe launches found the skate at three different reaches. At
- *  ±26 m every point of the circuit is inside 50 m of the court's north
- *  bank, so the pose holds the WHOLE loop and the phase stops mattering. */
-function pathAt(t: number, phase: number, out: Vector3): Vector3 {
-  const theta = t * Math.PI * 2 + phase;
-  const u = 948 + 26 * Math.cos(theta);
+ *  three probe launches found the skate at three different reaches. Now
+ *  ±26 m, and the phase is not a clock at all: the keeper ROOSTS on the
+ *  warm seam road, wings still, and lifts into its round when a diver
+ *  first reaches the court (below). Wall time cannot touch it. */
+const COURT_U = 948;
+/** Where the roosting skate lies, as a loop angle: chosen so six seconds
+ *  of flight (the pose's settle) put it mid-court on the north band,
+ *  ~25 m from the pose's bank and well under its aim ray. */
+const ROOST_THETA = 0.994;
+/** How far a diver must come before the keeper lifts off, metres. */
+const WAKE_RADIUS = 90;
+/** Seconds of the lift-off ease from the roost to flight height. */
+const RISE_SECONDS = 3;
+
+function pathAt(t: number, rise: number, out: Vector3): Vector3 {
+  const theta = t * Math.PI * 2 + ROOST_THETA;
+  const u = COURT_U + 26 * Math.cos(theta);
   const v = washCenter(u) + 8 * Math.sin(theta) + 1.4 * Math.sin(theta * 3);
   const { x, z } = worldOf(u, v);
   const floor = seabedHeight(x, z);
-  out.set(x, floor + 2.1 + 0.5 * Math.sin(theta * 2), z);
+  out.set(x, floor + 0.45 + (1.65 + 0.5 * Math.sin(theta * 2)) * rise, z);
   return out;
 }
 
@@ -77,9 +94,6 @@ function halfWidthAt(rowT: number): number {
 }
 
 export function buildSmoking2Skate(): SkateBuild {
-  const random = new Random(SEED ^ FC_SEEDS.skate);
-  const phase = random.range(0, Math.PI * 2);
-
   const geometry = buildSkateBody();
   const material = createToonMaterial({
     vertexColors: true,
@@ -95,12 +109,12 @@ export function buildSmoking2Skate(): SkateBuild {
   mesh.receiveShadow = false;
   mesh.frustumCulled = false;
 
-  // The discovery target sits at the Anvil's court, where the circuit
-  // passes closest to the region's heart.
-  const anvilAt = worldOf(ANVIL.u - 6, ANVIL.v - 8);
+  // The discovery target rides the skate's own nose (the morays' head
+  // convention): the player focuses the animal, not a spot of water.
+  // `pose()` keeps it current.
   const target: DiscoveryTarget = {
     speciesId: SKATE_SPECIES_ID,
-    position: new Vector3(anvilAt.x, seabedHeight(anvilAt.x, anvilAt.z) + 2.2, anvilAt.z),
+    position: new Vector3(),
   };
 
   const position = geometry.attributes.position as BufferAttribute;
@@ -111,27 +125,35 @@ export function buildSmoking2Skate(): SkateBuild {
   const lift = new Vector3();
   const up = new Vector3(0, 1, 0);
 
-  const pose = (time: number): void => {
-    const head = (time / LOOP_SECONDS) % 1;
-    const beat = time * 0.9;
+  const pose = (flightTime: number): void => {
+    const head = (flightTime / LOOP_SECONDS) % 1;
+    const beat = flightTime * 0.9;
+    const rise = smoothstep01(flightTime / RISE_SECONDS);
     for (let row = 0; row < ROWS; row++) {
       const rowT = row / (ROWS - 1);
       const s = (((head - (rowT * BODY_LENGTH) / 420) % 1) + 1) % 1;
-      pathAt(s, phase, at);
-      pathAt((s + 0.004) % 1, phase, ahead);
+      pathAt(s, rise, at);
+      pathAt((s + 0.004) % 1, rise, ahead);
       tangent.subVectors(ahead, at).normalize();
       side.crossVectors(tangent, up).normalize();
       lift.crossVectors(side, tangent).normalize();
+
+      if (row === 0) {
+        // The nose is the focusable point, morays' convention.
+        target.position.copy(at);
+      }
 
       const half = halfWidthAt(rowT);
       for (let col = 0; col < COLS; col++) {
         const colT = (col / (COLS - 1)) * 2 - 1; // −1 … +1 across the span
         const reach = colT * half;
         // The flap: a deep slow beat, strongest at the tips, travelling
-        // slightly aft so the wing rolls instead of hinging.
+        // slightly aft so the wing rolls instead of hinging — stilled at
+        // the roost, waking with the rise.
         const flap =
           Math.sin(beat - Math.abs(colT) * 0.9 - rowT * 0.6) *
           0.34 *
+          rise *
           Math.abs(colT) ** 1.4;
         // A slight dome over the body's midline.
         const dome = (1 - colT * colT) * 0.1 * Math.sin(Math.PI * rowT);
@@ -149,11 +171,11 @@ export function buildSmoking2Skate(): SkateBuild {
     for (let seg = 0; seg < TAIL_SEGMENTS; seg++) {
       const segT = (seg + 1) / TAIL_SEGMENTS;
       const s = (((head - (BODY_LENGTH + segT * 1.5) / 420) % 1) + 1) % 1;
-      pathAt(s, phase, at);
-      pathAt((s + 0.004) % 1, phase, ahead);
+      pathAt(s, rise, at);
+      pathAt((s + 0.004) % 1, rise, ahead);
       tangent.subVectors(ahead, at).normalize();
       side.crossVectors(tangent, up).normalize();
-      const wag = Math.sin(beat * 1.3 - segT * 2.4) * 0.12 * segT;
+      const wag = Math.sin(beat * 1.3 - segT * 2.4) * 0.12 * segT * rise;
       const width = 0.09 * (1 - segT * 0.75);
       for (const [k, dir] of [-1, 1].entries()) {
         position.setXYZ(
@@ -175,16 +197,36 @@ export function buildSmoking2Skate(): SkateBuild {
   geometry.boundingSphere!.center.set(mid.x, seabedHeight(mid.x, mid.z) + 2, mid.z);
   geometry.boundingSphere!.radius = 160;
 
-  let slowTime = 0;
+  // The wake latch (R5): the keeper roosts, wings still, until a diver
+  // first reaches the court — then it lifts into its round and stays on
+  // the wing. Flight time counts from THAT moment, never from page
+  // boot, so a capture's settle always finds it the same seconds into
+  // the same circuit; wall clock cannot reach it (connective-3's
+  // traveller lesson, answered in the animal's own behaviour).
+  const court = worldOf(COURT_U, washCenter(COURT_U));
+  let flying = false;
+  let flightTime = 0;
   let last = 0;
   return {
     meshes: [mesh],
     target,
-    update(time: number, reducedMotion: boolean): void {
+    update(
+      time: number,
+      reducedMotion: boolean,
+      diverPosition: { readonly x: number; readonly z: number },
+    ): void {
       const dt = Math.max(0, time - last);
       last = time;
-      slowTime += dt * (reducedMotion ? 0.5 : 1);
-      pose(slowTime);
+      if (!flying) {
+        const dx = diverPosition.x - court.x;
+        const dz = diverPosition.z - court.z;
+        flying = dx * dx + dz * dz < WAKE_RADIUS * WAKE_RADIUS;
+      }
+      if (!flying) {
+        return;
+      }
+      flightTime += dt * (reducedMotion ? 0.5 : 1);
+      pose(flightTime);
     },
   };
 }

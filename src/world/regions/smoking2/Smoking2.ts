@@ -237,7 +237,7 @@ export const SMOKING_2: RegionDef = {
       colliders,
       targets: [skate.target],
       update(_dt, ctx): void {
-        skate.update(ctx.time, ctx.reducedMotion);
+        skate.update(ctx.time, ctx.reducedMotion, ctx.diverPosition);
         // Kit motion is closed-form off simulated seconds (capture-safe);
         // reduced motion slows the clock the same way the region's own
         // systems do.
