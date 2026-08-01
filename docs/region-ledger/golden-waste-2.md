@@ -169,6 +169,11 @@ pass corridor only — the reserved depth-3 corridor stays sealed).
 
 - Draft 1: **67 draws / 618,842 tris**; colliders > 100, all inside
   the domain by test. Headroom held for the critique rounds.
+- Round 2: **67 draws / 763,762 tris** (stone value pass, Windows
+  rebuild, counts up).
+- Round 4 (final): **67 draws / 892,826 tris** — 26% of the R12 draw
+  cap, 66% of the tri cap, bound by the measured frame gate (16.7 ms
+  median at scale 1.00 at both probe poses).
 
 ## Seeds
 
@@ -522,3 +527,36 @@ a legislated parting with an edge, not a dissolve accident. The shelf
 road runs under the stand with its sward and grit carrying the near
 field. The vista pose finally does the one job it exists for: it
 frames the promise.
+
+### The no-assets pass (`gw2-noassets`) — 20/20 SURVIVE
+
+All twenty authored poses captured with every `public/assets` request
+aborted at the network. The region is procedural to the bone — every
+stone, tower, fin, hoodoo and shard is lathed/merged geometry wearing
+baked vertex paint; the kit cover, the light shafts, the seep pools,
+the Bell Ringer's gold spiral and the swift wheel all hold their
+frames unchanged. The only visible shift is the world's own fallback
+water/ambience tint (teal against the painted build's honey) — a
+shipping configuration, not a degradation. No frame goes black, no
+surface loses its paint, no landmark drops out.
+
+**Harness finding (for the orchestrator and the next worker):**
+`blockAssets` routes `**/assets/**` — and a PREVIEW bundle serves its
+own compiled JS from `/assets/` too, so a no-assets run against
+`vite preview` blocks the app's own bundle and `__reef` never
+appears (the 900 s wait at region-shots.mjs:87 times out; a sibling
+worker hit the identical crash). **Run the no-assets pass against
+the DEV server**, where source modules come from `/src/` and only
+authored art lives under `/assets/`. Everything else in this round
+ran on the prebuilt bundle as documented.
+
+### Final gates
+
+- `npm run typecheck` — exit 0.
+- `npx eslint . --max-warnings 0` — exit 0.
+- `npm test` (full) — 60 files, 844 tests, all green, exit 0
+  (includes `tests/regionGolden2.test.ts`: containment, rest
+  emptiness, determinism/no-reroll, world-map separation, budget
+  walk, pass-handover overlap, reject-circle step).
+- Authored 20/20; sweep 12/12 pinned; no-assets 20/20; frame gate
+  16.7 ms median / scale 1.00 at both probe poses. Standard met.
