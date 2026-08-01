@@ -11,6 +11,7 @@ import { GOLDEN_2 } from "./golden2/Golden2";
 import { PALE_2 } from "./pale2/Pale2";
 import { SMOKING_2 } from "./smoking2/Smoking2";
 import { BLUE_2 } from "./blue2/Blue2";
+import { SMOKING_3 } from "./smoking3/Smoking3";
 
 /**
  * The registered regions. Pre-wired empty by R0. A region worker adds
@@ -32,6 +33,7 @@ export const REGIONS: readonly RegionDef[] = [
   PALE_2,
   SMOKING_2,
   BLUE_2,
+  SMOKING_3,
 ];
 
 const BY_SLOT = new Map(REGIONS.map((region) => [region.slotId, region]));
