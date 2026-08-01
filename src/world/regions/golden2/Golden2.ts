@@ -168,9 +168,11 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // sill): between the flank stones, into the bare round chamber.
   { name: "anchorite-cell", u: 962.5, v: -71.5, lift: 2.1, atU: 962, atV: -80, pitch: -0.08, settle: 3 },
   // The Seep Terraces: travertine benches, pools, bubbles, gardens.
-  // Round 3: swung around to the east bench — the r2 stand framed
-  // sward with every pool out of shot left.
-  { name: "seep-terraces", u: 980, v: 46, lift: 3.4, atU: 966, atV: 86, pitch: -0.12, settle: 4 },
+  // Round 3: up to the HIGH shoulder looking down the staircase — the
+  // r2 stand framed sward with every pool out of shot left, and the
+  // first r3 draft looked up a riser wall (caught by the sightline
+  // probe, not a capture).
+  { name: "seep-terraces", u: 962, v: 102, lift: 5.8, atU: 976, atV: 66, pitch: -0.09, settle: 4 },
   // The Carillon from the road: five fluted towers rising over the
   // court — the region's proof shot.
   { name: "carillon", u: 994, v: -20, lift: 3.6, atU: 1030, atV: -18, pitch: 0.06, settle: 4 },
@@ -190,7 +192,11 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // gap; swung further in round 3 with the ring taper shortened (the
   // r2 sightline crossed the rings inside the old 1.1 rad taper, where
   // every column still topped out below ground).
-  { name: "sunset-shelf", u: 1076, v: -4, lift: 3.0, atU: 1104, atV: 30, pitch: -0.02 },
+  // …and lifted high off the court floor: the shelf RISES ~8 m between
+  // the old stand and the rim, and a level sightline from lift 3 died
+  // in the rise 43 m out (the probe again). The promise is a vista;
+  // the camera swims up for it.
+  { name: "sunset-shelf", u: 1064, v: -10, lift: 10.0, atU: 1104, atV: 30, pitch: 0.04 },
   // ── The close-range set (R12's still-frame bar, judged at 2–4 m) ─────────
   { name: "close-court-garden", u: 858.5, v: 9.2, lift: 1.5, atU: 862.0, atV: 12.8, pitch: -0.22, settle: 3 },
   // Round 3: backed off the rim — the r2 lens stood ON it and cut the
