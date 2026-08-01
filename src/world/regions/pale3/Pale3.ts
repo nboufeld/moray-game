@@ -120,10 +120,12 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // already parted over the corridor — the reservation, spent.)
   { name: "pass-threshold", u: 1137, v: 0, lift: 1.6, atU: 1200, atV: 2, pitch: 0.0 },
   // The Matins Gate: the twin font towers framing the descent's mouth.
-  { name: "matins-gate", u: 1233, v: 2, lift: 2.4, atU: 1256, atV: 0, pitch: -0.06 },
+  // Round 2: backed off — at u 1233 the towers cropped at the frame.
+  { name: "matins-gate", u: 1224, v: 2, lift: 2.6, atU: 1256, atV: 0, pitch: -0.04 },
   // On the descent itself, close and steep (the stair lesson: get ON
-  // the road, subject inside 30 m).
-  { name: "vigil-steps", u: 1262, v: -3, lift: 3.4, atU: 1284, atV: 2, pitch: -0.26 },
+  // the road, subject inside 30 m). Round 2: lower and steeper — the
+  // r1 pose floated over the slot and the staircase never read.
+  { name: "vigil-steps", u: 1258, v: -2, lift: 2.6, atU: 1280, atV: 2, pitch: -0.3 },
   // In the Undawn, looking back up at the gate's light — the hour
   // before morning, read as a composed held breath.
   { name: "undawn-hush", u: 1297, v: 2, lift: 3.6, atU: 1270, atV: -4, pitch: 0.22, settle: 4 },
@@ -136,11 +138,14 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // At the Belfry's doorway, looking into the lit room.
   { name: "belfry-heart", u: 1442, v: -34, lift: 2.4, atU: 1442, atV: -46, pitch: 0.14, settle: 4 },
   // THE STILL MORNING from its lip: the mirror, the reflection lane.
-  { name: "still-morning", u: 1414, v: 62, lift: 2.6, atU: 1444, atV: 78, pitch: -0.18, settle: 4 },
+  // Round 2: onto the low south-west lip, higher and steeper — the r1
+  // pose looked across the bowl and the mirror never read.
+  { name: "still-morning", u: 1420, v: 56, lift: 3.6, atU: 1442, atV: 78, pitch: -0.3, settle: 4 },
   // The Blushfields: dawn colour on the ground, fonts behind.
   { name: "blushfields", u: 1444, v: -84, lift: 2.6, atU: 1496, atV: -68, pitch: -0.02 },
   // The Dawn Steps toward the pearl: the region's proof frame.
-  { name: "dawn-steps", u: 1556, v: 12, lift: 3.4, atU: 1614, atV: 2, pitch: 0.02 },
+  // Round 2: stepped closer — at 60 m the terraces washed to fog.
+  { name: "dawn-steps", u: 1572, v: 10, lift: 3.0, atU: 1618, atV: 2, pitch: 0.04 },
   // THE DAYSPRING: the risen pearl, the veil, the Chorister.
   { name: "the-dayspring", u: 1594, v: -14, lift: 2.8, atU: 1630, atV: 0, pitch: 0.08 },
   // On the Sun's Doorstep, inside the rest, looking up at the light.
@@ -148,7 +153,9 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // Looking back the way we came: the font skyline over the road.
   { name: "dawn-lookback", u: 1560, v: 4, lift: 7.5, atU: 1460, atV: 0, pitch: 0.02 },
   // ── The close set (2–4 m, the owner's judged distance) ──
-  { name: "close-font-foot", u: 1384, v: -10, lift: 1.4, atU: 1382, atV: -6, pitch: -0.5 },
+  // Round 2: backed out of the font's own skirt radius — the r1 pose
+  // stood inside it and framed eight metres of flat wall.
+  { name: "close-font-foot", u: 1390, v: -13, lift: 1.5, atU: 1383, atV: -7, pitch: -0.42 },
   { name: "close-blush-bed", u: 1470, v: -78, lift: 1.4, atU: 1474, atV: -82, pitch: -0.45 },
   { name: "close-road-shelf", u: 1190, v: 1, lift: 1.3, atU: 1194, atV: 3, pitch: -0.5 },
   { name: "close-terrace-lip", u: 1588, v: 8, lift: 1.5, atU: 1592, atV: 12, pitch: -0.45 },
@@ -186,11 +193,15 @@ export const PALE_3: RegionDef = {
     // side of the paper: red a breath over the Combs' 3.7, gold up,
     // blue down a step; density eased a hair so the long dawn views
     // keep their paint (the fonts must layer through ~60 m).
-    fog: { colorScale: [4.0, 1.34, 1.08], densityGain: 0.0055, backdropFade: 0.3 },
+    // Round 2: density 0.0055 → 0.0065 and the scale milkier — r1's
+    // upper third showed the dark backdrop through too-clear water
+    // (teal, not morning milk); backdropFade up with it.
+    fog: { colorScale: [4.2, 1.38, 1.16], densityGain: 0.0065, backdropFade: 0.36 },
     // Morning light flat from ahead and above, shadows violet: the
     // province's light grammar, warmed one more step because the
-    // source is HERE.
-    light: { sun: 0.5, hemisphere: 0.32, ambient: -0.42 },
+    // source is HERE. Round 2: sun and hemisphere up a breath — the
+    // r1 ground read tan-in-shade instead of paper.
+    light: { sun: 0.52, hemisphere: 0.34, ambient: -0.42 },
   },
   moodSurface: 16,
   moodDescent: 8,

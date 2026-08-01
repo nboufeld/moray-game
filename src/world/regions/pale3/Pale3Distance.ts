@@ -58,8 +58,9 @@ const FOOT = -30;
 
 /** Milk ink: a breath above the fog — the pearl horizon. */
 const INK_MILK = new Color(1.03, 1.02, 1.04);
-/** Morning ink: first-light gold held BRIGHT. */
-const INK_MORNING = new Color(1.18, 1.02, 0.74);
+/** Morning ink: first-light gold held BRIGHT. Round 2: stronger — the
+ *  r1 warm sector was invisible under the milk. */
+const INK_MORNING = new Color(1.24, 1.04, 0.7);
 /** Dawn-rose ink at the morning's very heart. */
 const INK_ROSE = new Color(1.16, 0.94, 0.86);
 
@@ -215,15 +216,18 @@ function buildMorningVeil(outAt: number): Mesh {
     for (let i = 0; i <= COLS; i++) {
       const t = i / COLS - 0.5;
       positions.push(cx + tx * t * HALF_W * 2, FOOT + 4 + HEIGHT * h, cz + tz * t * HALF_W * 2);
-      // A gaussian heart low on the horizon line (a sun about to
-      // clear it), black at every rim (additive: black = gone). The
-      // heart leans gold; the skirt leans rose — a dawn sky's order.
-      const heart = Math.exp(-((t * 2.4) ** 2)) * Math.exp(-(((h - 0.3) / 0.34) ** 2));
-      const skirt = Math.exp(-((t * 1.5) ** 2)) * Math.exp(-(((h - 0.52) / 0.5) ** 2)) * 0.4;
+      // A gaussian heart just clearing the horizon line, black at
+      // every rim (additive: black = gone). The heart leans gold; the
+      // skirt leans rose — a dawn sky's order. Round 2: the heart
+      // raised (h 0.3 → 0.48) so it stands ABOVE the lowered ring
+      // crests, and both terms strengthened — r1's veil was hidden
+      // behind the region's own rings.
+      const heart = Math.exp(-((t * 2.4) ** 2)) * Math.exp(-(((h - 0.48) / 0.34) ** 2));
+      const skirt = Math.exp(-((t * 1.5) ** 2)) * Math.exp(-(((h - 0.66) / 0.5) ** 2)) * 0.42;
       colors.push(
-        0.6 * heart + 0.3 * skirt,
-        0.42 * heart + 0.17 * skirt,
-        0.18 * heart + 0.14 * skirt,
+        0.66 * heart + 0.34 * skirt,
+        0.46 * heart + 0.19 * skirt,
+        0.2 * heart + 0.15 * skirt,
       );
     }
   }
@@ -358,12 +362,16 @@ function reefRing(
 
     const t = i / SEGMENTS;
     const morning = morningAt(theta, outAt);
+    // Round 2: the morning's arc drops LOW instead of climbing — dawn
+    // is a low horizon the light floods over, and r1's raised crests
+    // stood in front of the veil and curtained the region's own dawn
+    // (the Emerald Gate lesson, self-inflicted and cured).
     const crest =
-      layer.crestBase +
-      morning * layer.crestBase * 0.35 +
+      layer.crestBase * (1 - 0.42 * morning) +
       (fbm(t * 8, layer.radius * 0.01, { seed: noiseSeed, period: 8, octaves: 3 }) - 0.5) *
         2 *
-        layer.crestVary;
+        layer.crestVary *
+        (1 - 0.5 * morning);
 
     positions.push(x, FOOT, z, x, FOOT + Math.max(1.4, crest - FOOT) * end + 0.2, z);
 

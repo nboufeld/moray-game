@@ -148,15 +148,18 @@ function bakeDawnPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
     const { u, v } = spokeOf(x, z);
 
     // Value structure from the ground's own relief — gentle, so the
-    // white ground never reads as dirt.
+    // white ground never reads as dirt. Round 2: the whole key lifted
+    // (1.0 → 1.06) — r1's country read TAN, not paper, in every wide
+    // frame; the morning needs a white ground to arrive on.
     const life = fbm(x * 0.024, z * 0.024, { seed: SEED ^ 0x5ae1, period: 9, octaves: 2 }) - 0.5;
-    let value = 1.0 + life * 0.2;
+    let value = 1.06 + life * 0.18;
 
-    // The two whites, drifting at the ~12 m scale.
+    // The two whites, drifting at the ~12 m scale (round 2: the cool
+    // share eased — the r1 mix leant lavender-tan).
     const cool = smoothstep01(
       (fbm(x * 0.014, z * 0.014, { seed: SEED ^ 0x5eaf, period: 6, octaves: 3 }) - 0.46) / 0.24,
     );
-    col.copy(PAPER_WARM_G).lerp(PAPER_COOL_G, cool * 0.75);
+    col.copy(PAPER_WARM_G).lerp(PAPER_COOL_G, cool * 0.6);
 
     const k = dawn(u, v);
 
@@ -192,7 +195,7 @@ function bakeDawnPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
       // Bank tops lean warm paper as they rise.
       const rise = smoothstep01((y - matinsFloor(u) - 1.2) / 3.5);
       col.lerp(PAPER_WARM_G, rise * s * 0.35);
-      value += rise * s * 0.05;
+      value += rise * s * 0.08;
       col.lerp(SHADOW_VIOLET_G, inChannel * s * 0.06);
     }
 
@@ -210,13 +213,15 @@ function bakeDawnPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
 
     // THE BLUSHFIELDS: dawn-rose reaching the ground — the province's
     // blush, a field at last, drawn as patches so it reads painted.
+    // Round 2: patches bigger and the rose stronger — r1 showed almost
+    // no colour where the story says colour arrives.
     const blush = blushWeight(u, v);
     if (blush > 0.02) {
       const roseField = smoothstep01(
-        (fbm(x * 0.026, z * 0.026, { seed: SEED ^ 0x51b7, period: 7, octaves: 3 }) - 0.42) / 0.26,
+        (fbm(x * 0.019, z * 0.019, { seed: SEED ^ 0x51b7, period: 7, octaves: 3 }) - 0.4) / 0.3,
       );
-      col.lerp(DAWN_ROSE_G, blush * roseField * 0.7);
-      value += blush * roseField * 0.03;
+      col.lerp(DAWN_ROSE_G, blush * roseField * 0.85);
+      value += blush * roseField * 0.05;
     }
 
     // Violet shade drifting under the font ranks — the darkest thing
@@ -226,22 +231,24 @@ function bakeDawnPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
       const shade = smoothstep01(
         (fbm(x * 0.03, z * 0.03, { seed: SEED ^ 0x51b0, period: 11, octaves: 3 }) - 0.5) / 0.2,
       );
-      col.lerp(SHADOW_VIOLET_G, mound * shade * 0.22);
-      value -= mound * shade * 0.03;
+      col.lerp(SHADOW_VIOLET_G, mound * shade * 0.16);
+      value -= mound * shade * 0.02;
     }
 
     // THE STILL MORNING: the palest floor in the region — a pearl
     // mirror with the one gold REFLECTION LANE laid across it toward
     // the Dayspring (the mirror carries the morning).
+    // Round 2: brighter and the lane wider/stronger — the r1 mirror
+    // read as tan swells with a faint smear.
     const bowl = mereWeight(u, v);
     if (bowl > 0) {
-      col.lerp(MERE_PEARL_G, bowl * 0.9);
-      value += bowl * 0.2;
+      col.lerp(MERE_PEARL_G, bowl * 0.95);
+      value += bowl * 0.26;
       const cross = (u - MERE.u) * laneNV - (v - MERE.v) * laneNU;
-      const lane = (1 - smoothstep01((Math.abs(cross) - 1.5) / 2.8)) * bowl;
+      const lane = (1 - smoothstep01((Math.abs(cross) - 2.2) / 3.0)) * bowl;
       if (lane > 0) {
-        col.lerp(REFLECTION_GOLD, lane * 0.6);
-        value += lane * 0.16;
+        col.lerp(REFLECTION_GOLD, lane * 0.75);
+        value += lane * 0.22;
       }
     }
 
@@ -250,9 +257,9 @@ function bakeDawnPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
     if (u > STEPS_FROM - 8) {
       const band = 0.5 + 0.5 * Math.sin(y * 1.3 + 0.4);
       const own = smoothstep01((u - (STEPS_FROM - 8)) / 16) * (1 - bowl);
-      col.lerp(STEP_NACRE, own * 0.5);
-      col.lerp(MORNING_GOLD_G, own * k * 0.3);
-      value += own * (band - 0.5) * 0.1;
+      col.lerp(STEP_NACRE, own * 0.65);
+      col.lerp(MORNING_GOLD_G, own * k * 0.4);
+      value += own * (0.04 + (band - 0.5) * 0.1);
     }
 
     // THE SUN'S DOORSTEP: one even warm white — the last ten metres
@@ -269,8 +276,8 @@ function bakeDawnPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
       const away = Math.abs(v - roadCenter(u));
       const lane = 1 - smoothstep01((away - 1.4) / 3.2);
       if (lane > 0) {
-        col.lerp(MORNING_GOLD_G, lane * (0.14 + k * 0.3));
-        value += lane * k * 0.06;
+        col.lerp(MORNING_GOLD_G, lane * (0.18 + k * 0.36));
+        value += lane * (0.02 + k * 0.07);
       }
     }
 

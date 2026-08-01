@@ -1,11 +1,13 @@
 import {
   BufferAttribute,
   BufferGeometry,
+  Color,
   DoubleSide,
   InstancedMesh,
+  Mesh,
   Object3D,
   Vector3,
-  type Mesh,
+  type WebGLProgramParametersWithUniforms,
 } from "three";
 import { fbm } from "../../../rendering/ProceduralTexture";
 import { createToonMaterial } from "../../../rendering/ToonShading";
@@ -51,6 +53,11 @@ const SEED = SEEDS.regionPale3;
 
 const SIDES = 14;
 const LEVELS = 16;
+
+const TINTED_EMISSIVE_CHUNK = /* glsl */ `
+#include <emissivemap_fragment>
+totalEmissiveRadiance *= vColor;
+`;
 
 export interface CrownSpot {
   /** World position on the crown's shoulder. */
@@ -161,9 +168,10 @@ function fontGeometry(
     for (let s = 0; s < SIDES; s++) {
       // THE BELFRY's doorway: quads near the doorway bearing are
       // skipped over the lowest levels, opening an arch into the room.
-      if (doorwayTheta !== null && level / LEVELS < 0.22) {
+      // Round 2: widened and raised — the r1 arch read as a slot.
+      if (doorwayTheta !== null && level / LEVELS < 0.26) {
         const theta = spin + ((s + 0.5) / SIDES) * Math.PI * 2;
-        if (angleBetween(theta, doorwayTheta) < 0.42) {
+        if (angleBetween(theta, doorwayTheta) < 0.52) {
           continue;
         }
       }
@@ -189,7 +197,7 @@ function fontGeometry(
       const wallR = font.footR * profileRadius(h, true);
       for (let i = 0; i < 8; i++) {
         const theta = (i / 8) * Math.PI * 2;
-        if (h < 0.3 && angleBetween(theta, doorwayTheta) < 0.55) {
+        if (h < 0.3 && angleBetween(theta, doorwayTheta) < 0.65) {
           continue;
         }
         colliders.push({
@@ -282,6 +290,123 @@ function splinterGeometry(): BufferGeometry {
   return geometry;
 }
 
+/**
+ * THE BELL and the room's glow garden — the Belfry's lit secret
+ * (round 2: the r1 room was an unlit shaft; a secret must be WORTH
+ * opening). One mesh: a hanging pearl teardrop at mid-chamber,
+ * brightest at its lowest point (an emissive gradient — the light
+ * gathers and drips), over a ring of glow nodules on the room floor.
+ */
+function belfryRoomGeometry(
+  center: { x: number; z: number },
+  ground: number,
+  height: number,
+  footR: number,
+  doorTheta: number,
+  seed: number,
+): BufferGeometry {
+  const random = new Random(seed);
+  const positions: number[] = [];
+  const colors: number[] = [];
+  const indices: number[] = [];
+
+  const lathe = (
+    cx: number,
+    cy: number,
+    cz: number,
+    levels: number,
+    sides: number,
+    radiusAt: (h: number) => number,
+    yAt: (h: number) => number,
+    colorAt: (h: number) => readonly [number, number, number],
+  ): void => {
+    const base = positions.length / 3;
+    for (let j = 0; j <= levels; j++) {
+      const h = j / levels;
+      const radius = radiusAt(h);
+      const y = cy + yAt(h);
+      const [r, g, b] = colorAt(h);
+      for (let s = 0; s <= sides; s++) {
+        const a = (s / sides) * Math.PI * 2;
+        positions.push(cx + Math.cos(a) * radius, y, cz + Math.sin(a) * radius);
+        colors.push(r, g, b);
+      }
+    }
+    for (let j = 0; j < levels; j++) {
+      for (let s = 0; s < sides; s++) {
+        const a = base + j * (sides + 1) + s;
+        const b = a + sides + 1;
+        indices.push(a, b, a + 1, b, b + 1, a + 1);
+      }
+    }
+  };
+
+  // THE BELL: a pearl teardrop hung at mid-chamber — round shoulders
+  // gathered to a dripping point BELOW, brightest at the drip.
+  const bellTop = ground + height * 0.62;
+  const bellH = 2.6;
+  const bellR = 1.05;
+  lathe(
+    center.x,
+    bellTop,
+    center.z,
+    8,
+    10,
+    (h) => bellR * Math.sin(Math.PI * (0.08 + 0.92 * (1 - h) * 0.78)) * (1 - (1 - h) * 0.5) + 0.05,
+    (h) => -bellH * (1 - h),
+    (h) => {
+      const glow = 1 - smoothstep01((h - 0.05) / 0.75);
+      return [0.3 + 0.7 * glow, 0.28 + 0.62 * glow, 0.28 + 0.42 * glow];
+    },
+  );
+  // The hanger stem, up toward the chimney.
+  lathe(
+    center.x,
+    bellTop,
+    center.z,
+    1,
+    5,
+    () => 0.08,
+    (h) => h * (height * 0.35),
+    () => [0.34, 0.32, 0.4],
+  );
+
+  // The glow garden: nodule domes ringing the room floor, the doorway
+  // lane kept clear so the arrival walks INTO the light, not over it.
+  const roomR = footR * profileRadius(0.08, true);
+  for (let i = 0; i < 11; i++) {
+    const theta = (i / 11) * Math.PI * 2 + random.range(0, 0.4);
+    if (angleBetween(theta, doorTheta) < 0.7) {
+      continue;
+    }
+    const r = roomR * random.range(0.42, 0.72);
+    const nx = center.x + Math.cos(theta) * r;
+    const nz = center.z + Math.sin(theta) * r;
+    const nodR = random.range(0.2, 0.42);
+    lathe(
+      nx,
+      ground - 0.04,
+      nz,
+      3,
+      7,
+      (h) => nodR * Math.sin(Math.PI * (1 - h) * 0.5) + 0.02,
+      (h) => nodR * 0.9 * h,
+      (h) => {
+        const glow = smoothstep01((h - 0.15) / 0.7);
+        return [0.32 + 0.62 * glow, 0.3 + 0.56 * glow, 0.3 + 0.4 * glow];
+      },
+    );
+  }
+
+  const geometry = new BufferGeometry();
+  geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
+  geometry.setAttribute("color", new BufferAttribute(new Float32Array(colors), 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 export function buildPale3Fonts(): Pale3FontsBuild {
   const meshes: Mesh[] = [];
   const colliders: SphereCollider[] = [];
@@ -339,6 +464,32 @@ export function buildPale3Fonts(): Pale3FontsBuild {
   meshes.push(mergedMesh(warmParts, warmChalk, "pale3-fonts-warm"));
   meshes.push(mergedMesh(coolParts, coolChalk, "pale3-fonts-cool"));
   meshes.push(mergedMesh([belfryPart!], belfryChalk, "pale3-belfry"));
+
+  // THE BELL and the room's glow garden (round 2).
+  const roomMaterial = createToonMaterial({ color: 0xf2e6cc, vertexColors: true });
+  roomMaterial.emissive = new Color(0xffd9a4);
+  roomMaterial.emissiveIntensity = 0.6;
+  roomMaterial.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <emissivemap_fragment>",
+      TINTED_EMISSIVE_CHUNK,
+    );
+  };
+  const room = new Mesh(
+    belfryRoomGeometry(
+      belfryCenter,
+      pale3TerrainTarget(belfryCenter.x, belfryCenter.z),
+      belfry.height,
+      belfry.footR,
+      belfryDoorTheta,
+      SEED ^ 0x0be1,
+    ),
+    roomMaterial,
+  );
+  room.name = "pale3-belfry-room";
+  room.castShadow = false;
+  room.receiveShadow = false;
+  meshes.push(room);
 
   // The waymark splinters pacing the Sun Road: the reveal-cadence
   // carriers from the threshold (the first things of ours the fog

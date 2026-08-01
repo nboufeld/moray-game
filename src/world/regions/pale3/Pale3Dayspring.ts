@@ -74,10 +74,12 @@ function domeGeometry(cx: number, cy: number, cz: number): BufferGeometry {
       const a = (s / SIDES) * Math.PI * 2;
       positions.push(cx + Math.cos(a) * radius, y, cz + Math.sin(a) * radius);
       // The rising light: dim nacre at the ground line, full at the
-      // crest, with the faintest band shimmer (nacre, not plastic).
+      // crest, with a nacre band shimmer. Round 2: the swing doubled
+      // (base 0.58 → 0.42) and the bands strengthened — the r1 dome
+      // read as a flat matte egg; CONTRAST is the light.
       const lift = smoothstep01((t - 0.06) / 0.86);
       const band = 0.5 + 0.5 * Math.sin(t * 9 + a * 2);
-      const value = 0.58 + 0.42 * lift + (band - 0.5) * 0.05;
+      const value = 0.42 + 0.58 * lift + (band - 0.5) * 0.09;
       colors.push(value, value * 0.9, value * 0.72);
     }
   }
@@ -131,14 +133,16 @@ function menhirGeometry(
     for (let s = 0; s <= SIDES; s++) {
       const a = (s / SIDES) * Math.PI * 2;
       positions.push(cx + Math.cos(a) * radius, y, cz + Math.sin(a) * radius);
+      // Round 2: the whole stone lifted — r1's ring read as dark
+      // violet slabs against the pan (the value key, violated).
       const root = 1 - smoothstep01((h - 0.04) / 0.3);
       const crest = smoothstep01((h - 0.6) / 0.35);
       // The face toward the light warms (yaw is the lean's bearing).
       const facing = Math.max(0, Math.cos(a - yaw));
       colors.push(
-        0.98 - root * 0.2 + crest * 0.08 + facing * 0.08,
-        0.97 - root * 0.26 + crest * 0.08 + facing * 0.02,
-        1.0 - root * 0.12 + crest * 0.1 - facing * 0.08,
+        1.02 - root * 0.12 + crest * 0.08 + facing * 0.14,
+        1.0 - root * 0.16 + crest * 0.08 + facing * 0.05,
+        1.04 - root * 0.08 + crest * 0.1 - facing * 0.1,
       );
       uvs.push((s / SIDES) * 0.8, h * (height / 6));
     }
@@ -172,9 +176,9 @@ export function buildPale3Dayspring(): Pale3DayspringBuild {
   const meshes: Mesh[] = [];
 
   // ── The Risen Pearl ────────────────────────────────────────────────
-  const pearlMaterial = createToonMaterial({ color: 0xf6e6c4, vertexColors: true });
-  pearlMaterial.emissive = new Color(0xffdca6);
-  pearlMaterial.emissiveIntensity = 0.55;
+  const pearlMaterial = createToonMaterial({ color: 0xf8e3bc, vertexColors: true });
+  pearlMaterial.emissive = new Color(0xffd498);
+  pearlMaterial.emissiveIntensity = 0.68;
   pearlMaterial.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
     shader.fragmentShader = shader.fragmentShader.replace(
       "#include <emissivemap_fragment>",
@@ -210,7 +214,7 @@ export function buildPale3Dayspring(): Pale3DayspringBuild {
   }
   const stoneMaterial = createToonMaterial({
     map: chalkTexture(),
-    color: 0xf1ebe0,
+    color: 0xf6f1e6,
     vertexColors: true,
   });
   meshes.push(mergedMesh(parts, stoneMaterial, "pale3-morning-ring"));

@@ -11,6 +11,7 @@ import { createToonMaterial } from "../../../rendering/ToonShading";
 import { Random, SEEDS } from "../../../util/Random";
 import { smoothstep01 } from "./Pale3Shared";
 import {
+  MERE,
   RESTS,
   blushWeight,
   pale3TerrainTarget,
@@ -281,6 +282,19 @@ export function buildPale3Gardens(crownSpots: readonly CrownSpot[]): Pale3Garden
       const { x, z } = worldOf(su, sv);
       pearlSeats.push({ x, y: pale3TerrainTarget(x, z), z, s: pearlRandom.range(0.8, 1.8) });
     }
+  }
+  // Round 2: bead clusters at the Mere's lip — the mirror wears its dew
+  // too, strictly OUTSIDE the rest radius (the stillness is framed).
+  for (let i = 0; i < 14; i++) {
+    const a = pearlRandom.range(0, Math.PI * 2);
+    const r = MERE.radius + pearlRandom.range(2.2, 6.5);
+    const su = MERE.u + Math.cos(a) * r;
+    const sv = MERE.v + Math.sin(a) * r;
+    if (blocked(su, sv)) {
+      continue;
+    }
+    const { x, z } = worldOf(su, sv);
+    pearlSeats.push({ x, y: pale3TerrainTarget(x, z), z, s: pearlRandom.range(1.0, 2.0) });
   }
   const pearlMaterial = createToonMaterial({ color: 0xecf2ea, vertexColors: true });
   pearlMaterial.emissive = new Color(0xdaeddf);

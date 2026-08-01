@@ -100,20 +100,23 @@ export function buildPale3Light(belfryMouth: { x: number; y: number; z: number }
   }
 
   // The Belfry's chimney beam, falling through the open crown into
-  // the room — the secret's own light.
+  // the room — the secret's own light. Round 2: up a step, so the room
+  // reads as LIT from the doorway, not merely occupied.
   beams.push({
     pos: [belfryMouth.x, belfryMouth.z],
     top: belfryMouth.y,
-    width: 2.6,
-    opacity: 0.12,
+    width: 3.0,
+    opacity: 0.16,
   });
-  pools.push({ pos: [belfryMouth.x, belfryMouth.z], radius: 2.6, opacity: 0.12 });
+  pools.push({ pos: [belfryMouth.x, belfryMouth.z], radius: 3.0, opacity: 0.16 });
 
   // THE DAYSPRING's shaft: the named light peak — the widest, warmest
-  // mark in the province, standing over the risen pearl.
+  // mark in the province, standing over the risen pearl. Round 2: the
+  // top raised so the shaft clears the dome's crest (r1's beam ended
+  // inside the pearl and read as a haze on its skin).
   {
     const { x, z } = worldOf(DAYSPRING.u, DAYSPRING.v);
-    beams.push({ pos: [x, z], top: 9, width: 8, opacity: 0.22 });
+    beams.push({ pos: [x, z], top: 14, width: 8, opacity: 0.22 });
   }
 
   const build = buildBeamAndPool({
