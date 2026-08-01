@@ -109,6 +109,15 @@ export function buildBlue2Life(): Blue2LifeBuild {
   for (let i = CURRENT_SPINE.length - 1; i >= 0; i--) {
     seat(CURRENT_SPINE[i]![0] + 4, CURRENT_SPINE[i]![1] + 7, 4.2);
   }
+  // Round 2, the phase rotation: the capture shutter lands ≈ 18 s after
+  // attach (head ≈ 6% of the 300 s loop), so the loop STARTS one
+  // station upstream of the Ford and the school is crossing under the
+  // Weir when the canonical weir-ford frame fires — the Drop Plains'
+  // "unmissable by timing" lesson, paid with arithmetic instead of a
+  // second school.
+  const rotated = [...stations.slice(3), ...stations.slice(0, 3)];
+  stations.length = 0;
+  stations.push(...rotated);
   const travellers = buildShoalRunner({
     seed: SEED ^ B2_SEEDS.travellers,
     route: { stations, closed: true },

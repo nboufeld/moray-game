@@ -21,6 +21,7 @@ import {
   STONE_DUSK,
   applyVeinGlow,
   mergedMesh,
+  palenStone,
   smoothstep01,
 } from "./Blue2Shared";
 import { FORD, MOORING_POSTS, WEIR, worldOf } from "./Blue2Terrain";
@@ -112,12 +113,14 @@ function ribAndPaint(geometry: BufferGeometry, height: number, ribs: number, see
     // strata bands, grain jitter and violet pooled in every groove.
     const strata = fbm(t * 7.2, theta * 0.7, { seed: seed ^ 0x17, period: 5, octaves: 2 }) - 0.5;
     const grain = fbm(theta * 2.4, y * 0.45, { seed: seed ^ 0x2b, period: 7, octaves: 2 }) - 0.5;
+    // Round 2: fine grain amplitude up — at a 2–4 m lens one ~5 m
+    // strata band fills the whole frame and the shaft read flat.
     const fine = fbm(theta * 6.1, y * 2.1, { seed: seed ^ 0x3d, period: 9, octaves: 2 }) - 0.5;
     shade
       .copy(pale)
       .lerp(bright, 0.18 + smoothstep01((t - 0.3) / 0.6) * 0.62)
       .lerp(violet, Math.max(0, -groove) * 0.34 * band + Math.max(0, -strata) * 0.24)
-      .multiplyScalar(1.04 + strata * 0.26 + grain * 0.22 + fine * 0.12);
+      .multiplyScalar(1.04 + strata * 0.28 + grain * 0.3 + fine * 0.22);
     // The drowned foot: the deep's own violet, never black.
     shade.lerp(violet, (1 - smoothstep01((t - 0.04) / 0.16)) * 0.42);
     colors[i * 3] = shade.r;
@@ -187,9 +190,12 @@ export function buildMooring(): MooringBuild {
   arch.rotateY(yaw);
   const fordY = seabedHeight(a.x, a.z);
   arch.translate(a.x, fordY, a.z);
-  const weirMaterial = createRockMaterial(0xbdb2ae);
+  // Round 2: the Weir joins the pale family outright — the r1 arch
+  // wore the rock wash's rust and read as a different country's stone.
+  palenStone(arch, 0.45);
+  const weirMaterial = createRockMaterial(0xd2d8de);
   weirMaterial.emissive.setHex(STONE_DUSK);
-  weirMaterial.emissiveIntensity = 0.32;
+  weirMaterial.emissiveIntensity = 0.38;
   meshes.push(mergedMesh([arch], weirMaterial, "deepsteps-weir"));
   contacts.push({ x: a.x, z: a.z, radius: WEIR.span * 0.7, strength: 0.35 });
   // Colliders on the two legs and the beam's crown (the opening stays

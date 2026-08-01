@@ -390,7 +390,12 @@ export function blue2TerrainTarget(x: number, z: number): number {
     h = discHeight(x, z, u, v);
   }
 
-  const fade = 1 - smoothstep01((rc - 172) / 38) * (1 - passGate(u, v));
+  // Round 2: the crest line undulates (a slow angular wobble on the
+  // fade radius) so the Worldwall's silhouette reads as geography, not
+  // as one flat fogged band.
+  const theta = Math.atan2(z - CENTER_Z, x - CENTER_X);
+  const crest = 172 + 5 * Math.sin(theta * 3 + 1.3) + 3 * Math.sin(theta * 7 + 0.4);
+  const fade = 1 - smoothstep01((rc - crest) / 38) * (1 - passGate(u, v));
   return h * fade;
 }
 

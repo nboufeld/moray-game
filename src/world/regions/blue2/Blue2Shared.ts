@@ -36,11 +36,14 @@ export const STEP_VIOLET = new Color(0x8a7aa6);
 export const ROUND_VIOLET = new Color(0x5e5280);
 /** The Current's silver-green: the one living ribbon. */
 export const CURRENT_GREEN = new Color(0x9ec4b4);
-/** The pale worked-stone family (red over blue kept close — the deep
- * mood pushes blue hard; the stone must fight for its warmth). */
-export const STONE_PALE = 0xbdb2ae;
-/** The darker violet-slate stone family (fallen fragments' undersides). */
-export const STONE_SLATE = 0x8d8298;
+/** The pale worked-stone family. Round 2: lifted HARD toward the SKY
+ * key — the r1 stones rendered rust-ochre mud under the violet mood,
+ * and the probe proved the ochre lives in the rock wash's own albedo:
+ * only a blue-leaning material tint can cancel it (blue-1's exact
+ * cure: its megaliths lerp toward 0xc8dcee). */
+export const STONE_PALE = 0xd2d8de;
+/** The violet-slate family — same sky-key lift, held a step deeper. */
+export const STONE_SLATE = 0xa6aac4;
 /** The stone dusk-lift (the Carillon Waste's proven cure): a small
  * emissive floor so a shade side stays a COLOUR under the deep mood.
  * Violet-leaning here — warm rust would read Smoulder. */
@@ -63,6 +66,27 @@ totalEmissiveRadiance *= vColor;
     );
   };
   material.customProgramCacheKey = () => cacheKey;
+}
+
+/**
+ * Lerps a stone geometry's baked vertex colours toward the pale sky
+ * key (blue-1's stone-value move, and golden2's `palenStone`): the
+ * rock pipeline bakes a warm facing tint that reads as rust under the
+ * deep mood; this keeps its variety and re-keys its family.
+ */
+export function palenStone(geometry: { attributes: Record<string, unknown> }, amount: number): void {
+  const colors = geometry.attributes.color as
+    | { count: number; getX(i: number): number; getY(i: number): number; getZ(i: number): number; setXYZ(i: number, x: number, y: number, z: number): void; needsUpdate: boolean }
+    | undefined;
+  if (!colors) {
+    return;
+  }
+  const c = new Color();
+  for (let i = 0; i < colors.count; i++) {
+    c.setRGB(colors.getX(i), colors.getY(i), colors.getZ(i)).lerp(SILT_BRIGHT, amount);
+    colors.setXYZ(i, c.r, c.g, c.b);
+  }
+  colors.needsUpdate = true;
 }
 
 /**

@@ -264,10 +264,12 @@ const wallTuftGate: GateFn = (x, z) => {
   );
 };
 
-/** Split-stone runs at the wrack fragments' and the posts' feet. */
+/** Split-stone runs at the wrack fragments', the posts' and the
+ *  Pharos' feet (round 2: the lone waymark stood on naked sand). */
 const splitGate: GateFn = (x, z) => {
   const { u, v } = spokeOf(x, z);
-  let ring = 0;
+  let ring = smoothstep01((Math.hypot(u - 692, v - 8) - 1.8) / 1.2) *
+    (1 - smoothstep01((Math.hypot(u - 692, v - 8) - 1.8 - 4) / 3));
   for (const fragment of WRACK_FRAGMENTS) {
     const fd = Math.hypot(u - fragment.u, v - fragment.v);
     ring = Math.max(
@@ -534,16 +536,17 @@ export function buildBlue2Cover(): Blue2CoverBuild {
     },
     {
       seed: B2_SEEDS.closeBankBed,
-      at: { u: CLOSE_LENSES[1]!.u + 2.4, v: CLOSE_LENSES[1]!.v + 2.8 },
+      at: { u: CLOSE_LENSES[1]!.u + 2.8, v: CLOSE_LENSES[1]!.v + 2.4 },
       radius: 4,
-      count: 100,
+      count: 130,
       profile: "blade",
       palette: { base: 0x84b49c, tip: 0xc2e2ce, shade: 0x527a6e },
       warm: 0x223a2a,
     },
     {
       seed: B2_SEEDS.closeWrackBed,
-      at: { u: CLOSE_LENSES[2]!.u + 2.6, v: CLOSE_LENSES[2]!.v + 2.6 },
+      // On the look ray toward the fallen blade (round 2 restage).
+      at: { u: CLOSE_LENSES[2]!.u - 2.4, v: CLOSE_LENSES[2]!.v - 2.4 },
       radius: 4,
       count: 78,
       profile: "frond",
@@ -552,7 +555,8 @@ export function buildBlue2Cover(): Blue2CoverBuild {
     },
     {
       seed: B2_SEEDS.closePostBed,
-      at: { u: CLOSE_LENSES[3]!.u + 2.8, v: CLOSE_LENSES[3]!.v + 2.4 },
+      // Between the backed-out lens and the post's foot (round 2).
+      at: { u: CLOSE_LENSES[3]!.u + 2.4, v: CLOSE_LENSES[3]!.v - 3.2 },
       radius: 4,
       count: 72,
       profile: "blade",

@@ -12,6 +12,7 @@ import {
   STONE_PALE,
   STONE_SLATE,
   mergedMesh,
+  palenStone,
 } from "./Blue2Shared";
 import { BRINK_D, HINGE_U, HORNS, worldOf } from "./Blue2Terrain";
 
@@ -62,9 +63,10 @@ export interface WrackFragment {
  */
 export const WRACK_FRAGMENTS: readonly WrackFragment[] = WRACK_LINE.map(([u, v], i) => {
   // The fall line points away from the hinge — everything here fell
-  // outward off the World's Edge.
+  // outward off the World's Edge. Round 2: grown ×1.35 — the r1
+  // fragments sank into the swells and the landmark did not exist.
   const yaw = Math.atan2(v, u - HINGE_U);
-  const lengths = [6.5, 8.5, 5.5, 9.0, 6.0, 7.5] as const;
+  const lengths = [8.8, 11.5, 7.4, 12.2, 8.1, 10.1] as const;
   return {
     u: u + (i % 2 === 0 ? 2 : -2),
     v,
@@ -190,19 +192,20 @@ export function buildBlue2Stones(): Blue2StonesBuild {
       continue;
     }
     // A fallen blade: a megalith-family stack lathed upright, then laid
-    // on its side along the fall line, sunk a third into the silt.
+    // on its side along the fall line, riding proud of the silt (round
+    // 2: the r1 third-sunk bodies vanished into the swells).
     const h = fragment.length;
     const body = stackGeometry(
       [
-        { radius: 1.3, rise: 0.3, stretch: 1.5, lean: 0 },
-        { radius: 0.95, rise: h * 0.55, stretch: (h * 0.4) / 0.95, lean: wrackRandom.signed(0.4) },
+        { radius: 1.9, rise: 0.3, stretch: 1.4, lean: 0 },
+        { radius: 1.4, rise: h * 0.55, stretch: (h * 0.4) / 1.4, lean: wrackRandom.signed(0.4) },
       ],
       { seed: SEED ^ (B2_SEEDS.wrack + i * 11), rings: 24 },
     );
     body.rotateZ(Math.PI / 2 - wrackRandom.signed(0.08));
     body.rotateY(-fragment.yaw + wrackRandom.signed(0.2));
     const { x, z } = worldOf(fragment.u, fragment.v);
-    const y = seabedHeight(x, z) + 0.9 - 0.35;
+    const y = seabedHeight(x, z) + 1.45;
     body.translate(x, y, z);
     (i % 2 === 0 ? paleParts : slateParts).push(body);
     contacts.push({ x, z, radius: h * 0.6, strength: 0.42 });
@@ -214,8 +217,8 @@ export function buildBlue2Stones(): Blue2StonesBuild {
       const sv = fragment.v + az * h * t;
       const at = worldOf(su, sv);
       colliders.push({
-        center: new Vector3(at.x, seabedHeight(at.x, at.z) + 0.8, at.z),
-        radius: 1.5,
+        center: new Vector3(at.x, seabedHeight(at.x, at.z) + 1.2, at.z),
+        radius: 2.0,
       });
     }
   }
@@ -223,21 +226,22 @@ export function buildBlue2Stones(): Blue2StonesBuild {
   // ─── THE SKIFF ───────────────────────────────────────────────────────────
   // The Ferryman's stone boat: a low hull-shaped mound and its prow
   // stump, half-buried at its berth. The berth's bareness is licensed.
+  // Round 2: boat-long and pale — the r1 hull read as an ochre pancake.
   const skiffRandom = new Random(SEED ^ B2_SEEDS.skiff);
-  const hull = boulderGeometry({ seed: SEED ^ B2_SEEDS.skiff, radius: 2.1, height: 1.5 });
-  hull.applyMatrix4(new Matrix4().makeScale(1.9, 0.62, 0.85));
-  stand(hull, slateParts, SKIFF_REST.u, SKIFF_REST.v, 0.9, 2.6, 1.1, 0.35);
+  const hull = boulderGeometry({ seed: SEED ^ B2_SEEDS.skiff, radius: 2.1, height: 1.9 });
+  hull.applyMatrix4(new Matrix4().makeScale(2.3, 0.8, 0.78));
+  stand(hull, paleParts, SKIFF_REST.u, SKIFF_REST.v, 0.9, 2.8, 1.5, 0.2);
   stand(
     stackGeometry(
-      [{ radius: 0.55, rise: 0.2, stretch: 2.6, lean: 0.35 }],
+      [{ radius: 0.6, rise: 0.2, stretch: 3.4, lean: 0.35 }],
       { seed: SEED ^ (B2_SEEDS.skiff + 3) },
     ),
     paleParts,
-    SKIFF_REST.u + 3.4,
-    SKIFF_REST.v + 1.4,
+    SKIFF_REST.u + 3.8,
+    SKIFF_REST.v + 1.5,
     skiffRandom.range(0, Math.PI * 2),
-    0.7,
-    1.6,
+    0.75,
+    2.2,
   );
 
   // ─── The Chute stones ────────────────────────────────────────────────────
@@ -318,6 +322,16 @@ export function buildBlue2Stones(): Blue2StonesBuild {
       }
     }
   }
+  // The palen pass (round 2): the rock pipeline's baked facing tint
+  // read as rust under the deep mood — every part re-keys toward the
+  // sky before merging, the pale family harder than the slate.
+  for (const part of paleParts) {
+    palenStone(part, 0.42);
+  }
+  for (const part of slateParts) {
+    palenStone(part, 0.24);
+  }
+
   // Two merged draws with the stone dusk-lift.
   const pale = createRockMaterial(STONE_PALE);
   pale.emissive.setHex(STONE_DUSK);

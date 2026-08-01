@@ -299,4 +299,88 @@ our corridor (tongue |v| ≤ ~16–22 through the band, spine v = 0):
 
 ## Critique history (silhouette → value → colour → detail, per round)
 
-*(rounds appended below as they complete)*
+### Round 1 (`gb2-r1`) — the amphitheatre exists; the stone is mud and four frames miss their subjects
+
+All 23 authored poses captured against the verified :5209 dev server
+(`SHOT_PER_LAUNCH=1`, nav 900 s / compile-wait 5 s from the first
+session — box at load 15–18 with two live sibling workers) and READ.
+
+**Silhouette — what already works.** `strand` is the register in one
+frame: a violet ripple-prairie with pale bone tufts and THE MOORING's
+three posts ranked into the fog like the masts of a drowned harbour —
+the colossal-vertical bet pays on the first pull. `brink` genuinely
+reveals (the floor falls away and two post crowns breach the far fog);
+`stairfall` reads treads-as-violet-ripples with the landing beam and a
+sweeping pale lip line; `weir-ford` composes arch + banks + posts;
+`current-glass` is the region's best road frame (green banks, glass
+sparks, the Weir as a doorway, travellers mid-frame); `spill` is a
+Ghibli frame outright (the glint cascade against the riser, post
+crowns over the crest); `round-hush` is the design's proof — the Moon
+Well beam standing in composed emptiness WITH the Gentle Dark crossing
+mid-frame; `moon-well` catches the resident arriving at the beam
+(the Ferryman attach-clock discipline worked on the FIRST try);
+`edge-lookback` layers floor → posts → milky west light as a proper
+Friedrich.
+
+**Silhouette — fails.** `kings-wrack`: the fallen fragments are
+nearly invisible — lying stones sunk too deep, too small, too dark;
+the drift-line reads as dirt lumps (the region's fourth landmark does
+not exist to the eye). `skiff`: the hull reads as an ochre pancake,
+not a boat. `chute`: nothing frames the notch — bare slope + ceiling.
+`horns-promise`: the promise is HIDDEN — redone arithmetic: the stand
+was 38 m below the rim crest (elevation to crest 0.54 rad), so the
+rings (tops +12…+26) can never clear it; the golden2 dissolve
+arithmetic assumed a near-crest camera. The stand must rise (lift 29:
+crest at 0.25 rad, horn crowns 0.27–0.33, rings behind at 0.28+) and
+the ring bases go 12/18/26 → 14/20/28. `close-post-foot`: the whole
+frame is one flat violet wall — the camera stands inside its subject
+(the golden2 close-flute-foot lesson, re-learned at 2.4 m from a 3 m
+shaft). `close-wrack-crown`: the lens's fragment is out of frame.
+`wall-face`/`wall-crest`: the void's drama is below the frame; both
+need steep pitch (and the crossing water is DESIGN-bright: neither
+region's mood owns the saddle — "sun again after the violet" reads as
+authored).
+
+**Value — the round's headline: every `createRockMaterial` stone
+renders rust-ochre-on-mud** (Pharos, brink slabs, wrack, skiff, the
+Weir's arch) — the blue-1 round-1 stone failure re-materialised under
+a violet mood: the rock wash's gold + facing-tint wins over mid-value
+family hexes. The Mooring posts (custom paint + vein-glow) hold their
+violet-pale families and read at range — the cure is known: family
+hexes lifted hard toward bone, baked colours palen-lerped toward the
+sky key (blue-1's own move), the Weir joins the pale family. At 2–4 m
+the post shaft reads FLAT: strata period ~5 m vertical means one band
+fills a close frame — fine grain amplitude up (golden2's r3 lesson).
+
+**Colour.** The step paint is RIGHT: violet floors with red above
+green, never cobalt, each shelf a value deeper — `strand`,
+`moon-well`, `spill` all carry it. The water column reads teal-cyan
+even at full mood — nudge fog red 0.62 → 0.66 so depth leans violet.
+The saddle's near field reads warm tan; the milky story whitens a
+step. The Current's bed paint is too dim to say "river" — the glass
+centreline brightens and the particulate glass sizes up.
+
+**Detail.** `close-strand-ripple` PASSES (painted pale clumps on
+ripple silt, posts behind). `close-bank-blades` near-passes (green
+blades + grit + travellers; the near strip under the camera thin).
+The Gentle Dark reads too PALE at 15 m (wings render lilac-pink under
+the beam; the dark must be dark) — wing paint deepens, emissive
+0.5 → 0.35, mottle up, scale ×1.12. The travellers missed the
+weir-ford shutter (phase luck) — stations rotate so the school sits
+at the Ford at the harness's ~18 s mark. UNRESOLVED: hard fog-flat
+rectangular slabs on several westward horizons (mooring/weir frames)
+— every analytic candidate (my rings, blue-1's rings/arcs, the
+Worldwall, the sheet trim) fails the distance arithmetic; round 2
+opens with a node-toggle probe before any retune.
+
+**Round-2 orders** (all landed before the r2 captures): stone palen
+pass (hexes + baked-colour lift, Weir → pale family, splits at the
+Pharos' foot); wrack fragments grown ×1.35 and raised proud of the
+silt; skiff reshaped boat-long and pale; horns arithmetic (stand lift
+29 / pitch 0.26, ridge bases +2); Worldwall crest undulation (angular
+wobble on the rim fade) + wall paint contrast ×2 + sheet-trim tuck;
+current glass sized up + bed paint brightened; traveller phase
+rotation; the Dark darkened and grown; six poses re-staged
+(wall-face, wall-crest, kings-wrack, chute, mooring backed off the
+Weir it accidentally framed, both failing closes + their lens/bed
+registry); mood red 0.66.

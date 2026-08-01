@@ -88,10 +88,14 @@ export function buildGentleDark(): GentleDarkBuild {
   const material = createToonMaterial({
     vertexColors: true,
     emissive: 0x2e2a48,
-    emissiveIntensity: 0.5,
+    // Round 2: 0.5 rendered the wings lilac-pink under the Well's
+    // light — the dark must be dark; the floor only keeps it a colour.
+    emissiveIntensity: 0.35,
   });
   const mesh = new Mesh(geometry, material);
   mesh.name = "deepsteps-gentle-dark";
+  // Round 2: grown — the event register wants the wing to read colossal.
+  mesh.scale.setScalar(1.12);
   mesh.castShadow = false;
   mesh.receiveShadow = false;
   mesh.frustumCulled = false;
@@ -235,6 +239,10 @@ function darkGeometry(): BufferGeometry {
     const z = pos.getZ(i);
     const top = smoothstep01((y + 0.05) / 0.3);
     shade.copy(belly).lerp(back, top);
+    // Round 2: the wings wear the BACK's dark across both faces — the
+    // r1 belly mix rendered them lilac-pink in the beam.
+    const wingness = smoothstep01((Math.abs(x) - 1.6) / 1.2);
+    shade.lerp(back, wingness * 0.75);
     // The crown crescent: the pale arc the codex draws, on the back
     // just behind the head.
     const arc = Math.abs(Math.hypot(x * 0.9, z - 1.1) - 1.35);
@@ -246,7 +254,7 @@ function darkGeometry(): BufferGeometry {
     shade.lerp(tipTone, tip * 0.7);
     // Drifted mottle so no facet holds one value.
     const mottle = fbm(x * 0.4 + 7, z * 0.4, { seed: SEED ^ 0xf0ab, period: 4, octaves: 2 });
-    shade.lerp(new Color(0x5a5480), smoothstep01((mottle - 0.56) / 0.18) * 0.4 * top);
+    shade.lerp(new Color(0x5a5480), smoothstep01((mottle - 0.52) / 0.18) * 0.55 * top);
     colors[i * 3] = shade.r;
     colors[i * 3 + 1] = shade.g;
     colors[i * 3 + 2] = shade.b;

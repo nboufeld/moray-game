@@ -13,6 +13,7 @@ import {
   SPILL,
   currentCarve,
   currentDistance,
+  passGate,
   passHalfWidth,
   spokeOf,
   stepD,
@@ -80,7 +81,7 @@ function story(hex: number): Color {
 // The palette the bake composes with — authored for THIS region's
 // violet mood (the calamity lesson: fill palettes are for the region's
 // own light; under a blue-violet fog, warmth must be overpaid).
-const MILKY_SADDLE = story(0xd6ddd2);
+const MILKY_SADDLE = story(0xe0e6dc);
 const BONE_STRAND = story(0xbcb4c6);
 const STEP_VIOLET_STORY = story(0x9282b0);
 const ROUND_VIOLET_STORY = story(0x6a5e8c);
@@ -141,8 +142,8 @@ function bakeDeepStepsPaint(geometry: PlaneGeometry, contacts: readonly ContactP
     } else if (d < 152) {
       // The Othershore: milky bone shelf, sun again after the violet.
       col.copy(MILKY_SADDLE);
-      col.lerp(SILT_DRIFT, silt * 0.35);
-      value *= 1.04;
+      col.lerp(SILT_DRIFT, silt * 0.3);
+      value *= 1.09;
     } else if (d < 258) {
       // The Strand: pale violet-bone under an arcing ripple field.
       const ripple = rippleField(u, v, x, z);
@@ -190,10 +191,12 @@ function bakeDeepStepsPaint(geometry: PlaneGeometry, contacts: readonly ContactP
     const current = currentCarve(u, v);
     if (current.bed > 0 && u > 700) {
       const { d: cd } = currentDistance(u, v);
-      const centreLine = 1 - smoothstep01(cd / 3.2);
-      col.lerp(CURRENT_BANK, current.bed * 0.7);
-      col.lerp(CURRENT_GLASS, centreLine * 0.75);
-      value *= 1 + centreLine * 0.14;
+      const centreLine = 1 - smoothstep01(cd / 3.6);
+      col.lerp(CURRENT_BANK, current.bed * 0.8);
+      // Round 2: the river must READ as a river — the glass line
+      // brightened to the region's near-brightest painted value.
+      col.lerp(CURRENT_GLASS, centreLine * 0.95);
+      value *= 1 + centreLine * 0.3;
     }
     // The banks' green fades outward — life clings to the river.
     const bankStain = 1 - smoothstep01((currentDistance(u, v).d - 8) / 14);
@@ -236,9 +239,14 @@ function bakeDeepStepsPaint(geometry: PlaneGeometry, contacts: readonly ContactP
     // distance goes bright, never dark — with contour strata.
     const wallK = smoothstep01((rc - 176) / 34) * smoothstep01((u - 700) / 30);
     if (wallK > 0) {
+      // Round 2: contrast doubled and a runnel term added — the r1
+      // wall read as one flat fogged band from every deep camera.
       const contour = Math.sin(y * 0.9 + silt * 2);
+      const runnel =
+        fbm(u * 0.06, v * 0.06, { seed: SEED ^ B2_SEEDS.paintWall, period: 9, octaves: 2 }) - 0.5;
       col.lerp(WALL_MILK, wallK * (0.55 + 0.2 * smoothstep01((y + 20) / 20)));
-      value *= 1 + wallK * (0.08 + contour * 0.05);
+      col.lerp(RISER_FACE, wallK * Math.max(0, -runnel) * 0.8);
+      value *= 1 + wallK * (0.08 + contour * 0.1 + runnel * 0.12);
     }
 
     // Depth is the dimmer: below the Strand every metre cools and
@@ -272,6 +280,30 @@ function bakeDeepStepsPaint(geometry: PlaneGeometry, contacts: readonly ContactP
   }
 
   geometry.setAttribute("color", new BufferAttribute(colors, 3));
+}
+
+/**
+ * Tucks the disc tiles' outermost trim edge under the crest (round 2):
+ * a flat cut edge at dune level silhouetted as a razor line on distant
+ * horizons (blue-1's round-5 sawtooth, one generation on). Gated off
+ * the corridor, whose own sheet carries the crossing.
+ */
+function tuckTrimEdge(geometry: PlaneGeometry): void {
+  const position = geometry.attributes.position!;
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i);
+    const z = position.getZ(i);
+    const rc = Math.hypot(x - CENTRE.x, z - CENTRE.z);
+    if (rc <= 230) {
+      continue;
+    }
+    const { u, v } = spokeOf(x, z);
+    const k = smoothstep01((rc - 232) / 8) * (1 - passGate(u, v));
+    if (k > 0) {
+      position.setY(i, position.getY(i) + k * (-8 - position.getY(i)));
+    }
+  }
+  position.needsUpdate = true;
 }
 
 /** Drops every triangle whose three corners all fail `keep`. */
@@ -312,6 +344,7 @@ export function buildBlue2Ground(contacts: readonly ContactPatch[]): Mesh[] {
   for (const [cx, cz] of centers) {
     const geometry = createSeabedGeometryAt(cx, cz, DISC_TILE, DISC_SEGMENTS);
     trimSheet(geometry, keepGround);
+    tuckTrimEdge(geometry);
     bakeDeepStepsPaint(geometry, contacts);
     const mesh = new Mesh(geometry, material);
     mesh.name = "deepsteps-ground-disc";

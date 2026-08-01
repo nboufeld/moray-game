@@ -139,12 +139,13 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // impossible until the orchestrator's cuts: blue-1's rim ceiling is
   // floor+3 out there — ledgered. Pre-connection this frame carries
   // blue-1's deep-step arcs crossing the corridor: the honest state.)
-  { name: "wall-face", u: 637, v: -2, lift: 2.4, atU: 610, atV: -8, pitch: -0.18, settle: 4 },
+  { name: "wall-face", u: 637, v: -2, lift: 2.4, atU: 612, atV: -8, pitch: -0.45, settle: 4 },
   // The far lip: standing on the Othershore looking BACK over the void
-  // toward the Drop Plains — the crossing, remembered.
-  { name: "wall-crest", u: 662, v: 0, lift: 2.1, atU: 618, atV: -8, pitch: -0.06 },
+  // toward the Drop Plains — the crossing, remembered. Round 2: pitch
+  // steepened — the void's drama is DOWN, and −0.06 framed open water.
+  { name: "wall-crest", u: 662, v: 0, lift: 2.1, atU: 616, atV: -10, pitch: -0.3 },
   // The Othershore: the bare milky saddle, the Pharos ahead.
-  { name: "othershore", u: 680, v: -4, lift: 2.3, atU: 712, atV: 4, pitch: -0.02 },
+  { name: "othershore", u: 680, v: -4, lift: 2.3, atU: 712, atV: 4, pitch: -0.03 },
   // The Pharos, close: the lone waymark and its thin blade.
   { name: "pharos", u: 684, v: 3, lift: 2.0, atU: 692, atV: 8, pitch: 0.12, settle: 3 },
   // THE BRINK: the second edge — the amphitheatre opens in one breath.
@@ -154,11 +155,15 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // The Strand: the ripple field, the Mooring's masts in the fog.
   { name: "strand", u: 812, v: -20, lift: 2.6, atU: 876, atV: -40, pitch: 0.02 },
   // THE KINGS' WRACK: along the drift-line of fallen megaliths.
-  { name: "kings-wrack", u: 838, v: 20, lift: 2.4, atU: 820, atV: 58, pitch: 0.0, settle: 3 },
+  // Round 2: re-staged onto the line's south run — the r1 stand's own
+  // fragment was out of its frame and the landmark read as dirt.
+  { name: "kings-wrack", u: 836, v: -52, lift: 2.6, atU: 826, atV: -18, pitch: -0.03, settle: 3 },
   // THE SKIFF: the secret at its berth, the lantern finding it.
   { name: "skiff", u: 812, v: 88, lift: 2.6, atU: 818.5, atV: 96, pitch: -0.06, settle: 4 },
-  // THE MOORING: the three posts ranked into the violet.
-  { name: "mooring", u: 886, v: -18, lift: 3.2, atU: 930, atV: 6, pitch: 0.14, settle: 4 },
+  // THE MOORING: the three posts ranked into the violet. Round 2:
+  // backed south-west — the r1 stand framed the Weir's leg at 13 m by
+  // accident and the Weir stole the mooring's own portrait.
+  { name: "mooring", u: 896, v: -52, lift: 3.4, atU: 908, atV: 20, pitch: 0.12, settle: 4 },
   // THE WEIR at the Ford: the arch over the river of glass, the
   // travellers threading it.
   { name: "weir-ford", u: 886, v: -26, lift: 2.4, atU: 899, atV: -14, pitch: 0.04, settle: 6 },
@@ -166,23 +171,27 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "current-glass", u: 878, v: 52, lift: 3.4, atU: 899, atV: -10, pitch: -0.04, settle: 5 },
   // THE SPILL from below: the river falling off the world's third step.
   { name: "spill", u: 964, v: -146, lift: 2.6, atU: 946, atV: -132, pitch: 0.16, settle: 5 },
-  // The Chute: the road's notch, looking down into the Round.
-  { name: "chute", u: 942, v: -28, lift: 2.8, atU: 972, atV: -44, pitch: -0.14, settle: 3 },
+  // The Chute: the road's notch, framed by its gate stones, the Well's
+  // beam far ahead (round 2 restage — the r1 frame was a bare slope).
+  { name: "chute", u: 938, v: -22, lift: 2.8, atU: 1005, atV: -16, pitch: -0.08, settle: 3 },
   // The Round: composed emptiness — the Friedrich, violet edition.
   { name: "round-hush", u: 996, v: 34, lift: 2.2, atU: 1054, atV: -16, pitch: 0.02 },
   // THE MOON WELL: the beam, the circle, the Dark's crossing.
   { name: "moon-well", u: 1046, v: -34, lift: 2.6, atU: 1032, atV: -8, pitch: 0.1, settle: 8 },
   // THE GENTLE DARK, met on its own floor.
   { name: "gentle-dark", u: 1014, v: -20, lift: 0, absoluteY: -34, atU: 1032, atV: -8, pitch: -0.08, settle: 8 },
-  // The Horns: the depth-3 promise, framed from the Round.
-  { name: "horns-promise", u: 1064, v: 2, lift: 9.0, atU: 1126, atV: 2, pitch: 0.3, settle: 3 },
+  // The Horns: the depth-3 promise. Round 2, by arithmetic: from the
+  // Round's floor the rim crest subtends 0.54 rad and hid everything —
+  // the stand rises to y ≈ −17 (crest 0.25 rad; horn crowns 0.27–0.33;
+  // raised ring bases behind at 0.28+).
+  { name: "horns-promise", u: 1064, v: 2, lift: 29.0, atU: 1126, atV: 2, pitch: 0.26, settle: 3 },
   // From the Round's heart, back up every shelf at once.
   { name: "edge-lookback", u: 1008, v: -8, lift: 10.0, atU: 820, atV: 10, pitch: 0.12 },
   // ── The close-range set (R12's still-frame bar, judged at 2–4 m) ─────────
   { name: "close-strand-ripple", u: 816.0, v: -18.5, lift: 1.5, atU: 819.0, atV: -15.3, pitch: -0.15, settle: 3 },
   { name: "close-bank-blades", u: 887.0, v: 3.0, lift: 1.4, atU: 890.4, atV: 5.8, pitch: -0.14, settle: 3 },
-  { name: "close-wrack-crown", u: 843.5, v: 16.5, lift: 1.5, atU: 846.3, atV: 19.7, pitch: -0.12, settle: 3 },
-  { name: "close-post-foot", u: 873.5, v: -35.5, lift: 1.6, atU: 875.8, atV: -38.9, pitch: -0.06, settle: 3 },
+  { name: "close-wrack-crown", u: 830.5, v: -29.5, lift: 1.5, atU: 826.5, atV: -33.5, pitch: -0.1, settle: 3 },
+  { name: "close-post-foot", u: 870.5, v: -32.5, lift: 1.6, atU: 876.0, atV: -40.0, pitch: 0.1, settle: 3 },
 ];
 
 function buildPoses(): RegionCapturePose[] {
@@ -221,7 +230,9 @@ export const BLUE_2: RegionDef = {
     // bluer than the backdrop it dissolves into IS the cobalt band).
     // The descent makes depth the dimmer: the saddle swims bright, the
     // Round takes all of it.
-    fog: { colorScale: [0.62, 0.5, 0.8], densityGain: -0.004, backdropFade: 0.5 },
+    // Round 2: red 0.62 → 0.66 — full-mood frames read teal; the deep
+    // register leans a nose further violet (red still under blue).
+    fog: { colorScale: [0.66, 0.5, 0.8], densityGain: -0.004, backdropFade: 0.5 },
     light: { sun: 0.28, hemisphere: 0.2, ambient: 0.06 },
   },
   moodSurface: 6,

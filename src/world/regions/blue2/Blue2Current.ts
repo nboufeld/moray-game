@@ -49,11 +49,13 @@ export function buildBlue2Current(): Blue2CurrentBuild {
     const glass = buildParticulateField({
       seed: SEED ^ (B2_SEEDS.currentGlass + i * 17),
       tint: 0xd8f0e4,
-      count: 120,
+      count: 150,
       mode: "drift",
       volume: { center: [x, floor + 1.6, z], size: [Math.min(44, len + 14), 2.8, Math.min(44, len + 14)] },
-      size: 0.3,
-      opacity: 0.42,
+      // Round 2: sized and brightened up — the r1 glass was sub-pixel
+      // past ~25 m and the river did not read as a river.
+      size: 0.42,
+      opacity: 0.5,
       bias: { dir, speed: 1.15 },
     });
     groups.push(glass.group);

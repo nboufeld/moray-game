@@ -39,10 +39,12 @@ interface StepLayer {
   readonly ink: Color;
 }
 
+// Bases raised in round 2: the horns-promise arithmetic (a deep-stand
+// camera 17 m below the crest needs ring tops clearing 0.28 rad).
 const LAYERS: readonly StepLayer[] = [
-  { radius: 246, ridgeBase: 12, ridgeVary: 4.2, fade: 0.3, ink: new Color(0.72, 0.6, 0.78) },
-  { radius: 265, ridgeBase: 18, ridgeVary: 5.6, fade: 0.5, ink: new Color(0.82, 0.7, 0.86) },
-  { radius: 288, ridgeBase: 26, ridgeVary: 7.2, fade: 0.66, ink: new Color(0.92, 0.82, 0.94) },
+  { radius: 246, ridgeBase: 14, ridgeVary: 4.2, fade: 0.3, ink: new Color(0.72, 0.6, 0.78) },
+  { radius: 265, ridgeBase: 20, ridgeVary: 5.6, fade: 0.5, ink: new Color(0.82, 0.7, 0.86) },
+  { radius: 288, ridgeBase: 28, ridgeVary: 7.2, fade: 0.66, ink: new Color(0.92, 0.82, 0.94) },
 ];
 
 const SEGMENTS = 220;
