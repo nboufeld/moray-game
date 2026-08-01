@@ -146,7 +146,9 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // breath — the Foremost kneeling, the Procession ranked into the fog.
   { name: "basin-reveal", u: 1324, v: 0, lift: 3.4, atU: 1368, atV: -8, pitch: -0.06, settle: 4 },
   // Among the pilgrim stones: long violet shadows, the road threading.
-  { name: "procession", u: 1380, v: -34, lift: 2.7, atU: 1430, atV: -12, pitch: 0.0, settle: 4 },
+  // Round 3: dollied INTO the ranks aimed at the Tall Pilgrim (the r2
+  // stand read the avenue as distant nubs across a flat pan).
+  { name: "procession", u: 1436, v: -44, lift: 2.6, atU: 1466, atV: -30, pitch: 0.06, settle: 4 },
   // The Mirror Pans from the road's shoulder: held sky, salt rims.
   { name: "mirror-pans", u: 1362, v: 26, lift: 3.2, atU: 1408, atV: -20, pitch: -0.1 },
   // THE STILL MIRROR: the rest, framed against its own door — the pan,
@@ -155,7 +157,9 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // The Dune Combs: ridge country, comb tufts in the lees. Round 2:
   // moved into the field's heart — the r1 stand sat on the comb's
   // feathered edge where the ridges are a whisper.
-  { name: "dune-combs", u: 1398, v: 88, lift: 3.2, atU: 1424, atV: 120, pitch: -0.02 },
+  // Round 3: raised to 7 m raking ALONG the crest lines — the r2 stand
+  // stared into a single lee face from below and read one flat slab.
+  { name: "dune-combs", u: 1390, v: 70, lift: 7.0, atU: 1436, atV: 104, pitch: -0.16 },
   // The Night Well from its kneeling ring: the violet deep, the blade.
   { name: "night-well", u: 1406, v: -84, lift: 2.8, atU: 1420, atV: -93, pitch: -0.16 },
   // Inside the well, looking up at the last light reaching the first
@@ -175,7 +179,9 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "suns-door", u: 1552, v: -18, lift: 6.0, atU: 1600, atV: -4, pitch: 0.08, settle: 4 },
   // On the balcony beside the door, looking straight into the painted
   // sunset: the province's last horizon, looked at on-axis.
-  { name: "evening-horizon", u: 1596, v: 18, lift: 6.0, atU: 1650, atV: -4, pitch: 0.0, settle: 3 },
+  // Round 3: raised to 9 m (over the rampart's mid-band, more sky and
+  // sunset in frame — the r2 frame was half flat wall).
+  { name: "evening-horizon", u: 1596, v: 18, lift: 9.0, atU: 1650, atV: -4, pitch: 0.02, settle: 3 },
   // The window with the Pilgrim crossing — the resident's own frame
   // (a round that cannot leave the door needs little phase luck).
   { name: "pilgrim", u: 1586, v: -16, lift: 3.0, atU: 1600, atV: -2, pitch: 0.1, settle: 8 },

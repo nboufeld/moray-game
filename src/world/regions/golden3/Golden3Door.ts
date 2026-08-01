@@ -4,12 +4,7 @@ import type { SphereCollider } from "../../CollisionField";
 import { createRockMaterial } from "../../RockMaterial";
 import { archGeometry, boulderGeometry, stackGeometry } from "../../RockShapes";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
-import {
-  CARVED_PALE,
-  STONE_DUSK,
-  STONE_DUSK_INTENSITY,
-  mergedMesh,
-} from "./Golden3Shared";
+import { CARVED_PALE, mergedMesh } from "./Golden3Shared";
 import { DOOR, GOLDEN3_SLOT, worldOf } from "./Golden3Terrain";
 
 /**
@@ -154,9 +149,13 @@ export function buildDoor(): DoorBuild {
     1.4,
   );
 
+  // Round 3: the door family lifts a step past the shared dusk floor —
+  // every touring pose sees the door's SHADE side (the sun stands
+  // behind it by design), and at 0.25 the legs crushed to rust-violet
+  // mottle at close range.
   const material = createRockMaterial(CARVED_PALE);
-  material.emissive.setHex(STONE_DUSK);
-  material.emissiveIntensity = STONE_DUSK_INTENSITY;
+  material.emissive.setHex(0x6a5038);
+  material.emissiveIntensity = 0.36;
   const mesh = mergedMesh(parts, material, "vesper-door");
 
   return { meshes: [mesh], colliders, contacts, window };

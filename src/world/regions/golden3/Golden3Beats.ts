@@ -140,10 +140,10 @@ export const WIDE_STANDS: readonly { u: number; v: number }[] = [
   { u: 1242, v: 1 }, // strand-gate
   { u: 1266, v: 0 }, // sandfall-combe
   { u: 1324, v: 0 }, // basin-reveal
-  { u: 1380, v: -34 }, // procession
+  { u: 1436, v: -44 }, // procession
   { u: 1362, v: 26 }, // mirror-pans
   { u: 1392, v: -42 }, // still-mirror
-  { u: 1398, v: 88 }, // dune-combs
+  { u: 1390, v: 70 }, // dune-combs
   { u: 1406, v: -84 }, // night-well
   { u: 1466, v: 20 }, // caravan-road
   { u: 1496, v: 30 }, // afterglow-garden
@@ -214,11 +214,13 @@ export const DRIFT_LINES: readonly (readonly (readonly [number, number])[])[] = 
     [1197, -2],
     [1204, 6],
   ],
-  // The combe's foot, where the pours spill their freight.
+  // The combe's foot, where the pours spill their freight. Round 3:
+  // pushed 16 m down-road — the r2 line lay directly under the
+  // basin-reveal camera and read as a dark scatter blob at the lens.
   [
-    [1326, -10],
-    [1334, -2],
-    [1342, 8],
+    [1342, -14],
+    [1350, -6],
+    [1358, 2],
   ],
   // A basin trough line riding the swells toward the garden.
   [

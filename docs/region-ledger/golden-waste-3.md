@@ -298,3 +298,61 @@ the rows so the body holds opacity and only the crest dissolves).
     grid) so the comb seam line is backed by ground.
 11. Grit 7,000 → 8,600; comb tufts 1,100 → 1,400 (brighter palette);
     basin wire 5,200 → 5,600.
+
+## Round 2 — the read (17/17 authored captured)
+
+**PASS (7):** `still-mirror` (the rest composes: pan, sky-pool, salt
+rim, stone skyline), `mirror-pans`, `close-pan-rim` (the region's best
+frame: blades, mat slabs, warm pool, gate skyline, rampart strata),
+`caravan-road` (road streaks + waymarks + gate arch + lantern; two
+pea-green bushes off-palette), `night-well` (violet deep + blade),
+`pilgrim` (the resident finally reads as a small copper ember crossing
+the window), `last-shelf` (bush photobomb cured, falls glinting;
+water still cool at the doorstep — the honest handover, accepted).
+
+**MARGINAL (5):** `suns-door` (sun seated in the window ✓, sunset band
+✓ — but the blade reads teal and the arch merges into the wall),
+`well-blade` (blade + petals ✓, walls flat), `afterglow-garden`
+(candle crowns read, bodies still carrot), `procession` (stones the
+proven pale ✓ but the stand reads the avenue as distant nubs),
+`close-comb-tufts` (near band ✓; the tile-seam line SURVIVED the
+overlap-and-sink — a 3 cm step still draws at grazing angles).
+
+**FAIL (4):**
+- `basin-reveal` — a lantern in the lens at point-blank. Structural,
+  not phase luck: the caravan circuit's first station IS SPINE_ROAD[0]
+  (1322, 0), two metres from the camera stand.
+- `evening-horizon` — the Pilgrim at point-blank top-right (its home
+  leg passes 6 m from the balcony camera), plus half the frame is the
+  rampart's flat beige mid-band.
+- `dune-combs` — the r2 stand stares into one lee face from below:
+  a single flat brown slab. The combs exist (close pose proves it);
+  the camera cannot see them from inside a trough.
+- `close-garden-bed` — traffic-cone candles (emissive wash saturates
+  the whole taper) + pea-green sward/bushes out of the province's
+  palette.
+
+## Round 3 — orders (all landed)
+
+1. Caravan circuit starts one station down the road (never again at a
+   camera's feet); flight −0.6 m; scale 1.25–1.65 → 1.0–1.3.
+2. Pilgrim home leg pushed north to v ≥ 22 (clears the balcony camera
+   by ~12 m).
+3. Candles: emissive 0.6 → 0.32 and hex cooled to umber (the crowns
+   burn through the near-white paint, not through a body wash); body
+   paint base lift 0.34 → 0.5.
+4. The whole garden green family to olive-gold (sward, fronds, bushes,
+   close bed) — sunset grass, not spring lawn.
+5. ONE disc ground sheet (211 segments) — the 2×2 grid is gone, and
+   with it the seam; three draws saved.
+6. Rampart runnels overshoot for the fog (0.32 → 0.5, value −0.2) and
+   the strata band doubled.
+7. Door family dusk-lift 0.25 → 0.36 warm (every touring pose sees its
+   shade side by design; it crushed at close range).
+8. THE LAST LIGHT warmed 0xffdf9c → 0xffc87a, beam 0.16 → 0.19, pool
+   0.2 → 0.24 (the r2 blade read teal over the honey water).
+9. Poses: `procession` dollied into the ranks at the Tall Pilgrim;
+   `dune-combs` raised to 7 m raking along the crests; `evening-horizon`
+   raised to 9 m (sky and sunset over wall).
+10. The combe-foot drift line pushed 16 m down-road off the
+    basin-reveal lens; wrack palette brightened a step.

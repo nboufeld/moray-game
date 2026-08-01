@@ -304,12 +304,16 @@ function buildLanternCaravan(): { group: Group; update: (timeSec: number) => voi
     const { x, z } = worldOf(u, v);
     points.push(new Vector3(x, seabedHeight(x, z) + lift, z));
   };
-  for (const [u, v] of SPINE_ROAD) {
-    seat(u, v + 4, 5.2 + Math.sin(u * 0.02) * 0.6);
+  // Round 3: the circuit starts one station down the road — SPINE_ROAD[0]
+  // is (1322, 0), two metres from the basin-reveal camera stand, and the
+  // r2 frame took a lantern in the lens by construction. Flight lowered
+  // half a metre so the lamps hug the road instead of the skyline.
+  for (const [u, v] of SPINE_ROAD.slice(1)) {
+    seat(u, v + 4, 4.6 + Math.sin(u * 0.02) * 0.6);
   }
-  seat(1602, 10, 5.6);
-  for (let i = SPINE_ROAD.length - 1; i >= 0; i--) {
-    seat(SPINE_ROAD[i]![0], SPINE_ROAD[i]![1] - 4.5, 6.0 + Math.cos(i * 1.1) * 0.5);
+  seat(1602, 10, 5.0);
+  for (let i = SPINE_ROAD.length - 1; i >= 1; i--) {
+    seat(SPINE_ROAD[i]![0], SPINE_ROAD[i]![1] - 4.5, 5.2 + Math.cos(i * 1.1) * 0.5);
   }
   const path = new CatmullRomCurve3(points, true, "centripetal", 0.5);
 
@@ -341,7 +345,9 @@ function buildLanternCaravan(): { group: Group; update: (timeSec: number) => voi
   const scales: number[] = [];
   const tint = new Color();
   for (let i = 0; i < count; i++) {
-    scales.push(random.range(1.25, 1.65));
+    // Round 3: 1.25–1.65 read as 3 m balloons at mid-range; the caravan
+    // carries votive lamps, not floats.
+    scales.push(random.range(1.0, 1.3));
     tint.setScalar(random.range(0.92, 1.08));
     mesh.setColorAt(i, tint);
   }

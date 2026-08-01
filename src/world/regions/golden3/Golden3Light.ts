@@ -93,14 +93,16 @@ export function buildGolden3Light(): Golden3LightBuild {
   groups.push(
     buildBeamAndPool({
       seed: SEED ^ G3_SEEDS.lastLight,
-      tint: 0xffdf9c,
+      // Round 3: warmed and strengthened — additive over the honey
+      // water, the r2 blade read teal-white.
+      tint: 0xffc87a,
       ground: seabedHeight,
       beams: [
         {
           pos: [threshold.x, threshold.z],
           top: thresholdY + 20,
           width: 6.5,
-          opacity: 0.16,
+          opacity: 0.19,
           slant: [-0.2, 0.06],
         },
       ],
@@ -108,7 +110,7 @@ export function buildGolden3Light(): Golden3LightBuild {
         {
           pos: [threshold.x, threshold.z],
           radius: 7,
-          opacity: 0.2,
+          opacity: 0.24,
         },
       ],
     }).group,

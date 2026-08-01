@@ -316,14 +316,16 @@ function bakeVesperPaint(geometry: PlaneGeometry, contacts: readonly ContactPatc
       const strata =
         fbm(theta * 8, y * 0.24, { seed: SEED ^ G3_SEEDS.paintStain, period: 6, octaves: 2 }) -
         0.5;
-      r += (1.14 - r) * rampart * (0.4 + height * 0.55);
+      r += (1.18 - r) * rampart * (0.4 + height * 0.55);
       g += (0.98 - g) * rampart * (0.4 + height * 0.55);
-      b += (0.72 - b) * rampart * (0.3 + height * 0.55);
+      b += (0.7 - b) * rampart * (0.3 + height * 0.55);
       // The runnels lean violet in their shade (red over green, held).
-      r += (0.62 - r) * rampart * runnel * 0.32;
-      g += (0.5 - g) * rampart * runnel * 0.32;
-      b += (0.9 - b) * rampart * runnel * 0.26;
-      value += rampart * (height * 0.16 + strata * 0.2 - runnel * 0.12);
+      // Round 3: contrast raised again — through 60+ m of fog the r2
+      // wall still ironed flat; the drawing must overshoot to survive.
+      r += (0.56 - r) * rampart * runnel * 0.5;
+      g += (0.44 - g) * rampart * runnel * 0.5;
+      b += (0.92 - b) * rampart * runnel * 0.4;
+      value += rampart * (height * 0.2 + strata * 0.3 - runnel * 0.2);
     }
 
     // Contact shade under everything that stands on the ground.
@@ -355,26 +357,23 @@ export function buildGolden3Ground(contacts: readonly ContactPatch[]): Mesh[] {
   const material = createSandMaterial();
   const meshes: Mesh[] = [];
 
-  const half = DISC_TILE / 2;
-  const centers: [number, number][] = [
-    [CENTRE.x - half, CENTRE.z - half],
-    [CENTRE.x + half, CENTRE.z - half],
-    [CENTRE.x - half, CENTRE.z + half],
-    [CENTRE.x + half, CENTRE.z + half],
-  ];
-  for (const [index, [cx, cz]] of centers.entries()) {
-    // Round 2: the tiles overlap by 3 m and alternate a 3 cm sink (the
-    // pass-sheet device turned inward) — the r1 abutting grids opened
-    // a visible dark seam line across the comb fields.
-    const sink = index === 0 || index === 3 ? -0.03 : 0;
-    const geometry = createSeabedGeometryAt(cx, cz, DISC_TILE + 3, DISC_SEGMENTS, sink);
-    trimSheet(geometry, keepGround);
-    bakeVesperPaint(geometry, contacts);
-    const mesh = new Mesh(geometry, material);
-    mesh.name = "vesper-ground-disc";
-    mesh.receiveShadow = true;
-    meshes.push(mesh);
-  }
+  // Round 3: ONE disc sheet. The 2×2 tiling seamed twice — r1's abutting
+  // grids opened a dark line, and r2's overlap-and-sink still drew its
+  // 3 cm step across the smooth comb fields at grazing angles. A single
+  // 211-segment sheet is the same vertex budget with no seam to hide,
+  // and three fewer draws.
+  const geometry = createSeabedGeometryAt(
+    CENTRE.x,
+    CENTRE.z,
+    DISC_TILE * 2 + 4,
+    DISC_SEGMENTS * 2 + 3,
+  );
+  trimSheet(geometry, keepGround);
+  bakeVesperPaint(geometry, contacts);
+  const disc = new Mesh(geometry, material);
+  disc.name = "vesper-ground-disc";
+  disc.receiveShadow = true;
+  meshes.push(disc);
 
   // The pass sheet: the Last Shelf and the combe's head, back over the
   // Carillon Waste's rim — overlapping its tiles (they reach spoke

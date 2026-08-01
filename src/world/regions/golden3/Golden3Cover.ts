@@ -532,10 +532,13 @@ export function buildGolden3Cover(): Golden3CoverBuild {
   );
   warmMaterials(pocketFronds, 0x8c8c3e, 0.6);
 
+  // Round 3: the whole garden green family shifts from pea-green to
+  // olive-gold — sunset grass, not spring lawn (the r2 close frame
+  // read out of the province's palette entirely).
   const gardenSward = keep(
     buildCarpetField({
       seed: SEED ^ G3_SEEDS.gardenSward,
-      palette: { base: 0x9eb062, tip: 0xd4dc88, shade: 0x6e8455 },
+      palette: { base: 0xa8ac5e, tip: 0xe0d688, shade: 0x76784e },
       area: discAreaAt(GARDEN.u, GARDEN.v, 52),
       gate: gardenSwardGate,
       ground: seabedHeight,
@@ -547,12 +550,12 @@ export function buildGolden3Cover(): Golden3CoverBuild {
       looseShare: 0.4,
     }),
   );
-  warmMaterials(gardenSward, 0x6a8a3e, 0.55);
+  warmMaterials(gardenSward, 0x8a883e, 0.55);
 
   const gardenFronds = keep(
     buildCarpetField({
       seed: SEED ^ G3_SEEDS.gardenFronds,
-      palette: { base: 0x8eb06a, tip: 0xcadc90, shade: 0x648256 },
+      palette: { base: 0xa2a660, tip: 0xd6ce86, shade: 0x6e744e },
       area: discAreaAt(GARDEN.u, GARDEN.v, 44),
       gate: gardenFrondGate,
       ground: seabedHeight,
@@ -563,12 +566,12 @@ export function buildGolden3Cover(): Golden3CoverBuild {
       sunGlow: true,
     }),
   );
-  warmMaterials(gardenFronds, 0x6a8a3e, 0.55);
+  warmMaterials(gardenFronds, 0x8a883e, 0.55);
 
   const gardenBushes = keep(
     buildBushBank({
       seed: SEED ^ G3_SEEDS.gardenBushes,
-      palette: { base: 0x9ca858, tip: 0xd8d68a, shade: 0x5c6a4a, accent: 0xf0e6a0 },
+      palette: { base: 0xaaa45c, tip: 0xdcd086, shade: 0x6c684a, accent: 0xf0e096 },
       area: discAreaAt(GARDEN.u, GARDEN.v, 46),
       gate: (x, z) => gardenSwardGate(x, z) * bushFree(x, z),
       ground: seabedHeight,
@@ -577,7 +580,7 @@ export function buildGolden3Cover(): Golden3CoverBuild {
       accents: 5,
     }),
   );
-  warmMaterials(gardenBushes, 0x6a8a3e, 0.45);
+  warmMaterials(gardenBushes, 0x8a883e, 0.45);
 
   const doorTufts = keep(
     buildCarpetField({
@@ -664,7 +667,7 @@ export function buildGolden3Cover(): Golden3CoverBuild {
     const wrack = keep(
       buildDriftDebris({
         seed: SEED ^ (G3_SEEDS.wrackLines + index),
-        palette: { base: 0xb29a74, shade: 0x8a7a8c },
+        palette: { base: 0xbea87c, shade: 0x968694 },
         area: driftLineArea(line, 5),
         gate: (x, z) => restFree(x, z) * fillOwn(x, z),
         ground: seabedHeight,
@@ -709,8 +712,8 @@ export function buildGolden3Cover(): Golden3CoverBuild {
       radius: 4.5,
       count: 110,
       profile: "frond",
-      palette: { base: 0x8eb06a, tip: 0xcadc90, shade: 0x648256 },
-      warm: 0x6a8a3e,
+      palette: { base: 0xa2a660, tip: 0xd6ce86, shade: 0x6e744e },
+      warm: 0x8a883e,
     },
     {
       seed: G3_SEEDS.closeDoorBed,

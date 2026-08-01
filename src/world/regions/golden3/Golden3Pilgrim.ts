@@ -86,9 +86,12 @@ export function buildPilgrim(door: DoorBuild): PilgrimBuild {
   points.push(new Vector3(window.x, wy, window.z)); // the crossing
   seat(1612, -4, wy - 0.6);
   seat(1622, 6, DOOR_BALCONY + 7.5);
-  seat(1614, 20, DOOR_BALCONY + 8.5);
-  seat(1596, 24, DOOR_BALCONY + 9);
-  seat(1578, 14, DOOR_BALCONY + 8);
+  // Round 3: the home leg pushed north to v ≥ 22 — the r2 leg passed
+  // six metres from the evening-horizon camera (1596, 18) and the
+  // Pilgrim photobombed the balcony frame at point-blank.
+  seat(1616, 26, DOOR_BALCONY + 8.5);
+  seat(1598, 32, DOOR_BALCONY + 9);
+  seat(1576, 22, DOOR_BALCONY + 8);
   const path = new CatmullRomCurve3(points, true, "centripetal", 0.5);
 
   const target: DiscoveryTarget = {

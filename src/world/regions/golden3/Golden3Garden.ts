@@ -161,7 +161,9 @@ function paintCandle(geometry: BufferGeometry, candle: Candle, seed: number): vo
     const crown = smoothstep01((t - 0.72) / 0.16);
     shade
       .copy(STONE_AMBER)
-      .lerp(STONE_BRIGHT, 0.34 + smoothstep01((t - 0.26) / 0.6) * 0.52)
+      // Round 3: base lift raised — the r2 bodies still read carrot
+      // under the emissive wash; the candle is a PALE mineral taper.
+      .lerp(STONE_BRIGHT, 0.5 + smoothstep01((t - 0.26) / 0.6) * 0.42)
       .lerp(SHADOW_VIOLET, Math.max(0, -groove) * 0.18 * band + Math.max(0, -strata) * 0.13)
       .multiplyScalar(1.06 + strata * 0.24 + grain * 0.18)
       .lerp(CROWN_LIGHT, crown);
@@ -211,12 +213,15 @@ export function buildGarden(): GardenBuild {
   }
 
   // The candle draw: dusk-lift emissive UNDER the paint's control (the
-  // vein glow), so the crowns burn and the grooves stay dusk.
+  // vein glow), so the crowns burn and the grooves stay dusk. Round 3:
+  // intensity halved and the hex cooled toward umber — at 0.6 the wash
+  // saturated the whole taper traffic-cone orange; the crowns carry the
+  // burn through the near-white paint alone.
   const material = createToonMaterial({
     color: 0xe8d2a2,
     vertexColors: true,
-    emissive: 0x9a7c42,
-    emissiveIntensity: 0.6,
+    emissive: 0x6a4e2c,
+    emissiveIntensity: 0.32,
   });
   applyVeinGlow(material, "golden3-candle-glow");
   const mesh = mergedMesh(parts, material, "vesper-candles");
