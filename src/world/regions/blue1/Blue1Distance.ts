@@ -357,11 +357,28 @@ function deepArc(step: DeepStep, noiseSeed: number, gapOutward: number): BufferG
   const count = 160;
   let column = 0;
 
+  // R0.6 integration (the Deep Steps' flagged gate): the depth-2 corridor
+  // crosses all four arcs dead-on at the outbound azimuth. Each arc parts
+  // over the corridor (half-angle 0.10 rad ≈ v ±20 at these radii), the
+  // cut edges diving under the ground line with the arcs' own ease — the
+  // painting parting to admit the diver, the Deep Steps' wall face rising
+  // behind it.
+  const CORRIDOR_HALF = 0.1;
+  const CORRIDOR_EASE = 0.12;
+
   for (let i = 0; i <= count; i++) {
     const off = (i / count) * 2 - 1;
     const theta = gapOutward + off * span;
-    // The arc's ends sink so its cut edges never stand as walls.
-    const end = 1 - smoothstep01((Math.abs(off) - 0.72) / 0.24);
+    const offCorridor = Math.abs(off * span);
+    if (offCorridor < CORRIDOR_HALF) {
+      column = 0;
+      continue;
+    }
+    // The arc's ends sink so its cut edges never stand as walls — the
+    // outer ends by |off|, the new corridor edges by their own ease.
+    const end =
+      (1 - smoothstep01((Math.abs(off) - 0.72) / 0.24)) *
+      smoothstep01((offCorridor - CORRIDOR_HALF) / CORRIDOR_EASE);
     const x = CENTER_X + Math.cos(theta) * step.radius;
     const z = CENTER_Z + Math.sin(theta) * step.radius;
     // A broad drooping swell carries the skyline; the fine ripple only

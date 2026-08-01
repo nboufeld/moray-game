@@ -67,6 +67,14 @@ function buildSeals(): SphereCollider[] {
     if (Math.abs(v) < 20 && Math.cos(theta - (BLUE1_SLOT.azimuth + Math.PI)) > 0) {
       continue;
     }
+    // R0.6 integration (the Deep Steps' flagged gate): the depth-2 pass
+    // leaves this disc at the far pole (stations i = 76–79, u ≈ 609),
+    // and now that the Deep Steps exist to catch the diver across the
+    // void, the ring parts on the outbound side too — MASTER R4's
+    // precedent, fourth use.
+    if (Math.abs(v) < 22 && Math.cos(theta - BLUE1_SLOT.azimuth) > 0) {
+      continue;
+    }
     seals.push({
       center: new Vector3(x, blue1TerrainTarget(x, z) + 1.5, z),
       radius: 9,

@@ -285,7 +285,12 @@ export function blue1Ceiling(x: number, z: number): number {
   // flank seals carry the approach.
   const corridorOpen =
     (1 - smoothstep01((u - 308) / 24)) * (1 - smoothstep01((Math.abs(v) - 18) / 12));
-  const close = smoothstep01((rc - 140) / 24) * (1 - corridorOpen);
+  // R0.6 (the Deep Steps' recommended term): the outbound corridor opens
+  // the closure too, so the crossing keeps the void's full column and
+  // the Under-Blue vertigo carries through the door.
+  const corridorOpenOut =
+    smoothstep01((u - 596) / 24) * (1 - smoothstep01((Math.abs(v) - 18) / 12));
+  const close = smoothstep01((rc - 140) / 24) * (1 - Math.max(corridorOpen, corridorOpenOut));
   if (close > 0) {
     c += (blue1TerrainTarget(x, z) + 3.0 - c) * close;
   }

@@ -69,6 +69,12 @@ function keepGround(x: number, z: number): boolean {
   const { u, v } = spokeOf(x, z);
   const rc = Math.hypot(x - CENTER_X, z - CENTER_Z);
   const s = u - 445;
+  // R0.6 integration (the Deep Steps' flagged gate): within the depth-2
+  // corridor's v-band the sheet keeps to rc ≈ 182, stitching to the Deep
+  // Steps' pass sheet which begins at u 626.
+  if (s > DROP_LIP_S + 26 && Math.abs(v) < 20 && rc <= 182) {
+    return true;
+  }
   const overTheEdge = s > DROP_LIP_S + 26 && Math.abs(v) < 118;
   if (rc <= (overTheEdge ? EDGE_GROUND_R : DISC_GROUND_R)) {
     return true;
@@ -105,9 +111,18 @@ function droopEdgeRim(geometry: PlaneGeometry): void {
     if (u - 445 > DROP_LIP_S + 26) {
       edge = 1 - smoothstep01((Math.abs(v) - 118) / 22);
     }
-    const startR = 166 + (214 - 166) * (1 - edge);
-    const span = 10 - (10 - 9) * (1 - edge);
-    const floor = -24 - 28 * edge;
+    // R0.6: inside the depth-2 corridor's v-band the pour softens to a
+    // hand's breadth under the LOCAL floor (−46 through the crossing,
+    // probed) instead of the abyssal −52 — deep enough that the trim
+    // edge sinks below the eye line (no resurrected teeth), shallow
+    // enough that a crossing diver never reads a skirt diving far below
+    // the collision floor. The Deep Steps' pass sheet takes over at
+    // u 626 and covers the seam once attached.
+    const corridorKeep =
+      u - 445 > DROP_LIP_S + 26 ? 1 - smoothstep01((Math.abs(v) - 14) / 10) : 0;
+    const startR = (166 + (214 - 166) * (1 - edge)) * (1 - corridorKeep) + 172 * corridorKeep;
+    const span = (10 - (10 - 9) * (1 - edge)) * (1 - corridorKeep) + 8 * corridorKeep;
+    const floor = (-24 - 28 * edge) * (1 - corridorKeep) + -48 * corridorKeep;
     const k = smoothstep01((rc - startR) / span);
     if (k > 0) {
       position.setY(i, position.getY(i) - k * (position.getY(i) - floor));
