@@ -305,9 +305,14 @@ const combTuftGate: GateFn = (x, z) => {
     return 0;
   }
   // The terrain's ridge factor, normalised by its own amplitude: the
-  // tufts keep to the troughs (the lee), off the lit crests.
+  // tufts favour the troughs (the lee), thinning over the lit crests.
+  // Round 5: the crests keep a 0.5 floor of wind-bent stragglers — the
+  // r4 sweep drew a stand ON a crest whose face filled the whole near
+  // band; each ridge occludes its trough, so the face must carry its
+  // own layer (a crest is combed, never shaved). A 0.25 first cut put
+  // ~4 blades on a 90 m² face — measured in-page, invisible.
   const crest = Math.max(0, Math.min(1, combRidge(u, v) / 2.8));
-  const lee = 1 - smoothstep01((crest - 0.45) / 0.3);
+  const lee = 0.5 + 0.5 * (1 - smoothstep01((crest - 0.6) / 0.3));
   return comb * lee * restFree(x, z) * lensFree(x, z) * golden3Weight(x, z);
 };
 
@@ -506,7 +511,9 @@ export function buildGolden3Cover(): Golden3CoverBuild {
       area: discArea(),
       gate: combTuftGate,
       ground: seabedHeight,
-      count: 1400,
+      // Round 5: 1400 → 3400 — two ~110×52 m comb fields at 1400 gave
+      // one tuft per ~20 m², and a random stand on a crest read bare.
+      count: 3400,
       profile: "blade",
       size: [0.4, 0.75],
       swayAmp: 0.045,

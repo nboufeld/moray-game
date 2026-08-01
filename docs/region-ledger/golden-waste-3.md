@@ -170,6 +170,9 @@ corridor only. The province ends here: the far pole never opens.
 
 - Draft 1: **69 draws / 899,334 tris**; colliders > 100, all inside
   the domain by test. Headroom held for the critique rounds.
+- Final (after round 5's comb-tuft density fix): **66 draws /
+  1,043,103 tris** — 25% of the R12 draw cap, 77% of the tri cap,
+  bound by the measured frame gate below.
 
 ## Seeds
 
@@ -390,3 +393,107 @@ the window, warm blade) all pass.
 3. Door scrub palette up a value step (0xc2b070/0xecdc96/0x807454),
    warm lift toward amber.
 4. Door family emissive 0.36 → 0.48 at 0x7a5c40.
+
+## Round 4 — the read (19/19 authored + the seeded sweep)
+
+**All 19 authored poses pass.** The four r3 nits are cured: the comb
+contours curve like wind creases (both comb poses), the candles are
+pale mineral tapers whose crowns genuinely burn, the door scrub reads
+warm gold on the rise's skyline, and the arch's shade side holds its
+pale at the pilgrim pose's ten metres.
+
+**Sweep (`gw3-r4`): 11/12.** Poses re-derived in spoke coordinates by
+a replay probe (the stream is FNV-1a off the slot id + KIT_SWEEP_SALT):
+none land in a registered rest except 04 (the Still Mirror, licensed —
+and it composes anyway: pan shards, stone skyline, lanterns). The miss
+is **08** — a random stand ON a comb crest at u ≈ 1363, v ≈ 109,
+staring across its own crest face: the near band read as one bare
+slab, no first layer.
+
+## Round 5 — the diagnosis and the fix (pose 08)
+
+Probed, not guessed:
+
+1. A ray-march along 08's view line showed the near band is the
+   CREST TOP itself — and the comb-tuft gate zeroed on crests by
+   design (a lee-only band, `1 − smoothstep((crest − 0.6)/0.3)`).
+   Each ridge occludes its own trough from a stand on the crest, so
+   the lee-only rule guarantees a bare frame from every crest top.
+2. Live-scene instance counts (a browser probe walking
+   `kit-carpet-field` matrices) confirmed the tufts exist and draw —
+   just never on the face the camera sees.
+3. A first cut (floor 0.25, count 2600) measured invisible in-page:
+   ~4 blades on a 90 m² face. The honest fix is both terms:
+   **crest floor 0.5** (a crest is combed, never shaved) and
+   **count 1400 → 3400** (two ~110×52 m comb fields at 1400 gave one
+   tuft per ~20 m²).
+4. A stale-module trap cost one sub-round: Vite kept serving the old
+   `Golden3Cover` chunk after the edit (budget test showed the new
+   tris; captures did not). A dev-server restart cured it — when a
+   capture contradicts a measurement, RESTART THE SERVER before
+   doubting the measurement.
+
+Budget after: 66 draws / 1,043,103 tris (the tuft field is merged
+instancing; the draw count actually fell with the round-3 one-sheet
+consolidation and holds).
+
+## Round 6 — the read (final sweep + recaptures)
+
+**Sweep (`gw3-r6`): 12/12.** Frame 08 now carries wind-bent
+stragglers across its crest band at every distance ring; the comb
+country reads combed from ON the comb, not only from beside it. All
+other frames hold their round-4 reads: near tufts/litter, mid stones
+or pan rims or combe walls, far sunset band or rampart or caravan
+wire in every frame. 04 remains the Still Mirror's licensed
+stillness and composes regardless.
+
+**Recaptured authored poses** (`dune-combs`, `close-comb-tufts`,
+`evening-horizon`): all pass — the tuft floor did not fuzz the comb
+silhouettes, and the horizon frame keeps its garden foreground, the
+end-wall's warm rim glow, and the sun's dome over the crest.
+
+**Verdict: authored 19/19, sweep 12/12.** The loop closes at four
+full rounds plus the round-5/6 targeted fix cycle.
+
+## The no-assets pass (dev server, `SHOT_NO_ASSETS=1`) — 19/19
+
+All 19 authored poses captured against the DEV server with painted
+maps blocked. The region is procedurally self-sufficient: the ground
+paint carries the drift ribbons, comb crest/lee, pan sky-floors, and
+rampart runnels alone; the procession stones and the door family hold
+as clean pale slabs (their painted lichen gone, their silhouettes and
+dusk-lift intact); the candles keep their taper-and-crown read on
+vertex colour + material emissive; the falls, THE WELL BLADE, THE
+LAST LIGHT, the lanterns, the Pilgrim, and THE SUNSET are all
+procedural and unchanged. **PASS.**
+
+## The frame gate — headed, scale 1.00, both poses under the bar
+
+`scripts/measure-frames.mjs` with `SHOT_HEADED=1`, real GPU, window
+visible, `SHOT_REGION=golden-waste-3`, 5 s samples:
+
+- **afterglow-garden** (the densest pose: 33 candles + sward +
+  fronds + bushes + glints + the spring column + the sunset):
+  300 frames | **median 16.7 ms** (59.9 fps) | p95 18.1 ms |
+  settled scale **1.00**
+- **caravan-road** (road dapple + caravan + shoal + procession
+  skyline + gate arch): 300 frames | **median 16.7 ms** (59.9 fps) |
+  p95 18.1 ms | settled scale **1.00**
+
+Both under the ≤16.9 ms bar — vsync held at 60 Hz at full render
+scale at the region's two heaviest views. Gate **PASS**.
+
+## Capture sets
+
+- `gw3-r1` — draft 1, 19 authored.
+- `gw3-r2` — round 2, 19 authored.
+- `gw3-r3` — round 3, 19 authored.
+- `gw3-r4` — round 4, 19 authored + 12 sweep.
+- `gw3-r5`/`r5b`/`r5c`/`r5d` — the pose-08 fix sub-rounds (comb
+  poses + sweep 01/08 probes; includes the stale-module detour).
+- `gw3-r6` — final: 12 sweep + `evening-horizon` recapture.
+- `gw3-noassets` — the procedural fallback build, 19 authored.
+
+Diagnostic probes retired; their findings live in this ledger
+(the sweep replay, the pose-08 ray-march, the live-scene instance
+counts, and the show/hide pixel-diff are all described above).
