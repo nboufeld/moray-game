@@ -115,7 +115,7 @@ interface PoseSpec {
 const POSE_SPECS: readonly PoseSpec[] = [
   // From the Smoulder's side of the overlap, looking into the deep — the
   // pass pose the handover is judged by.
-  { name: "saddle-crest", u: 668, v: 0, lift: 2.0, atU: 730, atV: 2, pitch: 0.0 },
+  { name: "saddle-crest", u: 656, v: 0, lift: 2.0, atU: 730, atV: 2, pitch: 0.0 },
   // The reveal: standing over the stair, the Forge Combs opening below.
   { name: "clinker-stair", u: 742, v: 2, lift: 2.6, atU: 800, atV: 0, pitch: -0.1 },
   // The Doorcombs: the gate pair framing the way in.

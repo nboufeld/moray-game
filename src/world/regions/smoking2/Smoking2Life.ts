@@ -75,12 +75,12 @@ export function washShoalStations(): [number, number, number][] {
   // The turn at the Glass Shore's edge (the Glass Hush stays far south).
   at(1058, washCenter(1058) + 10, 3.0);
   // Home through the comb gaps, north of the wash (the Anvil's Shadow
-  // rest at (946, 12) stays south of this line).
+  // rest sits south of the road, well off this line).
   at(1010, 36, 3.0);
   at(966, 46, 3.0);
   at(920, 8, 2.8);
   at(878, 24, 2.8);
-  at(836, 12, 2.6);
+  at(838, 2, 2.6);
   at(800, 4, 2.4);
   at(768, saddleCenter(768), 2.2);
   return stations;

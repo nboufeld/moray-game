@@ -225,7 +225,7 @@ export const GLASS_FROM = 1030;
 const GLASS_FLOOR = -16;
 
 /** The Anvil's seat: the flat-topped block the Emberwash splits around. */
-export const ANVIL = { u: 938, v: -4 } as const;
+export const ANVIL = { u: 938, v: -22 } as const;
 
 /** The Night Door: the far-pole frame over the reserved depth-3 pass. */
 export const NIGHT_DOOR = { u: 1122, v: 0 } as const;
@@ -299,9 +299,10 @@ export const COMBS: readonly CombSpec[] = [
   // The Long Gallery: the first rank, parted by the wash.
   { name: "gallery-north", u: 840, v: 38, heading: 1.3, halfLength: 26, height: 14, thickness: 4.2 },
   { name: "gallery-south", u: 828, v: -40, heading: 1.24, halfLength: 24, height: 13, thickness: 4.0 },
-  // The Broken Comb's two stubs (the fallen lintel is built, not terrain).
-  { name: "broken-north", u: 862, v: 13, heading: 1.3, halfLength: 8, height: 9, thickness: 3.4 },
-  { name: "broken-south", u: 855, v: -18, heading: 1.3, halfLength: 8, height: 8.5, thickness: 3.2 },
+  // The Broken Comb's two stubs, parted by the wash (which runs v ≈ 9.5
+  // here) — the fallen lintel is built, not terrain.
+  { name: "broken-north", u: 863, v: 24, heading: 1.3, halfLength: 8, height: 9, thickness: 3.4 },
+  { name: "broken-south", u: 855, v: -6, heading: 1.3, halfLength: 8, height: 8.5, thickness: 3.2 },
   // The Kings' Run: the tallest pair, the skyline's crown.
   { name: "king-west", u: 903, v: 40, heading: 1.4, halfLength: 30, height: 16, thickness: 5.0 },
   { name: "king-east", u: 934, v: 26, heading: 1.32, halfLength: 22, height: 15, thickness: 4.6 },
@@ -356,8 +357,9 @@ export const RESTS = {
   ladle: { u: 886, v: 122, radius: 12 },
   /** The Glass Hush: a bare obsidian pocket with one witness erratic. */
   glassHush: { u: 1058, v: -64, radius: 12 },
-  /** The Anvil's Shadow: the lee floor north of the Anvil, off the wash. */
-  anvilShadow: { u: 946, v: 12, radius: 9 },
+  /** The Anvil's Shadow: the lee floor south-east of the Anvil, off the
+   *  wash (the road bends north past the heart; the shadow pools behind). */
+  anvilShadow: { u: 949, v: -37, radius: 9 },
 } as const;
 
 /** 1 outside every rest, easing to 0 inside — the shared stillness gate. */

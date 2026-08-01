@@ -248,13 +248,14 @@ function anvilGeometry(baseY: number): BufferGeometry {
 
 /** The Broken Comb's fallen lintel: a slab leaning across the wash. */
 function lintelGeometry(): { geometry: BufferGeometry; colliders: SphereCollider[] } {
-  // The stubs stand at (862, 13) and (855, -18); the lintel leans from
+  // The stubs stand at (863, 24) and (855, -6); the lintel leans from
   // the north stub's shoulder down onto the south stub's break face,
-  // crossing the wash (centre ≈ v -2 at u 858) with clearance beneath.
-  const north = worldOf(861, 10);
-  const south = worldOf(856, -14);
-  const northY = seabedHeight(north.x, north.z) + 7.4;
-  const southY = seabedHeight(south.x, south.z) + 5.2;
+  // crossing the wash (centre ≈ v 9.5 at u 858) with swim-under
+  // clearance beneath — the road passes under the slab's high third.
+  const north = worldOf(862, 20);
+  const south = worldOf(856, -2);
+  const northY = seabedHeight(north.x, north.z) + 7.6;
+  const southY = seabedHeight(south.x, south.z) + 5.0;
   const span = Math.hypot(south.x - north.x, south.z - north.z);
 
   const geometry = new BoxGeometry(span + 4, 1.9, 4.6, 12, 2, 3);
