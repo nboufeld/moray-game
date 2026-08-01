@@ -444,3 +444,66 @@ outrider school in anti-phase (stations rotated by two, fresh stream)
 so the glide's crossing cannot be missed by timing; a two-stone
 shoulder seat + whelks by the close-slope-road pose (appended after
 every real site, earlier draws unchanged).
+
+### Round 3 / final (`bl-filled`) — critique (18 authored + 12 sweep + 18 noassets, all read)
+
+**Sweep verdict: 10 pass + 2 licensed rests (04, 06 — the Under-Blue,
+composed and correctly empty) = 12/12. Pose 11 — the fail of BOTH
+prior rounds — passes: the last shelf's lip owns its near metres now
+(tufts + whelk cones + two of the deep-violet stars on the floor the
+−31.5 cut finally reaches), and the terrace face behind it carries its
+own gravel where round 2's country had no gate at all.** The other
+graduates hold: 01's migration braid rides over a littered floor and a
+disc stone; 02 sets near blades against the arcs; 03/05/08/10/12 are
+the fill's proof frames (grass banks, collared silhouettes, beams,
+cards); 07's road look-back carries both shoulders; 09 stacks the
+braid over waymark stones.
+
+- Authored set, the round-3 orders answered one by one:
+  `edge-lookback`'s rim floor finally reads as its OWN country — warm
+  turf with tufts and whelk cones, the deep's ink held back to the
+  drop (onset −22.5 verified; the remaining gap to plains-final's
+  numbers is the mood region's red compression, not the paint — the
+  old reference was measured under the pre-rescue bake and is retired
+  as a target). `slope-glide` catches a school crossing the shoulder —
+  the anti-phase second school means SOME school is in frame at any
+  capture moment (the round-2 miss was timing, now unmissable).
+  `close-steppe-sward`'s loose blades wear green tips, the bleached
+  grey-white gone. `close-slope-road`'s shoulder is a seat now — two
+  stones, whelk cones, gravel — a place, not a lone boulder.
+- The rest of the authored set holds its round-2 reads: `gnomon`,
+  `sisters-frame`, `the-prow` (still the set's best), `wayline-walk`,
+  `ferryman-crossing` (no rectangle), `migration-river`,
+  `fallen-king` (grass rings the hollow, the hollow stays
+  stars-and-beam), `under-blue` and `terrace-stairs` unchanged.
+- The noassets set: geometry-only frames verified — no GLB-dependent
+  fill, all painted content present without assets.
+- The R11 verdict stands as recorded in round 2: the fallback fogged
+  translucent alpha sheets SHIP; MultiplyBlending stays ruled out on
+  this render chain.
+
+**Final measured budgets**: 92 draws / 1,029,519 tris at the gnomon
+pose (caps 260 / 1.35 M — headroom kept deliberately; quality before
+quantity). Headed frame gate at the densest pose (gnomon): median
+16.7 ms at scale 1.00 — under the 16.9 ms gate. Stillness gates
+(the Under-Blue, the mid-glide hush, the Fallen King hollow) tested
+empty in `tests/regionBlue1.test.ts`; reroll fence pins (landmarks,
+the Ferryman, the deep-step arcs) byte-identical throughout.
+
+**Canonical capture roster** (`visual-qa/`, all looked at): authored +
+close `20260801-0128_*_bl-filled` (18 poses — the twelve plains-final
+poses, `wayline-walk`/`ferryman-crossing`, and the four close plants);
+sweep `20260801-0246_SWEEP-*_bl-filled` (12); noassets
+`20260801-0328_*_bl-filled-noassets` (18 — all painted fill present
+without GLBs; only the Ferryman's asset absent from its pose, as
+expected). Round history: `bl-fill-r1` (1533/1635/1707 authored +
+1810 sweep), `bl-fill-r2` (1946 + 0055 recaptures + 2322 sweep).
+
+**Gates at close**: typecheck clean; eslint zero warnings; the four
+targeted suites 121/121; the full run 786/787 — the ONE failure is
+`tests/regionSmoking1.test.ts` "keeps the fill's instances inside the
+domain", the smoking-marches-1 lane's own containment spec, VERIFIED
+pre-existing at this branch's base (fails identically at the commit
+before the first fill commit; the connective-2 close-out had already
+flagged the same lane at base 95c99d9). Not this region's file scope;
+left for the smoulder lane.
