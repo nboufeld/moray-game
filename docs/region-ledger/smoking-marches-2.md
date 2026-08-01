@@ -352,4 +352,9 @@ it was wrong twice, and both failures are now laws for the file:**
   - emberwash road: **median 16.7 ms** (59.9 fps), p95 18.6 ms.
   - Both under the 16.9 ms law.
 - **No-assets pass**: full authored set captured with assets blocked
-  (`sm2-r7-noassets`) — procedural fallbacks survive; verdicts below.
+  (`sm2-r7-noassets`) — every frame reads essentially identical to the
+  painted set (the region is procedural throughout: painted ground
+  bakes, vertex-coloured combs, kit fills, the skate's own sheet). One
+  harness finding for the file: `blockAssets` aborts `**/assets/**`,
+  which on a PREVIEW server also kills the app's own `dist/assets/*.js`
+  bundle — the no-assets pass only runs against the dev server.
