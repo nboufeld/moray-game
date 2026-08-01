@@ -210,3 +210,130 @@ came up empty. Honest sweep ≈ 8–9/12.**
   03/05/06/09/12 all have standing blades + mid relief + a far
   silhouette or dawn band); the one weakness is the bright sky, same
   register fix as above.
+
+### Round 3 — sm3-r3 (16 authored + 12 sweep; the authored set re-shot
+after an HMR race killed the first pass mid-sweep)
+
+**Verdict: the NIGHT ARRIVES — the sky reads true night in every frame,
+the lanterns hold their r2 cure, the fens pools read from the pose, the
+dawn shows. 14/16 authored pass; lampwright is a boot-template capture
+(the loading spinner is IN the frame — capture noise, not a code bug);
+night-threshold passes but its mid-ground is thin. Honest sweep 6 solid
++ 3 marginal + 3 weak = ~9/12, and none of the three weak frames sit in
+a rest — under the bar. Round 4 targets the outer annulus.**
+
+- **Landed:** nightfall-stair (the crest rank of silhouettes against
+  true night is the arrival the region promised), wick-road, the-choir,
+  evensong, the-watch, cold-lantern, morning-vent (seams read, column
+  reads, dawn glows behind), ash-veil (milk-pale under the dark),
+  the-cradle, close-wick, close-cradle, spilt-light, ember-fens
+  (marginal — the pool chain reads, faint but present), ember-dawn.
+- **lampwright r3 is a WHITEOUT with the loading spinner visible** —
+  the pose relaunch caught the compile. Not a composition failure; the
+  r4 re-shoot of this one pose runs with SHOT_COMPILE_WAIT raised.
+- **The Ember Dawn's arc ends read as a hard pale SLAB** (the-cradle
+  top-left, spilt-light frame-left, sweeps 04/08/10/11): the additive
+  band stops while the pale ring curtain behind it continues — a
+  vertical yellow step; and one ring TOWER rises inside the dawn
+  sector, reading as a bright pyramid poking through the glow.
+  → DAWN_HALF 1.0 → 1.2 with the end-fade window 0.24 → 0.34 (the step
+  smears out), towers suppressed across the dawn sector, ring fades
+  0.52/0.68/0.80 → 0.50/0.64/0.72 (the far curtains keep more ink
+  against the night sky), band ink a step warmer (chartreuse → ember).
+- **Sweep 03 (u1363 v−134), 06 (u1393 v132), 11 (u1552 v−107) are BARE
+  in the mid-ground** — the outer annulus between the named zones
+  carries stubble too sparse to read past 15 m, and none of the three
+  stands in a registered rest. → night blades 2900 → 3600 with the
+  flank bias deepened (0.4 → 0.28 base, so the same rejection stream
+  lands MORE of them in the outer band), stubble 8400 → 8800, far
+  cards 5000 → 4600 (the trade pays the triangles), drift ribbons a
+  hair wider (threshold 0.46 → 0.44) so the plain's mottle reads at
+  sweep range.
+- **night-threshold's forecourt is honest but thin** — the corridor
+  genuinely extends past u 1240 (the Emerald Gate constraint: the gate
+  composition lives past the parent's rings), but our first 30 m can
+  carry more of the region's vocabulary. → two watch-ember seeps added
+  at u 1152 / 1166 on the channel (echoing the Forge Combs' own
+  watch-embers across the door), joining the 1182/1212/1240 chain.
+- **ember-fens halos still a hair shy** → radius ×1.05 → ×1.12,
+  opacity 0.17 → 0.19.
+
+### Round 4 — sm3-r4 (18 authored + 12 sweep, with three targeted
+re-shoot passes: r4b–r4e)
+
+**Verdict: 18/18 authored pass — including the two probe-named cures
+below. Sweep 11/12 with the one miss (06, the north outer flank) NOT in
+a rest — still under the bar by one frame; round 5 is that frame's.**
+
+- **The lampwright WHITEOUT was never capture noise** (r3's reading was
+  wrong, and r4's first re-shoots with SHOT_COMPILE_WAIT raised still
+  whited out). Probed by toggling nodes in the live harness: hiding
+  `vigil-lampwright` cured the frame with the emissive untouched. Root
+  cause: the mantle sheet carried BOTH windings "so the underside
+  draws", and `computeVertexNormals` over paired opposite faces summed
+  to zero → NaN normals → NaN pixels poisoning the light-shaft blur →
+  the whole frame whited out around the animal. Cure: ONE winding +
+  `DoubleSide`; a regression test now walks every wright normal for
+  finiteness. The r4d re-shoot stands: the court reads, the coal-orange
+  mantle crosses it mid-frame.
+- **The Ember Dawn's "pale slab" was geometric, not ink** (r4b still
+  showed it after the R3 end-fade widening): from inside the country a
+  tangential sight line compresses any short end-taper to a few pixels,
+  so the curtain stopped in a hard vertical edge wherever the band's
+  end crossed the frame. Cure: a dome profile — full height only at the
+  dawn's centre, the top diving to the foot toward both ends — so the
+  silhouette is a descending arc from every angle. Verified across
+  ember-dawn, the-cradle (top-left taper now soft), spilt-light and
+  morning-vent in r4e.
+- **Landed without further notes:** nightfall-stair, night-threshold
+  (the watch-ember chain reads on the way in), the-watch, wick-road,
+  the-choir, evensong, cold-lantern, ash-veil (ash fall present),
+  ember-fens (pool-chain halos read), close-wick, close-cradle,
+  the-cradle, spilt-light, morning-vent (seams + column).
+- **Sweep:** 01/02/05/07/08/09/10/12 solid; 03 and 11 marginal passes
+  (the R4 flank-bias landed blades across their mid-grounds); **06
+  (u1393 v132) still reads one flat pale slope** — near blades only at
+  the frame's foot, and its pitch (−0.03, near-level) holds the whole
+  mid-field at 30–80 m where 0.5–0.9 m carpets are sub-pixel under the
+  night fog. Not in a rest → under the standard.
+
+### Round 5 — sm3-r5/r5b/r5c (sweep ×3 + the three veil-adjacent
+authored poses re-shot)
+
+**Verdict: sweep 12/12 (10 solid + 03/11 marginal, no misses);
+ash-veil, cold-lantern, evensong hold. The region closes at 64 draws /
+1,346,653 tris.**
+
+- **r5 (ash skirt + settle paint): not enough.** A 700-tuft skirt ring
+  (d 52–118 off the Veil's heart) and pale settle streaks in the paint
+  went in — and frame 06 didn't move. The lesson named above: at a
+  near-level pitch nothing at carpet height reads past ~30 m in this
+  fog; density was never the failure mode, HEIGHT was.
+- **r5b (20 flank bushes, rc 118–196 band): still not enough** — one
+  bush per ~50 m of a ~1000 m ring cannot be guaranteed onto one
+  bearing.
+- **r5c (THE STRAYS): the cure.** Two lit lantern spires that wandered
+  from the rows onto the north-west flank — stray-near (u1368 v146,
+  11 m) stands dead on the sweep's bearing at 29 m, stray-far (u1342
+  v161, 9 m) fades behind it at 59 m. Frame 06 now composes: blades and
+  skirt tufts near, the lit stray mid, the crest fringe far. Sweep 01
+  gained a horizon silhouette for free; cold-lantern and ash-veil hold
+  (the strays sit outside both frames' subjects); the Cold Lantern
+  keeps its solitude (66 m clear).
+- The skirt, streaks, and bushes stay: they are what the flank should
+  have carried from the start, and the strays need ground to stand on.
+- Trades to hold the budget: night stubble 8600 → 8450, far cards
+  4600 → 4300. Measured: **64 draws / 1,346,653 tris**.
+
+## Close-out
+
+- **Authored:** 18/18 pass (r4/r4d/r4e/r5c frames standing).
+- **Sweep:** 12/12 (10 solid, 03/11 marginal, no misses) — sm3-r5c.
+- **No-assets pass (dev server):** clean — the procedural fallback
+  build composes every checked frame; the wright renders without
+  whiteout (the NaN-normal cure holds with no painted maps in play).
+- **Headed frame gate, scale 1.00 (the-choir, the densest court, and
+  close-cradle, the garden floor):** median 16.7 ms / p95 17.9 ms and
+  median 16.7 ms / p95 17.8 ms — both under the 16.9 ms bar.
+- **Budgets:** 64 draws / 1,346,653 tris (caps 260 / 1.35 M).
+- **Tests:** 30 region tests green; full suite green at commit.

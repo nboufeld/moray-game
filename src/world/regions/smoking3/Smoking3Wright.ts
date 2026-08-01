@@ -2,6 +2,7 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
+  DoubleSide,
   DynamicDrawUsage,
   Mesh,
   Vector3,
@@ -91,8 +92,16 @@ export function buildSmoking3Wright(): WrightBuild {
   const material = createToonMaterial({
     vertexColors: true,
     emissive: 0xff8c3a,
-    // The carried coal must read across the court in the night haze.
-    emissiveIntensity: 0.6,
+    // The carried coal must read across the court in the night haze,
+    // held under the lantern glass's proven 0.42 ceiling.
+    emissiveIntensity: 0.4,
+    // One winding + DoubleSide. R4 (probe-named): the sheet used to
+    // carry BOTH windings "so the underside draws", and
+    // computeVertexNormals over paired opposite faces summed to zero →
+    // NaN normals → NaN pixels poisoning the light-shaft blur → the
+    // whole frame whited out around the animal in r3/r4 (the
+    // "whiteout" was never a capture race and never the emissive).
+    side: DoubleSide,
   });
   applyLampGlow(material, "vigil-lampwright");
   const mesh = new Mesh(geometry, material);
@@ -293,7 +302,9 @@ function buildWrightBody(): BufferGeometry {
     }
   }
 
-  // The mantle sheet, both windings so the underside draws too.
+  // The mantle sheet — ONE winding; the material is DoubleSide so the
+  // underside still draws (see the material note: doubled windings
+  // zeroed every summed normal).
   for (let row = 0; row < ROWS - 1; row++) {
     for (let col = 0; col < COLS; col++) {
       const nextCol = (col + 1) % COLS;
@@ -302,10 +313,9 @@ function buildWrightBody(): BufferGeometry {
       const c = a + COLS;
       const d = b + COLS;
       indices.push(a, b, c, b, d, c);
-      indices.push(c, b, a, c, d, b);
     }
   }
-  // Each arm strip off the skirt row.
+  // Each arm strip off the skirt row, one winding likewise.
   for (let arm = 0; arm < ARMS; arm++) {
     const skirtCol = Math.round((arm / ARMS) * COLS) % COLS;
     let prevA = (ROWS - 1) * COLS + skirtCol;
@@ -314,7 +324,6 @@ function buildWrightBody(): BufferGeometry {
       const a = armBase + (arm * ARM_SEGMENTS + seg) * 2;
       const b = a + 1;
       indices.push(prevA, prevB, a, prevB, b, a);
-      indices.push(a, prevB, prevA, a, b, prevB);
       prevA = a;
       prevB = b;
     }

@@ -475,6 +475,21 @@ describe("smoking-marches-3 build", () => {
     }
   });
 
+  it("keeps every wright normal finite (the r4 whiteout regression)", () => {
+    // Double-wound sheets summed opposite face normals to zero →
+    // NaN normals → NaN pixels poisoning the light-shaft blur → the
+    // whole frame whited out around the animal. One winding +
+    // DoubleSide; this holds it.
+    const mesh = build.group.getObjectByName("vigil-lampwright") as Mesh | null;
+    expect(mesh?.geometry.attributes.normal).toBeDefined();
+    const normal = mesh!.geometry.attributes.normal!;
+    for (let i = 0; i < normal.count; i++) {
+      const len =
+        Math.abs(normal.getX(i)) + Math.abs(normal.getY(i)) + Math.abs(normal.getZ(i));
+      expect(Number.isFinite(len) && len > 1e-6, `normal ${i} degenerate`).toBe(true);
+    }
+  });
+
   it("survives a minute of updates without spending randomness", () => {
     const ctx = {
       diverPosition: { x: CENTER_X, y: -10, z: CENTER_Z },

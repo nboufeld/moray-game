@@ -9,6 +9,7 @@ import {
   CENTER_Z,
   DESCENT_TO,
   POOLS,
+  VEIL,
   VENT,
   benchFootU,
   channelCenter,
@@ -155,7 +156,9 @@ function bakeVigilPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch
     // pale drift ribbons over hard cinder darks, violet held in both.
     // R2: a step darker still, and the drifts quieter — the r1 plain
     // read as pastel day; the night is the register the lanterns need.
-    const drifts = smoothstep01((drift(x, z) - 0.46) / 0.24);
+    // R4: ribbons a hair wider so the open plain's mottle reads at
+    // sweep range (03/06 mid-grounds went smooth past ~15 m).
+    const drifts = smoothstep01((drift(x, z) - 0.44) / 0.24);
     const cinders = smoothstep01((cinder(x, z) - 0.56) / 0.2);
     let r = 0.45 + drifts * 0.12 - cinders * 0.2;
     let g = 0.39 + drifts * 0.11 - cinders * 0.22;
@@ -282,6 +285,21 @@ function bakeVigilPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch
       g += ((0.76 + flank * 0.11 + crown * 0.36) - g) * veil;
       b += ((0.78 + flank * 0.05 + crown * 0.28) - b) * veil;
       value += veil * (crown * 0.2 + flank * 0.06);
+    }
+
+    // The ash skirt (R5): the fall settles wide — pale streaks ringing
+    // the Veil so the flank slopes carry mottle at sweep range (sweep
+    // 06's seam read as one flat pale slope).
+    const dVeil = Math.hypot(u - VEIL.u, v - VEIL.v);
+    if (dVeil > 50 && dVeil < 145) {
+      const band = smoothstep01((dVeil - 52) / 18) * (1 - smoothstep01((dVeil - 118) / 24));
+      const settle = smoothstep01(
+        (fbm(x * 0.05, z * 0.05, { seed: SEED ^ 0x6e0b, period: 9, octaves: 2 }) - 0.55) / 0.14,
+      );
+      const s = band * (1 - wickWeight(u, v)) * settle;
+      r += s * 0.13;
+      g += s * 0.12;
+      b += s * 0.06;
     }
 
     // The Cradle: the garden floor — the one warm living green-amber in

@@ -44,10 +44,13 @@ interface HillLayer {
   readonly fade: number;
 }
 
+// R4: fades a step lower across the board — under the true-night sky
+// the r3 far curtain read as a bright day slab wherever the dawn band
+// crossed it.
 const LAYERS: readonly HillLayer[] = [
-  { radius: 246, hillBase: 7, hillVary: 3.2, fade: 0.52 },
-  { radius: 264, hillBase: 10, hillVary: 4.2, fade: 0.68 },
-  { radius: 286, hillBase: 14, hillVary: 5.2, fade: 0.8 },
+  { radius: 246, hillBase: 7, hillVary: 3.2, fade: 0.5 },
+  { radius: 264, hillBase: 10, hillVary: 4.2, fade: 0.64 },
+  { radius: 286, hillBase: 14, hillVary: 5.2, fade: 0.72 },
 ];
 
 const SEGMENTS = 220;
@@ -64,7 +67,9 @@ const GAP_HALF = 0.42;
  *  stands BETWEEN the second and third rings (r1 put it beyond every
  *  curtain and the curtains occluded it whole), and its glow peaks
  *  above the kneeling hill line. */
-const DAWN_HALF = 1.0;
+/** R4: wider, with a longer end fade — the r3 arc stopped in a hard
+ *  vertical step against the ring curtain behind it. */
+const DAWN_HALF = 1.2;
 const DAWN_RADIUS = 276;
 
 export function buildSmoking3Distance(): { meshes: (Mesh | InstancedMesh)[] } {
@@ -260,11 +265,15 @@ function hillRing(layer: HillLayer, noiseSeed: number): BufferGeometry {
     // Rolling hills at two scales, one occasional tower.
     const raw = fbm(t * 7, layer.radius * 0.01, { seed: noiseSeed, period: 7, octaves: 3 }) - 0.5;
     const roll = fbm(t * 21, 0.4, { seed: noiseSeed ^ 0x33, period: 13, octaves: 2 }) - 0.5;
-    const tower = smoothstep01(
-      (fbm(t * 41, 0.7, { seed: noiseSeed ^ 0x77, period: 19, octaves: 2 }) - 0.78) / 0.05,
-    );
-    // The hills kneel across the dawn sector.
+    // The hills kneel across the dawn sector, and the towers stand
+    // clear of it entirely — an r3 tower rose through the glow and
+    // read as a bright pyramid.
     const dawnOff = angleBetween(theta, dawnAt);
+    const towerGate = smoothstep01((dawnOff - DAWN_HALF * 0.85) / 0.35);
+    const tower =
+      smoothstep01(
+        (fbm(t * 41, 0.7, { seed: noiseSeed ^ 0x77, period: 19, octaves: 2 }) - 0.78) / 0.05,
+      ) * towerGate;
     const kneel = 1 - 0.45 * (1 - smoothstep01((dawnOff - DAWN_HALF * 0.7) / 0.5));
     const hill =
       (layer.hillBase + (raw * 1.4 + roll * 0.6) * layer.hillVary + tower * layer.hillBase * 0.7) *
@@ -306,16 +315,25 @@ function buildDawnBand(): Mesh {
     const theta = dawnAt + (t * 2 - 1) * DAWN_HALF;
     const x = CENTER_X + Math.cos(theta) * DAWN_RADIUS;
     const z = CENTER_Z + Math.sin(theta) * DAWN_RADIUS;
-    const endFade = smoothstep01(Math.min(t, 1 - t) / 0.24);
+    // R4 (probe-named): the band must die GEOMETRICALLY across the
+    // WHOLE arc, not just at its last columns — from inside the
+    // country a tangential sight line compresses any short end-taper
+    // to a few pixels and the curtain stops in a hard vertical edge
+    // (the "pale slab" of r3/r4). A dome profile — full height only at
+    // the dawn's centre, the top diving to the foot toward both ends —
+    // keeps the silhouette a descending arc from every angle.
+    const endFade = smoothstep01(Math.min(t, 1 - t) / 0.5);
+    const heightFade = 0.2 + 0.8 * endFade;
     for (let j = 0; j <= rows; j++) {
       const yT = j / rows;
-      const y = FOOT + (top - FOOT) * yT;
+      const y = FOOT + (top - FOOT) * yT * heightFade;
       positions.push(x, y, z);
       // Brightest just over the kneeling hill line (~+3 m), dying at
       // both ends so the band has no edge.
       const band = Math.pow(Math.max(0, 1 - Math.abs(yT - 0.6) / 0.45), 2.0);
       const glow = band * endFade;
-      colors.push(glow * 0.7, glow * 0.45, glow * 0.2);
+      // R4: warmer ink — additive over the teal water read chartreuse.
+      colors.push(glow * 0.74, glow * 0.42, glow * 0.16);
     }
   }
   for (let i = 0; i < columns; i++) {

@@ -357,6 +357,13 @@ export const LANTERNS: readonly LanternSpec[] = [
   { name: "cradle-east", u: 1576, v: 30, height: 12, radius: 2.0, lit: true },
   // The Last Lantern, beside the Vent's forecourt.
   { name: "last", u: 1600, v: -24, height: 16, radius: 2.3, lit: true },
+  // The Strays: two that wandered from the rows onto the north-west
+  // flank, still carrying their fire — R5: the sweep's near-level
+  // bearing across the region's quietest quarter (u1393 v132 looking
+  // out) had no held silhouette; carpets melt into the night fog at
+  // that pitch, a lit spire does not.
+  { name: "stray-near", u: 1368, v: 146, height: 11, radius: 1.7, lit: true },
+  { name: "stray-far", u: 1342, v: 161, height: 9, radius: 1.5, lit: true },
   // THE COLD LANTERN — unlit, alone in the ash; its rest is registered.
   { name: "cold", u: 1432, v: 130, height: 14, radius: 2.2, lit: false },
 ] as const;

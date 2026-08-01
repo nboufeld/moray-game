@@ -137,6 +137,19 @@ const ashSwardGate: GateFn = (x, z) => {
   return veilWeight(u, v) * 0.9 * restFree(x, z) * smoking3Weight(x, z);
 };
 
+/** The ash skirt: the ring band where the Veil's fall settles wide.
+ *  R5: sweep 06 (u1393 v132) stood in the seam between the Veil's
+ *  sward (dies at d 88) and the outer blade band and read bare in the
+ *  mid-ground — no family bridged it. This one does. */
+const ashSkirtGate: GateFn = (x, z) => {
+  const { u, v } = spokeOf(x, z);
+  const d = Math.hypot(u - VEIL.u, v - VEIL.v);
+  const band = smoothstep01((d - 52) / 18) * (1 - smoothstep01((d - 118) / 24));
+  const open =
+    (1 - wickWeight(u, v)) * (1 - fensWeight(u, v) * 0.7) * (1 - cradleWeight(u, v) * 0.6);
+  return band * open * restFree(x, z) * smoking3Weight(x, z);
+};
+
 /** The Cradle's garden: dense inside the basin, off the springs' bowls. */
 const cradleGardenGate: GateFn = (x, z) => {
   const { u, v } = spokeOf(x, z);
@@ -157,8 +170,11 @@ const nightBladeGate: GateFn = (x, z) => {
   if (u < 1230) {
     return 0;
   }
+  // R4: flank bias deepened (0.4 → 0.28 base) — the same rejection
+  // stream lands more blades in the outer annulus, where sweeps
+  // 03/06/11 read bare.
   const rc = Math.hypot(u - 1460, v);
-  const flank = 0.4 + 0.6 * smoothstep01((rc - 105) / 50);
+  const flank = 0.28 + 0.72 * smoothstep01((rc - 105) / 50);
   const open =
     (1 - wickWeight(u, v) * 0.6) * (1 - cradleWeight(u, v) * 0.5) * (1 - veilWeight(u, v) * 0.45);
   return flank * open * restFree(x, z) * smoking3Weight(x, z);
@@ -234,6 +250,26 @@ const nightBushGate: GateFn = (x, z) => {
   return open * restFree(x, z) * smoking3Weight(x, z);
 };
 
+/** Flank bushes: the smoke-bush stragglers of the outer annulus.
+ *  R5: the sweep's remaining thin mid-grounds (06 north, 03/11 south)
+ *  all stand in the rc 120–200 band between the named zones and the
+ *  rim — carpets alone melt into the night fog past ~15 m; a standing
+ *  waist-high silhouette every 20–30 m is what reads. */
+const flankBushGate: GateFn = (x, z) => {
+  const { u, v } = spokeOf(x, z);
+  if (u < 1240) {
+    return 0;
+  }
+  const rc = Math.hypot(u - 1460, v);
+  const band = smoothstep01((rc - 118) / 26) * (1 - smoothstep01((rc - 196) / 20));
+  const open =
+    (1 - wickWeight(u, v)) *
+    (1 - veilWeight(u, v) * 0.8) *
+    (1 - cradleWeight(u, v)) *
+    (1 - fensWeight(u, v) * 0.5);
+  return band * open * restFree(x, z) * smoking3Weight(x, z);
+};
+
 /** The far-card layer: everywhere the country owns, thinned on the road. */
 const farCardGate: GateFn = (x, z) => {
   const { u, v } = spokeOf(x, z);
@@ -267,7 +303,9 @@ export function buildSmoking3Flora(lanterns: LanternsBuild): Smoking3FloraBuild 
       ground: seabedHeight,
       // R2: sweeps 03/06 found bare-plain cones — count and blade size
       // both up so every open cone carries a standing near layer.
-      count: 8400,
+      // R4: a modest step, paid for by the lush interior zones.
+      // R5: −150 net, the ash skirt's and the Strays' triangle trade.
+      count: 8450,
       profile: "blade",
       size: [0.48, 0.88],
       swayAmp: 0.035,
@@ -283,7 +321,8 @@ export function buildSmoking3Flora(lanterns: LanternsBuild): Smoking3FloraBuild 
       area: discAreaAt(1470, -40, 210),
       gate: emberFrondGate,
       ground: seabedHeight,
-      count: 2800,
+      // R4: 2800 → 2600 — part of the trade for the outer annulus.
+      count: 2600,
       profile: "frond",
       size: [0.34, 0.6],
       swayAmp: 0.04,
@@ -299,9 +338,29 @@ export function buildSmoking3Flora(lanterns: LanternsBuild): Smoking3FloraBuild 
       area: discAreaAt(VEIL.u, VEIL.v, 92),
       gate: ashSwardGate,
       ground: seabedHeight,
-      count: 3600,
+      // R4: 3600 → 3400 — part of the trade for the outer annulus.
+      count: 3400,
       profile: "tuft",
       size: [0.4, 0.75],
+      swayAmp: 0.03,
+    }),
+  );
+
+  // The ash skirt: bone-pale tufts where the fall settles wide of the
+  // Veil — the family that bridges the Veil's sward to the outer blade
+  // band (R5: the sweep's one remaining bare mid-ground, the north
+  // flank seam, gets its standing layer). Sized a step larger than the
+  // sward so the silhouettes carry at 15–30 m.
+  keep(
+    buildCarpetField({
+      seed: SEED ^ LV_SEEDS.ashSward ^ 0x5c,
+      palette: { base: 0xa89a8e, tip: 0xd0c2a8, shade: 0x6e6472 },
+      area: discAreaAt(VEIL.u, VEIL.v, 132),
+      gate: ashSkirtGate,
+      ground: seabedHeight,
+      count: 700,
+      profile: "tuft",
+      size: [0.55, 0.95],
       swayAmp: 0.03,
     }),
   );
@@ -315,7 +374,9 @@ export function buildSmoking3Flora(lanterns: LanternsBuild): Smoking3FloraBuild 
       area: discAreaAt(CRADLE.u, CRADLE.v, 60),
       gate: cradleGardenGate,
       ground: seabedHeight,
-      count: 2400,
+      // R4: 2400 → 2200 — the garden holds its lush read; the tris go
+      // to the bare annulus.
+      count: 2200,
       profile: "frond",
       size: [0.4, 0.7],
       swayAmp: 0.045,
@@ -329,7 +390,8 @@ export function buildSmoking3Flora(lanterns: LanternsBuild): Smoking3FloraBuild 
       area: discAreaAt(CRADLE.u, CRADLE.v, 60),
       gate: cradleGardenGate,
       ground: seabedHeight,
-      count: 2000,
+      // R4: 2000 → 1800 — same trade.
+      count: 1800,
       profile: "blade",
       size: [0.45, 0.85],
       swayAmp: 0.04,
@@ -345,7 +407,9 @@ export function buildSmoking3Flora(lanterns: LanternsBuild): Smoking3FloraBuild 
       area: discAreaAt(1460, 0, 218),
       gate: nightBladeGate,
       ground: seabedHeight,
-      count: 2900,
+      // R4: 2900 → 3600 with the flank bias deepened — the outer
+      // annulus mid-ground was the sweep's whole remaining miss.
+      count: 3600,
       profile: "blade",
       size: [0.45, 0.8],
       swayAmp: 0.035,
@@ -596,6 +660,20 @@ export function buildSmoking3Flora(lanterns: LanternsBuild): Smoking3FloraBuild 
     }),
   );
 
+  // The flank stragglers: a value paler than the rows' family so the
+  // silhouettes survive the night fog at 20 m (the r2 near-black
+  // lesson, applied at the distance these are FOR).
+  keep(
+    buildBushBank({
+      seed: SEED ^ LV_SEEDS.nightBushes ^ 0x5c,
+      palette: { base: 0x7a6870, tip: 0xa87a58, shade: 0x544a5e },
+      area: discAreaAt(1460, 0, 218),
+      gate: flankBushGate,
+      ground: seabedHeight,
+      count: 20,
+    }),
+  );
+
   // ─── The far layer ────────────────────────────────────────────────────────
   keep(
     buildFarGrassCards({
@@ -604,7 +682,9 @@ export function buildSmoking3Flora(lanterns: LanternsBuild): Smoking3FloraBuild 
       area: discAreaAt(1460, 0, 218),
       gate: farCardGate,
       ground: seabedHeight,
-      count: 5000,
+      // R4: 5000 → 4600 — the trade that pays for the blades above.
+      // R5: −300 more, the ash skirt's and the Strays' trade.
+      count: 4300,
       size: [0.26, 0.6],
       nearFade: 14,
     }),

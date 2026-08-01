@@ -93,6 +93,10 @@ export const GLOWS: readonly { u: number; v: number; radius: number; opacity: nu
   // The Nightfall Stair's riser seams — the approach's warm cadence —
   // and the threshold's first seeps, so the door reads the vocabulary
   // before the reveal (R2: the r1 threshold arrived on bare glass).
+  // The forecourt watch-embers (R4): the pair standing our side of the
+  // Night Door, echoing the Forge Combs' own watch across the sill.
+  { u: 1152, v: channelCenter(1152) - 1.2, radius: 1.6, opacity: 0.07 },
+  { u: 1166, v: channelCenter(1166) + 1.4, radius: 1.8, opacity: 0.08 },
   { u: 1182, v: channelCenter(1182) + 1.5, radius: 1.8, opacity: 0.07 },
   { u: 1212, v: channelCenter(1212) - 1.5, radius: 2.0, opacity: 0.08 },
   { u: 1240, v: channelCenter(1240), radius: 2.4, opacity: 0.1 },
@@ -100,13 +104,13 @@ export const GLOWS: readonly { u: number; v: number; radius: number; opacity: nu
   { u: benchFootU(2) + 1, v: channelCenter(benchFootU(2)) + 1.5, radius: 3.0, opacity: 0.11 },
   { u: benchFootU(4) + 1, v: channelCenter(benchFootU(4)) - 1.5, radius: 3.0, opacity: 0.11 },
   // The Ember Fens' pool hearts — the warm coals the fens are named
-  // for (R3: brighter and wider; the r2 pools didn't read from a
-  // standing pose because the halos were small and dim).
+  // for (R3 widened them; R4 a hair more still — the r3 chain read,
+  // but only just, from the authored stand).
   ...POOLS.filter((pool) => !pool.cradle).map((pool) => ({
     u: pool.u,
     v: pool.v,
-    radius: pool.radius * 1.05,
-    opacity: 0.17,
+    radius: pool.radius * 1.12,
+    opacity: 0.19,
   })),
   // The Vent's forecourt: the fire arriving at its own door.
   { u: VENT.u - 6, v: VENT.v + 1, radius: 5.0, opacity: 0.13 },
