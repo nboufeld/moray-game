@@ -475,6 +475,35 @@ to u 1162 count 2400, and a climb-pebble strip (u 1080–1162,
 rc 172–212, 520 two-tone). Full authored + sweep recapture on final
 code.
 
+### Round 5 (pa2-r5) — 18/18 authored; the climb strip starves
+
+**All 18 authored pass.** `white-chapel` composes at last — doorway
+fins flanking at strata range, the pan pearl-white to the ring, the
+one beam standing at centre, the far ring as fins instead of hills.
+`lamp-heart`'s ellipse is gone (the pole caps took the bright base
+colour — a solid warm lantern from below). `close-garden-bed` keeps a
+warm ochre at the Lamp's very foot even after the second lift —
+ACCEPTED as the authored register: the basin is the province's one
+warm extreme (candle-gold, lumen = 1), the layers all read, and the
+wide basin shots are right. All other frames hold their round-4 reads.
+
+**The sweep**: 11/12 again, and **08 still fails** — a couple dozen
+stones where 520 were ordered. The r5 order was HALF right: rimArea
+lets the rim bands sample past 196, but `scatterPoints` seeds its
+clump hearts across the WHOLE area disc and caps attempts at 40 ×
+count — a gate window that is ~7% of the 214 m disc starves before it
+fills (the acceptance is ~2%). And the pose's centre line runs out to
+rc ≈ 212, the disc weight's own feather. The kit's idiom for narrow
+bands is the POLYLINE area (the road pebbles' shape) — sampling
+concentrated where the strip lives.
+
+**Round-6 orders (one sweep cone)**: the climb strip becomes a
+polyline arc at rc 191 across the gate sector (φ ± 0.38, width 44) —
+pebbles ×700 + short pearl tufts ×900 on the same stations, both
+gated by the old u/rc window; stepTufts looseShare 0.75 (clump-led
+scatter starves narrow bands). Budgets after: 64 draws / 1,203,860
+tris. Full authored + sweep recapture.
+
 ## Flags for the orchestrator (the reciprocal cuts — NOT made here)
 
 Measured exactly, pale-1's geometry crossing OUR corridor (we may not

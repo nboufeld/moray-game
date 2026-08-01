@@ -325,6 +325,9 @@ export function buildPale2Cover(
     profile: "tuft",
     size: [0.24, 0.5],
     swayAmp: 0.04,
+    // Round 6: mostly loose — clump hearts sample the whole rimArea
+    // disc, so a clump-led scatter starves a band this narrow.
+    looseShare: 0.75,
   });
   carpets.push(stepTufts);
 
@@ -355,30 +358,56 @@ export function buildPale2Cover(
   // Round 5: pearl pebbles shed down the gate climb — sweep 08's
   // down-shot at the steps' north flank met bare grade between the
   // hem and the tuft band; the climb needed litter of its own.
+  // Round 6: the strip resamples along a POLYLINE arc. As a disc-area
+  // scatter it starved — the gate window is ~7% of the 214 m rimArea
+  // and scatterPoints' clump hearts land disc-wide, so the 40×
+  // attempt cap exhausted at a couple dozen stones.
+  const climbStations: [number, number][] = [];
+  for (let phi = -0.38; phi <= 0.381; phi += 0.04) {
+    const { x, z } = worldOf(940 + 191 * Math.cos(phi), 191 * Math.sin(phi));
+    climbStations.push([x, z]);
+  }
+  const climbGate = (x: number, z: number): number => {
+    const g = baseGate(x, z);
+    if (g === 0) {
+      return 0;
+    }
+    const { u } = spokeOf(x, z);
+    const rc = Math.hypot(x - CENTER_X, z - CENTER_Z);
+    if (u < 1080 || u > 1162 || rc < 172 || rc > 212) {
+      return 0;
+    }
+    return g;
+  };
   const climbPebbles = buildGroundLitter({
     seed: SEED ^ 0x3014,
     palette: { base: 0xf0ead9, shade: 0xb9a9d2 },
-    area: rimArea,
-    gate: (x, z) => {
-      const g = baseGate(x, z);
-      if (g === 0) {
-        return 0;
-      }
-      const { u } = spokeOf(x, z);
-      const rc = Math.hypot(x - CENTER_X, z - CENTER_Z);
-      if (u < 1080 || u > 1162 || rc < 172 || rc > 212) {
-        return 0;
-      }
-      return g;
-    },
+    area: { polyline: climbStations, width: 44 },
+    gate: climbGate,
     ground,
-    count: 520,
+    count: 700,
     shapeSet: "pebble",
     size: [0.05, 0.15],
     twoTone: true,
     grade: 0.5,
   });
   groups.push(climbPebbles.group);
+
+  // Round 6: short pearl tufts on the same climb strip — the pebbles
+  // alone could not carry the down-shot's near layer.
+  const climbTufts = buildCarpetField({
+    seed: SEED ^ 0x3015,
+    palette: { base: 0xe2e8d8, tip: 0xf1f3e8, shade: 0xc6ccdc },
+    area: { polyline: climbStations, width: 44 },
+    gate: climbGate,
+    ground,
+    count: 900,
+    profile: "tuft",
+    size: [0.22, 0.46],
+    swayAmp: 0.04,
+    looseShare: 0.75,
+  });
+  carpets.push(climbTufts);
 
   // Pearl grit region-wide, two-tone with genuine violet-bone (the
   // camouflage lesson: half the run must draw against the paper).
