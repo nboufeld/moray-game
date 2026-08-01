@@ -209,7 +209,7 @@ export function buildGolden3Life(): Golden3LifeBuild {
   {
     const random = new Random(SEED ^ G3_SEEDS.doorWhelks);
     for (const at of [
-      { u: DOOR.u - 12.6, v: DOOR.v + 10 },
+      { u: DOOR.u - 13.6, v: DOOR.v + 16 },
       { u: DOOR.u - 14.5, v: DOOR.v - 11.2 },
     ]) {
       const u = at.u + random.signed(0.8);
@@ -243,8 +243,11 @@ export function buildGolden3Life(): Golden3LifeBuild {
 
 // ─── THE LANTERN CARAVAN ─────────────────────────────────────────────────────
 
-const BELL_GLOW = new Color(0xffd992);
-const BELL_AMBER = new Color(0xd8a05c);
+// Round 2: the r1 bells read as saturated parade balloons on every
+// horizon — the body joins the amber-cream family and only the crown
+// truly glows.
+const BELL_GLOW = new Color(0xffedc0);
+const BELL_AMBER = new Color(0xe0bc84);
 const SKIRT_DUSK = new Color(0x84688a);
 
 /** One lantern-jelly: a lathed bell with a fluted hanging skirt. */
@@ -302,11 +305,11 @@ function buildLanternCaravan(): { group: Group; update: (timeSec: number) => voi
     points.push(new Vector3(x, seabedHeight(x, z) + lift, z));
   };
   for (const [u, v] of SPINE_ROAD) {
-    seat(u, v + 4, 4.2 + Math.sin(u * 0.02) * 0.6);
+    seat(u, v + 4, 5.2 + Math.sin(u * 0.02) * 0.6);
   }
-  seat(1602, 10, 4.6);
+  seat(1602, 10, 5.6);
   for (let i = SPINE_ROAD.length - 1; i >= 0; i--) {
-    seat(SPINE_ROAD[i]![0], SPINE_ROAD[i]![1] - 4.5, 5.0 + Math.cos(i * 1.1) * 0.5);
+    seat(SPINE_ROAD[i]![0], SPINE_ROAD[i]![1] - 4.5, 6.0 + Math.cos(i * 1.1) * 0.5);
   }
   const path = new CatmullRomCurve3(points, true, "centripetal", 0.5);
 
@@ -315,13 +318,15 @@ function buildLanternCaravan(): { group: Group; update: (timeSec: number) => voi
     vertexColors: true,
     side: 2,
     emissive: 0xcf9440,
-    emissiveIntensity: 0.9,
+    emissiveIntensity: 0.6,
   });
   applyVeinGlow(material, "golden3-lantern");
-  // A lantern is a light source, not a lit object: the honey fog would
-  // wash the glow to nothing past ~35 m (the Keeper's lesson), and a
-  // centrepiece that disappears at road range is not a centrepiece.
-  material.fog = false;
+  // Round 2: the lanterns keep the FOG. The Keeper's fog-free licence
+  // is for a resident confined to its own circle; ten movers pacing
+  // the whole map wearing fog-free orange read as parade balloons on
+  // every horizon (five r1 frames photobombed). In fog they are warm
+  // lamps in the near-mid field and soft ghosts beyond — the honest
+  // read for a caravan walking away down a road.
 
   const mesh = new InstancedMesh(lanternGeometry(), material, count);
   mesh.name = "vesper-lantern-caravan";
@@ -336,7 +341,7 @@ function buildLanternCaravan(): { group: Group; update: (timeSec: number) => voi
   const scales: number[] = [];
   const tint = new Color();
   for (let i = 0; i < count; i++) {
-    scales.push(random.range(1.5, 2.1));
+    scales.push(random.range(1.25, 1.65));
     tint.setScalar(random.range(0.92, 1.08));
     mesh.setColorAt(i, tint);
   }

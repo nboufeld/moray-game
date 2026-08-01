@@ -255,7 +255,10 @@ function mesaRing(layer: MesaLayer, noiseSeed: number): BufferGeometry {
 }
 
 /** The evening sky: a curtain across the sunset sector, amber foot to
- *  a violet-rose dissolved crest, brightest on the sun's own axis. */
+ *  a violet-rose dissolved crest, brightest on the sun's own axis.
+ *  Round 2: four rows, with the SHOULDER row holding alpha at y ≈ +3 —
+ *  the r1 rows faded exactly where the band shows above the rampart
+ *  crest (y ≈ 0), so the visible half was the transparent half. */
 function sunsetBand(noiseSeed: number): BufferGeometry {
   const positions: number[] = [];
   const colors: number[] = [];
@@ -274,15 +277,15 @@ function sunsetBand(noiseSeed: number): BufferGeometry {
     const axial = 1 - smoothstep01((Math.abs(off) - 0.08) / (half - 0.08));
     const wander =
       (fbm(i * 0.13, 0.4, { seed: noiseSeed, period: 6, octaves: 2 }) - 0.5) * 2.2;
-    const top = 4 + axial * 9 + wander;
-    const mid = FOOT + (top - FOOT) * 0.6;
+    const top = 9 + axial * 10 + wander;
+    const shoulder = 3;
     const end = smoothstep01((half - Math.abs(off)) / 0.2);
     // Amber at the foot near the axis, rose-violet off-axis and up.
-    positions.push(x, FOOT, z, x, mid, z, x, top, z);
+    positions.push(x, FOOT, z, x, shoulder, z, x, top, z);
     const warmth = 0.55 + axial * 0.45;
     colors.push(
-      warmth, warmth * 0.82, 0.62, 0.9 * end,
-      warmth, warmth * 0.78, 0.72, 0.62 * end,
+      warmth, warmth * 0.82, 0.62, 0.95 * end,
+      warmth, warmth * 0.78, 0.7, 0.85 * end,
       0.72, 0.6, 0.86, 0,
     );
     if (column > 0) {
@@ -306,8 +309,12 @@ function sunDisc(): BufferGeometry {
   const radius = 218;
   const x = CENTER_X + Math.cos(SUNSET_THETA) * radius;
   const z = CENTER_Z + Math.sin(SUNSET_THETA) * radius;
-  const r = 11;
-  const cy = 8;
+  const r = 12;
+  // Round 2, by sightline arithmetic: centre y 3 puts the disc IN the
+  // Sun's Door window from the road pose (elevation ≈ 0.23 rad at
+  // 124 m) and HALF-SET on the rampart crest from the balcony — the
+  // setting sun, not a floating lamp.
+  const cy = 3;
   // The disc faces the region: its plane is perpendicular to the
   // sunset axis, spanned by the lateral direction and +y.
   const lx = -Math.sin(SUNSET_THETA);
@@ -359,8 +366,8 @@ function cloudBars(noiseSeed: number): BufferGeometry {
   const cz = CENTER_Z + Math.sin(SUNSET_THETA) * radius;
 
   for (const [b, bar] of [
-    { y: 11.5, halfLen: 36, thick: 1.5, shift: -6 },
-    { y: 16.5, halfLen: 26, thick: 1.1, shift: 9 },
+    { y: 7.5, halfLen: 36, thick: 1.5, shift: -6 },
+    { y: 12.5, halfLen: 26, thick: 1.1, shift: 9 },
   ].entries()) {
     const steps = 16;
     const start = positions.length / 3;
@@ -384,17 +391,21 @@ function cloudBars(noiseSeed: number): BufferGeometry {
   return curtain(positions, colors, indices);
 }
 
-/** The Last Isles: three low mesa silhouettes flanking the sun. */
+/** The Last Isles: three low mesa silhouettes flanking the sun.
+ *  Round 2: three rows with the body holding alpha to ~70% height —
+ *  the r1 two-row fade made the above-crest portion (the only part a
+ *  camera sees) nearly transparent. Tops raised so they break the
+ *  rampart's crest from the balcony. */
 function lastIsles(noiseSeed: number): BufferGeometry {
   const positions: number[] = [];
   const colors: number[] = [];
   const indices: number[] = [];
-  const radius = 210;
+  const radius = 212;
 
   for (const [n, isle] of [
-    { off: -0.34, halfWidth: 0.09, top: 9 },
-    { off: 0.28, halfWidth: 0.11, top: 7 },
-    { off: 0.44, halfWidth: 0.06, top: 10.5 },
+    { off: -0.34, halfWidth: 0.09, top: 12 },
+    { off: 0.28, halfWidth: 0.11, top: 10 },
+    { off: 0.44, halfWidth: 0.06, top: 13.5 },
   ].entries()) {
     const steps = 12;
     let column = 0;
@@ -408,11 +419,13 @@ function lastIsles(noiseSeed: number): BufferGeometry {
       const wobble =
         (fbm(t * 4 + n * 3, 0.6, { seed: noiseSeed, period: 5, octaves: 2 }) - 0.5) * 1.8;
       const top = FOOT + (isle.top - FOOT) * table + wobble * table;
-      positions.push(x, FOOT, z, x, top, z);
-      colors.push(1, 1, 1, 0.92, 1, 1, 1, 0.05);
+      const mid = FOOT + (top - FOOT) * 0.7;
+      positions.push(x, FOOT, z, x, mid, z, x, top, z);
+      colors.push(1, 1, 1, 0.95, 1, 1, 1, 0.85, 1, 1, 1, 0.04);
       if (column > 0) {
-        const a = positions.length / 3 - 4;
-        indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+        const a = positions.length / 3 - 6;
+        indices.push(a, a + 1, a + 3, a + 1, a + 4, a + 3);
+        indices.push(a + 1, a + 2, a + 4, a + 2, a + 5, a + 4);
       }
       column++;
     }

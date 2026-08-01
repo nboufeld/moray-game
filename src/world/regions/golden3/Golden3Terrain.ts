@@ -93,11 +93,16 @@ const DISC = slotDisc(GOLDEN3_SLOT);
 
 /**
  * The threshold gate: our ownership over the Carillon Waste's rim is a
- * whisper (0.14) so its terrain, mood and paint keep carrying the shelf,
- * rising to full only past u ≈ 1236 where the country is ours alone.
+ * whisper (0.14) so its terrain, mood and paint keep carrying the
+ * shelf. Golden-2's own domain ends at u 1160 and the framework's
+ * reject circle hides us below u 1200 anyway, so the gate rises the
+ * moment the circle admits us (round 2: the r1 gate held the whisper
+ * to u ~1236 and the doorstep swam in base-blue water — the treaty
+ * needs the whisper only over the OVERLAP; past the circle the honey
+ * should arrive with the diver).
  */
 function thresholdGate(u: number): number {
-  return 0.14 + 0.86 * smoothstep01((u - 1206) / 30);
+  return 0.14 + 0.86 * smoothstep01((u - 1200) / 22);
 }
 
 /** Ownership in [0, 1]; exactly 0 outside the disc and the pass tongue. */
@@ -336,7 +341,9 @@ export function basinSwell(x: number, z: number): number {
   );
 }
 
-/** The comb ridge relief: parallel crests at a grid-honest 17 m pitch. */
+/** The comb ridge relief: parallel crests at a grid-honest 17 m pitch.
+ *  Round 2: amplitude up (2.8 → 4.2) with a half-pitch harmonic — the
+ *  r1 combs read as soft noise, not ridge country. */
 export function combRidge(u: number, v: number): number {
   const w = combWeight(u, v);
   if (w <= 0) {
@@ -345,8 +352,10 @@ export function combRidge(u: number, v: number): number {
   const wander =
     (fbm(u * 0.01, v * 0.01, { seed: SEED ^ G3_SEEDS.terrainComb, period: 5, octaves: 2 }) - 0.5) *
     6;
-  const crest = 0.5 + 0.5 * Math.sin(((v + wander) * Math.PI * 2) / 17 + u * 0.035);
-  return w * crest * crest * 2.8;
+  const phase = ((v + wander) * Math.PI * 2) / 17 + u * 0.035;
+  const crest = 0.5 + 0.5 * Math.sin(phase);
+  const brow = 0.5 + 0.5 * Math.sin(phase * 2 + 0.9);
+  return w * (crest * crest * 4.2 + brow * brow * crest * 0.7);
 }
 
 function discHeight(x: number, z: number, u: number, v: number): number {

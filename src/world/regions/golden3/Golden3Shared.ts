@@ -41,11 +41,13 @@ export const SALT_PALE = new Color(0xece0c0);
 export const PAN_SKY = new Color(0xf6ecc8);
 
 /** The pale carved-stone family (warm, red held over blue — the
- * province's proven ratio lever, warmed one step toward rose for the
- * evening register). */
-export const CARVED_PALE = 0xd2a878;
-/** The kneeling/caprock family — darker, violet-warm. */
-export const DUSK_STONE = 0xa4806a;
+ * province's proven ratio lever; round 2 pulled it back toward the
+ * Carillon Waste's proven pale after the r1 stones read rust-brown
+ * under the quarter-sun). */
+export const CARVED_PALE = 0xd6b47e;
+/** The kneeling/caprock family — darker, violet-warm (lifted with the
+ * pale family in round 2). */
+export const DUSK_STONE = 0xac9070;
 /** The stone dusk-lift (the golden-2 lesson pre-paid): a small emissive
  * floor so a stone's toon-shade side stays a COLOUR under the
  * quarter-sun instead of crushing to eggplant. */

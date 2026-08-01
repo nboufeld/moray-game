@@ -134,11 +134,13 @@ export function buildDoor(): DoorBuild {
     7.6,
   );
 
-  // The kneeling pair at the balcony's edges.
+  // The kneeling pair at the balcony's edges. Round 2: the north stone
+  // moved off the close-door-foot lens (it stood 2 m from the camera
+  // and filled 70% of the frame — the close-flute-foot lesson).
   stand(
     boulderGeometry({ seed: SEED ^ 0x64b3, radius: 1.3, height: 1.8 }),
-    DOOR.u - 12,
-    DOOR.v + 9,
+    DOOR.u - 13,
+    DOOR.v + 15,
     random.range(0, Math.PI * 2),
     1.3,
     1.8,

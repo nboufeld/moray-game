@@ -54,10 +54,12 @@ export function buildPilgrim(door: DoorBuild): PilgrimBuild {
   const window = door.window;
 
   const geometry = buildPilgrimBody();
+  // Round 2: emissive halved — at 0.9 the whole turtle burned orange
+  // and the shell's drawing (dark plates, gold seams) was ironed flat.
   const material = createToonMaterial({
     vertexColors: true,
     emissive: 0xf0b860,
-    emissiveIntensity: 0.9,
+    emissiveIntensity: 0.45,
   });
   applyVeinGlow(material, "golden3-pilgrim");
   // The ember is fog-free (the Keeper's lesson): a resident that
@@ -126,9 +128,11 @@ export function buildPilgrim(door: DoorBuild): PilgrimBuild {
 
 // ─── The Pilgrim's body ──────────────────────────────────────────────────────
 
-const SHELL_COPPER = new Color(0xb07846);
-const SHELL_RIM = new Color(0xe0c088);
-const SEAM_GOLD = new Color(0xf6d488);
+// Round 2: plates darker, seams brighter and thinner — the ember reads
+// as a DRAWN shell passing the window, not an orange mass.
+const SHELL_COPPER = new Color(0x8a5a38);
+const SHELL_RIM = new Color(0xd0ac74);
+const SEAM_GOLD = new Color(0xffe098);
 const SKIN_DUSK = new Color(0x8a6a72);
 const SKIN_PALE = new Color(0xc8a882);
 
@@ -153,9 +157,9 @@ function buildPilgrimBody(): BufferGeometry {
       shade.copy(SHELL_COPPER).lerp(SHELL_RIM, 1 - up);
       // The seams: gold rings and meridians — the sunset written in
       // the shell, one voyage per line.
-      const ring = Math.max(0, Math.sin(Math.hypot(x, z) * 6.2)) ** 8;
-      const meridian = Math.max(0, Math.sin(theta * 6 + 0.4)) ** 10 * up;
-      shade.lerp(SEAM_GOLD, Math.min(1, ring * 0.7 + meridian * 0.75));
+      const ring = Math.max(0, Math.sin(Math.hypot(x, z) * 6.2)) ** 14;
+      const meridian = Math.max(0, Math.sin(theta * 6 + 0.4)) ** 16 * up;
+      shade.lerp(SEAM_GOLD, Math.min(1, ring * 0.85 + meridian * 0.9));
       const mottle =
         (fbm(theta * 1.2, y * 2.2, { seed: SEED ^ 0x0ef2, period: 5, octaves: 2 }) - 0.5) * 0.2;
       shade.multiplyScalar(1 + mottle);
@@ -210,8 +214,10 @@ function buildPilgrimBody(): BufferGeometry {
   }
   merged.computeVertexNormals();
   merged.computeBoundingSphere();
-  // A spirit, not a specimen: readable as an ember from the balcony.
-  merged.scale(2.0, 2.0, 2.0);
+  // A spirit, not a specimen: readable as an ember from the balcony —
+  // round 2 took it down from 2.0 (a 5+ m turtle at the pilgrim pose's
+  // 10 m read as a saucer, not a pilgrim).
+  merged.scale(1.4, 1.4, 1.4);
   merged.computeBoundingSphere();
   return merged;
 }

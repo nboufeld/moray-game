@@ -152,20 +152,27 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // THE STILL MIRROR: the rest, framed against its own door — the pan,
   // its sky-pool, the Procession's skyline behind.
   { name: "still-mirror", u: 1392, v: -42, lift: 2.4, atU: 1408, atV: -26, pitch: -0.12, settle: 3 },
-  // The Dune Combs: ridge country, comb tufts in the lees.
-  { name: "dune-combs", u: 1392, v: 82, lift: 3.0, atU: 1428, atV: 122, pitch: -0.04 },
+  // The Dune Combs: ridge country, comb tufts in the lees. Round 2:
+  // moved into the field's heart — the r1 stand sat on the comb's
+  // feathered edge where the ridges are a whisper.
+  { name: "dune-combs", u: 1398, v: 88, lift: 3.2, atU: 1424, atV: 120, pitch: -0.02 },
   // The Night Well from its kneeling ring: the violet deep, the blade.
   { name: "night-well", u: 1406, v: -84, lift: 2.8, atU: 1420, atV: -93, pitch: -0.16 },
   // Inside the well, looking up at the last light reaching the first
-  // dark — the region's vertical drama, composed from within.
-  { name: "well-blade", u: 1424, v: -96, lift: 2.1, atU: 1416, atV: -88, pitch: 0.18, settle: 4 },
+  // dark — the region's vertical drama, composed from within. Round 2:
+  // the r1 stand faced the pit's featureless wall (the anchorite-cell
+  // lesson: a hole reads only against its own door) — the camera now
+  // stands ON the floor looking up the blade at the rim and the sky.
+  { name: "well-blade", u: 1414, v: -87, lift: 2.0, atU: 1422, atV: -95, pitch: 0.4, settle: 4 },
   // THE AFTERGLOW GARDEN: the candle field, crowns burning.
   { name: "afterglow-garden", u: 1496, v: 30, lift: 2.8, atU: 1526, atV: 48, pitch: 0.02, settle: 4 },
   // The road with the Lantern Caravan crossing — life as wayfinding.
   { name: "caravan-road", u: 1466, v: 20, lift: 3.4, atU: 1502, atV: 6, pitch: -0.04, settle: 6 },
   // THE SUN'S DOOR from the road: the arch on its rise over the basin,
   // the sunset standing in the window — the region's proof shot.
-  { name: "suns-door", u: 1552, v: -18, lift: 4.5, atU: 1600, atV: -4, pitch: 0.04, settle: 4 },
+  // Round 2: lifted and pitched up so the lowered sun sits in the
+  // window (the sightline arithmetic lives in Golden3Distance).
+  { name: "suns-door", u: 1552, v: -18, lift: 6.0, atU: 1600, atV: -4, pitch: 0.08, settle: 4 },
   // On the balcony beside the door, looking straight into the painted
   // sunset: the province's last horizon, looked at on-axis.
   { name: "evening-horizon", u: 1596, v: 18, lift: 6.0, atU: 1650, atV: -4, pitch: 0.0, settle: 3 },

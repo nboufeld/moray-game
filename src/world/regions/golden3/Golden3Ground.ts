@@ -175,19 +175,20 @@ function bakeVesperPaint(geometry: PlaneGeometry, contacts: readonly ContactPatc
       value -= shadow * 0.3 * inCountry;
 
       // The comb fields: crests lit rose-gold on the sunward flank,
-      // violet pooled in the lee troughs.
+      // violet pooled in the lee troughs (contrast doubled in round 2:
+      // at sweep range the r1 combs read as one muddy wash).
       const comb = combWeight(u, v);
       if (comb > 0.02) {
-        const ridge = combRidge(u, v) / 2.8; // 0..~1 crest factor
+        const ridge = Math.min(1, combRidge(u, v) / 4.2); // 0..1 crest factor
         const lee = comb * (1 - ridge);
-        r += (1.12 - r) * ridge * 0.5 * inCountry;
-        g += (0.96 - g) * ridge * 0.5 * inCountry;
-        b += (0.52 - b) * ridge * 0.4 * inCountry;
-        value += ridge * 0.12 * inCountry;
-        r += (0.6 - r) * lee * 0.3 * inCountry;
-        g += (0.5 - g) * lee * 0.3 * inCountry;
-        b += (0.82 - b) * lee * 0.24 * inCountry;
-        value -= lee * 0.08 * inCountry;
+        r += (1.16 - r) * ridge * 0.6 * inCountry;
+        g += (1.0 - g) * ridge * 0.6 * inCountry;
+        b += (0.54 - b) * ridge * 0.5 * inCountry;
+        value += ridge * 0.16 * inCountry;
+        r += (0.58 - r) * lee * 0.42 * inCountry;
+        g += (0.48 - g) * lee * 0.42 * inCountry;
+        b += (0.86 - b) * lee * 0.34 * inCountry;
+        value -= lee * 0.12 * inCountry;
       }
     }
 
@@ -304,18 +305,25 @@ function bakeVesperPaint(geometry: PlaneGeometry, contacts: readonly ContactPatc
     }
 
     // The Vesper Rampart: the world's last wall climbs milky-rose out
-    // of the basin — the sunset leaving the ground.
+    // of the basin — the sunset leaving the ground. Round 2: the r1
+    // wall was a flat beige curtain in every far-pole frame — the
+    // runnels doubled, height strata added, the crest warmed harder.
     const rampart = smoothstep01((rc - 165) / 40);
     if (rampart > 0) {
+      const theta = Math.atan2(z - CENTRE.z, x - CENTRE.x);
       const height = smoothstep01((y - BASIN_FLOOR - 4) / 20);
-      const runnel = Math.max(
-        0,
-        Math.sin(Math.atan2(z - CENTRE.z, x - CENTRE.x) * 44),
-      );
-      r += (1.08 - r) * rampart * (0.4 + height * 0.5);
-      g += (0.96 - g) * rampart * (0.4 + height * 0.5);
-      b += (0.78 - b) * rampart * (0.3 + height * 0.5);
-      value += rampart * (height * 0.14 - runnel * 0.07);
+      const runnel = Math.max(0, Math.sin(theta * 44 + Math.sin(theta * 9) * 2));
+      const strata =
+        fbm(theta * 8, y * 0.24, { seed: SEED ^ G3_SEEDS.paintStain, period: 6, octaves: 2 }) -
+        0.5;
+      r += (1.14 - r) * rampart * (0.4 + height * 0.55);
+      g += (0.98 - g) * rampart * (0.4 + height * 0.55);
+      b += (0.72 - b) * rampart * (0.3 + height * 0.55);
+      // The runnels lean violet in their shade (red over green, held).
+      r += (0.62 - r) * rampart * runnel * 0.32;
+      g += (0.5 - g) * rampart * runnel * 0.32;
+      b += (0.9 - b) * rampart * runnel * 0.26;
+      value += rampart * (height * 0.16 + strata * 0.2 - runnel * 0.12);
     }
 
     // Contact shade under everything that stands on the ground.
@@ -354,8 +362,12 @@ export function buildGolden3Ground(contacts: readonly ContactPatch[]): Mesh[] {
     [CENTRE.x - half, CENTRE.z + half],
     [CENTRE.x + half, CENTRE.z + half],
   ];
-  for (const [cx, cz] of centers) {
-    const geometry = createSeabedGeometryAt(cx, cz, DISC_TILE, DISC_SEGMENTS);
+  for (const [index, [cx, cz]] of centers.entries()) {
+    // Round 2: the tiles overlap by 3 m and alternate a 3 cm sink (the
+    // pass-sheet device turned inward) — the r1 abutting grids opened
+    // a visible dark seam line across the comb fields.
+    const sink = index === 0 || index === 3 ? -0.03 : 0;
+    const geometry = createSeabedGeometryAt(cx, cz, DISC_TILE + 3, DISC_SEGMENTS, sink);
     trimSheet(geometry, keepGround);
     bakeVesperPaint(geometry, contacts);
     const mesh = new Mesh(geometry, material);

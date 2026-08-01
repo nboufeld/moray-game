@@ -130,9 +130,12 @@ function resampleProfile(points: Vector2[], step: number): Vector2[] {
   return out;
 }
 
-const CROWN_LIGHT = new Color(0xffe9b0);
+const CROWN_LIGHT = new Color(0xfff3cc);
 
-/** Grooves + drawn paint: amber body, violet grooves, burning crown. */
+/** Grooves + drawn paint: pale amber body, violet grooves, burning
+ *  crown. Round 2: the r1 candles read carrot-orange with no readable
+ *  flame — the body joins the pale family (bright lift up, violet
+ *  halved) and the crown band widens and whitens. */
 function paintCandle(geometry: BufferGeometry, candle: Candle, seed: number): void {
   const position = geometry.attributes.position!;
   const colors = new Float32Array(position.count * 3);
@@ -155,15 +158,15 @@ function paintCandle(geometry: BufferGeometry, candle: Candle, seed: number): vo
     const grain = fbm(theta * 2.4, y * 0.9, { seed: seed ^ 0x2b, period: 7, octaves: 2 }) - 0.5;
     // The crown: the candle's flame — the only part the vein-glow
     // emissive lets burn, rising through the bulb to the tip.
-    const crown = smoothstep01((t - 0.8) / 0.14);
+    const crown = smoothstep01((t - 0.72) / 0.16);
     shade
       .copy(STONE_AMBER)
-      .lerp(STONE_BRIGHT, 0.24 + smoothstep01((t - 0.3) / 0.6) * 0.5)
-      .lerp(SHADOW_VIOLET, Math.max(0, -groove) * 0.32 * band + Math.max(0, -strata) * 0.22)
-      .multiplyScalar(1.04 + strata * 0.26 + grain * 0.2)
+      .lerp(STONE_BRIGHT, 0.34 + smoothstep01((t - 0.26) / 0.6) * 0.52)
+      .lerp(SHADOW_VIOLET, Math.max(0, -groove) * 0.18 * band + Math.max(0, -strata) * 0.13)
+      .multiplyScalar(1.06 + strata * 0.24 + grain * 0.18)
       .lerp(CROWN_LIGHT, crown);
     // The foot stands in its own contact dusk.
-    shade.lerp(SHADOW_VIOLET, (1 - smoothstep01((t - 0.02) / 0.1)) * 0.24);
+    shade.lerp(SHADOW_VIOLET, (1 - smoothstep01((t - 0.02) / 0.1)) * 0.2);
     colors[i * 3] = shade.r;
     colors[i * 3 + 1] = shade.g;
     colors[i * 3 + 2] = shade.b;
@@ -210,10 +213,10 @@ export function buildGarden(): GardenBuild {
   // The candle draw: dusk-lift emissive UNDER the paint's control (the
   // vein glow), so the crowns burn and the grooves stay dusk.
   const material = createToonMaterial({
-    color: 0xe2c896,
+    color: 0xe8d2a2,
     vertexColors: true,
-    emissive: 0x8a6034,
-    emissiveIntensity: 0.62,
+    emissive: 0x9a7c42,
+    emissiveIntensity: 0.6,
   });
   applyVeinGlow(material, "golden3-candle-glow");
   const mesh = mergedMesh(parts, material, "vesper-candles");

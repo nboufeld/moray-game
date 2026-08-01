@@ -129,6 +129,43 @@ export function lensFree(x: number, z: number): number {
 }
 
 /**
+ * Every WIDE pose's camera stand (round 2): the r1 `last-shelf` and
+ * `pilgrim` frames were photobombed by metre-high bushes at the lens —
+ * the close lenses were cleared, the wide stands were not. Bushes (and
+ * anything bush-sized) clear these by ~4 m and the close lenses by
+ * ~3.5; the ankle layers keep their 1 m lens hole only.
+ */
+export const WIDE_STANDS: readonly { u: number; v: number }[] = [
+  { u: 1214, v: 2 }, // last-shelf
+  { u: 1242, v: 1 }, // strand-gate
+  { u: 1266, v: 0 }, // sandfall-combe
+  { u: 1324, v: 0 }, // basin-reveal
+  { u: 1380, v: -34 }, // procession
+  { u: 1362, v: 26 }, // mirror-pans
+  { u: 1392, v: -42 }, // still-mirror
+  { u: 1398, v: 88 }, // dune-combs
+  { u: 1406, v: -84 }, // night-well
+  { u: 1466, v: 20 }, // caravan-road
+  { u: 1496, v: 30 }, // afterglow-garden
+  { u: 1552, v: -18 }, // suns-door
+  { u: 1596, v: 18 }, // evening-horizon
+  { u: 1586, v: -16 }, // pilgrim
+] as const;
+
+/** 1 clear of every stand and lens at bush range, 0 inside one. */
+export function bushFree(x: number, z: number): number {
+  const { u, v } = spokeOf(x, z);
+  let free = 1;
+  for (const stand of WIDE_STANDS) {
+    free = Math.min(free, smoothstep01((Math.hypot(u - stand.u, v - stand.v) - 4) / 1.6));
+  }
+  for (const lens of CLOSE_LENSES) {
+    free = Math.min(free, smoothstep01((Math.hypot(u - lens.u, v - lens.v) - 3.5) / 1.4));
+  }
+  return free;
+}
+
+/**
  * The spine road: the one journey every system agrees on — off the
  * combe's foot, across the Vesper Flats between the pans, past the
  * Procession and the garden's edge to the Sun's Door. The traveller
