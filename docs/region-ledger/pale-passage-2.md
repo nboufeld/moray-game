@@ -206,7 +206,62 @@ below.
 
 ## Critique history (silhouette → value → colour → detail, per round)
 
-(appended per round)
+### Round 1 (`pa2-r1`) — the R5 blackout found by probe; the value key fails everywhere it can
+
+Draft-1 measured 59 draws / 738,924 tris; 26/26 region tests green.
+18 authored + 12 sweep captured. **Seven authored frames came back
+FLAT VIOLET** — deterministic, not the compile race. Probed in a live
+browser (node-toggle at scene level, then a show-one-at-a-time pass):
+hiding the LIGHTS restored the world, and exactly two region children
+each reproduce the wash alone — `pale2-lamp` and `pale2-lampwright`.
+Root cause: **both shipped without a `normal` attribute** —
+`smoothNormals` silently no-ops when none exists (every other module
+called `computeVertexNormals` first), and a LIT toon mesh with no
+normals rasterises as a full-screen violet wash. This is MASTER R5's
+documented class ("lit geometry shipping without a normal attribute"),
+reproduced and cured at authoring time. Fix: `mergedMesh` computes
+normals when missing; the Lampwright's shell/body compute theirs; a
+region test now walks every lit mesh and asserts the attribute.
+
+The eleven readable frames, silhouette → value → colour → detail:
+
+- **Silhouette — the bones stand.** The Comb Gate composes (two curved
+  fins, slot doorway, slanted blades); the Winnow reads as a walled
+  descent; `gallery-crossing` layers fin ranks into the fog with the
+  jellies drifting between; `pearl-steps` frames both needle horns on
+  the crest; the Still Pool bowl + flanking fin compose. The comb
+  silhouette IS a new country — the concept survives contact.
+- **Value — the region's one systemic failure, in every frame.** The
+  Bone Meadows' complement lesson arrived here on day one: every fill
+  family keyed below the paper's value reads as a DARK VIOLET SPRIG
+  (road/threshold/sward blades), the split stones read as blank purple
+  boxes, the jelly bells grey. And the ground's violet stories
+  (channel shadow, riser shade, comb shade) are so strong the
+  `winnow-hush` frame is a flat purple wall — the paper is gone.
+- **Colour** — water reads teal-mint rather than the province's milk
+  (densityGain 0.0075 also merges the fins to flat mint by ~35 m);
+  the basin ground reads BROWN mud, not lamp gold (the gold stories
+  sit at mid value under the milk — grey-mush cousin).
+- **Detail** — the lantern anemones read as TAN MUSHROOM LAWNS (caps
+  too flat and broad, spacing uniform); near fields are bare over
+  broad mauve swells (three-layer law fails on the ground layer);
+  the pass sheet's trim reads as patchwork against the dunes at the
+  close road pose.
+
+Sweep r1 (read in full): the same classes — mid silhouettes pass
+almost everywhere (the fin ranks carry), foregrounds fail on bare
+ground + sub-pixel dark sprigs.
+
+**Round-2 orders**: (1) the R5 cure + regression test; (2) value pass
+— every fill palette lifted ABOVE the ground (paper-warm tips, violet-
+WHITE shades), a warm emissive floor on the cover families (the
+verdant-2 dusk-lift, keyed for paper light); (3) ground violet halved
+everywhere, gold stories lifted toward candle-through-paper; (4) fog
+densityGain 0.0075 → 0.005 with a milkier colour scale so the comb
+portraits keep paint to ~55 m; (5) anemones rebuilt as clustered
+glowing pinheads (smaller, rounder, brighter, clumped); (6) road
+pearl-pebble run + threshold milk thickened; (7) fin paint amplitudes
+up (strata banding, crest lift) so near fins read painted chalk.
 
 ## Flags for the orchestrator (the reciprocal cuts — NOT made here)
 

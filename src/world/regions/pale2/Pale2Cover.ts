@@ -1,4 +1,4 @@
-import type { Group } from "three";
+import { Color, Mesh, type Group } from "three";
 import { SEEDS } from "../../../util/Random";
 import { seabedHeight } from "../../Seabed";
 import { buildBushBank } from "../kit/BushBank";
@@ -91,7 +91,7 @@ export function buildPale2Cover(
   // over violet roots, thickening as the lamp light nears.
   const sward = buildCarpetField({
     seed: SEED ^ 0x3001,
-    palette: { base: 0xd9c48c, tip: 0xf0e2b4, shade: 0x8d78ab },
+    palette: { base: 0xe6d7ac, tip: 0xf7edc9, shade: 0xb2a4cc },
     area,
     gate: (x, z) => {
       const g = baseGate(x, z);
@@ -102,10 +102,11 @@ export function buildPale2Cover(
       if (u < 800) {
         return 0;
       }
-      return g * (0.4 + 0.6 * lumen(u, v)) * (1 - basinWeight(u, v) * 0.5);
+      // Round 2: gate floor raised — the near gallery third read bare.
+      return g * (0.6 + 0.4 * lumen(u, v)) * (1 - basinWeight(u, v) * 0.5);
     },
     ground,
-    count: 4200,
+    count: 5200,
     profile: "blade",
     size: [0.34, 0.66],
     swayAmp: 0.05,
@@ -124,7 +125,7 @@ export function buildPale2Cover(
   }
   const roadBlades = buildCarpetField({
     seed: SEED ^ 0x3002,
-    palette: { base: 0xccbd94, tip: 0xeadfba, shade: 0x9a8bb0 },
+    palette: { base: 0xe0d6b2, tip: 0xf2ead0, shade: 0xb4aacb },
     area: { polyline: roadStations, width: 15 },
     gate: baseGate,
     ground,
@@ -146,7 +147,7 @@ export function buildPale2Cover(
   }
   const thresholdMilk = buildCarpetField({
     seed: SEED ^ 0x3003,
-    palette: { base: 0xd8d4c6, tip: 0xece7d8, shade: 0xa79ec0 },
+    palette: { base: 0xe8e4d6, tip: 0xf5f1e4, shade: 0xbdb4d4 },
     area: { polyline: milkStations, width: 22 },
     gate: (x, z) => {
       const g = baseGate(x, z);
@@ -157,9 +158,9 @@ export function buildPale2Cover(
       return g * (1 - (u - 640) / 150);
     },
     ground,
-    count: 700,
+    count: 900,
     profile: "blade",
-    size: [0.26, 0.5],
+    size: [0.28, 0.54],
     swayAmp: 0.04,
     sunGlow: true,
     looseShare: 0.5,
@@ -175,7 +176,7 @@ export function buildPale2Cover(
   }
   const winnowMoss = buildCarpetField({
     seed: SEED ^ 0x3004,
-    palette: { base: 0xc6b490, tip: 0xe4d6ae, shade: 0x8d78ab },
+    palette: { base: 0xdccdaa, tip: 0xf0e3c0, shade: 0xb2a4cc },
     area: { polyline: winnowStations, width: 30 },
     gate: (x, z) => {
       const g = baseGate(x, z);
@@ -200,7 +201,7 @@ export function buildPale2Cover(
   // bowls (the Still Pool's rest keeps its own rim bare).
   const poolFronds = buildCarpetField({
     seed: SEED ^ 0x3005,
-    palette: { base: 0xaecfba, tip: 0xd8ecdc, shade: 0x7a86a8 },
+    palette: { base: 0xc6e2d0, tip: 0xe6f5e9, shade: 0xa7b2cc },
     area,
     gate: (x, z) => {
       const g = baseGate(x, z);
@@ -232,7 +233,7 @@ export function buildPale2Cover(
   // lantern anemones — the lamp feeding its own garden.
   const basinFronds = buildCarpetField({
     seed: SEED ^ 0x3006,
-    palette: { base: 0xd2b184, tip: 0xf0d9a8, shade: 0x8d78ab },
+    palette: { base: 0xe6cb9e, tip: 0xf8e6bc, shade: 0xb2a0c4 },
     area,
     gate: (x, z) => {
       const g = baseGate(x, z);
@@ -255,7 +256,7 @@ export function buildPale2Cover(
   // rim-facing sweep cones meet knee-high paper blades, not bare fade.
   const rimHem = buildCarpetField({
     seed: SEED ^ 0x3007,
-    palette: { base: 0xd6cbae, tip: 0xefe6cc, shade: 0x8d78ab },
+    palette: { base: 0xe6ddc4, tip: 0xf5eeda, shade: 0xb2a4cc },
     area,
     gate: (x, z) => {
       const g = baseGate(x, z);
@@ -281,7 +282,7 @@ export function buildPale2Cover(
   // The Pearl Steps' tufts: short pearl grass on the rising terraces.
   const stepTufts = buildCarpetField({
     seed: SEED ^ 0x3008,
-    palette: { base: 0xd4dcc8, tip: 0xe9ecdf, shade: 0x9a8bb0 },
+    palette: { base: 0xe2e8d8, tip: 0xf1f3e8, shade: 0xb4bcd0 },
     area,
     gate: (x, z) => {
       const g = baseGate(x, z);
@@ -304,11 +305,33 @@ export function buildPale2Cover(
 
   // ── T1 litter ──────────────────────────────────────────────────────
 
+  // Pearl pebbles pacing the road itself — the walk line's own voice.
+  const roadPebbles = buildGroundLitter({
+    seed: SEED ^ 0x3013,
+    palette: { base: 0xf0ead9, shade: 0xa694c2 },
+    area: { polyline: roadStations, width: 8 },
+    gate: (x, z) => {
+      const w = pale2Weight(x, z);
+      if (w === 0) {
+        return 0;
+      }
+      const { u, v } = spokeOf(x, z);
+      // The pebbles may pace the trodden lane the blades avoid.
+      return Math.sqrt(w) * stillnessGate(u, v) * poolFree(u, v) * lampFree(u, v);
+    },
+    ground,
+    count: 700,
+    shapeSet: "pebble",
+    size: [0.05, 0.14],
+    grade: 0.5,
+  });
+  groups.push(roadPebbles.group);
+
   // Pearl grit region-wide, two-tone with genuine violet-bone (the
   // camouflage lesson: half the run must draw against the paper).
   const grit = buildGroundLitter({
     seed: SEED ^ 0x3010,
-    palette: { base: 0xe7e0cc, shade: 0x8d78ab },
+    palette: { base: 0xf0ead8, shade: 0xa694c2 },
     area,
     gate: baseGate,
     ground,
@@ -323,7 +346,7 @@ export function buildPale2Cover(
   // Comb shards drifting at the fin feet — the combs shed.
   const shards = buildGroundLitter({
     seed: SEED ^ 0x3011,
-    palette: { base: 0xe2dcd0, shade: 0x7d6b96 },
+    palette: { base: 0xefe9dc, shade: 0xa08cc0 },
     area,
     gate: (x, z) => {
       const g = baseGate(x, z);
@@ -345,7 +368,7 @@ export function buildPale2Cover(
   // Split stones pacing the gallery floors — formed foreground rock.
   const splits = buildGroundLitter({
     seed: SEED ^ 0x3012,
-    palette: { base: 0xe9e3d2, shade: 0x8d78ab },
+    palette: { base: 0xf2ecdc, shade: 0xab98c6 },
     area,
     gate: (x, z) => {
       const g = baseGate(x, z);
@@ -368,7 +391,7 @@ export function buildPale2Cover(
   // Aprons at every fin foot and needle — things grow FROM somewhere.
   const scree = buildScreeApron({
     seed: SEED ^ 0x3020,
-    palette: { base: 0xeae2ce, shade: 0x7d6b96 },
+    palette: { base: 0xf0e9d6, shade: 0xa694c2 },
     ground,
     anchors: screeAnchors,
     slabsPerAnchor: 7,
@@ -378,7 +401,7 @@ export function buildPale2Cover(
   // Paper bushes: pale cushions with gold tips and blush bud knots.
   const paperBushes = buildBushBank({
     seed: SEED ^ 0x3021,
-    palette: { base: 0xd8c9a8, tip: 0xf2e6c8, shade: 0x8d78ab, accent: 0xf0b6c4 },
+    palette: { base: 0xe8dcbe, tip: 0xf6ecd4, shade: 0xb2a4cc, accent: 0xf0b6c4 },
     area,
     gate: (x, z) => {
       const g = baseGate(x, z);
@@ -399,7 +422,7 @@ export function buildPale2Cover(
   // Lamp-gold bushes cresting the basin rim — the garden's edge.
   const goldBushes = buildBushBank({
     seed: SEED ^ 0x3022,
-    palette: { base: 0xd9b581, tip: 0xf0d9a8, shade: 0x8d78ab, accent: 0xeec98e },
+    palette: { base: 0xe8cb9c, tip: 0xf6e2b8, shade: 0xb2a4cc, accent: 0xeec98e },
     area,
     gate: (x, z) => {
       const g = baseGate(x, z);
@@ -420,6 +443,30 @@ export function buildPale2Cover(
 
   for (const carpet of carpets) {
     groups.push(carpet.group as Group);
+  }
+
+  // The paper lift (the verdant-2 dusk-lift precedent, keyed for THIS
+  // region's light): under the milk the toon ramp crushes smallwork a
+  // full value below its hex, and blades keyed for paper render as
+  // dark sprigs (round 1). A soft warm floor on every carpet and bush
+  // material keeps the shadow side a colour. Region-side tweak only —
+  // `createToonMaterial` mints per-build materials, nothing leaks.
+  const lift = new Color(0x4a4030);
+  for (const group of groups) {
+    group.traverse((node) => {
+      if (!(node instanceof Mesh)) {
+        return;
+      }
+      const material = node.material as {
+        type?: string;
+        emissive?: Color;
+        emissiveIntensity?: number;
+      };
+      if (material.type === "MeshToonMaterial" && material.emissive) {
+        material.emissive.copy(lift);
+        material.emissiveIntensity = 0.5;
+      }
+    });
   }
 
   return {

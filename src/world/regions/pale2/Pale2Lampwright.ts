@@ -220,6 +220,9 @@ export function buildLampwright(
     );
   };
   const shellGeo = shellGeometry();
+  // The R5 guard (round 1's blackout): normals must exist before the
+  // smoothing pass, which no-ops without them.
+  shellGeo.computeVertexNormals();
   smoothNormals(shellGeo);
   shellGeo.computeBoundingSphere();
   const shell = new Mesh(shellGeo, shellMaterial);
@@ -233,6 +236,7 @@ export function buildLampwright(
   group.add(shell);
 
   const bodyGeo = bodyGeometry();
+  bodyGeo.computeVertexNormals();
   smoothNormals(bodyGeo);
   bodyGeo.computeBoundingSphere();
   const body = new Mesh(bodyGeo, createToonMaterial({ vertexColors: true }));

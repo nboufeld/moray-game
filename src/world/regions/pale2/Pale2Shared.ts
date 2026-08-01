@@ -78,6 +78,12 @@ export function mergedMesh(parts: BufferGeometry[], material: Material, name: st
   if (!merged) {
     throw new Error(`pale2 ${name} parts could not be merged`);
   }
+  // MASTER R5's class, guarded at the door: a LIT mesh with no normal
+  // attribute rasterises as a full-screen wash (round 1's blackout —
+  // `smoothNormals` silently no-ops without normals to smooth).
+  if (!merged.attributes.normal) {
+    merged.computeVertexNormals();
+  }
   smoothNormals(merged);
   merged.computeBoundingSphere();
   const mesh = new Mesh(merged, material);

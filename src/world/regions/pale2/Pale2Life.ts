@@ -91,8 +91,9 @@ function jellyGeometry(): BufferGeometry {
       const scallop = 1 + (j === 0 ? 0.06 * Math.sin(a * 6) : 0);
       positions.push(Math.cos(a) * radius * scallop, y, Math.sin(a) * radius * scallop);
       // Apex-lit pearl: the crown glows softly, the skirt cools violet.
+      // Round 2: values lifted — the r1 bells read grey against the milk.
       const t = smoothstep01((h - 0.1) / 0.8);
-      colors.push(0.5 + 0.5 * t, 0.5 + 0.46 * t, 0.56 + 0.44 * t);
+      colors.push(0.64 + 0.36 * t, 0.62 + 0.34 * t, 0.68 + 0.32 * t);
     }
   }
   for (let j = 0; j < LEVELS; j++) {
@@ -266,7 +267,7 @@ export function buildPale2Life(
   jellyMaterial.transparent = true;
   jellyMaterial.opacity = 0.86;
   jellyMaterial.emissive = new Color(0xd8e4e8);
-  jellyMaterial.emissiveIntensity = 0.3;
+  jellyMaterial.emissiveIntensity = 0.42;
   jellyMaterial.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
     shader.fragmentShader = shader.fragmentShader.replace(
       "#include <emissivemap_fragment>",

@@ -20,7 +20,6 @@ import { PALE_1 } from "../src/world/regions/pale1/Pale1";
 import {
   CENTER_X,
   CENTER_Z,
-  LAMP_BASIN,
   PALE2_SLOT,
   RESTS,
   channelCenter,
@@ -223,6 +222,28 @@ describe("pale-passage-2 build", () => {
       expect(a.length, name).toBe(b.length);
       expect(Buffer.from(a.buffer).equals(Buffer.from(b.buffer)), `${name} bytes`).toBe(true);
     }
+  });
+
+  it("ships no lit geometry without a normal attribute (MASTER R5's class)", () => {
+    // Round 1's blackout: `smoothNormals` no-ops without normals, and a
+    // lit toon mesh with none rasterises as a full-screen wash. Every
+    // Mesh that is not an additive/basic mark must carry normals.
+    let checked = 0;
+    (build.group as Object3D).traverse((node) => {
+      if (!(node instanceof Mesh)) {
+        return;
+      }
+      const material = node.material as { type?: string };
+      if (material.type === "MeshBasicMaterial" || node instanceof Points) {
+        return;
+      }
+      expect(
+        node.geometry.attributes.normal,
+        `${node.name || node.type} has no normal attribute`,
+      ).toBeDefined();
+      checked++;
+    });
+    expect(checked).toBeGreaterThan(10);
   });
 
   it("keeps every collider inside the domain", () => {

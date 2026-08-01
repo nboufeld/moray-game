@@ -106,16 +106,17 @@ function anemoneGeometry(): BufferGeometry {
   const positions: number[] = [];
   const colors: number[] = [];
   const indices: number[] = [];
-  // The stalk: a 5-sided tapered column, dark violet (no glow).
+  // The stalk: a 5-sided tapered column, violet-pale (dim, not dark —
+  // round 1's stalks dragged the whole plant to mud).
   const SIDES = 5;
-  const stalkH = 0.34;
+  const stalkH = 0.3;
   for (let j = 0; j <= 2; j++) {
     const h = j / 2;
-    const radius = 0.075 * (1 - h * 0.35);
+    const radius = 0.06 * (1 - h * 0.35);
     for (let s = 0; s <= SIDES; s++) {
       const a = (s / SIDES) * Math.PI * 2;
       positions.push(Math.cos(a) * radius, stalkH * h, Math.sin(a) * radius);
-      colors.push(0.3, 0.24, 0.38);
+      colors.push(0.46, 0.4, 0.54);
     }
   }
   for (let j = 0; j < 2; j++) {
@@ -125,20 +126,22 @@ function anemoneGeometry(): BufferGeometry {
       indices.push(a, b, a + 1, b, b + 1, a + 1);
     }
   }
-  // The bulb: an apex-lit squashed dome — the lantern.
+  // The bulb: a round glowing pinhead — round 1's broad flat cap read
+  // as a mushroom; the lantern is a small full sphere of light.
   const base = positions.length / 3;
-  const LEVELS = 4;
+  const LEVELS = 5;
   const BS = 7;
+  const R = 0.105;
   for (let j = 0; j <= LEVELS; j++) {
     const h = j / LEVELS;
-    const y = stalkH + 0.02 + 0.22 * h;
-    const radius = 0.16 * Math.sin(Math.PI * (0.12 + 0.82 * h * 0.5 + 0.06)) + 0.02;
+    const y = stalkH + 0.05 + R - R * Math.cos(Math.PI * h);
+    const radius = R * Math.sin(Math.PI * h) + 0.012;
     for (let s = 0; s <= BS; s++) {
       const a = (s / BS) * Math.PI * 2;
       positions.push(Math.cos(a) * radius, y, Math.sin(a) * radius);
-      const t = smoothstep01((h - 0.15) / 0.75);
-      const value = 0.32 + 0.68 * t;
-      colors.push(value, value * 0.85, value * 0.6);
+      const t = smoothstep01((h - 0.1) / 0.8);
+      const value = 0.42 + 0.58 * t;
+      colors.push(value, value * 0.87, value * 0.64);
     }
   }
   for (let j = 0; j < LEVELS; j++) {
@@ -248,38 +251,51 @@ export function buildPale2Gardens(
   meshes.push(fans);
 
   // ── Lantern anemones: the basin gardens + the lit pool rims ───────
+  // Round 2: CLUSTERED, not lawned — the r1 uniform scatter read as a
+  // field of mushrooms. The gardens grow in lantern-clumps of 6–10
+  // around seeded hearts, the way candles gather on a shrine.
   const anemoneRandom = new Random(SEED ^ 0x2b01);
   const seats: { x: number; y: number; z: number; s: number }[] = [];
-  let guard = 0;
-  // The basin ring: dense on the slopes, an open aisle around the Lamp.
-  while (seats.length < 200 && guard++ < 4000) {
+  for (let heart = 0; heart < 24; heart++) {
     const a = anemoneRandom.range(0, Math.PI * 2);
-    const r = 12 + 36 * Math.sqrt(anemoneRandom.next());
-    const u = LAMP_BASIN.u + Math.cos(a) * r;
-    const v = LAMP_BASIN.v + Math.sin(a) * r;
-    // Denser where the lamp light feels near (the story gradient).
-    if (anemoneRandom.next() > 0.35 + lumen(u, v) * 0.65) {
-      continue;
+    const r = 13 + 34 * Math.sqrt(anemoneRandom.next());
+    const hu = LAMP_BASIN.u + Math.cos(a) * r;
+    const hv = LAMP_BASIN.v + Math.sin(a) * r;
+    const per = 6 + Math.floor(anemoneRandom.next() * 5);
+    // Fuller clumps where the lamp light feels near (the story number).
+    const keep = 0.4 + lumen(hu, hv) * 0.6;
+    for (let i = 0; i < per; i++) {
+      const spreadA = anemoneRandom.range(0, Math.PI * 2);
+      const spreadR = anemoneRandom.range(0.2, 1.9);
+      if (anemoneRandom.next() > keep) {
+        continue;
+      }
+      const { x, z } = worldOf(hu + Math.cos(spreadA) * spreadR, hv + Math.sin(spreadA) * spreadR);
+      seats.push({ x, y: pale2TerrainTarget(x, z), z, s: anemoneRandom.range(0.75, 1.2) });
     }
-    const { x, z } = worldOf(u, v);
-    seats.push({ x, y: pale2TerrainTarget(x, z), z, s: anemoneRandom.range(0.8, 1.6) });
   }
-  // The lit pools' rims (never the Still Pool — the rest keeps it bare).
+  // The lit pools' rims take two clumps each (never the Still Pool —
+  // the rest keeps its own rim bare).
   for (const pool of POOLS) {
     if (pool.rest) {
       continue;
     }
-    const per = Math.round(pool.radius * 1.6);
-    for (let i = 0; i < per; i++) {
+    for (let clump = 0; clump < 2; clump++) {
       const a = anemoneRandom.range(0, Math.PI * 2);
-      const r = pool.radius * anemoneRandom.range(1.05, 1.45);
-      const { x, z } = worldOf(pool.u + Math.cos(a) * r, pool.v + Math.sin(a) * r);
-      seats.push({ x, y: pale2TerrainTarget(x, z), z, s: anemoneRandom.range(0.7, 1.2) });
+      const hu = pool.u + Math.cos(a) * pool.radius * 1.2;
+      const hv = pool.v + Math.sin(a) * pool.radius * 1.2;
+      const per = 5 + Math.floor(anemoneRandom.next() * 4);
+      for (let i = 0; i < per; i++) {
+        const spreadA = anemoneRandom.range(0, Math.PI * 2);
+        const spreadR = anemoneRandom.range(0.2, 1.4);
+        const { x, z } = worldOf(hu + Math.cos(spreadA) * spreadR, hv + Math.sin(spreadA) * spreadR);
+        seats.push({ x, y: pale2TerrainTarget(x, z), z, s: anemoneRandom.range(0.65, 1.05) });
+      }
     }
   }
   const anemoneMaterial = createToonMaterial({ color: 0xf0e0c8, vertexColors: true });
   anemoneMaterial.emissive = new Color(0xffd9a0);
-  anemoneMaterial.emissiveIntensity = 0.34;
+  anemoneMaterial.emissiveIntensity = 0.5;
   anemoneMaterial.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
     shader.fragmentShader = shader.fragmentShader.replace(
       "#include <emissivemap_fragment>",

@@ -59,7 +59,7 @@ const FOOT = -30;
 /** Milk ink: a breath above the fog — the pearl horizon. */
 const INK_MILK = new Color(1.03, 1.02, 1.04);
 /** Dayspring ink: lamp gold held BRIGHT — the light behind the paper. */
-const INK_DAYSPRING = new Color(1.1, 1.0, 0.82);
+const INK_DAYSPRING = new Color(1.16, 1.0, 0.72);
 
 /** Half-angle of the gap over the inbound pass (toward the origin). */
 const GAP_IN_HALF = 0.42;
@@ -68,7 +68,7 @@ const GAP_OUT_HALF = 0.3;
 
 /** 0 in plain milk, 1 at the Dayspring's edges. */
 function dayspringAt(theta: number, outAt: number): number {
-  return 1 - smoothstep01((angleBetween(theta, outAt) - GAP_OUT_HALF) / 0.65);
+  return 1 - smoothstep01((angleBetween(theta, outAt) - GAP_OUT_HALF) / 0.85);
 }
 
 export function buildPale2Distance(): { meshes: (Mesh | InstancedMesh)[] } {
@@ -126,7 +126,7 @@ export function buildPale2Distance(): { meshes: (Mesh | InstancedMesh)[] } {
   const bands = [
     { kind: "splinter" as const, rFrom: 238, rTo: 254, count: 20, fade: 0.44, hMin: 12, hMax: 20 },
     { kind: "splinter" as const, rFrom: 258, rTo: 278, count: 14, fade: 0.62, hMin: 16, hMax: 24 },
-    { kind: "font" as const, rFrom: 240, rTo: 268, count: 8, fade: 0.5, hMin: 20, hMax: 30 },
+    { kind: "font" as const, rFrom: 240, rTo: 268, count: 10, fade: 0.46, hMin: 22, hMax: 32 },
   ];
   for (const [bandIndex, band] of bands.entries()) {
     const ink = band.kind === "splinter" ? INK_MILK : INK_DAYSPRING;

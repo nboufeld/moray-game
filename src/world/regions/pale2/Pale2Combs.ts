@@ -159,14 +159,17 @@ function finGeometry(
     const root = 1 - smoothstep01((h - 0.02) / 0.26);
     const crest = smoothstep01((h - 0.68) / 0.28);
     const band = 0.5 + 0.5 * Math.sin(h * (st.crest - st.ground) * 0.9 + i * 0.3);
-    let r = 0.98 - root * 0.24 + crest * 0.07 + (band - 0.5) * 0.05;
-    let g = 0.97 - root * 0.3 + crest * 0.07 + (band - 0.5) * 0.05;
-    let b = 1.0 - root * 0.16 + crest * 0.1 + (band - 0.5) * 0.03;
+    // Round 2: strata amplitude nearly doubled and the root shade
+    // eased — the r1 fins read one flat wash at portrait range and the
+    // roots leaned mud.
+    let r = 0.99 - root * 0.16 + crest * 0.09 + (band - 0.5) * 0.09;
+    let g = 0.98 - root * 0.22 + crest * 0.09 + (band - 0.5) * 0.09;
+    let b = 1.0 - root * 0.1 + crest * 0.12 + (band - 0.5) * 0.05;
     // The lamp's warmth on the basin-facing ranks, mid heights only.
-    const warm = lumen(u, v) * (1 - root) * (1 - crest) * (cool ? 0.15 : 0.3);
-    r += warm * 0.06;
-    g += warm * 0.01;
-    b -= warm * 0.08;
+    const warm = lumen(u, v) * (1 - root) * (1 - crest) * (cool ? 0.2 : 0.4);
+    r += warm * 0.08;
+    g += warm * 0.02;
+    b -= warm * 0.1;
     return [Math.min(1.12, r), Math.min(1.1, g), Math.min(1.14, b)];
   };
 

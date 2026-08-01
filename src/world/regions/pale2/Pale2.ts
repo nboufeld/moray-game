@@ -183,7 +183,10 @@ export const PALE_2: RegionDef = {
     // Meadows' (the lamp side of the paper): red raised the same
     // fourfold the pilot measured, a breath more gold, density eased
     // so the comb ranks layer through ~60 m of legible water.
-    fog: { colorScale: [3.5, 1.3, 1.12], densityGain: 0.0075, backdropFade: 0.28 },
+    // Round 2: density 0.0075 → 0.005 (the comb portraits merged to
+    // flat mint by ~35 m) and the scale a step milkier — the fins keep
+    // their paint to ~55 m and the water reads paper, not teal.
+    fog: { colorScale: [3.7, 1.32, 1.14], densityGain: 0.005, backdropFade: 0.28 },
     // Paper lit flat from above, shadows violet: half the sun, the
     // level given back as violet ambient — the province's light
     // grammar, warmed a step because the lamp is near.

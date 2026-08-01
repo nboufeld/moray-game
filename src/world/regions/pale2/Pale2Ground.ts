@@ -114,13 +114,13 @@ function story(hex: number): Color {
 // The palette the bake composes with — absolute paint, not multipliers.
 const PAPER_WARM_G = story(0xefe6d1);
 const PAPER_COOL_G = story(0xdfe1f0);
-const SHADOW_VIOLET_G = story(0x8d78ab);
+const SHADOW_VIOLET_G = story(0xa997c6);
 const MILK_HANDOVER = story(0xece7db);
-const SWARD_GOLD = story(0xcdb478);
+const SWARD_GOLD = story(0xdcc793);
 const MOON_PEARL_G = story(0xdff0e3);
 const CHAPEL_WHITE = story(0xfbf8f1);
-const BASIN_GOLD = story(0xe3bc84);
-const LAMP_HEART = story(0xd9a05e);
+const BASIN_GOLD = story(0xeed3a4);
+const LAMP_HEART = story(0xe4b87e);
 const PEARL_BAND = story(0xe9ecdf);
 
 /**
@@ -169,20 +169,20 @@ function bakeCombPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
         const inShadow =
           smoothstep01((u - (RESTS.winnowShadow.fromU - 4)) / 5) *
           (1 - smoothstep01((u - RESTS.winnowShadow.toU) / 5));
-        col.lerp(SHADOW_VIOLET_G, inShadow * inChannel * 0.4);
-        value -= inShadow * inChannel * 0.1;
+        col.lerp(SHADOW_VIOLET_G, inShadow * inChannel * 0.28);
+        value -= inShadow * inChannel * 0.06;
       }
       const drop = descentDrop(u);
       if (drop.riser > 0) {
         // Riser faces step down in violet shade; treads stay lit.
-        col.lerp(SHADOW_VIOLET_G, drop.riser * s * 0.5);
-        value -= drop.riser * s * 0.14;
+        col.lerp(SHADOW_VIOLET_G, drop.riser * s * 0.32);
+        value -= drop.riser * s * 0.09;
       }
       // Bank tops lean cool-white as they rise (the chalk reads as chalk).
       const rise = smoothstep01((y - winnowFloor(u) - 1.2) / 3.5);
       col.lerp(PAPER_COOL_G, rise * s * 0.3);
       // Channel floor: a breath of violet — the walk line reads as a way.
-      col.lerp(SHADOW_VIOLET_G, inChannel * s * 0.18);
+      col.lerp(SHADOW_VIOLET_G, inChannel * s * 0.1);
     }
 
     // The gallery sward: warm gold patches arriving with the lumen —
@@ -205,8 +205,8 @@ function bakeCombPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
       const shade = smoothstep01(
         (fbm(x * 0.03, z * 0.03, { seed: SEED ^ 0x51b0, period: 11, octaves: 3 }) - 0.5) / 0.2,
       );
-      col.lerp(SHADOW_VIOLET_G, mound * shade * 0.35);
-      value -= mound * shade * 0.05;
+      col.lerp(SHADOW_VIOLET_G, mound * shade * 0.22);
+      value -= mound * shade * 0.03;
     }
 
     // The Moonmilk Pools: the palest floors in the province — pearl
@@ -217,7 +217,7 @@ function bakeCombPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
         const bowl = 1 - smoothstep01((d - pool.radius * 0.8) / pool.radius);
         const rings = 0.5 + 0.5 * Math.sin(d * 0.5);
         col.lerp(MOON_PEARL_G, bowl);
-        value += bowl * (0.14 + rings * 0.015);
+        value += bowl * (0.18 + rings * 0.015);
       }
     }
 
@@ -277,7 +277,7 @@ function bakeCombPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
         shade *= 1 - contact.strength * falloff * falloff;
       }
     }
-    col.lerp(SHADOW_VIOLET_G, (1 - shade) * 0.5);
+    col.lerp(SHADOW_VIOLET_G, (1 - shade) * 0.35);
 
     // The division: story colour over the wash's own mean. The 1.16
     // rides over the milk's flat light — the Bone Meadows' measured
