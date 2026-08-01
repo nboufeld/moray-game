@@ -106,6 +106,27 @@ function towerProfile(tower: Tower, random: Random): Vector2[] {
   return points;
 }
 
+/**
+ * Resamples a profile polyline to ~`step`-metre rows before lathing.
+ * Round 4, the close-flute-foot lesson: the drawn profile has only ~9
+ * rows over a 23 m shaft, and per-VERTEX paint interpolates every
+ * strata band across those spans into one smooth gradient — at 3 m the
+ * foot read as a single flat amber slug no matter how hard the fbm
+ * contrast was pushed. The paint needs rows to live on.
+ */
+function resampleProfile(points: Vector2[], step: number): Vector2[] {
+  const out: Vector2[] = [points[0]!.clone()];
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1]!;
+    const b = points[i]!;
+    const rows = Math.max(1, Math.round(a.distanceTo(b) / step));
+    for (let r = 1; r <= rows; r++) {
+      out.push(a.clone().lerp(b, r / rows));
+    }
+  }
+  return out;
+}
+
 /** Radial fluting + drawn paint, applied to a lathed tower in place. */
 function fluteAndPaint(geometry: BufferGeometry, tower: Tower, seed: number): void {
   const position = geometry.attributes.position!;
@@ -145,9 +166,12 @@ function fluteAndPaint(geometry: BufferGeometry, tower: Tower, seed: number): vo
       fbm(theta * 2.2, y * 0.5, { seed: seed ^ 0x2b, period: 7, octaves: 2 }) - 0.5;
     const fine =
       fbm(theta * 6.4, y * 2.3, { seed: seed ^ 0x3d, period: 9, octaves: 2 }) - 0.5;
+    // Round 4: the foot joins the pale family — a 0-bright foot under
+    // the dusk emissive read as saturated rust at the close pose while
+    // every other stone in the region held warm pale.
     shade
       .copy(amber)
-      .lerp(bright, smoothstep01((t - 0.35) / 0.6) * 0.8)
+      .lerp(bright, 0.26 + smoothstep01((t - 0.32) / 0.62) * 0.58)
       .lerp(violet, Math.max(0, -groove) * 0.38 * band + Math.max(0, -strata) * 0.26)
       .multiplyScalar(1.06 + strata * 0.28 + grain * 0.24 + fine * 0.13);
     // The foot stands in its own contact dusk.
@@ -180,7 +204,7 @@ export function buildCarillon(): CarillonBuild {
   let bellMouth = new Vector3();
 
   for (const [i, tower] of TOWERS.entries()) {
-    const geometry = new LatheGeometry(towerProfile(tower, random), 28);
+    const geometry = new LatheGeometry(resampleProfile(towerProfile(tower, random), 0.8), 28);
     fluteAndPaint(geometry, tower, SEED ^ (0x61b0 + i));
     const { x, z } = worldOf(tower.u, tower.v);
     const y = seabedHeight(x, z);
@@ -216,13 +240,16 @@ export function buildCarillon(): CarillonBuild {
     const z = centre.z + Math.sin(angle) * ringR;
     const h = random.range(1.1, 1.9);
     const stone = new LatheGeometry(
-      [
-        new Vector2(h * 0.42, -0.3),
-        new Vector2(h * 0.46, h * 0.25),
-        new Vector2(h * 0.3, h * 0.6),
-        new Vector2(h * 0.34, h * 0.85),
-        new Vector2(0.01, h),
-      ],
+      resampleProfile(
+        [
+          new Vector2(h * 0.42, -0.3),
+          new Vector2(h * 0.46, h * 0.25),
+          new Vector2(h * 0.3, h * 0.6),
+          new Vector2(h * 0.34, h * 0.85),
+          new Vector2(0.01, h),
+        ],
+        0.3,
+      ),
       12,
     );
     fluteAndPaint(

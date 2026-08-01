@@ -138,7 +138,10 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // lesson says that is CORRECT: from here the rings ARE the promise.
   // Round 3: walked forward a pace — from 658 the first waymark pair
   // sat behind the camera and the road read as one stack in a fog.
-  { name: "shore-road", u: 668, v: 2, lift: 2.6, atU: 716, atV: 2, pitch: -0.02 },
+  // Then half a pace BACK with the horizon dropped: from 668 the 678
+  // pair fell abeam and got cut at the frame's edge over a half-empty
+  // sky (r3 capture).
+  { name: "shore-road", u: 663, v: 4, lift: 2.4, atU: 706, atV: -4, pitch: -0.04 },
   // The Chime Gate: the fluted jambs framing the gully's descent. The
   // camera stands PAST the pilot's outermost ring (u ≈ 731).
   { name: "chime-gate", u: 735, v: 0, lift: 2.4, atU: 754, atV: 0, pitch: -0.04 },
@@ -162,11 +165,13 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // violet walls — the region's vertical drama, composed from within.
   { name: "ribbon-depths", u: 946, v: -54, lift: 2.2, atU: 970, atV: -68, pitch: 0.12, settle: 4 },
   // The Anchorite's Cell: the registered rest, framed as composed
-  // stillness from INSIDE the mouth (round 3 — the r2 stand sat on the
-  // slot's spine and its sightline died in the sill that rises to −14
-  // between spine and chamber; the camera must already be over the
-  // sill): between the flank stones, into the bare round chamber.
-  { name: "anchorite-cell", u: 962.5, v: -71.5, lift: 2.1, atU: 962, atV: -80, pitch: -0.08, settle: 3 },
+  // stillness from the chamber's BACK WALL looking out (round 3, twice
+  // — the mouth stand cleared its sightline but a 19 m curved wall at
+  // 12 m fills a 70° frame with featureless stone; a rest reads only
+  // against its own door): the licensed thin blade falls centre-frame
+  // over the bare floor, the mouth's sill and the slot's lit wall
+  // stack behind it.
+  { name: "anchorite-cell", u: 962, v: -81, lift: 2.2, atU: 964, atV: -71, pitch: 0.14, settle: 3 },
   // The Seep Terraces: travertine benches, pools, bubbles, gardens.
   // Round 3: up to the HIGH shoulder looking down the staircase — the
   // r2 stand framed sward with every pool out of shot left, and the
@@ -196,7 +201,13 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // the old stand and the rim, and a level sightline from lift 3 died
   // in the rise 43 m out (the probe again). The promise is a vista;
   // the camera swims up for it.
-  { name: "sunset-shelf", u: 1064, v: -10, lift: 10.0, atU: 1104, atV: 30, pitch: 0.04 },
+  // Round 4: the aim swung from 45° off the outbound axis to ~24° —
+  // by ARITHMETIC the r3 aim crossed the mesa ring at ~146 m of
+  // camera distance, inside its own 140–157 m self-dissolve, so the
+  // promise dissolved itself out of its own shot; at 24° the ring sits
+  // at ~129 m (opaque) and both framing spires bracket the reserved
+  // gap.
+  { name: "sunset-shelf", u: 1064, v: -10, lift: 10.0, atU: 1104, atV: 8, pitch: 0.04 },
   // ── The close-range set (R12's still-frame bar, judged at 2–4 m) ─────────
   { name: "close-court-garden", u: 858.5, v: 9.2, lift: 1.5, atU: 862.0, atV: 12.8, pitch: -0.22, settle: 3 },
   // Round 3: backed off the rim — the r2 lens stood ON it and cut the

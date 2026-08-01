@@ -193,12 +193,29 @@ function hoodooRing(u: number, v: number): number {
 
 // ─── The gates ───────────────────────────────────────────────────────────────
 
+/** The gully's HIGH shoulders (round 4): from the Chime Gate on, the
+ *  carved country begins — but the r1–r3 gates all started the open-
+ *  country fill at u 806/824, so the shoulders above the gully (u
+ *  744–824, |v| past the channel) owned no grain and no standing
+ *  layer at all. Both remaining sweep misses stood exactly there. */
+function gullyShoulder(u: number, v: number): number {
+  if (u < 736 || u > 830) {
+    return 0;
+  }
+  const away = Math.abs(v - gullyChannelCenter(u));
+  const offRoad = smoothstep01((away - gullyChannelHalf(u) - 4) / 6);
+  return smoothstep01((u - 744) / 14) * (1 - smoothstep01((u - 816) / 10)) * offRoad;
+}
+
 /** Ripple-grit: the whole carved floor's close-range grain (T1 base). */
 const gritGate: GateFn = (x, z) => {
   const { u, v } = spokeOf(x, z);
   // Grit gathers in the sand hollows and thins over bare carved rises.
   const hollow = 1 - smoothstep01(courtSwale(x, z) / 1.3) * 0.5;
-  const base = u < 824 ? roadness(u, v) * shoreWarm(u) : 1 - zoneCalm(u, v) * 0.75;
+  const base =
+    u < 824
+      ? Math.max(roadness(u, v) * shoreWarm(u), gullyShoulder(u, v) * 0.85)
+      : 1 - zoneCalm(u, v) * 0.75;
   return fillOwn(x, z) * restFree(x, z) * base * hollow;
 };
 
@@ -255,7 +272,11 @@ const roadWireGate: GateFn = (x, z) => {
  */
 const courtWireGate: GateFn = (x, z) => {
   const { u, v } = spokeOf(x, z);
-  if (u < 806) {
+  // Round 4: the standing layer starts at the gully's rim, not at the
+  // court's door — the high shoulders join the country (off-road only;
+  // the descent stays a road).
+  const country = u >= 806 ? 1 : gullyShoulder(u, v);
+  if (country <= 0) {
     return 0;
   }
   const rc = Math.hypot(x - CENTER_X, z - CENTER_Z);
@@ -268,6 +289,7 @@ const courtWireGate: GateFn = (x, z) => {
     lensFree(x, z) *
     hoodooFree(x, z) *
     (1 - zoneCalm(u, v)) *
+    country *
     flank *
     base
   );
@@ -395,7 +417,8 @@ export function buildGolden2Cover(finFeet: readonly { u: number; v: number }[]):
       ground: seabedHeight,
       // Round 3: up from 5,200 — the r2 sweep's shoulder frames held
       // paint but no grain in the first ten metres.
-      count: 6600,
+      // Round 4: up again with the gully shoulders joining the gate.
+      count: 7400,
       shapeSet: "grit",
       size: [0.03, 0.09],
       twoTone: true,
@@ -465,7 +488,9 @@ export function buildGolden2Cover(finFeet: readonly { u: number; v: number }[]):
       // Round 3: the r2 sweep's remaining misses were all high open
       // shoulders where only the broad base term reaches — up again,
       // with the base floor raised in the gate.
-      count: 4200,
+      // Round 4: the gate's support GREW (the gully shoulders joined
+      // the country); the count keeps pace so density holds.
+      count: 5200,
       profile: "blade",
       size: [0.42, 0.85],
       swayAmp: 0.05,

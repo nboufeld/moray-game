@@ -379,3 +379,64 @@ authored hoodoos planted in `hoodoo-court`'s near field; slot-wall
 flute striping; lip slabs leaned off the "manhole" read; waymarks
 grown; Anchorite's Cell rest radius trimmed to 5.5 so the mouth can
 take its two flank stones (the carve keeps r 7).
+
+### Round 3 (`gw2-r3`) — the laws land; two frames still owed to composition
+
+Prebuilt-bundle harness again, `SHOT_PER_LAUNCH=1`. All 20 authored
+poses captured and read; a throwaway sightline probe
+(`tests/probeGolden2Poses.test.ts`, kept) now walks every re-authored
+ray over the composed ground BEFORE captures spend an hour proving
+what arithmetic could have said — it caught two bad stands this round
+(seep-terraces' east bench looked UP a riser wall; sunset-shelf's
+lift-3 ray died in the shelf's own 8 m rise) and both were re-authored
+before their captures could fail.
+
+**Passes (17/20 authored).** The r2 core holds: `chime-gate`,
+`wind-gully`, `court-reveal`, `hoodoo-court`, `great-arch`,
+`ribbon-mouth`, `ribbon-depths`, `noon-bell`, `carillon`, `belfry`,
+`swift-wheel`, `close-court-garden`, `close-arch-shards` all pass
+again. New this round: `windows-wall` PASSES (the two near-field
+pockets seat its foreground); `seep-terraces` PASSES from the high
+shoulder — pools stepping down the travertine staircase, sward and
+bubbles in their gardens; `close-seep-rim` PASSES backed off its rim
+(pool, rim, fry all in frame). The vein-glow patch is the round's
+win: `carillon` and `noon-bell` show strata and grooves surviving on
+the shade side — the towers are DRAWN again, and the pale
+chime-stones separate from the tower feet.
+
+**Fails and marginals:**
+
+- **`anchorite-cell` FAIL, differently** — the mouth stand cleared
+  its sightline (the probe said so, truthfully) but the FRAME is a
+  featureless amber wall: a 19 m curved chamber wall 12 m out fills a
+  70° lens. A rest reads only against its own door. Round 4 shoots
+  from the chamber's BACK WALL looking out at (962, −81 → 964, −71):
+  the licensed thin blade centre-frame over the bare floor, the
+  mouth's sill and the slot's lit wall stacked behind it.
+- **`shore-road` FAIL, differently** — the fill law WORKED (grit,
+  wire, wrack and pebbles pace the road now) but the walked-forward
+  stand overshot: the 678 waymark pair fell abeam and got cut at the
+  frame's left edge over a 60%-water sky. Round 4: half a pace back
+  to (663, 4), horizon dropped (pitch −0.04 — the probe grazed at
+  −0.06), the 678 pair leading the eye down the road.
+- **`sunset-shelf` MARGINAL — and the root cause is ARITHMETIC
+  again:** the r3 aim (atV 30) is 45° off the outbound axis, and at
+  that bearing the mesa ring stands ~146 m from the camera — inside
+  its own 140–157 m self-dissolve. The promise dissolved itself out
+  of its own shot; only a faint band survives at frame left. Round 4
+  swings the aim to ~24° (atV 8): ring at ~129 m, fully opaque, both
+  framing spires bracketing the reserved gap.
+- **`close-flute-foot` MARGINAL** — better (fine grain reads on the
+  lit flank) but the foot is still a saturated rust mass that
+  separates from the region's pale family, and the strata do NOT read
+  at 3 m. Diagnosis is structural, not paint: the lathe profile has
+  ~9 rows over a 23 m shaft, and per-vertex paint interpolates every
+  band across those spans into one smooth gradient — no fbm contrast
+  can survive that vertex density. Round 4: the profile RESAMPLED to
+  0.8 m rows before lathing (the paint gets rows to live on;
+  +75k tris, budget 838k of 1.35M), and the foot joins the pale
+  family (bright floor 0.26 — a 0-bright foot under the dusk emissive
+  read as rust while every other stone held warm pale).
+
+**Sweep (r3):** read below once the chain lands it (the sweep runs
+behind the authored set on the loaded box).

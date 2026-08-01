@@ -22,12 +22,14 @@ interface Sight {
 }
 
 const SIGHTS: (Sight & { range?: number })[] = [
-  { name: "anchorite-cell", u: 962.5, v: -71.5, lift: 2.1, atU: 962, atV: -80, pitch: -0.08 },
+  // Aimed at the licensed blade (the chamber's centre) — the sill wall
+  // BEYOND it is the composition's mid-ground, not an obstruction.
+  { name: "anchorite-cell", u: 962, v: -81, lift: 2.2, atU: 964, atV: -71, pitch: 0.14 },
   { name: "seep-terraces", u: 962, v: 102, lift: 5.8, atU: 976, atV: 66, pitch: -0.09 },
   { name: "close-seep-rim", u: 963.5, v: 82.5, lift: 2.2, atU: 968.5, atV: 88.5, pitch: -0.28 },
-  { name: "shore-road", u: 668, v: 2, lift: 2.6, atU: 716, atV: 2, pitch: -0.02 },
+  { name: "shore-road", u: 663, v: 4, lift: 2.4, atU: 706, atV: -4, pitch: -0.04 },
   // The vista pose walks its ray all the way to the distance rings.
-  { name: "sunset-shelf", u: 1064, v: -10, lift: 10.0, atU: 1104, atV: 30, pitch: 0.04, range: 130 },
+  { name: "sunset-shelf", u: 1064, v: -10, lift: 10.0, atU: 1104, atV: 8, pitch: 0.04, range: 130 },
 ];
 
 describe("golden-waste-2 round-3 pose sightlines", () => {
