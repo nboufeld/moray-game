@@ -418,15 +418,23 @@ export function buildPale3Fonts(): Pale3FontsBuild {
   const footSpots: { x: number; z: number; facing: number }[] = [];
   const crownSpots: CrownSpot[] = [];
 
+  // Round 5: a soft warm floor on the chalks — at arm's length a
+  // font's down-sun wall printed a third of the frame at the ramp's
+  // bottom band (close-font-foot's violet country); the shadow stays
+  // violet in HUE, but it must stay a value on paper.
   const warmChalk = createToonMaterial({
     map: chalkTexture(),
     color: 0xf6efdd,
     vertexColors: true,
+    emissive: 0x4a4238,
+    emissiveIntensity: 0.5,
   });
   const coolChalk = createToonMaterial({
     map: chalkTexture(),
     color: 0xeaecf4,
     vertexColors: true,
+    emissive: 0x443f42,
+    emissiveIntensity: 0.5,
   });
   // The Belfry alone: its doorway shows the interior, so its backfaces
   // must exist (the Canopy Deep's hollow-mesa device).
@@ -434,6 +442,8 @@ export function buildPale3Fonts(): Pale3FontsBuild {
     map: chalkTexture(),
     color: 0xf4eddb,
     vertexColors: true,
+    emissive: 0x4a4238,
+    emissiveIntensity: 0.5,
   });
   belfryChalk.side = DoubleSide;
 

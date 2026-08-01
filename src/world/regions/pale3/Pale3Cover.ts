@@ -509,10 +509,13 @@ export function buildPale3Cover(screeAnchors: readonly ScreeAnchor[]): Pale3Cove
   // dark sprigs. A soft warm floor on every carpet and bush material
   // keeps the shadow side a colour. Region-side tweak only —
   // `createToonMaterial` mints per-build materials, nothing leaks.
-  // Rounds 3+4: the lift up two steps (0x4a4030 @ 0.5 left the shade
-  // side a dark violet sprig against the paper — the one systemic
-  // remainder of round 2, half-paid by round 3).
-  const lift = new Color(0x5e5244);
+  // Rounds 3–5: the lift, finally paid in full. 0x4a4030 @ 0.5 left
+  // the shade side a dark violet sprig against the paper, and rounds
+  // 3+4 nudged the product by three parts in a hundred — arithmetic,
+  // not art (emissive ≈ hex × intensity; a step must MOVE that
+  // product). This floor puts a shade side at ≈ 0.4, a lit paper
+  // blade near white — the pale country's own register.
+  const lift = new Color(0x8e7e6a);
   for (const group of groups) {
     group.traverse((node) => {
       if (!(node instanceof Mesh)) {
@@ -525,15 +528,15 @@ export function buildPale3Cover(screeAnchors: readonly ScreeAnchor[]): Pale3Cove
       };
       if (material.type === "MeshToonMaterial" && material.emissive) {
         material.emissive.copy(lift);
-        material.emissiveIntensity = 0.66;
+        material.emissiveIntensity = 0.72;
       }
     });
   }
 
-  // Round 4: the Blushfields' own lift is ROSE, not paper — the shade
-  // side of a rose frond must stay a rose, or the field prints as
-  // violet sprigs from every up-sun camera.
-  const roseLift = new Color(0x6e5852);
+  // The Blushfields' own lift is ROSE, not paper — the shade side of
+  // a rose frond must stay a rose, or the field prints as violet
+  // sprigs from every up-sun camera.
+  const roseLift = new Color(0x9a7268);
   (blushFronds.group as Group).traverse((node) => {
     if (!(node instanceof Mesh)) {
       return;
@@ -545,7 +548,7 @@ export function buildPale3Cover(screeAnchors: readonly ScreeAnchor[]): Pale3Cove
     };
     if (material.type === "MeshToonMaterial" && material.emissive) {
       material.emissive.copy(roseLift);
-      material.emissiveIntensity = 0.66;
+      material.emissiveIntensity = 0.72;
     }
   });
 

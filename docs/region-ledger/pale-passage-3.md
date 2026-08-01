@@ -428,6 +428,31 @@ standard's letter; recorded, not excused silently.
 5. Pearl emissive 0.68 → 0.72 (with the r3 hue gradient it reads as
    glow, not wash).
 
+## Round 4 — critique
+
+The pose orders landed; the lift order did not — and the miss was
+ARITHMETIC, not art. `suns-doorstep` now composes (the dome an event
+between its menhirs, gradient legible, the Chorister crossing);
+`still-morning` looks into the bowl at last — pale nacre, dew pearls,
+the one gold seam; quiet, but quiet is this rest's register.
+`the-dayspring` and `belfry-heart` held.
+
+But `close-blush-bed` and `close-font-foot` came back near-identical
+to r3: the round's lift step moved the emissive PRODUCT (hex ×
+intensity) by three parts in a hundred — imperceptible by
+construction. Emissive floors must be stepped by their product, and
+mine were nudged. The font's own chalks, which take no lift at all,
+print a third of `close-font-foot` at the ramp's bottom band.
+
+**Round-5 orders (one lesson, applied once, properly):**
+
+1. Shared carpet/bush/litter lift → 0x8e7e6a @ 0.72 (shade side
+   ≈ 0.4 — a colour on paper, not a sprig).
+2. Blush lift → rose 0x9a7268 @ 0.72.
+3. The font chalks get their own soft floor (warm/belfry 0x4a4238,
+   cool 0x443f42, both @ 0.5) — the violet stays the hue, the value
+   comes home.
+
 ## Capture sets
 
 All under `visual-qa/`, 18 authored (`REGION-pale-passage-3-*`) + 12
