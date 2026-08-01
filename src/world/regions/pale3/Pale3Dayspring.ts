@@ -30,9 +30,9 @@ import { DAYSPRING, pale3TerrainTarget, worldOf } from "./Pale3Terrain";
  * stands between the diver and the light).
  *
  * The dome's glow is a vertex-shaped emissive (the glow-colony
- * discipline at landmark scale, the Lamp heart's precedent): base
- * value 0.58 rising to 1.0 at the crest, warm white-gold, intensity
- * well under the bloom pass's threshold.
+ * discipline at landmark scale, the Lamp heart's precedent): a
+ * violet-pearl shadow foot rising through nacre bands to a warm gold
+ * crest, intensity well under the bloom pass's threshold.
  */
 
 const SEED = SEEDS.regionPale3;
@@ -74,13 +74,15 @@ function domeGeometry(cx: number, cy: number, cz: number): BufferGeometry {
       const a = (s / SIDES) * Math.PI * 2;
       positions.push(cx + Math.cos(a) * radius, y, cz + Math.sin(a) * radius);
       // The rising light: dim nacre at the ground line, full at the
-      // crest, with a nacre band shimmer. Round 2: the swing doubled
-      // (base 0.58 → 0.42) and the bands strengthened — the r1 dome
-      // read as a flat matte egg; CONTRAST is the light.
+      // crest, with a nacre band shimmer. Round 3: value alone was not
+      // enough (a monochrome gold gradient flattens to one hue under
+      // the fog — the r2 dome read as a tan ball at arm's length); the
+      // gradient now moves in HUE too — violet-pearl shadow at the
+      // foot, warm gold at the crest — and the banding is doubled.
       const lift = smoothstep01((t - 0.06) / 0.86);
       const band = 0.5 + 0.5 * Math.sin(t * 9 + a * 2);
-      const value = 0.42 + 0.58 * lift + (band - 0.5) * 0.09;
-      colors.push(value, value * 0.9, value * 0.72);
+      const value = 0.3 + 0.7 * lift + (band - 0.5) * 0.14;
+      colors.push(value, value * (0.84 + 0.08 * lift), value * (0.92 - 0.2 * lift));
     }
   }
   for (let j = 0; j < LEVELS; j++) {
@@ -93,7 +95,7 @@ function domeGeometry(cx: number, cy: number, cz: number): BufferGeometry {
   // The crest cap.
   const capCenter = positions.length / 3;
   positions.push(cx, cy + R, cz);
-  colors.push(1, 0.9, 0.72);
+  colors.push(1, 0.92, 0.72);
   const lastRing = LEVELS * (SIDES + 1);
   for (let s = 0; s < SIDES; s++) {
     indices.push(capCenter, lastRing + s + 1, lastRing + s);
@@ -178,7 +180,7 @@ export function buildPale3Dayspring(): Pale3DayspringBuild {
   // ── The Risen Pearl ────────────────────────────────────────────────
   const pearlMaterial = createToonMaterial({ color: 0xf8e3bc, vertexColors: true });
   pearlMaterial.emissive = new Color(0xffd498);
-  pearlMaterial.emissiveIntensity = 0.68;
+  pearlMaterial.emissiveIntensity = 0.72;
   pearlMaterial.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
     shader.fragmentShader = shader.fragmentShader.replace(
       "#include <emissivemap_fragment>",

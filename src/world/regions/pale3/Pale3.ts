@@ -138,9 +138,9 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // At the Belfry's doorway, looking into the lit room.
   { name: "belfry-heart", u: 1442, v: -34, lift: 2.4, atU: 1442, atV: -46, pitch: 0.14, settle: 4 },
   // THE STILL MORNING from its lip: the mirror, the reflection lane.
-  // Round 2: onto the low south-west lip, higher and steeper — the r1
-  // pose looked across the bowl and the mirror never read.
-  { name: "still-morning", u: 1420, v: 56, lift: 3.6, atU: 1442, atV: 78, pitch: -0.3, settle: 4 },
+  // Round 4: INTO the mirror — r2/r3 both skimmed the bowl and the
+  // pearl floor never read; from the lip, pitched down, it must.
+  { name: "still-morning", u: 1424, v: 58, lift: 6.5, atU: 1438, atV: 74, pitch: -0.55, settle: 4 },
   // The Blushfields: dawn colour on the ground, fonts behind.
   { name: "blushfields", u: 1444, v: -84, lift: 2.6, atU: 1496, atV: -68, pitch: -0.02 },
   // The Dawn Steps toward the pearl: the region's proof frame.
@@ -148,8 +148,10 @@ const POSE_SPECS: readonly PoseSpec[] = [
   { name: "dawn-steps", u: 1572, v: 10, lift: 3.0, atU: 1618, atV: 2, pitch: 0.04 },
   // THE DAYSPRING: the risen pearl, the veil, the Chorister.
   { name: "the-dayspring", u: 1594, v: -14, lift: 2.8, atU: 1630, atV: 0, pitch: 0.08 },
-  // On the Sun's Doorstep, inside the rest, looking up at the light.
-  { name: "suns-doorstep", u: 1610, v: 4, lift: 1.8, atU: 1628, atV: 0, pitch: 0.14, settle: 5 },
+  // On the Sun's Doorstep, the dome an EVENT with its ring and shaft
+  // (round 4: the r2/r3 pose stood 15 m out and the dome was a wall
+  // of skin — no gradient survives filling four-fifths of a frame).
+  { name: "suns-doorstep", u: 1594, v: -8, lift: 5.0, atU: 1630, atV: 0, pitch: 0.02, settle: 5 },
   // Looking back the way we came: the font skyline over the road.
   { name: "dawn-lookback", u: 1560, v: 4, lift: 7.5, atU: 1460, atV: 0, pitch: 0.02 },
   // ── The close set (2–4 m, the owner's judged distance) ──

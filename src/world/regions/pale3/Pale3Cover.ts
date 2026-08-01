@@ -96,7 +96,7 @@ export function buildPale3Cover(screeAnchors: readonly ScreeAnchor[]): Pale3Cove
   // r1's near fields at the descent's foot read thin.
   const sward = buildCarpetField({
     seed: SEED ^ 0x3001,
-    palette: { base: 0xe8dab0, tip: 0xf8efcc, shade: 0xd6cde4 },
+    palette: { base: 0xe8dab0, tip: 0xf8efcc, shade: 0xe0d8ec },
     area,
     gate: (x, z) => {
       const g = baseGate(x, z);
@@ -132,9 +132,12 @@ export function buildPale3Cover(screeAnchors: readonly ScreeAnchor[]): Pale3Cove
     const { x, z } = worldOf(u, -72);
     blushStations.push([x, z]);
   }
+  // Round 3: sunGlow OFF (warm tips render amber-crimson against the
+  // milk — the Combs' round-3 finding, re-proven on this field) and
+  // the palette keyed pale ROSE, not clay.
   const blushFronds = buildCarpetField({
     seed: SEED ^ 0x3002,
-    palette: { base: 0xf0cfc6, tip: 0xfae4da, shade: 0xd8c6de },
+    palette: { base: 0xf4d8d0, tip: 0xfcece6, shade: 0xdcc8de },
     area: { polyline: blushStations, width: 72 },
     gate: (x, z) => {
       const g = baseGate(x, z);
@@ -149,7 +152,7 @@ export function buildPale3Cover(screeAnchors: readonly ScreeAnchor[]): Pale3Cove
     profile: "frond",
     size: [0.32, 0.6],
     swayAmp: 0.04,
-    sunGlow: true,
+    sunGlow: false,
   });
   carpets.push(blushFronds);
 
@@ -163,7 +166,7 @@ export function buildPale3Cover(screeAnchors: readonly ScreeAnchor[]): Pale3Cove
   }
   const roadBlades = buildCarpetField({
     seed: SEED ^ 0x3003,
-    palette: { base: 0xe2d8b4, tip: 0xf4ecd2, shade: 0xc9bdda },
+    palette: { base: 0xe2d8b4, tip: 0xf4ecd2, shade: 0xd8cee6 },
     area: { polyline: roadStations, width: 15 },
     gate: baseGate,
     ground,
@@ -218,7 +221,7 @@ export function buildPale3Cover(screeAnchors: readonly ScreeAnchor[]): Pale3Cove
   }
   const matinsMoss = buildCarpetField({
     seed: SEED ^ 0x3005,
-    palette: { base: 0xdecfab, tip: 0xf1e5c2, shade: 0xc9bdda },
+    palette: { base: 0xdecfab, tip: 0xf1e5c2, shade: 0xd8cee6 },
     area: { polyline: matinsStations, width: 30 },
     gate: (x, z) => {
       const g = baseGate(x, z);
@@ -279,8 +282,8 @@ export function buildPale3Cover(screeAnchors: readonly ScreeAnchor[]): Pale3Cove
   // finding, pre-paid).
   const terraceTufts = buildCarpetField({
     seed: SEED ^ 0x3007,
-    // Round 2: lifted a value — r1's tufts read violet-dark at range.
-    palette: { base: 0xeef0e2, tip: 0xf6f8ec, shade: 0xd0d4e2 },
+    // Rounds 2+3: lifted twice — the tufts read violet-dark at range.
+    palette: { base: 0xeef0e2, tip: 0xf6f8ec, shade: 0xdce0ea },
     area: rimArea,
     gate: (x, z) => {
       const g = baseGate(x, z);
@@ -308,7 +311,7 @@ export function buildPale3Cover(screeAnchors: readonly ScreeAnchor[]): Pale3Cove
   // these numbers.
   const rimHem = buildCarpetField({
     seed: SEED ^ 0x3008,
-    palette: { base: 0xe8dfc6, tip: 0xf6f0dc, shade: 0xd6cde4 },
+    palette: { base: 0xe8dfc6, tip: 0xf6f0dc, shade: 0xe0d8ec },
     area: rimArea,
     gate: (x, z) => {
       const g = baseGate(x, z);
@@ -369,7 +372,7 @@ export function buildPale3Cover(screeAnchors: readonly ScreeAnchor[]): Pale3Cove
     shapeSet: "grit",
     size: [0.03, 0.09],
     twoTone: true,
-    grade: 0.4,
+    grade: 0.35,
   });
   groups.push(grit.group as Group);
 
@@ -391,7 +394,7 @@ export function buildPale3Cover(screeAnchors: readonly ScreeAnchor[]): Pale3Cove
     shapeSet: "shard",
     size: [0.09, 0.26],
     twoTone: true,
-    grade: 0.5,
+    grade: 0.35,
   });
   groups.push(shards.group as Group);
 
@@ -412,8 +415,10 @@ export function buildPale3Cover(screeAnchors: readonly ScreeAnchor[]): Pale3Cove
     ground,
     count: 240,
     shapeSet: "split",
-    size: [0.1, 0.22],
-    grade: 0.4,
+    // Round 3: sized down — at [0.1, 0.22] the two-tone halves read
+    // as purple luggage in the close frames.
+    size: [0.08, 0.15],
+    grade: 0.35,
   });
   groups.push(splits.group as Group);
 
@@ -422,7 +427,7 @@ export function buildPale3Cover(screeAnchors: readonly ScreeAnchor[]): Pale3Cove
   // Aprons at every font foot — things grow FROM somewhere.
   const scree = buildScreeApron({
     seed: SEED ^ 0x3020,
-    palette: { base: 0xf0e9d6, shade: 0xc8badc },
+    palette: { base: 0xf0e9d6, shade: 0xd6cae6 },
     ground,
     anchors: screeAnchors,
     slabsPerAnchor: 7,
@@ -430,10 +435,11 @@ export function buildPale3Cover(screeAnchors: readonly ScreeAnchor[]): Pale3Cove
   groups.push(scree.group as Group);
 
   // Paper bushes: pale cushions with gold tips and blush bud knots.
-  // Round 2: bases up a full value — r1's cushions read as mud lumps.
+  // Rounds 2+3: bases up twice — the cushions read as mud lumps at
+  // range; the accents brightened to read as BUDS, not bruises.
   const paperBushes = buildBushBank({
     seed: SEED ^ 0x3021,
-    palette: { base: 0xf2e9d2, tip: 0xfaf3e0, shade: 0xd6cde4, accent: 0xf0b6c4 },
+    palette: { base: 0xf6efdc, tip: 0xfdf8ea, shade: 0xdcd4e8, accent: 0xf8c8d4 },
     area,
     gate: (x, z) => {
       const g = baseGate(x, z);
@@ -454,7 +460,7 @@ export function buildPale3Cover(screeAnchors: readonly ScreeAnchor[]): Pale3Cove
   // Rose bushes in the Blushfields — the dawn's own scrub.
   const roseBushes = buildBushBank({
     seed: SEED ^ 0x3022,
-    palette: { base: 0xf0d2c8, tip: 0xfae6da, shade: 0xd6c6de, accent: 0xf4bcc8 },
+    palette: { base: 0xf6dcd2, tip: 0xfceee6, shade: 0xdccce2, accent: 0xf8c6d0 },
     area,
     gate: (x, z) => {
       const g = baseGate(x, z);
@@ -475,7 +481,7 @@ export function buildPale3Cover(screeAnchors: readonly ScreeAnchor[]): Pale3Cove
   // Morning-gold bushes cresting the Dawn Steps — the terraces' edge.
   const goldBushes = buildBushBank({
     seed: SEED ^ 0x3023,
-    palette: { base: 0xf2ddb4, tip: 0xfaedcc, shade: 0xd6cde4, accent: 0xf6dcaa },
+    palette: { base: 0xf6e6c4, tip: 0xfcf2d8, shade: 0xdcd4e8, accent: 0xfae4b8 },
     area: rimArea,
     gate: (x, z) => {
       const g = baseGate(x, z);
@@ -503,7 +509,10 @@ export function buildPale3Cover(screeAnchors: readonly ScreeAnchor[]): Pale3Cove
   // dark sprigs. A soft warm floor on every carpet and bush material
   // keeps the shadow side a colour. Region-side tweak only —
   // `createToonMaterial` mints per-build materials, nothing leaks.
-  const lift = new Color(0x4a4030);
+  // Rounds 3+4: the lift up two steps (0x4a4030 @ 0.5 left the shade
+  // side a dark violet sprig against the paper — the one systemic
+  // remainder of round 2, half-paid by round 3).
+  const lift = new Color(0x5e5244);
   for (const group of groups) {
     group.traverse((node) => {
       if (!(node instanceof Mesh)) {
@@ -516,10 +525,29 @@ export function buildPale3Cover(screeAnchors: readonly ScreeAnchor[]): Pale3Cove
       };
       if (material.type === "MeshToonMaterial" && material.emissive) {
         material.emissive.copy(lift);
-        material.emissiveIntensity = 0.5;
+        material.emissiveIntensity = 0.66;
       }
     });
   }
+
+  // Round 4: the Blushfields' own lift is ROSE, not paper — the shade
+  // side of a rose frond must stay a rose, or the field prints as
+  // violet sprigs from every up-sun camera.
+  const roseLift = new Color(0x6e5852);
+  (blushFronds.group as Group).traverse((node) => {
+    if (!(node instanceof Mesh)) {
+      return;
+    }
+    const material = node.material as {
+      type?: string;
+      emissive?: Color;
+      emissiveIntensity?: number;
+    };
+    if (material.type === "MeshToonMaterial" && material.emissive) {
+      material.emissive.copy(roseLift);
+      material.emissiveIntensity = 0.66;
+    }
+  });
 
   return {
     groups,

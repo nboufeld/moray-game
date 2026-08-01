@@ -381,6 +381,53 @@ blades. Sweeps: 9–10 of 12 satisfy the three layers outright.
 7. **Bushes' last step**: bases/tips up again; accents brighter
    (the knots must read as BUDS, not bruises).
 
+## Round 3 — critique (all 18 authored + 12 sweeps read)
+
+Budget unchanged: **70 draws / 1,349,764 tris** (palette and pose
+rounds are free).
+
+**Landed.** THE BELL is the round's win: from `belfry-heart` the
+lowered teardrop hangs centred in the doorway arch, glowing over its
+nodule garden — the secret is WORTH opening now. `the-dayspring`
+passes outright (dome cresting the terrace, shaft clearing the crest,
+the Chorister crossing, the Morning Ring pale and warm — the r2 stone
+lift held). `matins-gate`, `undawn-hush`, `pass-threshold`,
+`daybreak`, `the-fonts`, `the-belfry`, `dawn-lookback`,
+`close-road-shelf` all pass. The sweep came back **11/12** — the one
+miss (sweep-10) hangs at ceiling height over the UNDAWN's own
+shoulder (u 1277, v −44, y −0.3, computed from the seeded stream):
+the mid-ground it lacks is the registered rest itself. Passes the
+standard's letter; recorded, not excused silently.
+
+**Still failing (the round-4 bill):**
+
+- `suns-doorstep` — the dome at 15 m is a WALL OF SKIN; no gradient
+  survives filling 80 % of the frame. The pose is wrong, not the
+  paint: back out and let dome + ring + shaft compose.
+- `still-morning` — the pose skims the bowl instead of looking into
+  it; the mirror never shows. Onto the lip, pitch down.
+- `close-blush-bed` — the r3 rose palette + sunGlow-off helped the
+  ground read; the frond SHADE SIDES still print violet-dark. The
+  blush carpet needs its own ROSE lift, not the shared warm one.
+- `close-font-foot` — the violet country remains: the ground mound
+  shade, the scree slab shade-sides and the font's own cool chalk
+  stack three violets in one frame. Mound lerp down, scree shade up.
+- `dawn-steps` — the gold bushes' lobes still run liver-brown at
+  40 m; one more step of lift.
+
+**Round-4 orders (poses and the last violets):**
+
+1. `suns-doorstep` → u 1594, v −8, lift 5.0, at the pearl, pitch
+   0.02 (the dome as an EVENT, not a wall).
+2. `still-morning` → u 1424, v 58, lift 6.5, at the mere's heart,
+   pitch −0.55 (INTO the mirror).
+3. Shared paper lift 0x564a38 @ 0.62 → 0x5e5244 @ 0.66; the blush
+   carpet overridden after it with a rose lift 0x6e5852 @ 0.66.
+4. Ground font-mound violet 0.16 → 0.10; scree shade 0xc8badc →
+   0xd6cae6.
+5. Pearl emissive 0.68 → 0.72 (with the r3 hue gradient it reads as
+   glow, not wash).
+
 ## Capture sets
 
 All under `visual-qa/`, 18 authored (`REGION-pale-passage-3-*`) + 12
@@ -393,3 +440,6 @@ sweep (`SWEEP-pale-passage-3-*`) per full round:
   the Dayspring an event, the Belfry occupied; the carpets' shade
   side, the close pearl, the bell's hang and the mere's mirror are
   the round-3 bill.
+- `pa3-r3` — the shade-side round: the bell hangs in the arch, the
+  Dayspring passes, the sweep at 11/12 (the miss over the Undawn);
+  two poses re-aimed and the last violets are the round-4 bill.

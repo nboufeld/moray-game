@@ -341,10 +341,13 @@ function belfryRoomGeometry(
     }
   };
 
-  // THE BELL: a pearl teardrop hung at mid-chamber — round shoulders
-  // gathered to a dripping point BELOW, brightest at the drip.
-  const bellTop = ground + height * 0.62;
-  const bellH = 2.6;
+  // THE BELL: a pearl teardrop hung low in the chamber — round
+  // shoulders gathered to a dripping point BELOW, brightest at the
+  // drip. Round 3: LOWERED from mid-chamber (height * 0.62 hung it
+  // far above the ~5.5 m doorway arch — invisible from the one pose
+  // that looks in); the drip now hangs centred in the arch's view.
+  const bellTop = ground + 6.8;
+  const bellH = 2.8;
   const bellR = 1.05;
   lathe(
     center.x,
@@ -392,8 +395,9 @@ function belfryRoomGeometry(
       (h) => nodR * Math.sin(Math.PI * (1 - h) * 0.5) + 0.02,
       (h) => nodR * 0.9 * h,
       (h) => {
+        // Round 3: the ring's glow up a step — the room must read LIT.
         const glow = smoothstep01((h - 0.15) / 0.7);
-        return [0.32 + 0.62 * glow, 0.3 + 0.56 * glow, 0.3 + 0.4 * glow];
+        return [0.4 + 0.6 * glow, 0.38 + 0.56 * glow, 0.36 + 0.42 * glow];
       },
     );
   }

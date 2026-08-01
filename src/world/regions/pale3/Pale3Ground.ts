@@ -231,24 +231,29 @@ function bakeDawnPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch[
       const shade = smoothstep01(
         (fbm(x * 0.03, z * 0.03, { seed: SEED ^ 0x51b0, period: 11, octaves: 3 }) - 0.5) / 0.2,
       );
-      col.lerp(SHADOW_VIOLET_G, mound * shade * 0.16);
-      value -= mound * shade * 0.02;
+      // Round 4: down again — with the font's cool chalk and the
+      // scree shade-sides this stacked three violets in one frame.
+      col.lerp(SHADOW_VIOLET_G, mound * shade * 0.1);
+      value -= mound * shade * 0.015;
     }
 
     // THE STILL MORNING: the palest floor in the region — a pearl
     // mirror with the one gold REFLECTION LANE laid across it toward
     // the Dayspring (the mirror carries the morning).
-    // Round 2: brighter and the lane wider/stronger — the r1 mirror
-    // read as tan swells with a faint smear.
+    // Round 3: the r2 fix overshot — lane + gold covered the bowl and
+    // it read as a GOLD SAND PATCH. The bowl is nacre first; the lane
+    // is ONE gold seam, clamped to the crossing chord and thinner.
     const bowl = mereWeight(u, v);
     if (bowl > 0) {
-      col.lerp(MERE_PEARL_G, bowl * 0.95);
-      value += bowl * 0.26;
+      col.lerp(MERE_PEARL_G, Math.min(1, bowl * 1.05));
+      value += bowl * 0.2;
       const cross = (u - MERE.u) * laneNV - (v - MERE.v) * laneNU;
-      const lane = (1 - smoothstep01((Math.abs(cross) - 2.2) / 3.0)) * bowl;
+      const along = (u - MERE.u) * laneNU + (v - MERE.v) * laneNV;
+      const chord = 1 - smoothstep01((Math.abs(along) - MERE.radius * 0.8) / 6);
+      const lane = (1 - smoothstep01((Math.abs(cross) - 1.6) / 2.4)) * bowl * chord;
       if (lane > 0) {
-        col.lerp(REFLECTION_GOLD, lane * 0.75);
-        value += lane * 0.22;
+        col.lerp(REFLECTION_GOLD, lane * 0.55);
+        value += lane * 0.18;
       }
     }
 
