@@ -309,6 +309,78 @@ ordering, inherited):**
    its room reads through its licensed glow, bell and chimney beam,
    not through sun (the Canopy Deep's hollow-mesa device).
 
+## Round 2 — critique (all 18 authored + 12 sweeps read)
+
+Budget after round 2: **70 draws / 1,349,764 tris** (the blush count
+came back 4200 → 3880 to pay the cap — 236 tris of headroom; any
+round-3 density must be paid for elsewhere).
+
+**What round 2 bought.** The mood landed: the water carries milk in
+the upper third now, the ground reads a full value brighter and the
+tan is warmer than brown. `matins-gate` composes (two towers framing
+the doorway, beams inside); `dawn-lookback` and `daybreak` pass as
+painted frames; `the-dayspring` finally reads as an EVENT — dome
+cresting the terrace, shaft clearing the crest (the raised top
+works), menhirs leaning in; `belfry-heart`'s doorway shows a glow
+garden at the floor line — the room reads OCCUPIED, if not yet lit;
+the Sun Road reads in `close-road-shelf` with warm lanes and pale
+blades. Sweeps: 9–10 of 12 satisfy the three layers outright.
+
+**What still fails, by root cause:**
+
+- **The carpet shade side is the region's one systemic remainder.**
+  In every mid frame the sward/tuft/frond instances read as DARK
+  VIOLET SPRIGS against the pale ground — the toon shade band lands
+  most of a blade at its `shade` hex, and the paper-lift emissive at
+  0.5 isn't paying the difference. The blush field reads BROWN-VIOLET
+  (`close-blush-bed`, sweep-08): worse, its `sunGlow` warm tips
+  render amber-crimson against the milk — the Combs' round-3 finding,
+  re-proven on my own field.
+- **The pearl at arm's length is a FLAT TAN BALL** (`suns-doorstep`).
+  The r2 contrast (0.42 base) moves value only; with the fog on top a
+  monochrome gold gradient flattens to one hue. The dome needs HUE
+  movement (violet-pearl shadow foot → warm gold crest), a deeper
+  base, and stronger banding.
+- **THE BELL is invisible** (`belfry-heart`): hung at mid-chamber
+  (~12 m up) it sits far above the doorway's ~5.5 m arch — from the
+  only pose that looks in, the room's crown jewel cannot be seen.
+- **The mere reads as a GOLD SAND PATCH, not a mirror**
+  (`still-morning`): the widened reflection lane + morning gold now
+  cover the pearl bowl entirely — the fix overshot.
+- **`close-font-foot` is a violet country**: the litter's two-tone
+  violet halves read as PURPLE BOXES (one split stone reads as
+  luggage); the grade 0.5 is too deep a cut at close range.
+- **Bushes still muddy at range** (`dawn-steps` lumps): the base-up
+  helped the near read; at 40 m the lobes' shade side still runs
+  liver-brown.
+- Observed and left: the hard additive pane over the threshold is
+  pale-2's veil (flag 2 stands); the objective HUD count wobbles
+  18/19 between page loads (streaming-radius dependent — which
+  neighbour regions' targets are registered; not ours to fix,
+  Chorister registration is test-asserted).
+
+**Round-3 orders (the shade-side round):**
+
+1. **Carpet shade sides paid in full**: paper-lift emissive
+   0x4a4030 @ 0.5 → 0x564a38 @ 0.62; sward/road/matins/tuft shade
+   hexes up a step (violet stays the HUE, value comes up).
+2. **Blush fronds**: `sunGlow` OFF; palette to pale rose
+   (base 0xf4d8d0 / tip 0xfcece6 / shade 0xdcc8de).
+3. **The pearl given hue**: foot drops to 0.3 and leans
+   violet-nacre, crest warm gold (blue channel runs 0.92 → 0.72
+   across the lift), band amp 0.09 → 0.14 — a painted sphere of
+   light, not a tan dune.
+4. **THE BELL lowered into the doorway's view**: bellTop
+   ground + 6.8, bell 2.8 m — the drip glow hangs centred in the
+   arch from `belfry-heart`; nodule ring glow up a step.
+5. **The mere re-mirrored**: reflection-gold lerp inside the bowl
+   0.75 → 0.55 and the lane clamped to the bowl's crossing chord;
+   MERE_PEARL bake stays — the bowl reads nacre with ONE gold seam.
+6. **Litter de-boxed**: split stones size [0.1,0.22] → [0.08,0.15];
+   shard/grit two-tone grade 0.5 → 0.35.
+7. **Bushes' last step**: bases/tips up again; accents brighter
+   (the knots must read as BUDS, not bruises).
+
 ## Capture sets
 
 All under `visual-qa/`, 18 authored (`REGION-pale-passage-3-*`) + 12
@@ -317,3 +389,7 @@ sweep (`SWEEP-pale-passage-3-*`) per full round:
 - `pa3-r1` — draft 1: the silhouette country stands; tan ground, teal
   water, the light not yet light, the morning curtained by its own
   rings.
+- `pa3-r2` — value and light: the mood milkified, the ground lifted,
+  the Dayspring an event, the Belfry occupied; the carpets' shade
+  side, the close pearl, the bell's hang and the mere's mirror are
+  the round-3 bill.
