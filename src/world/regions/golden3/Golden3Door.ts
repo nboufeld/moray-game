@@ -149,13 +149,13 @@ export function buildDoor(): DoorBuild {
     1.4,
   );
 
-  // Round 3: the door family lifts a step past the shared dusk floor —
+  // Rounds 3–4: the door family lifts well past the shared dusk floor —
   // every touring pose sees the door's SHADE side (the sun stands
-  // behind it by design), and at 0.25 the legs crushed to rust-violet
-  // mottle at close range.
+  // behind it by design), and at 0.25–0.36 the legs still crushed to
+  // rust-violet mottle at the pilgrim pose's ten metres.
   const material = createRockMaterial(CARVED_PALE);
-  material.emissive.setHex(0x6a5038);
-  material.emissiveIntensity = 0.36;
+  material.emissive.setHex(0x7a5c40);
+  material.emissiveIntensity = 0.48;
   const mesh = mergedMesh(parts, material, "vesper-door");
 
   return { meshes: [mesh], colliders, contacts, window };

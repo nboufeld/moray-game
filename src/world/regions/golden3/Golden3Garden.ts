@@ -161,12 +161,15 @@ function paintCandle(geometry: BufferGeometry, candle: Candle, seed: number): vo
     const crown = smoothstep01((t - 0.72) / 0.16);
     shade
       .copy(STONE_AMBER)
-      // Round 3: base lift raised — the r2 bodies still read carrot
-      // under the emissive wash; the candle is a PALE mineral taper.
-      .lerp(STONE_BRIGHT, 0.5 + smoothstep01((t - 0.26) / 0.6) * 0.42)
+      // Rounds 3–4: base lift raised twice — the candle is a PALE
+      // mineral taper, and the warm cast belongs to the crown alone.
+      .lerp(STONE_BRIGHT, 0.62 + smoothstep01((t - 0.26) / 0.6) * 0.32)
       .lerp(SHADOW_VIOLET, Math.max(0, -groove) * 0.18 * band + Math.max(0, -strata) * 0.13)
       .multiplyScalar(1.06 + strata * 0.24 + grain * 0.18)
-      .lerp(CROWN_LIGHT, crown);
+      .lerp(CROWN_LIGHT, crown)
+      // Round 4: the crown overdrives past 1 so the vein-glow emissive
+      // truly burns there against a body it no longer washes.
+      .multiplyScalar(1 + crown * 0.35);
     // The foot stands in its own contact dusk.
     shade.lerp(SHADOW_VIOLET, (1 - smoothstep01((t - 0.02) / 0.1)) * 0.2);
     colors[i * 3] = shade.r;

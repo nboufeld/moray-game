@@ -599,10 +599,12 @@ export function buildGolden3Cover(): Golden3CoverBuild {
   );
   warmMaterials(doorTufts, 0xa08a48, 0.6);
 
+  // Round 4: brighter, warmer — the r3 mounds sat mid-value on the door
+  // rise's skyline, and 130 m of red attenuation turned olive to pea.
   const doorScrub = keep(
     buildBushBank({
       seed: SEED ^ G3_SEEDS.doorScrub,
-      palette: { base: 0xb8a862, tip: 0xe6d88e, shade: 0x746850 },
+      palette: { base: 0xc2b070, tip: 0xecdc96, shade: 0x807454 },
       area: discAreaAt(DOOR.u - 10, DOOR.v, 34),
       gate: (x, z) => doorTuftGate(x, z) * bushFree(x, z),
       ground: seabedHeight,
@@ -612,7 +614,7 @@ export function buildGolden3Cover(): Golden3CoverBuild {
       looseShare: 0.35,
     }),
   );
-  warmMaterials(doorScrub, 0xa08a48, 0.5);
+  warmMaterials(doorScrub, 0xb09a50, 0.5);
 
   const pocketBushes = keep(
     buildBushBank({

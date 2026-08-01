@@ -356,3 +356,37 @@ overlap-and-sink — a 3 cm step still draws at grazing angles).
    raised to 9 m (sky and sunset over wall).
 10. The combe-foot drift line pushed 16 m down-road off the
     basin-reveal lens; wrack palette brightened a step.
+
+## Round 3 — the read (17/17 authored captured)
+
+**Every frame now composes.** The four r2 fails are cured: `basin-reveal`
+(no lantern, no litter blob — the shadow-streaked road opens the basin
+between the Foremost pair), `evening-horizon` (no Pilgrim; the sun sits
+half-set on the crest under its amber cloud band), `dune-combs` (raked
+from 7 m the ridge country and its skyline read), `close-garden-bed`
+(the sward is olive-gold and drawn). `procession` is a portrait now —
+the Tall Pilgrim centred against the ranked skyline. `well-blade`,
+`night-well`, `still-mirror`, `mirror-pans`, `strand-gate`,
+`sandfall-combe`, `close-pan-rim`, `last-shelf`, `suns-door` (sun IN
+the window, warm blade) all pass.
+
+**Four nits remain, all small:**
+1. Both comb poses show thin DEAD-STRAIGHT dark lines — not the tile
+   seam after all (the single sheet proved it): they are toon-step
+   contour lines along my grid-straight parallel ridges. The phase
+   needs more wander so the contours curve like wind creases.
+2. Candle bodies still lean terracotta at close range; the crowns no
+   longer visibly burn (the r3 emissive cut traded one for the other).
+3. The door scrub mounds read pea-green ON the skyline at 130 m — red
+   attenuation over distance on a mid-value olive.
+4. The arch's shade side still crushes to rust-violet mottle at the
+   pilgrim pose's 10 m (0.36 was not enough against the wash).
+
+## Round 4 — orders (all landed)
+
+1. Comb wander 6 → 13 (curved contours, natural creases).
+2. Candle body base lift 0.5 → 0.62; crown paint overdrives ×1.35 past
+   white so the vein glow burns there and nowhere else.
+3. Door scrub palette up a value step (0xc2b070/0xecdc96/0x807454),
+   warm lift toward amber.
+4. Door family emissive 0.36 → 0.48 at 0x7a5c40.

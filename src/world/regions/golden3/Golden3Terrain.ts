@@ -349,9 +349,12 @@ export function combRidge(u: number, v: number): number {
   if (w <= 0) {
     return 0;
   }
+  // Round 4: wander doubled — grid-straight ridges drew dead-straight
+  // toon-step contour lines across both comb poses (read as scratches,
+  // not sand); curved phase turns them into natural wind creases.
   const wander =
     (fbm(u * 0.01, v * 0.01, { seed: SEED ^ G3_SEEDS.terrainComb, period: 5, octaves: 2 }) - 0.5) *
-    6;
+    13;
   const phase = ((v + wander) * Math.PI * 2) / 17 + u * 0.035;
   const crest = 0.5 + 0.5 * Math.sin(phase);
   const brow = 0.5 + 0.5 * Math.sin(phase * 2 + 0.9);
