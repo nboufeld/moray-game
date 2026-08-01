@@ -169,6 +169,9 @@ stays clean — motes and plankton reject inside its bowl.)
   r4 density draft measured 1,495,888 and was trimmed back under the
   cap (fronds 10,500 → 8,200 etc.) before ever being captured; the
   drift-floor raise, not raw count, carries the close-pose fix.
+- Round 5 / FINAL: **101 draws / 1,344,208 tris / 471 colliders** —
+  the underfloor carpet's +1 draw / +28,800 tris. Headroom 5,792 tris
+  (0.43%): the region is at its cap.
 
 ## Seeds
 
@@ -573,16 +576,21 @@ load); retaken same-session and clean, the void frame deleted.
 
 ### Budgets and the frame gate (the R12 numbers, final build)
 
-- **100 draws / 1,315,408 tris / 471 colliders** (caps 260 / 1.35M) —
-  re-measured at close-out by the budget test's own traversal,
-  byte-identical to the round-4 entry.
-- **Headed frame gate — PASS**: `SHOT_HEADED=1 SHOT_REGION=verdant-line-3
-  SHOT_AT=... measure-frames.mjs` on the real GPU, at the two densest
-  poses: twin-court **median 16.7 ms (59.9 fps, vsync-locked), p95
-  18.6 ms, settled scale 1.00**; deep-vista the same 16.7 / 18.6 /
-  1.00. Both runs taken with the box at 1-min load ≈ 25 (two sibling
-  workers live) — the pass is conservative: contention can only
-  inflate the number, and it still sat under the 16.9 ms gate.
+- **101 draws / 1,344,208 tris / 471 colliders** (caps 260 / 1.35M) —
+  re-measured on the FINAL build (round 5 included) by the budget
+  test's own traversal. The delta over the round-4 entry
+  (100 / 1,315,408) is exactly round 5's underfloor carpet: +1 draw,
+  +2,400 × 12 = +28,800 tris. **Triangle headroom is now 5,792
+  (0.43%)** — the region is effectively at its cap; any future
+  addition must be paid for by a removal.
+- **Headed frame gate — PASS on the final build**: `SHOT_HEADED=1
+  SHOT_REGION=verdant-line-3 SHOT_AT=... measure-frames.mjs` on the
+  real GPU, at the two densest poses: twin-court **median 16.7 ms
+  (59.9 fps, vsync-locked), p95 18.6 ms, settled scale 1.00**;
+  deep-vista **16.7 / 18.4 / 1.00**. Re-run after round 5 landed, with
+  the box at 1-min load ≈ 20 (two sibling workers live) — the pass is
+  conservative: contention can only inflate the number, and it still
+  sat under the 16.9 ms gate.
 
 ### Gates
 
@@ -598,11 +606,54 @@ load); retaken same-session and clean, the void frame deleted.
   files**, typecheck and `eslint . --max-warnings 0` re-run clean
   after the harness edits. All three gates unpiped, real exit codes.
 
+### Round-5 verification addendum (`v3-final-r5`)
+
+Mid-close-out, the region author landed round 5 (`45348ae`): the
+underfloor tuft carpet (2,400 × 12-tri tufts past u 1305, aimed at the
+`close-shade-floor` softness), the log's moss saddle (green on the
+bole's up-facing half, aimed at `fallen-causeway`), and the
+`close-wellspring-rim` pose reseeded off a spore mote. The close-out
+worker rebuilt the bundle (confirmed the served `index-*.js` carries
+the round-5 constants), recaptured the three changed poses plus two
+wide controls, and re-ran every measurement. Verdicts, every frame
+READ and pixel-diffed against its `v3-final` counterpart:
+
+- `close-wellspring-rim` — **PASS on the new pose**: backed out to the
+  full bowl, a mossy boulder anchoring the foreground, bubbles readable
+  over the pale floor, rim sward and lip stones at the crest, no mote
+  on the lens. Composition improved over the r4 spot.
+- `close-shade-floor` — **holds MARGINAL-PASS, unchanged**: the frame
+  pixel-diffs at 0.33% against `v3-final` (water sparkle only). The
+  carpet's arithmetic cannot land here: 2,400 instances over the deep
+  province is ~1 per 25 m², so a 3 m frame expects zero-to-one new
+  tufts — the same "counts spread over 144,000 m²" trap the round-5
+  comment itself names. The registered close-range softness carries
+  exactly as registered; the change costs 28,800 tris for no read at
+  its own target pose.
+- `fallen-causeway` — **holds MARGINAL-PASS, unchanged**: 0.38%
+  pixel diff. The authored pose's dominant pale plane is the fallen
+  HEAD'S DRAPE, not the bole — the saddle greens the bole's top, but
+  the drape hides it from this angle. Correct code, wrong lever for
+  this frame; noted, not chased (headroom licenses nothing more).
+- `deep-vista` and `SWEEP-02` (controls) — **both hold PASS**: three
+  layers intact wide, the down-shot floor reads planted; the carpet
+  is invisible at range, as its size envelope predicts.
+
+Sweep standard unaffected: still 10 pass / 2 registered marginals of
+12. Budgets, frame gate, and all three gates re-measured on the final
+build — the numbers above and in the Gates section are post-round-5.
+Final full suite: **791/791 across 56 files**, typecheck and
+`eslint . --max-warnings 0` clean, all unpiped.
+
 ### The canonical capture roster
 
 - `v3-final` authored 16: `20260731-2325_seed1_hi_REGION-verdant-line-3-*_v3-final.png`
 - `v3-final` sweep 12: `20260801-0009_SWEEP-verdant-line-3-01..12_v3-final.png`
 - `v3-final-noassets` authored 16 (the fallback build).
+- `v3-final-r5` 5: the round-5 recaptures — `20260801-0200_*` for the
+  three changed poses (these SUPERSEDE their `v3-final` counterparts;
+  `close-wellspring-rim`'s `v3-final` frame shows the retired pose)
+  and `20260801-0225_*` for the deep-vista / SWEEP-02 controls.
 - Prior rounds: `v3-r1` (14), `v3-r2` (16 + 12 sweep), `v3-r3`
   (6 + 12 sweep + 16), `v3-r4` (6 + 9 sweep — the load wall's
   partial).
