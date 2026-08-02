@@ -311,3 +311,72 @@ verified with `curl -sf` before every run; port 5209 never touched.
 2. Lumen veil sillLift −0.6, height 5.2; moonlit veil height 4.6, far
    ink 0x6a6690, column 0.1.
 3. Lumen interior stand y −6.5, pitch −0.5.
+
+### r3 (all twenty looked at — the batch ships)
+
+- **wreck-meadow (interior)** — the [0.09, 0.24] step lands: the
+  rust-and-bone drift finally reads as grain scattered up both slopes
+  framing the ribs, dark and bone flecks against the silt. Under the
+  wing's own rust haze it is a floor with a history, not a texture.
+  SHIP. (door) — the notch holds a faint sea-light haze between the
+  grass stands; modest, honest, a side room's door. SHIP.
+- **glass-cove (interior)** — the batch's best interior now as well as
+  its best door: mint/rose/peach/amber grit banks the bowl on both
+  flanks, glints sparking, the octopus resident in the clearing the
+  law keeps bare. Three layers at a glance. SHIP. (door) — unchanged
+  from r2's verdict: the toybox promise. SHIP.
+- **lumen-garden (interior, y −6.5 / pitch −0.5)** — the frame is the
+  wing's own register now: frond silhouettes texture the frame foot,
+  the beds' cyan-teal lamps and jelly motes layer the middle, the
+  violet gloom recedes behind. The floor never becomes BRIGHT because
+  nothing in this wing is — the garden's light belongs to its beds
+  (the T1's contract) and the read is silhouette-on-glow, three layers
+  in the night voice. SHIP. (door) — the veil at sillLift −0.6 /
+  height 5.2 is a soft shaft standing in the notch instead of r2's
+  monolith; the sovereign hangs over the saddle inside it. SHIP.
+- **moonlit-lagoon (interior)** — moon-grass reads across the bowl:
+  lavender-silver blades among the green tufts and pale stones, the
+  moon pool bare. SHIP. (door) — the r3 column (0.1) and lightened
+  gauze finally stand in the notch against the bright water; a thin
+  vertical breath with motes. The quietest door of the nine, correctly
+  so — the lagoon whispers. SHIP.
+- **nursery-shallows** — both poses hold their r2 verdicts: shell
+  trails beside the tuft rows, the den arch a repoussoir with the
+  brood moray inside; door frames the arch through warm motes. SHIP.
+- **current-run** — turf combed downstream between the stone banks,
+  bubble rings streaming overhead; the door reads teal recession +
+  pale column under the notch. SHIP ×2.
+- **mangrove-roots** — amber seedlings scattered between the knees
+  along the lane flanks; the door's amber veil glows between the root
+  columns with the eel crossing above. SHIP ×2.
+- **ice-grotto** — hoarfrost splinters strewn under the spires, the
+  blue whale calf drifting through the arch; the door frames the
+  violet spire haze with frost crystals on the sill. SHIP ×2.
+- **sargassum-sky (interior, the look-up)** — canopy + the Island That
+  Swims, sea-glass aqua-gold water column, NO poster band: the horizon
+  flag stays closed in the batch's final round. (door) — the gold
+  column and motes fall through the notch beneath the island. SHIP ×2.
+- **ruins-terrace** — both poses healthy, the conn1/conn3 uplift
+  reading exactly as their ledgers recorded. Untouched, verified.
+
+**r3 verdict: twenty of twenty ship.** Every wing reads three-layer at
+its interior stand; every doorway reads as a door (veil, light,
+threshold voice); no rest violated (moon pool, nursery den corridor,
+lumen heart, turtle volume, koi circle all bare/clear in frame); no
+wing over its R2 ceiling.
+
+## Close-out
+
+- Gates run unpiped at the final tree: `npm run typecheck` clean,
+  `npx eslint . --max-warnings 0` clean, full `npm test` green
+  including `tests/wingsTierB.test.ts` (reroll fence vs 50504b4
+  sentinels, per-wing budget ceilings, program envelope arithmetic,
+  frustum/shadow discipline, veil-vs-resident geometry, corridor laws).
+- Program envelope after this batch: **+111 draws / +186.3k tris** of
+  the ≤ +120 / ≤ 380k — 9 draws and ~194k tris remain for the
+  orchestrator.
+- Flags for the orchestrator: none standing from this batch. The
+  kraken probe (`scripts/tierb-kraken-probe.mjs`) is left in the tree
+  as a rerunnable spot-check (exits 1 on regression); the sargassum
+  horizon band is verified closed at the canonical look-up in r1 and
+  r3; REGIONS.md now carries the R12 doctrine numbers per R1.
