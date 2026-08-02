@@ -7,7 +7,7 @@ import { createToonMaterial } from "../../../rendering/ToonShading";
 import { seabedHeight } from "../../Seabed";
 import { buildBeamAndPool } from "../kit/BeamAndPool";
 import { B3_SEEDS, smoothstep01 } from "./Blue3Shared";
-import { ANCHOR, DAYMARK, DOORSTEP, PEARL, WELLHEAD, worldOf } from "./Blue3Terrain";
+import { ANCHOR, DAYMARK, DOORSTEP, PANS, PEARL, WELLHEAD, worldOf } from "./Blue3Terrain";
 
 /**
  * The light of the First Sea — the province's law kept to the last
@@ -165,6 +165,62 @@ export function buildBlue3Light(): Blue3LightBuild {
           pos: [pearlAt.x, pearlAt.z],
           radius: 2.6,
           opacity: 0.13,
+        },
+      ],
+    }).group,
+  );
+
+  // ── The pans' held light (round 5): the paint alone read as pale
+  // sand from the restaged diagonal — each dish takes a soft pool,
+  // and one slow shaft stands over the great pan: light the dishes
+  // HOLD, not light that falls.
+  const panPools = PANS.map((pan) => {
+    const at = worldOf(pan.u, pan.v);
+    return { pos: [at.x, at.z] as [number, number], radius: pan.radius * 0.8, opacity: 0.16 };
+  });
+  const greatPan = worldOf(PANS[0]!.u, PANS[0]!.v);
+  groups.push(
+    buildBeamAndPool({
+      seed: SEED ^ B3_SEEDS.panGlow,
+      tint: 0xf0e8da,
+      ground: seabedHeight,
+      beams: [
+        {
+          pos: [greatPan.x, greatPan.z],
+          top: seabedHeight(greatPan.x, greatPan.z) + 16,
+          width: 4.5,
+          opacity: 0.07,
+          slant: [0.04, -0.03],
+        },
+      ],
+      pools: panPools,
+    }).group,
+  );
+
+  // ── The east Hem's fall of light (round 5): the sweep's east-face
+  // graze (09) found a wall with no event — one shaft at the foot,
+  // and its pool on the toe, so the bare quadrant between Doorstep
+  // and Pearl carries a luminous mark.
+  const hemEast = worldOf(1632, 50);
+  groups.push(
+    buildBeamAndPool({
+      seed: SEED ^ B3_SEEDS.hemEastBeam,
+      tint: 0xeee4d8,
+      ground: seabedHeight,
+      beams: [
+        {
+          pos: [hemEast.x, hemEast.z],
+          top: seabedHeight(hemEast.x, hemEast.z) + 20,
+          width: 3.0,
+          opacity: 0.09,
+          slant: [0.05, 0.06],
+        },
+      ],
+      pools: [
+        {
+          pos: [hemEast.x, hemEast.z],
+          radius: 4.5,
+          opacity: 0.14,
         },
       ],
     }).group,

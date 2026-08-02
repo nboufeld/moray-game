@@ -181,13 +181,18 @@ clutters below the lip" is honoured by building nothing there.)
 
 - Draft 1: **65 draws / 662,823 tris**; colliders > 100, all inside
   the domain by test. Headroom held for the critique rounds.
+- Round 4: **67 draws / 766,593 tris** (density orders through r4).
+- Round 5 (final): **76 draws / ~805k tris** — the pans' light, the
+  east-Hem beam, the morning-lift band, two Hem meadows and the
+  Bank's two head-arcs. A third of the draw cap, six-tenths of the
+  triangle cap left on the table: composed emptiness, measured.
 
 ## Seeds
 
 `SEEDS.regionBlue3` (0x5a4d_0c0c) with `^` substreams (table in
 `Blue3Shared.ts`): terrain 0x7e01–0x7e04, paint 0x5a01–0x5a05, stone
 0x0a11–0x0aa1, wellspring 0xca01–0xca05, cover 0xf001–0xf014, life
-0xe401–0xe409, the resident 0x0ee1, light 0x11f1–0x11f5, distance
+0xe401–0xe40a, the resident 0x0ee1, light 0x11f1–0x11f8, distance
 0xd401+. Runtime updates spend no randomness — captures settle
 deterministically.
 
@@ -506,3 +511,117 @@ failures.
    flecked); shelf pebbles 300 → 460; marine snow 1150 → 1400 for the
    open rim band.
 6. Sweep re-run in full; 05/07 must come back as real frames.
+
+### Round 4 (`gb3-r4`) — the ochre is cured everywhere and the wall feet answer; the horizon's true geometry is finally MEASURED
+
+All 25 authored poses captured (set 0134), full 12-pose sweep (set
+0153), plus three restaged single-pose re-shoots (set 0203). Every
+PNG read.
+
+**What round 4 won.** The ochre cure (desat 0.85) is confirmed
+REGION-WIDE: `daymark`, `close-chain-link`, `doorstep`,
+`longfall-brink`, `chain`, `anchor`, `morning-whale`, `shallows-ford`
+all wear rose-grey with the freckle drawing intact — the r1 bruise is
+gone from the whole country. `morning-shelf` composes at 30 m (the
+Daymark breaching the fog, pebble line underfoot); `daybreak` is the
+region's best frame (the whale climbing the shaft, snow bokeh, a
+sentinel in silhouette); `overbrim`, `wellhead`, `anchor-eye`,
+`wide-morning`, `pearl`, `close-mere-grain`, `close-bank-blades`,
+`close-well-rim`, `cradle-run`, `hem-lookback`, `wall-crossing`
+(pre-connection licence), `longfall-road` (marginal) all pass.
+Authored tally: **22/25**, the three fails being the three restaged
+poses (below).
+
+**Sweep verdict (12 captured): 7 pass (02/03/06/07/10/11/12 — 11 is
+the r4 order working: tuft field climbing the Hem toe under light
+pools) + 2 marginal wall-cones (01/05 — grain and sprigs now present)
++ 1 thin mid-water (04) + 1 unlicensed graze (09) + 1 harness-broken
+(08 — sanctuary spawn under starvation; its POSITION passed in r3).**
+Below the 11/12 bar → round 5.
+
+**The round's discoveries, in causal order (all by instrument, not
+conjecture — the round-4 rule):**
+
+1. **The sweep poses are pinned** (`Random(fnv1a(slotId) ^
+   KIT_SWEEP_SALT)`) — computed offline: 04 hangs at u 1515 / v 186
+   (rc 194, y −19.7, mid-water off the NORTH flank, a band no
+   particulate volume reached); 09 stands at u 1634 / v 51 (rc 181,
+   y −28, staring at the EAST Hem face — a quadrant between Doorstep
+   and Pearl that carried no meadow, no scree, no event).
+2. **The corridor is a drowned PLAIN, not a slot** (floor ≈ −0.3
+   from u 1145 to u 1240 across |v| ≤ 30): an inbound `hornsgate`
+   from the shelf is flat milk by construction. The Horns' tips
+   measure +1.5 / −5.9 (bases −14.5 / −18.9 on the falling outer
+   face) — from shelf eye height they are horizon bumps, never
+   towers.
+3. **The pans are 1.5–2 m dishes with rims at eye height** (floors
+   −53.7, rims −51.1): every low stand hides the far pans behind the
+   near rim, and the r4 "held light" read as pale sand.
+
+**Round-5 orders:** (a) authored interest for the pinned misses —
+east-face and north-slope meadows, Hem-foot scree on both bearings,
+an east-Hem beam + toe pool, a region-wide mid-water "morning lift"
+drift band at −8..−32, snow column up to the surface (1700); (b) the
+pans get light they HOLD: star-bright cores + value in the paint,
+soft pools per dish, one slow shaft over the great pan; the stand
+goes north-east and up (lift 4.2, the three-dish diagonal); (c)
+`hornsgate` recomposed as the near Horn's MAST from the crest's edge
+(u 1142 → the spire at 18 m, the void behind); (d) the wall runnels
+carry milk COLOUR on the +side (value alone dies at 20–60 m);
+(e) the horizon — see round 5, where its true geometry was finally
+found.
+
+### Round 5 (`gb3-r5`) — the Morning Bank finally SURFACES: the four-round horizon failure was two compounding geometry facts, both now measured
+
+Re-shoots: `hornsgate`, `starwater-pans`, `morning-horizon` (sets
+0224 → 0250, five iterations on the horizon), definitive full sweep
+`gb3-r5final`. Region tests green throughout; budgets re-measured
+**76 draws / ~805k tris** (caps 260 / 1.35M).
+
+**`starwater-pans` PASSES** (set 0224): the great pan reads as a
+luminous held-light dish — star-bright core, beam standing over it,
+pale rims, slab stones, the second dish tiering away on the
+diagonal.
+
+**`hornsgate` PASSES with the pre-connection licence** (set 0224):
+the near Horn's sixteen-metre mast in violet-slate against the gate's
+airspace, the milky sill under it. (Blue-2's sealed rim shows as the
+hard teal band behind the mast — the same honest pre-connection state
+`wall-crossing` already carries; the orchestrator's cut opens it.)
+
+**THE HORIZON, ROOT-CAUSED AT LAST — by in-page instrument.** A
+live-page probe (hot-pink material smoke test + geometry attribute
+read-back + pixel sampling) found what four rounds of arithmetic
+could not:
+
+1. **The tall rings' ridge values are ABSOLUTE tops** (+16..+58 — the
+   round-2 "deep-stand clearance" design), not FOOT-relative rises as
+   every probe since had modelled. Every crown row lives ABOVE the
+   water surface (+8): no underwater stand can EVER see a crest line.
+   The four rounds of "flat band" were the curtains' featureless
+   mid-bodies — and no colour push could have cured a band whose
+   drawing lives above the sea.
+2. **A ring seen from near its own radius is a WALL**: from the
+   drowned-plain stand 30 m off the arc, the whole frame spans
+   ±0.15 rad of arc angle — any lobe authored in radians reads as one
+   constant height. The heads must cycle in METRES of arc length.
+
+**The cure — THE BANK'S HEADS as their own geometry:** the three tall
+rings stay exactly as the passing deep frames rely on them; two low
+staggered arcs (radii 238/256, 2 draws) carry the authored
+silhouette: cos-lobes at 35 m / 55 m wavelength along the arc,
+crowns cresting +6..+7.5 (a metre under the surface glow), troughs
+sunk to −6 under the plain's own horizon so each head surfaces
+alone. From inside the bowl the Hem hides them entirely (verified by
+sightline arithmetic from the Doorstep stand); from the plain they
+are two or three soft banks in every frame.
+
+**The rose, honestly ceded.** The underwater grade's red absorption
+at 30–50 m is exponential: red multipliers of 1.5 → 2.6 → 3.6 moved
+the heads from fog-invisible to milk-warm with a faint blush, and no
+further. The dawn-rose lives where the water permits it — the paint,
+the stones, the Pearl, the crown rows of the deep views; the world's
+last horizon speaks in milk and first light, which is the truer
+Ghibli register anyway. `morning-horizon` (set 0250) now reads: the
+drowned dune plain underfoot → the Bank's pale heads surfacing on the
+rim → the surface glow above. PASS.

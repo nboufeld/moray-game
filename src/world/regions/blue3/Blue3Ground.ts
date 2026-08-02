@@ -276,7 +276,9 @@ function bakeFirstSeaPaint(geometry: PlaneGeometry, contacts: readonly ContactPa
     }
 
     // THE STARWATER PANS: still dishes of held light (round 2: value
-    // up — the r1 pans read as faint smears at thirty metres).
+    // up — the r1 pans read as faint smears at thirty metres; round
+    // 5: the LIGHT ITSELF — a star-bright core in each dish, value up
+    // again: the r4 dishes read as pale sand, not held water).
     for (const pan of PANS) {
       const pd = Math.hypot(u - pan.u, v - pan.v);
       if (pd < pan.radius * 1.8) {
@@ -285,8 +287,9 @@ function bakeFirstSeaPaint(geometry: PlaneGeometry, contacts: readonly ContactPa
           smoothstep01((pd - pan.radius * 0.85) / 1.5) *
           (1 - smoothstep01((pd - pan.radius * 1.4) / 2));
         col.lerp(PAN_WATER, water * 0.92);
+        col.lerp(STAR_BLOOM, water * water * 0.6);
         col.lerp(SHADOW_VIOLET, lip * 0.25);
-        value *= 1 + water * 0.4 - lip * 0.05;
+        value *= 1 + water * 0.55 + water * water * 0.25 - lip * 0.05;
       }
     }
 
@@ -356,6 +359,11 @@ function bakeFirstSeaPaint(geometry: PlaneGeometry, contacts: readonly ContactPa
       col.lerp(HEM_MILK, wallK * (0.5 + 0.2 * height));
       col.lerp(HEM_ROSE, wallK * height * height * 0.6);
       col.lerp(SHADOW_VIOLET, wallK * Math.max(0, -runnel) * 0.9);
+      // Round 5: the milk rides the +runnel too — the r4 east face
+      // (sweep 09, twenty to sixty metres out) still fogged to one
+      // plane: value swings die at that range, only 8–16 m COLOUR
+      // streaks survive it.
+      col.lerp(MILKY_SHELF, wallK * Math.max(0, runnel) * 0.55);
       col.lerp(MILKY_SHELF, wallK * (Math.max(0, fine) * 0.5 + crest * 0.5));
       col.lerp(SHADOW_VIOLET, wallK * Math.max(0, -fine) * 0.4);
       value *=

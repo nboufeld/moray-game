@@ -47,18 +47,38 @@ export function buildBlue3Life(): Blue3LifeBuild {
   const heart = worldOf(1460, 0);
   // Round 3: count and presence up a step — the sweep's open-water
   // frames (04/05) read near-empty at the high stations. Round 4: up
-  // once more for the rim band's half-water grazes.
+  // once more for the rim band's half-water grazes. Round 5: the
+  // column reaches the SURFACE (top 0 → +8) so the drowned plain and
+  // the corridor shallows carry the same first-light dust, count up
+  // to hold the density.
   const snow = buildParticulateField({
     seed: SEED ^ B3_SEEDS.snow,
     tint: 0xdcdaec,
-    count: 1400,
+    count: 1700,
     mode: "fall",
-    volume: { center: [heart.x, -26, heart.z], size: [420, 52, 420] },
+    volume: { center: [heart.x, -22, heart.z], size: [420, 60, 420] },
     size: 0.12,
     opacity: 0.5,
   });
   groups.push(snow.group);
   updaters.push((t) => snow.update(t));
+
+  // The morning lift (round 5): a mid-water drift band across the
+  // whole disc at −8..−32 — the band the sweep's open-water station
+  // (04, y −20 over the north flank) hangs in, which the shelf band
+  // (−4, shelf-local) and the deep band (−43) both miss.
+  const lift = buildParticulateField({
+    seed: SEED ^ B3_SEEDS.planktonLift,
+    tint: 0xe0dcea,
+    count: 700,
+    mode: "drift",
+    volume: { center: [heart.x, -20, heart.z], size: [400, 24, 400] },
+    size: 0.34,
+    opacity: 0.3,
+    bias: { dir: [0.24, 0.05, 0.26], speed: 0.11 },
+  });
+  groups.push(lift.group);
+  updaters.push((t) => lift.update(t));
 
   const shelf = worldOf(1240, 0);
   const shelfBand = buildParticulateField({

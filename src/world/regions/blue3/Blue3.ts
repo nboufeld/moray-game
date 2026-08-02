@@ -143,12 +143,16 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // drops onto the amphitheatre. Pre-connection this frame carries
   // blue-2's rim seals and closed ceiling: the honest state.)
   { name: "wall-crossing", u: 1140, v: 0, lift: 1.4, atU: 1114, atV: -4, pitch: -0.45, settle: 4 },
-  // THE HORNSGATE — recomposed AGAIN in round 4: the r3 stand looked
-  // OUTBOUND past the crest into open fog (the Horns behind the
-  // camera's shoulder, one Gatebuoy cropped in a corner). The pose
-  // now stands on the shelf side and faces the gate itself: the
-  // Horns' pair at 34 m, the corridor's slot walls flanking them.
-  { name: "hornsgate", u: 1158, v: 2, lift: 1.8, atU: 1124, atV: 0, pitch: 0.03, settle: 3 },
+  // THE HORNSGATE — round 5, the measured truth: the shelf rides at
+  // ~0 and the Horns' TIPS at +1.5 / −5.9 (bases −14.5 / −18.9 on the
+  // falling outer face) — from any shelf stand they are bumps on the
+  // horizon line, and the inbound gaze is flat milk by construction
+  // (the corridor is a drowned plain, not a slot). The gate's honest
+  // portrait: from the crest's edge, the near Horn's whole MAST —
+  // sixteen metres of violet-slate rising out of the void it guards —
+  // against the deep teal of the amphitheatre's airspace, the milky
+  // sill running under it.
+  { name: "hornsgate", u: 1142, v: 4, lift: 1.6, atU: 1128, atV: 15, pitch: -0.16, settle: 3 },
   // The Morning Shelf: the world's last milky threshold, the Daymark
   // breaching the fog ahead (round 2: the r1 stand left it 68 m out;
   // round 4: in to 30 m — at 46 the shelf's own paint and pebbles all
@@ -190,23 +194,28 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // crosses on schedule.
   { name: "shallows-ford", u: 1436, v: 40, lift: 2.0, atU: 1446, atV: 47, pitch: 0.02, settle: 6 },
   // THE STARWATER PANS: still dishes of held light (round 2: closer —
-  // the r1 pans were dim smears at thirty metres; round 4: onto the
-  // near pan's lip, looking DOWN into the held light — the r3 stand
-  // put a bare violet slope in the whole lower half).
-  { name: "starwater-pans", u: 1413, v: -104, lift: 3.2, atU: 1425, atV: -115, pitch: -0.2, settle: 3 },
+  // the r1 pans were dim smears at thirty metres; round 5: the probe
+  // put numbers on the dishes at last — 1.5–2 m deep, rims at eye
+  // height from any low stand, so every low diagonal hides the far
+  // pans behind the near rim. The stand goes NORTH-EAST and UP
+  // (lift 4.2): the three dishes tier away down the diagonal, each
+  // pool of held light open to the lens, the paint's new star-glow
+  // in their centres).
+  { name: "starwater-pans", u: 1428, v: -94, lift: 4.2, atU: 1421, atV: -114, pitch: -0.22, settle: 3 },
   // THE PEARL: the secret, found.
   { name: "pearl", u: 1541, v: 90, lift: 1.8, atU: 1548, atV: 96, pitch: -0.04, settle: 4 },
   // THE SEA'S DOORSTEP: the bench, the Watchers, the last horizon.
   { name: "doorstep", u: 1586, v: 6, lift: 2.2, atU: 1603, atV: -5, pitch: 0.04, settle: 3 },
-  // ON the Hem's crest, facing the Morning Bank — the end of the sea,
-  // painted. Round 4, the arithmetic finally honest: from the
-  // Doorstep (rc 142) ring 2 — the only ring whose bank crowns reach
-  // the eye line — sat at ~155 m, inside its own self-dissolve. The
-  // stand walks OUT to the rail (rc ≈ 190): every ring solid at
-  // 56/76/100 m, the near bank rolling below the eye, the far rose
-  // crowns cresting above it, the Hem's outer apron falling away
-  // underfoot.
-  { name: "morning-horizon", u: 1650, v: -2, lift: 0, absoluteY: -10, atU: 1720, atV: -2, pitch: 0.0 },
+  // ON THE DROWNED PLAIN, facing the Morning Bank — the end of the
+  // sea, painted. Round 4's measured truth: the surface rides at +8,
+  // the dune plain outside the disc at ~0, and from every stand
+  // INSIDE the bowl the weight-feather's lip hides anything below the
+  // plain line — three rounds of "flat band" were the lip itself, not
+  // the rings. So the last frame is the last crossing: the diver
+  // rises out of the deep onto the sea's last shallows (the ceiling
+  // grants ~3 m of water here), the milky plain running out ahead,
+  // and the Bank's rose heads surfacing on its horizon at 40–80 m.
+  { name: "morning-horizon", u: 1668, v: -2, lift: 0, absoluteY: 2, atU: 1720, atV: -2, pitch: 0.0 },
   // Back across the country from the Mere's east edge (round 2: the
   // r1 stand at 165 m fogged everything out; the Anchor silhouette
   // needs ≤ ~90 m).

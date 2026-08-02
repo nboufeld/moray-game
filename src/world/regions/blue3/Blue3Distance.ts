@@ -84,6 +84,76 @@ const FOOT = -66;
 /** Half-angle of the gap over the inbound corridor. */
 const GAP_IN_HALF = 0.4;
 
+/**
+ * THE MORNING BANK'S HEADS (round 5). The tall rings' ridge values
+ * are ABSOLUTE tops (+16..+58 — round 2's deep-stand clearance
+ * arithmetic), which the round-5 in-page probe finally measured:
+ * every crown row lives ABOVE the water surface (+8), so no
+ * underwater stand can ever see a crest line — four rounds of "flat
+ * horizon" from the drowned plain were the curtains' featureless
+ * mid-bodies, and no colour push could ever have cured it. The deep
+ * frames rely on those tall bodies, so they stay untouched. The heads
+ * the morning-horizon stand was built to see are their own geometry:
+ * two low staggered arcs over the outbound bearing, authored cos-lobe
+ * silhouettes cresting at +6..+7.5 — UNDER the surface glow, above
+ * the drowned plain's line — with troughs sunk to −6 so each head
+ * surfaces alone. Invisible from inside the bowl (the Hem hides
+ * everything below its crest) and unmistakable from the plain.
+ */
+interface BankArc {
+  readonly radius: number;
+  /** Lobe phase: staggers the two ranks' heads. */
+  readonly phase: number;
+  /** Peak crest height (y, absolute). */
+  readonly crest: number;
+  /** Lobe frequency along the arc, per METRE of arc length — the
+   *  round-5c lesson: from a stand 30 m off the arc, the whole frame
+   *  spans ±0.15 rad of arc angle, so any angular lobe reads as one
+   *  constant height (the very "flat rule" of rounds 1–4, again). At
+   *  0.18/m the heads sit ~35 m apart: two or three in every frame. */
+  readonly lobeFreq: number;
+  readonly ink: Color;
+  readonly fade: number;
+  readonly dissolve: readonly [number, number];
+}
+
+const BANK_ARCS: readonly BankArc[] = [
+  {
+    radius: 238,
+    phase: 0,
+    crest: 7.5,
+    lobeFreq: 0.18,
+    ink: new Color(1.0, 0.84, 0.88),
+    fade: 0.22,
+    dissolve: [140, 157],
+  },
+  {
+    radius: 256,
+    phase: 2.4,
+    crest: 6.2,
+    lobeFreq: 0.115,
+    ink: new Color(1.04, 0.88, 0.9),
+    fade: 0.34,
+    dissolve: [143, 158],
+  },
+];
+
+/** The heads' arc half-angle around the outbound bearing. */
+const BANK_HALF = 1.0;
+/** ~3.3 m per column: five-plus columns per head at the tight rank. */
+const BANK_SEGMENTS = 144;
+/** The heads' trough line: under the plain's own horizon. */
+const BANK_TROUGH = -6;
+/** The heads' rose, authored to OUT-MULTIPLY the shallow aqua fog:
+ *  followFog leaves the material near (0.32, 0.65, 0.70) at the
+ *  drowned-plain stand, where a 1.5 red multiplier lands fog-matched
+ *  and gone (the round-3 lesson, finally with its number). */
+const BANK_ROSE: readonly [number, number, number] = [3.6, 1.1, 0.86];
+/** The shoulder carries the rose DOWN into the visible mound body —
+ *  round 5d's heads read aqua-green because the shoulder row sat at
+ *  the plain line and owned everything under the thin crown edge. */
+const BANK_SHOULDER: readonly [number, number, number] = [2.6, 1.02, 0.9];
+
 /** Foot/crown tints: feet fall violet, crowns go milky — and toward
  *  the Morning Bank's bearing the crown warms rose. */
 const FOOT_TINT: readonly [number, number, number] = [0.54, 0.52, 0.68];
@@ -95,7 +165,7 @@ const CROWN_ROSE: readonly [number, number, number] = [1.52, 1.12, 0.88];
 
 export function buildBlue3Distance(): { meshes: Mesh[] } {
   const meshes: Mesh[] = [];
-  const materials: MeshBasicMaterial[] = [];
+  const inked: { material: MeshBasicMaterial; ink: Color; fade: number }[] = [];
   let lastFog = -1;
 
   const followFog = (scene: Scene): void => {
@@ -108,15 +178,19 @@ export function buildBlue3Distance(): { meshes: Mesh[] } {
       return;
     }
     lastFog = hex;
-    for (const [index, layer] of LAYERS.entries()) {
-      const ink = fog.color.clone().multiply(layer.ink);
-      materials[index]?.color.copy(ink).lerp(fog.color, layer.fade);
+    for (const entry of inked) {
+      const ink = fog.color.clone().multiply(entry.ink);
+      entry.material.color.copy(ink).lerp(fog.color, entry.fade);
     }
   };
 
-  for (const [index, layer] of LAYERS.entries()) {
+  const curtainMaterial = (
+    ink: Color,
+    fade: number,
+    dissolve: readonly [number, number],
+  ): MeshBasicMaterial => {
     const material = new MeshBasicMaterial({
-      color: new Color(0x6f6a90).lerp(new Color(0x6f6a90).multiply(layer.ink), 1 - layer.fade),
+      color: new Color(0x6f6a90).lerp(new Color(0x6f6a90).multiply(ink), 1 - fade),
       fog: false,
       side: DoubleSide,
       toneMapped: true,
@@ -126,7 +200,7 @@ export function buildBlue3Distance(): { meshes: Mesh[] } {
     });
     // The self-dissolve: alpha to zero across the layer's own window
     // of camera distance, safely inside the 160 m clip.
-    const [dissolveFrom, dissolveTo] = layer.dissolve;
+    const [dissolveFrom, dissolveTo] = dissolve;
     material.onBeforeCompile = (shader) => {
       shader.vertexShader = shader.vertexShader
         .replace("#include <common>", "#include <common>\nvarying float vRingDist;")
@@ -142,6 +216,12 @@ export function buildBlue3Distance(): { meshes: Mesh[] } {
         );
     };
     material.customProgramCacheKey = () => `blue3-distance-dissolve-${dissolveFrom}`;
+    inked.push({ material, ink, fade });
+    return material;
+  };
+
+  for (const [index, layer] of LAYERS.entries()) {
+    const material = curtainMaterial(layer.ink, layer.fade, layer.dissolve);
     const geometry = seaRing(layer, SEEDS.regionBlue3 ^ (B3_SEEDS.distance + index * 131));
     const mesh = new Mesh(geometry, material);
     mesh.castShadow = false;
@@ -152,10 +232,86 @@ export function buildBlue3Distance(): { meshes: Mesh[] } {
       mesh.onBeforeRender = (_renderer, scene) => followFog(scene);
     }
     meshes.push(mesh);
-    materials.push(material);
+  }
+
+  for (const [index, arc] of BANK_ARCS.entries()) {
+    const material = curtainMaterial(arc.ink, arc.fade, arc.dissolve);
+    const geometry = bankHeads(arc, SEEDS.regionBlue3 ^ (B3_SEEDS.distance + 977 + index * 131));
+    const mesh = new Mesh(geometry, material);
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    mesh.name = `firstsea-bankheads-${index}`;
+    // Drawn after the tall rings (nearer, lower), still before the
+    // scene's own transparents.
+    mesh.renderOrder = -index - 1;
+    meshes.push(mesh);
   }
 
   return { meshes };
+}
+
+/**
+ * One rank of the Morning Bank's heads: a low curtain arc over the
+ * outbound bearing whose top edge IS the authored silhouette — rose
+ * crowns cresting a metre under the surface glow, troughs sunk under
+ * the drowned plain's horizon so each head surfaces alone.
+ */
+function bankHeads(arc: BankArc, noiseSeed: number): BufferGeometry {
+  const positions: number[] = [];
+  const colors: number[] = [];
+  const indices: number[] = [];
+  const morning = BLUE3_SLOT.azimuth;
+  let column = 0;
+
+  for (let i = 0; i <= BANK_SEGMENTS; i++) {
+    const t = i / BANK_SEGMENTS;
+    const theta = morning - BANK_HALF + t * BANK_HALF * 2;
+    const off = angleBetween(theta, morning);
+    // Ends sink fully under the plain before the arc stops.
+    const end = 1 - smoothstep01((off - (BANK_HALF - 0.35)) / 0.35);
+    const roll =
+      fbm(t * 7, arc.radius * 0.011, { seed: noiseSeed, period: 7, octaves: 3 }) - 0.5;
+    // Lobes cycle along the arc's LENGTH in metres (see lobeFreq).
+    const s = (theta - morning) * arc.radius;
+    const lobes = 0.62 + 0.38 * Math.cos(s * arc.lobeFreq - arc.phase);
+    const crest =
+      BANK_TROUGH + ((arc.crest - BANK_TROUGH) * lobes + roll * 2.0) * end;
+    const x = CENTER_X + Math.cos(theta) * arc.radius;
+    const z = CENTER_Z + Math.sin(theta) * arc.radius;
+
+    const rose = 1 - smoothstep01((off - 0.55) / 0.9);
+    const crown: [number, number, number] = [
+      CROWN_TINT[0] + (BANK_ROSE[0] - CROWN_TINT[0]) * rose,
+      CROWN_TINT[1] + (BANK_ROSE[1] - CROWN_TINT[1]) * rose,
+      CROWN_TINT[2] + (BANK_ROSE[2] - CROWN_TINT[2]) * rose,
+    ];
+
+    // Four rows: violet foot (hidden under the plain), warm shoulder,
+    // the rose crown edge, and a short sky fade into the surface glow.
+    const shoulder = crest * 0.25 - 4.5;
+    positions.push(x, -24, z, x, shoulder, z, x, crest, z, x, crest + 1.8, z);
+    colors.push(
+      ...FOOT_TINT, 0.95,
+      ...BANK_SHOULDER, 0.9,
+      ...crown, 0.88,
+      ...crown, 0,
+    );
+    if (column > 0) {
+      const a = positions.length / 3 - 8;
+      for (let row = 0; row < 3; row++) {
+        const b = a + row;
+        indices.push(b, b + 1, b + 4, b + 1, b + 5, b + 4);
+      }
+    }
+    column++;
+  }
+
+  const geometry = new BufferGeometry();
+  geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
+  geometry.setAttribute("color", new BufferAttribute(new Float32Array(colors), 4));
+  geometry.setIndex(indices);
+  geometry.computeBoundingSphere();
+  return geometry;
 }
 
 /**

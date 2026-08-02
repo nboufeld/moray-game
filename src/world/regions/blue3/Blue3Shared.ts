@@ -185,6 +185,8 @@ export const B3_SEEDS = {
   flankMeadowW: 0xf00c,
   flankMeadowE: 0xf00d,
   chainDrift: 0xf00e,
+  hemEastMeadow: 0xf00f,
+  hemNorthMeadow: 0xf010,
   closeMereBed: 0xf011,
   closeBankBed: 0xf012,
   closeChainBed: 0xf013,
@@ -193,6 +195,7 @@ export const B3_SEEDS = {
   snow: 0xe401,
   plankton: 0xe402,
   planktonDeep: 0xe403,
+  planktonLift: 0xe40a,
   dawnShoal: 0xe404,
   buoyFry: 0xe405,
   chainStars: 0xe406,
@@ -208,6 +211,8 @@ export const B3_SEEDS = {
   anchorPool: 0x11f3,
   pearlGlow: 0x11f4,
   doorstepRays: 0x11f5,
+  panGlow: 0x11f7,
+  hemEastBeam: 0x11f8,
   // Distance.
   distance: 0xd401,
 } as const;

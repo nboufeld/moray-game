@@ -268,8 +268,11 @@ const wallTuftGate: GateFn = (x, z) => {
   }
   const offCorridor = 1 - passGate(u, v);
   const beat = beatDepth(u, v);
+  // Round 5: the beat floor rises 0.45 → 0.62 — the east and north
+  // faces sit between drift beats, and their graze frames (sweep
+  // 04/09) got the band's thinnest draw.
   return (
-    blue3Weight(x, z) * restFree(x, z) * lensFree(x, z) * wall * offCorridor * (0.45 + 0.55 * beat)
+    blue3Weight(x, z) * restFree(x, z) * lensFree(x, z) * wall * offCorridor * (0.62 + 0.38 * beat)
   );
 };
 
@@ -388,6 +391,26 @@ export function buildBlue3Cover(): Blue3CoverBuild {
       spread: 10,
     });
   }
+  // Round 5: the east and north Hem feet join too — sweep 04 and 09
+  // stand over those quadrants, and the even ring at 24° spacing left
+  // both bearings between anchors. These face the bowl's centre.
+  for (const [au, av] of [
+    [1628, 50],
+    [1610, 74],
+    [1499, 171],
+    [1531, 161],
+  ] as const) {
+    const at = worldOf(au, av);
+    const inward = worldOf(au + (1460 - au) * 0.05, av - av * 0.05);
+    if (restFree(at.x, at.z) < 0.6) {
+      continue;
+    }
+    screeAnchors.push({
+      pos: [at.x, at.z],
+      facing: Math.atan2(inward.z - at.z, inward.x - at.x),
+      spread: 11,
+    });
+  }
   const scree = keep(
     buildScreeApron({
       seed: SEED ^ B3_SEEDS.wallScree,
@@ -503,11 +526,16 @@ export function buildBlue3Cover(): Blue3CoverBuild {
   // sweep actually visits (aimed off the pinned sweep probe — the
   // blue-2 round-3 lesson paid up front: sweeps 01 and 11 stand on
   // the bare south-west flank; sweep 03 rides the north-east bank).
-  // Silt banks, not gardens.
+  // Silt banks, not gardens. Round 5: the east face (sweep 09's whole
+  // frame) and the north slope (sweep 04's right wall) get their own
+  // stands — the ring band's even draw left both quadrants at eight
+  // blades a frame.
   const meadows: readonly { seed: number; u: number; v: number; radius: number; count: number }[] =
     [
       { seed: B3_SEEDS.flankMeadowW, u: 1382, v: -140, radius: 26, count: 520 },
       { seed: B3_SEEDS.flankMeadowE, u: 1512, v: 82, radius: 24, count: 440 },
+      { seed: B3_SEEDS.hemEastMeadow, u: 1630, v: 54, radius: 20, count: 380 },
+      { seed: B3_SEEDS.hemNorthMeadow, u: 1518, v: 178, radius: 20, count: 360 },
     ];
   for (const meadow of meadows) {
     const field = keep(
