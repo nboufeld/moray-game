@@ -225,8 +225,15 @@ function buildDayspringVeil(outAt: number): Mesh {
       const t = i / COLS - 0.5;
       positions.push(cx + tx * t * HALF_W * 2, FOOT + 4 + HEIGHT * h, cz + tz * t * HALF_W * 2);
       // A gaussian heart, black at every rim (additive: black = gone).
+      // Journey-close: the gaussians alone left 15–37 % of peak at the
+      // rims — from the mid-pass stand at ~90 m (outside the R0.7
+      // near-fade) the pane drew its own rectangle against the water.
+      // An edge window drives every rim to a true zero; the heart
+      // (|t| < 0.32, 0.22 < h < 0.78) is untouched.
+      const window =
+        smoothstep01((0.5 - Math.abs(t)) / 0.18) * smoothstep01(Math.min(h, 1 - h) / 0.22);
       const falloff =
-        Math.exp(-((t * 2.6) ** 2)) * Math.exp(-(((h - 0.42) / 0.42) ** 2));
+        Math.exp(-((t * 2.6) ** 2)) * Math.exp(-(((h - 0.42) / 0.42) ** 2)) * window;
       colors.push(0.55 * falloff, 0.39 * falloff, 0.17 * falloff);
     }
   }
