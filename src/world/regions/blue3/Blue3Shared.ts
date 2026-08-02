@@ -164,6 +164,7 @@ export const B3_SEEDS = {
   pearl: 0x0a81,
   fordStones: 0x0a91,
   panLips: 0x0aa1,
+  combers: 0x0ab1,
   // The Wellhead's water.
   wellBreath: 0xca01,
   cradleGlass: 0xca02,

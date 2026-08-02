@@ -198,10 +198,12 @@ export function buildBlue3Light(): Blue3LightBuild {
   );
 
   // ── The east Hem's fall of light (round 5): the sweep's east-face
-  // graze (09) found a wall with no event — one shaft at the foot,
-  // and its pool on the toe, so the bare quadrant between Doorstep
-  // and Pearl carries a luminous mark.
-  const hemEast = worldOf(1632, 50);
+  // graze (09) found a wall with no event — one shaft standing
+  // between the Combers, its pool poured on the face, so the bare
+  // quadrant between Doorstep and Pearl carries a luminous mark.
+  // (First placement sat ON the pinned stand itself — a beam is
+  // invisible from inside its own column.)
+  const hemEast = worldOf(1644, 52);
   groups.push(
     buildBeamAndPool({
       seed: SEED ^ B3_SEEDS.hemEastBeam,

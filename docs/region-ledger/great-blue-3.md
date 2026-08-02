@@ -253,6 +253,21 @@ corridor (tongue |v| ≤ ~16–22 through the band, spine v = 0):
    blade and the Morning Shelf's milk through the gap at ~125 m —
    heavily fogged; its canonical frames should be re-verified at
    merge (the standing protocol).
+7. **FRAMEWORK (shared harness, all regions): the sweep's floor
+   arithmetic can bury a pinned camera on a weight-feather band.**
+   `region-sweep.mjs` draws `y ≥ def.terrainTarget + floorClearance +
+   1.2`, but the COMPOSED surface (`seabedHeight` = base/target blend
+   + detail) rides up to 4–11 m ABOVE the region's own target where
+   the feather blends toward the outside country. Our pinned pose 09
+   (u 1634, v 51, rc 181) lands ~1 m inside the ground skin —
+   raycast-measured 0.4 m to `firstsea-ground-disc` in every screen
+   direction — and deterministically renders the sheet's interior;
+   no fill can pass a camera inside the hill. Suggested harness fix:
+   floor from `max(def.terrainTarget(x, z), seabedHeight(x, z))` —
+   BUT it re-rolls every region's pinned stream (accept/reject flips
+   at `ceiling − floor < 1`), so it is the orchestrator's call, not a
+   region worker's. Our sweep verdict counts 09 accordingly (see
+   round 5).
 
 ## Critique history (silhouette → value → colour → detail, per round)
 
@@ -625,3 +640,37 @@ last horizon speaks in milk and first light, which is the truer
 Ghibli register anyway. `morning-horizon` (set 0250) now reads: the
 drowned dune plain underfoot → the Bank's pale heads surfacing on the
 rim → the surface glow above. PASS.
+
+**Deep-frame regression check** (`gb3-r5verify`): `doorstep`,
+`wide-morning`, `hem-lookback` re-shot after the arcs landed — all
+three match their passing r4 compositions exactly; the sightline
+arithmetic held (the Hem hides the low arcs from every bowl stand).
+
+**THE DEFINITIVE SWEEP** (`gb3-r5final`, all twelve real frames):
+**11/12 PASS** — 02/03/04/05/06/07/08/10/11/12 outright (04 is
+transformed: rose tufts climbing the north wall, specks, the brink
+line; 05 carries streak grain + foot tufts + the snail stone; 08 came
+back real: the Wellhead's crags in silhouette over star tufts), 01 as
+the licensed wall-cone marginal (grain + sprigs, the standing
+treatment). The twelfth (09) is DETERMINISTICALLY DEGENERATE, not
+thin: the harness's floor arithmetic lands its camera ~1 m inside the
+composed ground skin on the Hem's weight-feather band
+(raycast-measured 0.4 m to the sheet in every screen direction; the
+region's target and the blended surface diverge 4.4 m there). A
+camera inside the hill has no three layers to satisfy; the frame
+renders the sheet's interior no matter what is authored. Flagged to
+the orchestrator as flag 7 (shared-harness fix suggested; re-rolls
+every region's pinned stream, so not taken unilaterally). THE
+COMBERS — two worn slate slabs with a shaft and toe pool — were still
+set into that bare east face (u 1637–1646, v 51–62, zero extra draws,
+by measurement of the stand's ray), so the quadrant carries its
+composed event for every diver who swims it honestly.
+
+**Round 5 closes the loop at five rounds.** Authored 25/25 (every
+pose passing in its final capture set); sweep 11/12 + 1
+harness-degenerate; frame gate **16.7 ms median at settled scale
+1.00** (301/300 frames sampled headed at `shallows-ford` and
+`overbrim`, the two densest stands) against the 16.9 ms bar; budgets
+**76 draws / 805k tris**; typecheck, eslint `--max-warnings 0`, and
+the full suite (68 files / 1001 tests) all green; no-assets pass run
+against the dev server (never preview — the standing law).

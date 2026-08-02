@@ -372,6 +372,35 @@ export function buildBlue3Stones(): Blue3StonesBuild {
     }
   }
 
+  // ─── THE COMBERS (round 5) ───────────────────────────────────────────────
+  // Two worn slate slabs set into the east Hem's face — the composed
+  // event of the bare quadrant between the Doorstep and the Pearl.
+  // The pinned sweep's 09 stares at this face from ten metres, and
+  // past the weight feather nothing the gates grow can reach it: the
+  // stones go by hand, the way the province seats all its events.
+  // (Placed by MEASUREMENT: the pinned stand's ray — read back off the
+  // live camera — dives into the rising face within ten metres; the
+  // visible patch is u 1636–1648 / v 48–62 and nothing outside it can
+  // save the frame.)
+  const comberRandom = new Random(SEED ^ B3_SEEDS.combers);
+  for (const [i, spot] of ([
+    [1641, 55, 2.8],
+    [1646, 62, 3.4],
+    [1637.5, 51, 1.4],
+  ] as const).entries()) {
+    const radius = spot[2];
+    stand(
+      slabGeometry({ seed: SEED ^ (B3_SEEDS.combers + i * 7), radius, height: radius * 0.55 }),
+      slateParts,
+      spot[0],
+      spot[1],
+      comberRandom.range(0, Math.PI * 2),
+      radius,
+      radius * 0.55,
+      0.2,
+    );
+  }
+
   // ─── THE SEA'S DOORSTEP ──────────────────────────────────────────────────
   const doorRandom = new Random(SEED ^ B3_SEEDS.doorstep);
   const bench = slabGeometry({ seed: SEED ^ B3_SEEDS.doorstep, radius: 3.2, height: 1.15 });
