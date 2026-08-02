@@ -1,6 +1,7 @@
-import { BoxGeometry, BufferAttribute, Group, Mesh } from "three";
+import { BoxGeometry, BufferAttribute, Group, Mesh, type BufferGeometry } from "three";
 import { createToonMaterial } from "../../../rendering/ToonShading";
 import { createRockMaterial } from "../../RockMaterial";
+import { boulderGeometry, rockVariantIndex, slabGeometry, stackGeometry } from "../../RockShapes";
 import { createSandMaterial } from "../../SandMaterial";
 import { createSeabedGeometryAt, seabedHeight } from "../../Seabed";
 import { buildBushBank } from "./BushBank";
@@ -628,6 +629,135 @@ export const KIT_DEMOS_A: KitDemoRegistry = {
       group.name = "kit-strata-demo";
       group.add(mesh);
       return compose([dressGround(), finishBuild(group, [geometry, material])]);
+    },
+  },
+
+  /**
+   * The kit-variants wave (critic punch #9 / C2): the new silhouettes,
+   * photographed before any plain wears them.
+   */
+  rockSilhouettes: {
+    // The line-up: each family's original beside its two siblings — the
+    // boulder row near, the slab row mid, the double-lobe sentinel
+    // stacks (the critic's actual gatepost idiom) standing behind. One
+    // seed per stone chosen so every profile is IN the frame.
+    camera: { position: [0, 2.2, 10.8], lookAt: [0, 1.5, -3] },
+    build(): KitBuild {
+      const group = new Group();
+      group.name = "kit-rock-silhouettes";
+      const owned: Parameters<typeof finishBuild>[1][number][] = [];
+      const seedFor = (kind: "boulder" | "slab" | "stack", variant: number): number => {
+        // Walk a fresh salt until the hash lands on the wanted sibling —
+        // demo staging only; the world lets the hash fall where it may.
+        let seed = 0xa11c_0f00 + variant * 131;
+        while (rockVariantIndex(seed, kind) !== variant) {
+          seed++;
+        }
+        return seed;
+      };
+      const stand = (geometry: BufferGeometry, x: number, z: number, tint: number, name: string): void => {
+        const material = createRockMaterial(tint);
+        const mesh = new Mesh(geometry, material);
+        mesh.position.set(x, demoGround(x, z), z);
+        mesh.name = name;
+        group.add(mesh);
+        owned.push(geometry, material);
+      };
+      for (let variant = 0; variant < 3; variant++) {
+        stand(
+          boulderGeometry({ seed: seedFor("boulder", variant), radius: 1.05, height: 1.6 }),
+          (variant - 1) * 4.2 - 1.3,
+          1.6,
+          0x93a089,
+          `kit-rock-boulder-${variant}`,
+        );
+        stand(
+          slabGeometry({ seed: seedFor("slab", variant), radius: 1.3, height: 0.7 }),
+          (variant - 1) * 4.2 + 1.3,
+          -1.2,
+          0x9a938a,
+          `kit-rock-slab-${variant}`,
+        );
+        // The sentinels flank the frame clear of the wall panel, so all
+        // three carvings stand against open water.
+        stand(
+          stackGeometry(
+            [
+              { radius: 1.1, rise: 0.5, stretch: 1.8, lean: 0.3 },
+              { radius: 0.75, rise: 3.1, stretch: 1.6, lean: 0.8 },
+            ],
+            { seed: seedFor("stack", variant) },
+          ),
+          (variant - 1) * 8.2,
+          variant === 1 ? -6.4 : -4.6,
+          0xa39a8e,
+          `kit-rock-stack-${variant}`,
+        );
+      }
+      return compose([dressGround(), finishBuild(group, owned)]);
+    },
+  },
+
+  carpetFieldTuftForms: {
+    // The dark-shard tuft slot at swimming distance: one seeded field,
+    // per-instance forms mixed by the deployment hash itself — the
+    // crossed star, the low fan and the broken-tip cluster in ONE draw.
+    camera: { position: [0, 1.15, 3.0], lookAt: [0, 0.25, -0.8] },
+    build(): KitBuild {
+      const shared = { gate: OPEN_GATE, ground: demoGround };
+      return compose([
+        dressGround(),
+        // The smoking plains' bone-sulfur dark tuft read.
+        buildCarpetField({
+          seed: 0xa11c_0f31,
+          palette: { base: 0x6b6552, tip: 0x9c9067, shade: 0x453f47 },
+          area: { center: [-0.4, -0.9], radius: 2.6 },
+          count: 130,
+          profile: "tuft",
+          ...shared,
+        }),
+        // The pale terraces' rose tuft, same forms, second palette.
+        buildCarpetField({
+          seed: 0xa11c_0f32,
+          palette: { base: 0xa98b95, tip: 0xd0b3ae, shade: 0x6d5a72 },
+          area: { center: [2.9, -2.4], radius: 1.9 },
+          count: 80,
+          profile: "tuft",
+          ...shared,
+        }),
+        // The charcoal card stubble in front — smoking's "dark shard"
+        // spike, now card / low hook / kinked shard per instance.
+        buildCarpetField({
+          seed: 0xa11c_0f33,
+          palette: { base: 0x7b6c78, tip: 0x94818a, shade: 0x554a64 },
+          area: { center: [-2.6, 0.6], radius: 1.7 },
+          count: 90,
+          size: [0.4, 0.75],
+          ...shared,
+        }),
+      ]);
+    },
+  },
+
+  carpetFieldBladeForms: {
+    // The blade-tuft slot: crossed clumps, arcing sheaves and low splays
+    // sharing one instanced draw, at the R12 judging distance.
+    camera: { position: [0, 1.1, 2.9], lookAt: [0, 0.3, -0.7] },
+    build(): KitBuild {
+      const shared = { gate: OPEN_GATE, ground: demoGround };
+      return compose([
+        dressGround(),
+        buildCarpetField({
+          seed: 0xa11c_0f41,
+          palette: SPRING,
+          area: { center: [0, -0.7], radius: 2.8 },
+          count: 230,
+          profile: "blade",
+          swayAmp: 0.05,
+          sunGlow: true,
+          ...shared,
+        }),
+      ]);
     },
   },
 };

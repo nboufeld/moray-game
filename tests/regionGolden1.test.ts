@@ -199,14 +199,20 @@ describe("golden-waste-1 build", () => {
     });
     const m = new Matrix4();
 
+    // The rock pins ride geometry boundingSphere centres — a SHAPE-coupled
+    // proxy for the stand position. Since the kit-variants wave (critic
+    // punch #9) a stone's lathe profile is hash-selected per seed, so the
+    // centroid may drift millimetres while the stand stays byte-identical
+    // (tests/kitVariants.test.ts pins the placements exactly). 5 cm still
+    // convicts any real reroll: the stands jitter by metres.
     const rocks = (named["hourglass-rock"] ?? []) as Mesh[];
     const boulder = rocks[2]!.geometry.boundingSphere!.center;
-    expect(boulder.x).toBeCloseTo(83.49681854248047, 9);
-    expect(boulder.y).toBeCloseTo(-4.689630508422852, 9);
-    expect(boulder.z).toBeCloseTo(1.53416408598423, 9);
+    expect(boulder.x).toBeCloseTo(83.49681854248047, 1);
+    expect(boulder.y).toBeCloseTo(-4.689630508422852, 1);
+    expect(boulder.z).toBeCloseTo(1.53416408598423, 1);
     const monolith = rocks[12]!.geometry.boundingSphere!.center;
-    expect(monolith.x).toBeCloseTo(495.18067932128906, 9);
-    expect(monolith.z).toBeCloseTo(118.99128723144531, 9);
+    expect(monolith.x).toBeCloseTo(495.18067932128906, 1);
+    expect(monolith.z).toBeCloseTo(118.99128723144531, 1);
 
     const fins = named["hourglass-glass-fins"]![0] as InstancedMesh;
     fins.getMatrixAt(0, m);

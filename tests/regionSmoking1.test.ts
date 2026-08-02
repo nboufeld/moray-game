@@ -215,14 +215,20 @@ describe("smoking-marches-1 build", () => {
     // boulder, the erratic and the last shore stack.
     const rocks = named.get("smoulder-rock") ?? [];
     expect(rocks.length).toBe(22);
+    // Geometry boundingSphere centres are SHAPE-coupled: since the
+    // kit-variants wave (critic punch #9) a stone's profile is
+    // hash-selected per seed, so the centroid drifts centimetres (up to
+    // ~7 cm on the big erratic) while the stand stays byte-identical
+    // (tests/kitVariants.test.ts pins placements exactly). Half a metre
+    // still convicts a reroll — stands jitter by metres.
     const center = (index: number): Vector3 =>
       (rocks[index] as Mesh).geometry.boundingSphere!.center;
-    expect(center(0).x).toBeCloseTo(-48.73159217834473, 3);
-    expect(center(2).x).toBeCloseTo(-78.69575500488281, 3);
-    expect(center(2).z).toBeCloseTo(38.70378112792969, 3);
-    expect(center(10).x).toBeCloseTo(-307.7706756591797, 3);
-    expect(center(10).z).toBeCloseTo(95.7418098449707, 3);
-    expect(center(21).x).toBeCloseTo(-559.9765930175781, 3);
+    expect(center(0).x).toBeCloseTo(-48.73159217834473, 0);
+    expect(center(2).x).toBeCloseTo(-78.69575500488281, 0);
+    expect(center(2).z).toBeCloseTo(38.70378112792969, 0);
+    expect(center(10).x).toBeCloseTo(-307.7706756591797, 0);
+    expect(center(10).z).toBeCloseTo(95.7418098449707, 0);
+    expect(center(21).x).toBeCloseTo(-559.9765930175781, 0);
   });
 
   it("keeps every collider inside the domain", () => {

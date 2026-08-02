@@ -82,6 +82,50 @@ const BOULDER: readonly ProfilePoint[] = [
 ];
 
 /**
+ * The split crag (critic punch #9): the potato's first sibling. A full
+ * shoulder that cleaves in at two thirds height and throws up a second,
+ * narrower head — the one thing the convex potato can never be is
+ * *concave*, and the collar is what a silhouette reads at fifty metres.
+ * Same envelope: nothing exceeds the declared radius, foot at SINK,
+ * crown closed.
+ */
+const SPLIT_CRAG: readonly ProfilePoint[] = [
+  [0, 0.58],
+  [0.13, 0.9],
+  [0.3, 1.0],
+  [0.5, 0.86],
+  [0.64, 0.6],
+  [0.75, 0.68],
+  [0.87, 0.52],
+  [0.95, 0.28],
+  [1, 0],
+];
+
+/** The crag's head drifts a little off-axis (r2: a symmetric collar read
+ *  as two stacked buns — the lean is what makes it ONE cleaved stone). */
+const CRAG_LEAN = 0.16;
+
+/**
+ * The keeled stone: the potato's second sibling. Widest low, a straighter
+ * fall to a narrow crest, and the whole spine *leaned* off the lathe axis
+ * (see {@link leanRings}) — the asymmetry a body of revolution cannot
+ * otherwise have. Callers already yaw every stone from their own streams,
+ * so the lean direction distributes for free.
+ */
+const KEELED: readonly ProfilePoint[] = [
+  [0, 0.7],
+  [0.1, 0.94],
+  [0.24, 1.0],
+  [0.46, 0.8],
+  [0.68, 0.56],
+  [0.88, 0.34],
+  [1, 0],
+];
+
+/** How far the keeled profiles' crowns shift off-axis, per unit radius. */
+const KEEL_LEAN = 0.32;
+
+/**
  * A low wide shelf: full width from the sand to well past half height, then a
  * quick fall to a broad flat crown.
  *
@@ -101,6 +145,45 @@ const SLAB: readonly ProfilePoint[] = [
 ];
 
 /**
+ * The shelf-stack (critic punch #9): the slab's first sibling. Two benched
+ * ledges — full width, a bitten waist, a narrower second bench — the
+ * stepped strata read the single-overhang slab cannot give. Stays inside
+ * the slab's own 1.02 overhang ceiling.
+ */
+const SHELF_STACK: readonly ProfilePoint[] = [
+  [0, 0.92],
+  [0.16, 1.02],
+  [0.32, 0.98],
+  [0.42, 0.75],
+  [0.55, 0.82],
+  [0.7, 0.76],
+  [0.82, 0.52],
+  [0.92, 0.42],
+  [1, 0],
+];
+
+/** The bench tilt (r2): straight-stacked benches read as two slabs piled
+ *  by a mason; a drifted upper bench is one ledged stone. */
+const SHELF_LEAN = 0.1;
+
+/**
+ * The prow: the slab's second sibling. A low wedge whose crown drifts
+ * off-axis (the keel lean again, gentler) — the leaning ship-bow stone a
+ * roadside verge wants where the potato used to squat.
+ */
+const PROW: readonly ProfilePoint[] = [
+  [0, 0.96],
+  [0.2, 1.02],
+  [0.42, 0.9],
+  [0.64, 0.68],
+  [0.84, 0.46],
+  [1, 0],
+];
+
+/** The prow leans less than the keeled boulder: it is broad, not tall. */
+const PROW_LEAN = 0.2;
+
+/**
  * The waist a sea stack is given, as a fraction taken out at mid height.
  *
  * A stack is the one rock here that is tall enough for its outline to be read
@@ -113,6 +196,47 @@ const SLAB: readonly ProfilePoint[] = [
 const WAIST_DEPTH = 0.13;
 const WAIST_AT = 0.52;
 const WAIST_WIDTH = 0.24;
+
+/**
+ * The stack's silhouette variants (critic punch #9). The two-segment
+ * bulb-over-bulb stack is the "double-lobe" the critic caught wearing
+ * six recolours — golden's Honey Gate jambs, calamity's rim sentinels
+ * and bank teeth, verdant and pale waysides. A stack's outline is
+ * DERIVED from its measured blocks and may only ever lose material
+ * (colliders and sightlines rely on it — see {@link stackSpan}), so a
+ * sibling here is a different *carving* of the same union: a table of
+ * Gaussian notches plus an optional crown taper, every term ≤ 1.
+ *
+ * - variant 0 — the original single waist, byte-identical arithmetic;
+ * - variant 1 — the collared spire: a deep low collar over a pedestal
+ *   foot, the crown pinched through the last quarter, so the upper
+ *   lobe reads as a tapering finger instead of a second bulb;
+ * - variant 2 — the cleft head: one thin, deep notch high on the stone
+ *   and a faint belly trim, the split-crown read at fog distance.
+ */
+interface StackCarving {
+  readonly notches: readonly { depth: number; at: number; width: number }[];
+  /** Crown taper: radius × (1 − taper·s³) with s ramping over the top
+   *  40% — zero keeps the profile exactly as measured. */
+  readonly crownTaper: number;
+}
+
+const STACK_CARVINGS: readonly StackCarving[] = [
+  { notches: [{ depth: WAIST_DEPTH, at: WAIST_AT, width: WAIST_WIDTH }], crownTaper: 0 },
+  // r3: both siblings cut deeper — at fog distance (where the sentinel
+  // parade lives) the r2 carvings still read as the same two bulbs.
+  {
+    notches: [{ depth: 0.3, at: 0.3, width: 0.22 }],
+    crownTaper: 0.45,
+  },
+  {
+    notches: [
+      { depth: 0.45, at: 0.74, width: 0.13 },
+      { depth: 0.1, at: 0.42, width: 0.3 },
+    ],
+    crownTaper: 0.22,
+  },
+];
 
 /** One of the ellipsoids a sea stack's silhouette is measured from. */
 export interface StackSegment {
@@ -136,12 +260,56 @@ export interface RockShapeOptions {
   readonly rings?: number;
 }
 
+/**
+ * The silhouette families (critic punch #9 — "buy two more silhouettes
+ * per kit slot"). Index 0 is always the original profile, byte-for-byte:
+ * a seed that selects it builds exactly the stone it always built.
+ */
+const BOULDER_FAMILY: readonly { profile: readonly ProfilePoint[]; lean: number }[] = [
+  { profile: BOULDER, lean: 0 },
+  { profile: SPLIT_CRAG, lean: CRAG_LEAN },
+  { profile: KEELED, lean: KEEL_LEAN },
+];
+
+const SLAB_FAMILY: readonly { profile: readonly ProfilePoint[]; lean: number }[] = [
+  { profile: SLAB, lean: 0 },
+  { profile: SHELF_STACK, lean: SHELF_LEAN },
+  { profile: PROW, lean: PROW_LEAN },
+];
+
+/** A fresh XOR substream for the variant pick, so it can never collide
+ *  with the roughing streams (`seed`, `seed ^ 0x4d21`) already in use. */
+const VARIANT_SALT = 0x5eed_c2a6;
+
+/**
+ * Which sibling a seed selects — the deployment device. Every caller
+ * already passes a per-stone seed drawn from its own fenced stream, so
+ * hashing that seed (mulberry32's avalanche, no stream consumed) swaps
+ * the geometry profile under a placement without moving it: position,
+ * scale and rotation are the caller's and stay byte-identical.
+ * Exported for the variant tests; regions have no reason to call it.
+ */
+export function rockVariantIndex(seed: number, kind: "boulder" | "slab" | "stack"): number {
+  const count =
+    kind === "boulder"
+      ? BOULDER_FAMILY.length
+      : kind === "slab"
+        ? SLAB_FAMILY.length
+        : STACK_CARVINGS.length;
+  let t = (seed ^ VARIANT_SALT) >>> 0;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) % count;
+}
+
 export function boulderGeometry(options: RockShapeOptions): BufferGeometry {
-  return latheRock(BOULDER, options);
+  const variant = BOULDER_FAMILY[rockVariantIndex(options.seed, "boulder")]!;
+  return latheRock(variant.profile, options, { lean: variant.lean });
 }
 
 export function slabGeometry(options: RockShapeOptions): BufferGeometry {
-  return latheRock(SLAB, options);
+  const variant = SLAB_FAMILY[rockVariantIndex(options.seed, "slab")]!;
+  return latheRock(variant.profile, options, { lean: variant.lean });
 }
 
 /**
@@ -174,12 +342,22 @@ export function stackGeometry(
   // because a surface of revolution has one axis by definition.
   const centres: number[] = [0];
 
+  const carving = STACK_CARVINGS[rockVariantIndex(options.seed, "stack")]!;
   let axis = 0;
   for (let i = 0; i <= rings; i++) {
     const t = i / rings;
     const y = -SINK + t * (top + SINK);
     const span = stackSpan(segments, y);
-    const waist = 1 - WAIST_DEPTH * Math.exp(-(((t - WAIST_AT) / WAIST_WIDTH) ** 2));
+    // Every carving term multiplies by ≤ 1, so the profile can only ever
+    // fit deeper inside the measured blocks (the stackSpan guarantee).
+    let waist = 1;
+    for (const notch of carving.notches) {
+      waist *= 1 - notch.depth * Math.exp(-(((t - notch.at) / notch.width) ** 2));
+    }
+    if (carving.crownTaper > 0) {
+      const s = Math.min(1, Math.max(0, (t - 0.6) / 0.4));
+      waist *= 1 - carving.crownTaper * s * s * s;
+    }
     radii.push(Math.max(0, span.radius * waist));
     heights.push(y);
     // The topmost ring closes on nothing — the highest block's own apex is
@@ -304,6 +482,8 @@ export function archGeometry(options: ArchOptions): BufferGeometry {
 interface LatheRockFlags {
   /** Off while a part is on its way into a merge; see {@link archGeometry}. */
   readonly finish?: boolean;
+  /** Crown drift off the lathe axis, per unit radius; see {@link leanRings}. */
+  readonly lean?: number;
 }
 
 function latheRock(
@@ -336,7 +516,40 @@ function latheRock(
 
   const geometry = new LatheGeometry(points, options.segments ?? 13);
   roughLathe(geometry, options.seed, options.amount ?? 0.14);
+  if (flags.lean) {
+    leanRings(geometry, points, flags.lean * options.radius, options.height);
+  }
   return flags.finish === false ? geometry : finish(geometry, options.seed);
+}
+
+/**
+ * Drifts a lathe's rings off the axis as they climb — the keeled stones'
+ * asymmetry. The same ring-stride walk as {@link shiftRings}, with the
+ * shift a smooth power of height so the foot stays planted where the
+ * caller put it and only the crown leans. Applied AFTER the roughing
+ * (whose noise is sampled around the original axis, so the seam column
+ * still displaces identically) and BEFORE the finish (which computes the
+ * welded normals off the final shape). The crown shift never exceeds a
+ * third of the radius, so a leaned stone stays inside the footprint its
+ * caller's clearances were authored against.
+ */
+function leanRings(
+  geometry: BufferGeometry,
+  points: readonly Vector2[],
+  crownShift: number,
+  height: number,
+): void {
+  const position = geometry.attributes.position;
+  if (!position) {
+    return;
+  }
+  const perSlice = points.length;
+  for (let i = 0; i < position.count; i++) {
+    const ring = i % perSlice;
+    const t = Math.max(0, (points[ring]!.y + SINK) / (height + SINK));
+    position.setX(i, position.getX(i) + crownShift * Math.pow(t, 1.6));
+  }
+  position.needsUpdate = true;
 }
 
 /**

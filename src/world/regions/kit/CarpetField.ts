@@ -3,6 +3,7 @@ import {
   Color,
   DoubleSide,
   Group,
+  InstancedBufferAttribute,
   Matrix4,
   PlaneGeometry,
   type BufferGeometry,
@@ -46,6 +47,23 @@ import {
  * — 3,000 cards ≈ 12k tris; 800 blade clumps ≈ 38k. Sway, when asked
  * for, is a vertex-shader lean off closed-form simulated time
  * (capture-safe; zero cost when `swayAmp` is 0).
+ *
+ * **Per-instance silhouette forms (critic punch #9 / C2 — "one blade-tuft
+ * kit and one dark-shard tuft kit carry nearly every plain").** The
+ * "card", "tuft" and "blade" profiles each carry THREE same-topology
+ * forms: the original, plus two siblings (card: a low hook and a kinked
+ * shard — the card stubble is the dark spike that carries the smoking
+ * and pale plains; tuft: a low fan and a broken-tip shard cluster;
+ * blade: an arcing sheaf and a low splayed rosette). The
+ * geometry stays ONE instanced draw at the SAME triangle count: sibling
+ * forms are baked as per-vertex position/normal deltas and selected in
+ * the vertex shader by a per-instance attribute, whose value is a pure
+ * hash of the call's seed and the instance index (a fresh XOR substream —
+ * zero stream draws). Every placement, scale and rotation is therefore
+ * byte-identical to the pre-form build (tests/kitVariants.test.ts holds
+ * the fixture); only the silhouette swaps. Instance-aware bounds stay
+ * honest: the shared bounding sphere is inflated by the largest form
+ * delta before the matrices are folded in.
  *
  * Paint (law 3): the instance colour owns the hue at the blade TIP — the
  * brightest point — and the vertex colours only darken below it (the GLB
@@ -124,6 +142,87 @@ function defaultSize(profile: CarpetProfile): readonly [number, number] {
 /** Fallback root shade when a palette brings no `shade`: a grey-violet dusk. */
 const DEFAULT_ROOT: readonly [number, number, number] = [0.58, 0.55, 0.62];
 
+// ─── The per-instance silhouette forms (critic punch #9 / C2) ────────────────
+
+/** Forms per formed profile: the original plus two siblings. */
+const FORM_COUNT = 3;
+
+/** A fresh substream for the form pick — never a draw from the main
+ *  scatter stream, so survivors' poses cannot move (the reroll fence). */
+const FORM_SALT = 0x0f0a_11ad;
+
+/**
+ * Which form an instance wears: mulberry32's avalanche over the call
+ * seed and the instance index. Pure — reading it costs nothing, so the
+ * pick can never shift a position, and the same instance wears the same
+ * form on every build. Exported for the variant tests.
+ */
+export function carpetFormIndex(seed: number, instance: number): number {
+  let t = ((seed ^ FORM_SALT) + Math.imul(instance + 1, 0x9e3779b1)) >>> 0;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) % FORM_COUNT;
+}
+
+/**
+ * Bakes the sibling forms onto the base geometry as position/normal
+ * deltas (`aKitFormB/C`, `aKitFormBN/CN`) the vertex shader selects by
+ * `aKitForm`. Same topology is a construction guarantee (same builders,
+ * same segment counts); this asserts it anyway, because a silent
+ * mismatch would deform every instance. Returns the largest position
+ * delta, for the honest-bounds inflation.
+ */
+function bakeFormDeltas(base: BufferGeometry, siblings: readonly BufferGeometry[]): number {
+  const basePosition = base.attributes.position as BufferAttribute;
+  const baseNormal = base.attributes.normal as BufferAttribute;
+  let maxDelta = 0;
+  const names = [
+    ["aKitFormB", "aKitFormBN"],
+    ["aKitFormC", "aKitFormCN"],
+  ] as const;
+  for (const [index, sibling] of siblings.entries()) {
+    const position = sibling.attributes.position as BufferAttribute;
+    const normal = sibling.attributes.normal as BufferAttribute;
+    if (position.count !== basePosition.count) {
+      throw new Error("carpetField: form topology mismatch");
+    }
+    const dPos = new Float32Array(position.count * 3);
+    const dNor = new Float32Array(position.count * 3);
+    for (let i = 0; i < position.count; i++) {
+      const dx = position.getX(i) - basePosition.getX(i);
+      const dy = position.getY(i) - basePosition.getY(i);
+      const dz = position.getZ(i) - basePosition.getZ(i);
+      dPos[i * 3] = dx;
+      dPos[i * 3 + 1] = dy;
+      dPos[i * 3 + 2] = dz;
+      maxDelta = Math.max(maxDelta, Math.hypot(dx, dy, dz));
+      dNor[i * 3] = normal.getX(i) - baseNormal.getX(i);
+      dNor[i * 3 + 1] = normal.getY(i) - baseNormal.getY(i);
+      dNor[i * 3 + 2] = normal.getZ(i) - baseNormal.getZ(i);
+    }
+    const [posName, norName] = names[index]!;
+    base.setAttribute(posName, new BufferAttribute(dPos, 3));
+    base.setAttribute(norName, new BufferAttribute(dNor, 3));
+    sibling.dispose();
+  }
+  return maxDelta;
+}
+
+/** The GLSL that swaps an instance onto its form: declarations, the
+ *  normal blend, and the position offset (spliced before the sway). */
+const FORM_ATTRIBUTES = `
+attribute float aKitForm;
+attribute vec3 aKitFormB;
+attribute vec3 aKitFormBN;
+attribute vec3 aKitFormC;
+attribute vec3 aKitFormCN;`;
+const FORM_NORMAL = `
+float kitFormB = step(0.5, aKitForm) - step(1.5, aKitForm);
+float kitFormC = step(1.5, aKitForm);
+objectNormal = normalize(objectNormal + kitFormB * aKitFormBN + kitFormC * aKitFormCN);`;
+const FORM_POSITION = `
+transformed += kitFormB * aKitFormB + kitFormC * aKitFormC;`;
+
 export function buildCarpetField(options: CarpetFieldOptions): CarpetFieldBuild {
   const random = new Random(options.seed);
   const profile = options.profile ?? "card";
@@ -145,22 +244,26 @@ export function buildCarpetField(options: CarpetFieldOptions): CarpetFieldBuild 
 
   const geometry = profileGeometry(profile, options.seed, midRatio, rootRatio);
 
+  // The formed profiles (the critic's over-recognised slots — the card
+  // stubble is the "dark-shard" spike that carries the smoking and pale
+  // plains) carry their sibling silhouettes as baked deltas; see the
+  // module header.
+  const formed = profile === "card" || profile === "tuft" || profile === "blade";
+  const formPad = formed
+    ? bakeFormDeltas(geometry, siblingForms(profile, options.seed, midRatio, rootRatio))
+    : 0;
+
   const sway = { value: 0 };
   const sunView = createKitSunViewUniform();
   const material = createToonMaterial({ side: DoubleSide, vertexColors: true });
-  if (swayAmp > 0 || sunGlow) {
+  if (formed || swayAmp > 0 || sunGlow) {
     material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
-      if (swayAmp > 0) {
-        shader.uniforms.uKitSway = sway;
-        shader.vertexShader = shader.vertexShader
-          .replace(
-            "#include <common>",
-            `#include <common>
-             uniform float uKitSway;`,
-          )
-          .replace(
-            "#include <begin_vertex>",
-            `#include <begin_vertex>
+      // Composed in one pass so the order is authored: an instance takes
+      // its FORM first, then the sway bends whatever silhouette it wears.
+      const beginVertexTail = [
+        formed ? FORM_POSITION : "",
+        swayAmp > 0
+          ? `
              // Each blade leans on its own phase, taken from where it stands
              // (the meadow's trick — one uniform for the whole carpet).
              float kitPhase = instanceMatrix[3][0] * 0.61 + instanceMatrix[3][2] * 0.43;
@@ -168,8 +271,27 @@ export function buildCarpetField(options: CarpetFieldOptions): CarpetFieldBuild 
              float kitBend = sin(uKitSway * 1.25 + kitPhase) * 0.5
                            + sin(uKitSway * 0.43 + kitPhase * 1.7) * 0.5;
              transformed.x += kitBend * ${swayAmp.toFixed(3)} * kitTip * kitTip;
-             transformed.z += kitBend * ${(swayAmp * 0.55).toFixed(3)} * kitTip * kitTip;`,
-          );
+             transformed.z += kitBend * ${(swayAmp * 0.55).toFixed(3)} * kitTip * kitTip;`
+          : "",
+      ].join("");
+      if (swayAmp > 0) {
+        shader.uniforms.uKitSway = sway;
+        shader.vertexShader = shader.vertexShader.replace(
+          "#include <common>",
+          `#include <common>
+           uniform float uKitSway;`,
+        );
+      }
+      if (formed) {
+        shader.vertexShader = shader.vertexShader
+          .replace("#include <common>", `#include <common>${FORM_ATTRIBUTES}`)
+          .replace("#include <beginnormal_vertex>", `#include <beginnormal_vertex>${FORM_NORMAL}`);
+      }
+      if (beginVertexTail.length > 0) {
+        shader.vertexShader = shader.vertexShader.replace(
+          "#include <begin_vertex>",
+          `#include <begin_vertex>${beginVertexTail}`,
+        );
       }
       if (sunGlow) {
         // The paint ramp climbs root → tip, so the green ratio doubles as
@@ -233,6 +355,23 @@ export function buildCarpetField(options: CarpetFieldOptions): CarpetFieldBuild 
     });
   }
 
+  if (formed) {
+    // The pick rides the instance INDEX on a fresh substream — reading it
+    // consumes nothing, so every pose above is exactly where it was.
+    const forms = new Float32Array(parts.length);
+    for (let i = 0; i < parts.length; i++) {
+      forms[i] = carpetFormIndex(options.seed, i);
+    }
+    geometry.setAttribute("aKitForm", new InstancedBufferAttribute(forms, 1));
+    // Honest bounds (law 4): the shared sphere must hold every FORM the
+    // shader can select, so it grows by the largest baked delta before
+    // the instance matrices are folded in.
+    geometry.computeBoundingSphere();
+    if (geometry.boundingSphere) {
+      geometry.boundingSphere.radius += formPad;
+    }
+  }
+
   const mesh = instantiatePlacements(geometry, material, parts, "kit-carpet-field");
   if (sunGlow) {
     trackKitSunView(mesh, sunView);
@@ -272,6 +411,41 @@ function profileGeometry(
       throw new Error(`carpetField: unknown profile ${String(exhaustive)}`);
     }
   }
+}
+
+/**
+ * The two sibling silhouettes a formed profile carries (critic punch #9):
+ * built by the SAME constructions as the originals, so topology equality
+ * is structural, and welded from their own fresh substreams so no
+ * existing geometry stream moves.
+ */
+function siblingForms(
+  profile: "card" | "tuft" | "blade",
+  seed: number,
+  midRatio: readonly [number, number, number],
+  rootRatio: readonly [number, number, number],
+): readonly [BufferGeometry, BufferGeometry] {
+  if (profile === "card") {
+    // B — the low hook: squat, broad, bowed right over; C — the kinked
+    // shard: a straighter spike snapped above two-thirds. At stubble
+    // range these are the three distinct marks a plain's near field
+    // needs where one bent quad used to repeat six thousand times.
+    const hook = bladeGeometry(1.35, 0.25, midRatio, rootRatio);
+    hook.scale(1.25, 0.62, 1);
+    const shard = bladeGeometry(0.35, 0.15, midRatio, rootRatio);
+    snapTip(shard, 0.8);
+    return [hook, shard];
+  }
+  if (profile === "tuft") {
+    return [
+      lowFanTuftGeometry(midRatio, rootRatio),
+      brokenTipTuftGeometry(midRatio, rootRatio),
+    ];
+  }
+  return [
+    sheafClumpGeometry(new Random(seed ^ 0x1eaf_5eaf), midRatio, rootRatio),
+    splayClumpGeometry(new Random(seed ^ 0x1eaf_fa42), midRatio, rootRatio),
+  ];
 }
 
 /**
@@ -365,6 +539,89 @@ function tuftGeometry(
     throw new Error("carpetField: tuft blades could not be merged");
   }
   return merged;
+}
+
+/**
+ * Tuft sibling B — the low fan: the same three blades squashed to knee
+ * height and spread through one ~70° sector, bowed hard, so the clump
+ * reads as a broad splayed fan instead of the crossed star. The instance
+ * yaw (the caller's own draw) turns the fan's heading, so a plain never
+ * shows two fans facing the same way side by side. 12 triangles.
+ */
+function lowFanTuftGeometry(
+  midRatio: readonly [number, number, number],
+  rootRatio: readonly [number, number, number],
+): BufferGeometry {
+  const blades: BufferGeometry[] = [];
+  const bows = [1.2, 1.42, 1.3] as const;
+  const yaws = [-0.62, 0.04, 0.66] as const;
+  for (let i = 0; i < 3; i++) {
+    const blade = bladeGeometry(bows[i]!, 0.28, midRatio, rootRatio);
+    blade.scale(1.3, 0.6 + i * 0.05, 1);
+    blade.rotateX(0.3 + i * 0.05);
+    blade.rotateY(yaws[i]! + i * 0.09);
+    blades.push(blade);
+  }
+  const merged = mergeGeometries(blades, false);
+  for (const blade of blades) {
+    blade.dispose();
+  }
+  if (!merged) {
+    throw new Error("carpetField: fan blades could not be merged");
+  }
+  return merged;
+}
+
+/**
+ * Tuft sibling C — the broken-tip cluster: three near-straight shards,
+ * each snapped above two-thirds height so the tip folds sideways and
+ * down. The kink is what the dark-shard palettes want — a clipped,
+ * angular skyline instead of three polite arcs. 12 triangles.
+ */
+function brokenTipTuftGeometry(
+  midRatio: readonly [number, number, number],
+  rootRatio: readonly [number, number, number],
+): BufferGeometry {
+  const blades: BufferGeometry[] = [];
+  const bows = [0.3, 0.46, 0.22] as const;
+  const shears = [0.85, -0.7, 0.55] as const;
+  for (let i = 0; i < 3; i++) {
+    const blade = bladeGeometry(bows[i]!, 0.18, midRatio, rootRatio);
+    snapTip(blade, shears[i]!);
+    blade.scale(0.92, 0.85 + i * 0.13, 0.92);
+    blade.rotateX(0.09 + i * 0.07);
+    blade.rotateY((i / 3) * Math.PI * 2 + i * 0.5);
+    blades.push(blade);
+  }
+  const merged = mergeGeometries(blades, false);
+  for (const blade of blades) {
+    blade.dispose();
+  }
+  if (!merged) {
+    throw new Error("carpetField: shard blades could not be merged");
+  }
+  return merged;
+}
+
+/** Folds a blade's top third sideways and down — a snapped shard tip. */
+function snapTip(blade: BufferGeometry, shear: number): void {
+  const position = blade.attributes.position as BufferAttribute;
+  let maxY = 0;
+  for (let i = 0; i < position.count; i++) {
+    maxY = Math.max(maxY, position.getY(i));
+  }
+  const hinge = maxY * 0.62;
+  for (let i = 0; i < position.count; i++) {
+    const y = position.getY(i);
+    if (y <= hinge) {
+      continue;
+    }
+    const past = (y - hinge) / Math.max(1e-4, maxY - hinge);
+    position.setX(i, position.getX(i) + shear * past * 0.24);
+    position.setY(i, hinge + (y - hinge) * 0.42);
+  }
+  position.needsUpdate = true;
+  blade.computeVertexNormals();
 }
 
 // ─── The near profiles (MASTER R12: the bowl meadow's craft, ported) ─────────
@@ -536,6 +793,135 @@ function bladeClumpGeometry(
   }
   if (!merged) {
     throw new Error("carpetField: blade clump could not be merged");
+  }
+  return merged;
+}
+
+/**
+ * Blade sibling B — the arcing sheaf: the same three lanceolate leaves
+ * all swept to ONE side, staggered in length, the current-combed clump
+ * the crossed star can never read as. Same topology as the base clump
+ * (leader + two siblings, four segments each); its own fresh substream.
+ * 48 triangles.
+ */
+function sheafClumpGeometry(
+  random: Random,
+  midRatio: readonly [number, number, number],
+  rootRatio: readonly [number, number, number],
+): BufferGeometry {
+  const leaves: BufferGeometry[] = [];
+  const baseYaw = random.range(0, Math.PI * 2);
+  const sweep = random.range(0.95, 1.25);
+
+  leaves.push(
+    leafGeometry(
+      {
+        length: 1.05,
+        width: 0.12,
+        segments: 4,
+        bendAt: (t) => sweep * Math.pow(t, 1.15),
+        twist: random.range(0.25, 0.45),
+        cup: 0.4,
+        taper: lanceolate,
+        tone: 1,
+      },
+      midRatio,
+      rootRatio,
+    ),
+  );
+  plantLeaf(leaves[0]!, baseYaw, random.signed(0.06), random.range(0.01, 0.03));
+
+  for (let i = 0; i < 2; i++) {
+    const bow = sweep * random.range(0.85, 1.1);
+    const leaf = leafGeometry(
+      {
+        length: random.range(0.66, 0.88),
+        width: 0.15,
+        segments: 4,
+        bendAt: (t) => bow * Math.pow(t, 1.3),
+        twist: random.range(0.2, 0.4),
+        cup: 0.45,
+        taper: lanceolate,
+        tone: random.range(0.86, 0.96),
+      },
+      midRatio,
+      rootRatio,
+    );
+    // The whole clump shares one heading — a sheaf, not a rosette.
+    plantLeaf(leaf, baseYaw + random.signed(0.35), random.range(0.04, 0.18), random.range(0.02, 0.05));
+    leaves.push(leaf);
+  }
+
+  const merged = mergeGeometries(leaves, false);
+  for (const leaf of leaves) {
+    leaf.dispose();
+  }
+  if (!merged) {
+    throw new Error("carpetField: sheaf clump could not be merged");
+  }
+  return merged;
+}
+
+/**
+ * Blade sibling C — the low splay: two short siblings leaning far out of
+ * a squat rosette while the leader hooks hard over past vertical late in
+ * its run — the broken-tip read. Ankle-height mass where the base clump
+ * is knee-height spikes. Same topology; its own substream. 48 triangles.
+ */
+function splayClumpGeometry(
+  random: Random,
+  midRatio: readonly [number, number, number],
+  rootRatio: readonly [number, number, number],
+): BufferGeometry {
+  const leaves: BufferGeometry[] = [];
+  const baseYaw = random.range(0, Math.PI * 2);
+  const hook = random.range(2.1, 2.6);
+
+  leaves.push(
+    leafGeometry(
+      {
+        length: 0.95,
+        width: 0.14,
+        segments: 4,
+        bendAt: (t) => hook * Math.pow(t, 2.2),
+        twist: random.range(0.3, 0.5),
+        cup: 0.5,
+        taper: lanceolate,
+        tone: 1,
+      },
+      midRatio,
+      rootRatio,
+    ),
+  );
+  plantLeaf(leaves[0]!, baseYaw, random.range(0.12, 0.28), random.range(0.02, 0.05));
+
+  for (let i = 0; i < 2; i++) {
+    const bow = random.range(1.2, 1.55);
+    const leaf = leafGeometry(
+      {
+        length: random.range(0.5, 0.66),
+        width: 0.17,
+        segments: 4,
+        bendAt: (t) => bow * Math.pow(t, 1.5),
+        twist: random.range(0.25, 0.5),
+        cup: 0.55,
+        taper: lanceolate,
+        tone: random.range(0.82, 0.94),
+      },
+      midRatio,
+      rootRatio,
+    );
+    const yaw = baseYaw + ((i + 1) * Math.PI * 2) / 3 + random.signed(0.4);
+    plantLeaf(leaf, yaw, random.range(0.5, 0.72), random.range(0.02, 0.06));
+    leaves.push(leaf);
+  }
+
+  const merged = mergeGeometries(leaves, false);
+  for (const leaf of leaves) {
+    leaf.dispose();
+  }
+  if (!merged) {
+    throw new Error("carpetField: splay clump could not be merged");
   }
   return merged;
 }
