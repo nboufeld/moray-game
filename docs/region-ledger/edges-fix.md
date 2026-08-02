@@ -352,3 +352,77 @@ continuous grade through the horizon. Afters re-captured as
    and a live render-state interrogation of a named mesh. Both earned
    their keep in this wave's bisects (the false conviction in N5, the
    two zero-pixel bugs in #3) and cost nothing at runtime.
+
+---
+
+## Follow-up: the kelp silhouette on the integrated tree (N3, third pass)
+
+Branch `fix/kelp-silhouette`, worktree `worktrees/fx-kelp2`, judged
+against the integrated control
+`visual-qa/20260802-2118_…_JOURNEY-calamity-00-bowl_integ.png`.
+
+**The finding, confirmed.** The two-axis cup and the floored twist fixed
+the cross-section — the integrated frame shows the interior gradient and
+the dark fold — but the blade's LONG edge is still a razor: one straight
+silhouette line across ~60 % of the frame width against the sky. The
+crop tells it plainly: a fat triangle, both margins ruler-straight,
+dead-sharp tip. The cross-section rolls; the spine does not — `reach`
+runs down local +x with no lateral curvature, and both the margin
+serration (6–16 %, 1–3 waves over a length mostly out of frame) and the
+vertical ruffle are too weak or wrongly aimed to break the line.
+
+**The fix, in three captured rounds — the middle one is the lesson.**
+All draws from the per-leaf detail hash (zero stream draws), placement
+byte-identical, zero draw/triangle delta (leaf-interior vertex moves
+only). `shapeLeaf` gains:
+
+1. **A lengthwise bow** (r1): a low-frequency sine along the blade's
+   run, VERTICAL only (the ruffle's own licence), floored like the
+   twist so no leaf can draw a straight spine, ramped to keep the root
+   welded to its stalk.
+2. **A margin swell** (r1): a second, much slower wave on the width
+   (0.5–0.9 waves along the length, inward-only), so the lanceolate
+   outline's long straight taper breathes instead of ruling.
+3. **A per-margin ruffle** (r1): the vertical ruffle re-weighted by
+   |edge| with a per-side phase, so each margin waves as its own line
+   instead of the whole cross-section lifting as one.
+4. **The √v ramp** (r2): the r1 linear ramp left the root half of the
+   blade nearly flat and the razor survived there; √v is at full
+   amplitude by mid-blade and still pins v = 0.
+5. **The spine sway** (r3) — the one the pose actually needed. The
+   bowl's overhead blade is a hanging crown ribbon: it falls
+   near-vertically, so every vertical term above runs PARALLEL to its
+   silhouette line and buys nothing (the r2 frame proved it — tip
+   curled, run still ruled). The spine must move laterally, and there
+   is a fence-safe way: each cross-section blends toward a swaying
+   centreline, `across·(1−A) + A·halfWidth·sin(v·f+φ)`. Every vertex
+   stays inside the leaf's own width envelope by arithmetic — at the
+   sway's peak one margin touches the envelope exactly while the other
+   pulls in — so the plan-space fence holds by construction: the blade
+   trades a fraction A (0.16–0.30) of its width for a centreline that
+   snakes. This is the term that finally curves the long edge.
+
+**Verdicts (before → after, r3):**
+
+- `JOURNEY-calamity-00-bowl` (the charged pose): **fixed.** The crop
+  pair is the verdict: before, a razor triangle; after, a slender
+  tapering ribbon — the lower margin bows and undulates along its whole
+  run, a dark spine vein snakes down the length, the tip curls with a
+  rolled golden lip, and the underside grades. No straight line of any
+  length survives on the form.
+- `A-opening-hero` (capture-shots bowl control): **holds.** Composition
+  and placement identical; the mid-frame kelp fronds read as before,
+  marginally slimmer at the waist (the sway's width trade), still well
+  inside the canopy-mass floors.
+- `Z-kelp-canopy` (the wings-polish control): **holds, improved.** The
+  blades now carry visibly undulating margins and snaking spine veins;
+  no V-splits return, the canopy mass is intact.
+- `CRITIC-verdant-line-3-03-floor-up`: **holds.** The canopy pads are
+  `Verdant3Canopy`, untouched by this pass — the frame is unchanged and
+  watertight.
+
+**Fences and budgets.** `tests/kelp.test.ts` green as-is after every
+round (stalk hash `4264248344`, lane sweeps, anemone disc, canopy
+floors); the lateral term was DESIGNED inside the fence rather than
+tested into it — the envelope argument above is the guarantee, the
+sweeps are the check. Zero placement changes, zero draw/tri delta.
