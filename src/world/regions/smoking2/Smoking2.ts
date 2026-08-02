@@ -212,7 +212,12 @@ export const SMOKING_2: RegionDef = {
     // R3: density down to the Smoulder's own gain and blue up a step —
     // 0.011 crushed everything past ~50 m into one putty value; the walls
     // must keep a value of their own to ~90 m for the wall-country to read.
-    fog: { colorScale: [3.2, 0.5, 0.43], densityGain: 0.0085, backdropFade: 0.56 },
+    // Beat-repair (#4): 0.0085 → 0.0078 — the critique's flat salmon
+    // wall at the anvil pose is the court comb at ~55 m rendered at the
+    // fog's own value; one more step of clarity (the R3 move, smaller)
+    // lets the strata stay a drawing to the court's width. Register
+    // (colorScale, backdropFade) untouched.
+    fog: { colorScale: [3.2, 0.5, 0.43], densityGain: 0.0078, backdropFade: 0.56 },
     light: { sun: 0.19, hemisphere: 0.27, ambient: 0.15 },
   },
   moodSurface: 20,

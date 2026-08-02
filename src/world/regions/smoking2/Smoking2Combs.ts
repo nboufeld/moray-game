@@ -30,6 +30,7 @@ import {
   NIGHT_DOOR,
   SMOKING2_SLOT,
   washCenter,
+  washHalf,
   worldOf,
   type CombSpec,
 } from "./Smoking2Terrain";
@@ -86,8 +87,13 @@ function combWorldYaw(comb: CombSpec): number {
  */
 function finGeometry(comb: CombSpec, random: Random, baseY: number): BufferGeometry {
   const length = comb.halfLength * 2;
-  const lengthSegments = Math.max(14, Math.round(length / 1.6));
-  const heightSegments = Math.max(8, Math.round(comb.height / 1.1));
+  // Beat-repair (#4): rows at 1.1 × 0.8 m (was 1.6 × 1.1) — the critic's
+  // roadside stand settles pressed against a wall face, and at that range
+  // the old grid held one interpolated band across the whole lens. Paint
+  // needs rows to live on (golden-2's tower-resample law); +~18 k tris,
+  // inside the region's 1.35 M cap.
+  const lengthSegments = Math.max(14, Math.round(length / 1.1));
+  const heightSegments = Math.max(8, Math.round(comb.height / 0.8));
   const geometry = new BoxGeometry(length, comb.height, comb.thickness, lengthSegments, heightSegments, 2);
   geometry.translate(0, comb.height / 2, 0);
 
@@ -114,13 +120,15 @@ function finGeometry(comb: CombSpec, random: Random, baseY: number): BufferGeome
     const newY = y - crestDrop * smoothstep01((heightT - 0.55) / 0.45);
 
     // Columnar ribbing on the faces, and a taper toward the crest.
+    // Beat-repair (#4): amplitude up 0.55 → 0.85 — at the anvil pose the
+    // faces read as one plane; the ribs must catch their own toon shade.
     const rib =
       (fbm(alongT * 11, heightT * 1.1, { seed: noiseSeed ^ 0x03, period: 7, octaves: 2 }) - 0.5) *
       0.9;
     const taper = 1 - smoothstep01((heightT - 0.2) / 0.8) * 0.42;
     const side = Math.sign(z) || 1;
     const newZ =
-      z * taper + side * Math.max(0, rib) * 0.55 * (1 - smoothstep01((heightT - 0.85) / 0.15));
+      z * taper + side * Math.max(0, rib) * 0.85 * (1 - smoothstep01((heightT - 0.85) / 0.15));
 
     // The ends flare into buttress feet.
     const endT = Math.abs(x) / (length / 2);
@@ -135,11 +143,23 @@ function finGeometry(comb: CombSpec, random: Random, baseY: number): BufferGeome
   }
 
   // The paint: iron strata rising to a pale crest, violet in the shade.
+  // Beat-repair (#4, the critic's F1): the drawing must SURVIVE — at the
+  // anvil pose the lit faces washed to salmon fog and the shade faces
+  // crushed to one violet, so the strata go louder and lower-frequency
+  // (wide bands survive where fine lines dissolve), the faces take a
+  // columnar stripe (per-column value jitter — basalt colonnade at 40 m),
+  // and the wash-facing feet take an ember lick the seam-glow material
+  // reads as light. The material change beside buildSmoking2Combs makes
+  // every one of these value moves a GLOW move too, so the shade side
+  // keeps the drawing (golden-2's vein-glow lesson, this region's own
+  // anvil patch).
   const colors = new Float32Array(position.count * 3);
   const low = new Color(COMB_TONES[2]);
   const mid = new Color(COMB_TONES[0]);
   const high = new Color(COMB_TONES[1]);
   const shade = new Color();
+  const cosHeading = Math.cos(comb.heading);
+  const sinHeading = Math.sin(comb.heading);
   for (let i = 0; i < position.count; i++) {
     const x = position.getX(i);
     const y = position.getY(i);
@@ -150,11 +170,40 @@ function finGeometry(comb: CombSpec, random: Random, baseY: number): BufferGeome
     shade.lerp(high, smoothstep01((heightT - 0.5) / 0.4));
 
     // Strata bands: horizontal weathering lines a value apart (R3: up
-    // again — the fog takes half of whatever the paint puts down).
-    const band =
+    // again — the fog takes half of whatever the paint puts down). #4,
+    // second cut: the r2-beat capture proved ±0.12 does NOT survive the
+    // shade side's dark ramp — a face the toon light multiplies by ~0.2
+    // needs its DRAWING in the vColor at nearly double amplitude, and a
+    // second mid band (~8 m) so a 20 m wall carries more than hairlines.
+    // Final amplitude, measured not guessed (the golden-3 beat's own
+    // arithmetic): the r5 pixel-diff showed these bands surviving to
+    // only ~4% on screen through the court's water — the sand-warm
+    // tone curve compresses vColor ~4×, so the drawing overshoots, and
+    // asymmetrically: the dark half goes deeper than the pale half
+    // rises (iron strata are shadow lines, not stripes).
+    const bandRaw =
       Math.sin(y * 1.35 + fbm(alongT * 4, 0.2, { seed: noiseSeed ^ 0x04, period: 5, octaves: 2 }) * 3.2) *
-      0.12;
+        0.26 +
+      Math.sin(y * 0.8 + fbm(alongT * 2.2, 0.7, { seed: noiseSeed ^ 0x07, period: 4, octaves: 2 }) * 2.4) *
+        0.18;
+    const band = bandRaw < 0 ? bandRaw * 1.35 : bandRaw;
     shade.offsetHSL(0, 0, band);
+
+    // The columnar stripe: value jitter per ~2.2 m column, so the face
+    // carries a vertical grain the ribbing's silhouette agrees with.
+    const column = Math.floor((alongT * length) / 2.2);
+    const stripe =
+      (fbm(column * 0.37, 0.5, { seed: noiseSeed ^ 0x08, period: 11, octaves: 1 }) - 0.5) * 0.22;
+    shade.offsetHSL(stripe > 0 ? 0.01 : -0.015, 0, stripe * (1 - smoothstep01((heightT - 0.7) / 0.3)));
+
+    // Close grain (~1 m, the new rows' own pitch): the tooth an
+    // arm's-length read gets — without it a pressed-close face is one
+    // interpolated value however loud the bands are.
+    const grain =
+      (fbm(alongT * length * 0.9, y * 1.1, { seed: noiseSeed ^ 0x0a, period: 13, octaves: 2 }) -
+        0.5) *
+      0.12;
+    shade.offsetHSL(0, 0, grain);
 
     // The pale weathered crest — the milk-bright top.
     const crestT = smoothstep01((heightT - 0.72) / 0.24);
@@ -171,9 +220,25 @@ function finGeometry(comb: CombSpec, random: Random, baseY: number): BufferGeome
       (1 - smoothstep01((heightT - 0.3) / 0.25));
     shade.lerp(AMBER, stain * 0.4);
 
+    // The ember lick (#4): where the Emberwash runs under this face, the
+    // foot takes the seams' own heat — brightest at the floor, gone by a
+    // quarter height, mottled so it reads as pooled light, not a stripe.
+    const vertexU = comb.u + cosHeading * x;
+    const vertexV = comb.v + sinHeading * x;
+    const washD = Math.abs(vertexV - washCenter(vertexU));
+    const nearWash = 1 - smoothstep01((washD - washHalf(vertexU) - 3) / 9);
+    const lick =
+      nearWash *
+      (1 - smoothstep01((heightT - 0.06) / 0.2)) *
+      (0.45 +
+        0.55 *
+          fbm(alongT * 8, heightT * 5, { seed: noiseSeed ^ 0x09, period: 6, octaves: 2 }));
+    shade.lerp(EMBER, lick * 0.55);
+    shade.lerp(AMBER, lick * 0.25);
+
     // Violet in the under-shade: the feet sink into their own dark, so
     // the wall grows out of shadow instead of standing on pale ground.
-    shade.lerp(SHADOW_VIOLET, (1 - heightT) * 0.3);
+    shade.lerp(SHADOW_VIOLET, (1 - heightT) * 0.3 * (1 - lick));
 
     colors[i * 3] = shade.r;
     colors[i * 3 + 1] = shade.g;
@@ -228,12 +293,22 @@ function anvilGeometry(baseY: number): BufferGeometry {
     const heightT = Math.min(1, Math.max(0, y / 12.5));
     const theta = Math.atan2(z, x);
     shade.copy(body).lerp(top, smoothstep01((heightT - 0.4) / 0.5));
+    // Beat-repair (#4): the block anchors DARK — at the anvil pose its
+    // midtone body sat exactly on the fog's value and the whole heart
+    // washed to salmon; iron must read iron so the seams can read heat.
+    shade.multiplyScalar(0.78 + heightT * 0.18);
+    // Forge strata on the flanks — wide worked bands the fog cannot take.
+    const anvilBand =
+      Math.sin(y * 1.1 + fbm(theta * 0.9, 0.4, { seed: noiseSeed ^ 0x13, period: 4, octaves: 2 }) * 2.6) *
+      0.22;
+    shade.offsetHSL(0, 0, anvilBand * (1 - smoothstep01((heightT - 0.8) / 0.2)));
     // The seams: meridian cracks widening toward the base — the glow
-    // material reads these as light.
+    // material reads these as light. #4: a touch wider, so the heart's
+    // heat reads from the road, not only from the court.
     const seam = smoothstep01(
       (fbm(theta * 1.9, y * 0.4, { seed: noiseSeed ^ 0x11, period: 4, octaves: 2 }) -
-        (0.64 + heightT * 0.12)) /
-        0.07,
+        (0.6 + heightT * 0.13)) /
+        0.09,
     );
     shade.multiplyScalar(1 - seam * 0.5);
     shade.r += seam * EMBER.r * (0.75 - heightT * 0.3);
@@ -437,7 +512,19 @@ export function buildSmoking2Combs(): CombsBuild {
       });
     }
   }
-  const finMaterial = createToonMaterial({ vertexColors: true });
+  // Beat-repair (#4): the walls take a dusk-lift that RIDES the baked
+  // paint (applySeamGlow — emissive × vColor), so the strata, stripes and
+  // ember licks stay a drawing on the shade side and through the fog,
+  // instead of the flat salmon/violet slabs the critique proved. A flat
+  // emissive would iron the paint off (golden-2's r2 lesson); riding the
+  // vertex colour is that region's r3 cure, and this region's own anvil
+  // has always worn it.
+  const finMaterial = createToonMaterial({
+    vertexColors: true,
+    emissive: 0xffcf9e,
+    emissiveIntensity: 0.38,
+  });
+  applySeamGlow(finMaterial, "forge-comb-dusk");
   meshes.push(mergedMesh(finParts, finMaterial, "forge-comb-walls"));
 
   // ─── The Broken Comb's lintel ─────────────────────────────────────────────
@@ -458,7 +545,9 @@ export function buildSmoking2Combs(): CombsBuild {
   const anvilMaterial = createToonMaterial({
     vertexColors: true,
     emissive: 0xff7a38,
-    emissiveIntensity: 0.3,
+    // #4: 0.3 → 0.4 — the heat must carry the extra step the darker
+    // body just took, so the seams read as light from the road.
+    emissiveIntensity: 0.4,
   });
   applySeamGlow(anvilMaterial, "forge-anvil");
   const anvilMesh = new Mesh(anvil, anvilMaterial);
