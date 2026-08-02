@@ -16,6 +16,12 @@ import {
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { fbm } from "../../../rendering/ProceduralTexture";
 import { Random, SEEDS } from "../../../util/Random";
+import {
+  SoftRingBuilder,
+  applyCurtainDissolve,
+  endAlpha,
+  softCurtainMaterial,
+} from "../kit/HorizonCurtain";
 import { smoothstep01 } from "./Pale2Shared";
 import { CENTER_X, CENTER_Z, PALE2_SLOT } from "./Pale2Terrain";
 
@@ -104,18 +110,19 @@ export function buildPale2Distance(): { meshes: (Mesh | InstancedMesh)[] } {
   };
 
   for (const [index, layer] of LAYERS.entries()) {
-    const material = new MeshBasicMaterial({
-      color: new Color(0x9fc4c4),
-      fog: false,
-      side: DoubleSide,
-      toneMapped: true,
-      vertexColors: true,
-    });
+    // Critic F3 (the class fix): the two-row strip's razor top and its
+    // min-height end ribbons — the pale-10 "floating slabs" — are the
+    // shared grammar defect; the ring is now the kit's soft three-row
+    // curtain (dissolved crest, ends fading to nothing). The Dayspring
+    // ink walk below is byte-untouched.
+    const material = softCurtainMaterial({ color: new Color(0x9fc4c4) });
+    applyCurtainDissolve(material, { cacheKey: "pale2-distance-dissolve" });
     const geometry = reefRing(layer, SEEDS.regionPale2 ^ (0xd210 + index * 131), inAt, outAt);
     const mesh = new Mesh(geometry, material);
     mesh.castShadow = false;
     mesh.receiveShadow = false;
     mesh.name = `pale2-distance-${index}`;
+    mesh.renderOrder = -(index + 3);
     if (index === 0) {
       mesh.onBeforeRender = (_renderer, scene) => followFog(scene);
     }
@@ -357,10 +364,7 @@ function reefRing(
   inAt: number,
   outAt: number,
 ): BufferGeometry {
-  const positions: number[] = [];
-  const colors: number[] = [];
-  const indices: number[] = [];
-  let column = 0;
+  const builder = new SoftRingBuilder();
 
   const ink = new Color();
   for (let i = 0; i <= SEGMENTS; i++) {
@@ -368,7 +372,7 @@ function reefRing(
     const inOff = angleBetween(theta, inAt);
     const outOff = angleBetween(theta, outAt);
     if (inOff < GAP_IN_HALF || outOff < GAP_OUT_HALF) {
-      column = 0;
+      builder.gap();
       continue;
     }
     // Long eases at both arc ends (the stair-step lesson).
@@ -384,28 +388,23 @@ function reefRing(
         2 *
         layer.crestVary;
 
-    positions.push(x, FOOT, z, x, FOOT + Math.max(1.4, crest - FOOT) * end + 0.2, z);
-
     // The Dayspring ink: milk almost everywhere, warming toward the
     // reserved corridor, blended toward the fog by the layer's fade.
     const dayspring = dayspringAt(theta, outAt);
     ink.copy(INK_MILK).lerp(INK_DAYSPRING, dayspring);
     ink.lerp(new Color(1, 1, 1), layer.fade);
-    colors.push(ink.r, ink.g, ink.b, ink.r, ink.g, ink.b);
 
-    if (column > 0) {
-      const a = positions.length / 3 - 4;
-      indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
-    }
-    column++;
+    builder.column(x, z, FOOT, FOOT + Math.max(1.4, crest - FOOT) * end + 0.2, {
+      alpha: endAlpha(end),
+      tints: [
+        [ink.r * 0.92, ink.g * 0.92, ink.b * 0.92],
+        [ink.r, ink.g, ink.b],
+        [ink.r * 1.06, ink.g * 1.06, ink.b * 1.06],
+      ],
+    });
   }
 
-  const geometry = new BufferGeometry();
-  geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
-  geometry.setAttribute("color", new BufferAttribute(new Float32Array(colors), 3));
-  geometry.setIndex(indices);
-  geometry.computeBoundingSphere();
-  return geometry;
+  return builder.build();
 }
 
 function angleBetween(a: number, b: number): number {

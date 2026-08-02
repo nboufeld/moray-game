@@ -14,6 +14,12 @@ import {
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { fbm } from "../../../rendering/ProceduralTexture";
 import { Random, SEEDS } from "../../../util/Random";
+import {
+  SoftRingBuilder,
+  applyCurtainDissolve,
+  endAlpha,
+  softCurtainMaterial,
+} from "../kit/HorizonCurtain";
 import { smoothstep01 } from "./CalamityShared";
 import { CALAMITY_SLOT, CENTER_X, CENTER_Z } from "./CalamityTerrain";
 
@@ -87,17 +93,21 @@ export function buildCalamityDistance(): { meshes: (Mesh | InstancedMesh)[] } {
   };
 
   for (const [index, layer] of LAYERS.entries()) {
-    const material = new MeshBasicMaterial({
+    // Critic F3 (the class fix): the two-row opaque strip drew this
+    // skyline's fault steps as hard paper rectangles in the reveal and
+    // last-grove frames. The ridge arithmetic below is untouched; the
+    // strip is now the kit's soft three-row grammar — dissolved crest,
+    // graded values, gap ends fading out instead of running as slivers.
+    const material = softCurtainMaterial({
       color: new Color(0x6b7c84).lerp(new Color(0x6b7c84).multiply(INK), 1 - layer.fade),
-      fog: false,
-      side: DoubleSide,
-      toneMapped: true,
     });
+    applyCurtainDissolve(material, { cacheKey: "calamity-distance-dissolve" });
     const geometry = ruinRing(layer, SEEDS.regionCalamity ^ (0xd200 + index * 131));
     const mesh = new Mesh(geometry, material);
     mesh.castShadow = false;
     mesh.receiveShadow = false;
     mesh.name = `calamity-distance-${index}`;
+    mesh.renderOrder = -(index + 3);
     if (index === 0) {
       mesh.onBeforeRender = (_renderer, scene) => followFog(scene);
     }
@@ -200,9 +210,7 @@ function ruinCardGeometry(): BufferGeometry {
  * is skipped: the ring is an open arc.
  */
 function ruinRing(layer: RuinLayer, noiseSeed: number): BufferGeometry {
-  const positions: number[] = [];
-  const indices: number[] = [];
-  let column = 0;
+  const builder = new SoftRingBuilder();
 
   // The gap faces back down the spoke toward the origin, where the march
   // comes in: from the disc's centre that is the slot azimuth plus π.
@@ -211,7 +219,7 @@ function ruinRing(layer: RuinLayer, noiseSeed: number): BufferGeometry {
     const theta = (i / SEGMENTS) * Math.PI * 2;
     const off = angleBetween(theta, gapAt);
     if (off < GAP_HALF) {
-      column = 0;
+      builder.gap();
       continue;
     }
     // The arc's ends sink into the ground over a short run.
@@ -231,19 +239,12 @@ function ruinRing(layer: RuinLayer, noiseSeed: number): BufferGeometry {
       (roll - 0.5) * 2 * layer.ridgeVary +
       Math.pow(fault, 2.2) * layer.ridgeVary * 1.6;
 
-    positions.push(x, FOOT, z, x, FOOT + Math.max(1.2, ridge - FOOT) * end + 0.2, z);
-    if (column > 0) {
-      const a = positions.length / 3 - 4;
-      indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
-    }
-    column++;
+    builder.column(x, z, FOOT, FOOT + Math.max(1.2, ridge - FOOT) * end + 0.2, {
+      alpha: endAlpha(end),
+    });
   }
 
-  const geometry = new BufferGeometry();
-  geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
-  geometry.setIndex(indices);
-  geometry.computeBoundingSphere();
-  return geometry;
+  return builder.build();
 }
 
 function angleBetween(a: number, b: number): number {

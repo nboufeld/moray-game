@@ -14,6 +14,12 @@ import {
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { fbm } from "../../../rendering/ProceduralTexture";
 import { Random, SEEDS } from "../../../util/Random";
+import {
+  SoftRingBuilder,
+  applyCurtainDissolve,
+  endAlpha,
+  softCurtainMaterial,
+} from "../kit/HorizonCurtain";
 import { regionSlot } from "../RegionSlots";
 import { smoothstep01 } from "./Blue1Shared";
 import { BLUE1_SLOT, CENTER_X, CENTER_Z } from "./Blue1Terrain";
@@ -85,6 +91,27 @@ const DEEP_STEPS: readonly DeepStep[] = [
   { radius: 224, top: -23.5, vary: 1.9, ink: new Color(0.92, 0.78, 0.9) },
 ];
 const DEEP_FOOT = -50;
+
+/**
+ * The Far Wall face curtains (critic #1): the drop's near rampart,
+ * painted. Two offset planes just outside the rim sheets' rc-178 trim —
+ * depth layering, because two planes beat one — in the Under-Blue's own
+ * violet register, red held above green, never cobalt.
+ */
+interface WallFace {
+  readonly radius: number;
+  readonly ink: Color;
+}
+
+const WALL_FACES: readonly WallFace[] = [
+  { radius: 183, ink: new Color(0.6, 0.5, 0.7) },
+  { radius: 196, ink: new Color(0.72, 0.61, 0.79) },
+];
+/** The curtain's crest, tucked under the dune lip (~0) from every pose. */
+const WALL_TOP = -2.4;
+const WALL_FOOT = -52;
+const WALL_FOOT_TINT: readonly [number, number, number] = [0.4, 0.39, 0.58];
+const WALL_CREST_TINT: readonly [number, number, number] = [1.18, 1.12, 1.04];
 
 const SEGMENTS = 220;
 
@@ -161,13 +188,12 @@ export function buildBlue1Distance(): { meshes: (Mesh | InstancedMesh)[] } {
 
   // ── The prairie horizon rings. ──
   for (const [index, layer] of PRAIRIE_LAYERS.entries()) {
-    const material = new MeshBasicMaterial({
-      color: 0x9fc4d8,
-      fog: false,
-      side: DoubleSide,
-      toneMapped: true,
-      vertexColors: true,
-    });
+    // Critic F2/F3 (the class fix): the two-row opaque strip is now the
+    // kit's soft three-row curtain — dissolved crest, graded values,
+    // gap ends fading out, and the far-clip self-dissolve so the 160 m
+    // plane never slices an arc into hard vertical edges.
+    const material = softCurtainMaterial({ color: 0x9fc4d8 });
+    applyCurtainDissolve(material, { cacheKey: "blue1-horizon-dissolve" });
     entries.push({ material, ink: layer.ink });
     const geometry = horizonRing(
       layer,
@@ -186,6 +212,7 @@ export function buildBlue1Distance(): { meshes: (Mesh | InstancedMesh)[] } {
     mesh.castShadow = false;
     mesh.receiveShadow = false;
     mesh.name = `blue1-horizon-${index}`;
+    mesh.renderOrder = -(index + 3);
     if (index === 0) {
       mesh.onBeforeRender = (_renderer, scene) => followFog(scene);
     }
@@ -194,12 +221,18 @@ export function buildBlue1Distance(): { meshes: (Mesh | InstancedMesh)[] } {
 
   // ── The deep steps over the World's Edge. ──
   for (const [index, step] of DEEP_STEPS.entries()) {
-    const material = new MeshBasicMaterial({
-      color: 0x33406e,
-      fog: false,
-      side: DoubleSide,
-      toneMapped: true,
-      vertexColors: true,
+    // Critic #1 (SHIP-BLOCKER): at the wall-face beat these arcs stood
+    // beside the camera as opaque blades with sawtooth razor edges,
+    // and from across the void their 0.7–1.9 m tops compressed into
+    // one razor-straight line. Soft grammar + a NEAR guard (an arc the
+    // swim-line passes beside dissolves rather than standing as a
+    // pane) + the far-clip dissolve; the crest itself is broken in
+    // `deepArc` below.
+    const material = softCurtainMaterial({ color: 0x33406e });
+    applyCurtainDissolve(material, {
+      nearFrom: 26,
+      nearTo: 58,
+      cacheKey: "blue1-deep-step-dissolve",
     });
     entries.push({ material, ink: step.ink });
     const geometry = deepArc(step, SEEDS.regionBlue1 ^ (0xd300 + index * 131), gapOutward);
@@ -207,6 +240,33 @@ export function buildBlue1Distance(): { meshes: (Mesh | InstancedMesh)[] } {
     mesh.castShadow = false;
     mesh.receiveShadow = false;
     mesh.name = `blue1-deep-step-${index}`;
+    mesh.renderOrder = -(index + 4) - PRAIRIE_LAYERS.length;
+    meshes.push(mesh);
+  }
+
+  // ── The Far Wall face: the painted cliff under the World's Edge. ──
+  // Critic #1's void: between blue-1's rim lip (its sheets end at
+  // rc ≈ 178) and blue-2's pass sheet (u ≥ 626) the drop's near face
+  // was BARE FOG — the wall-face identity beat looked at a hole. Two
+  // offset curtain planes now paint the cliff: strata-runneled violet
+  // rising to a milky crest tucked under the dune lip, broken crest
+  // line, corridor parting over the crossing, near guard so the
+  // ferryman's swim-line never meets a pane. Budget: 2 draws, ~1.9k
+  // triangles, ledgered under blue-1's painted distance.
+  for (const [index, wall] of WALL_FACES.entries()) {
+    const material = softCurtainMaterial({ color: 0x4a4676 });
+    applyCurtainDissolve(material, {
+      nearFrom: 20,
+      nearTo: 48,
+      cacheKey: "blue1-wall-face-dissolve",
+    });
+    entries.push({ material, ink: wall.ink });
+    const geometry = wallFaceCurtain(wall, SEEDS.regionBlue1 ^ (0xd500 + index * 131), gapOutward);
+    const mesh = new Mesh(geometry, material);
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    mesh.name = `blue1-wall-face-${index}`;
+    mesh.renderOrder = -11 - index;
     meshes.push(mesh);
   }
 
@@ -337,15 +397,17 @@ function horizonRing(
   noiseSeed: number,
   inGap: (theta: number) => boolean,
 ): BufferGeometry {
-  const positions: number[] = [];
-  const colors: number[] = [];
-  const indices: number[] = [];
-  let column = 0;
+  const builder = new SoftRingBuilder();
+  const midTint: [number, number, number] = [
+    (PRAIRIE_FOOT_TINT[0] + PRAIRIE_CROWN_TINT[0]) / 2,
+    (PRAIRIE_FOOT_TINT[1] + PRAIRIE_CROWN_TINT[1]) / 2,
+    (PRAIRIE_FOOT_TINT[2] + PRAIRIE_CROWN_TINT[2]) / 2,
+  ];
 
   for (let i = 0; i <= SEGMENTS; i++) {
     const theta = (i / SEGMENTS) * Math.PI * 2;
     if (inGap(theta)) {
-      column = 0;
+      builder.gap();
       continue;
     }
     const end = endEase(theta, inGap);
@@ -357,40 +419,28 @@ function horizonRing(
       (fbm(t * 6, layer.radius * 0.013, { seed: noiseSeed, period: 6, octaves: 3 }) - 0.5) *
         2 *
         layer.vary;
-    positions.push(
+    builder.column(
       x,
+      z,
       PRAIRIE_FOOT,
-      z,
-      x,
       PRAIRIE_FOOT + Math.max(1.2, crest - PRAIRIE_FOOT) * end + 0.2,
-      z,
+      {
+        alpha: endAlpha(end),
+        tints: [PRAIRIE_FOOT_TINT, midTint, PRAIRIE_CROWN_TINT],
+      },
     );
-    colors.push(...PRAIRIE_FOOT_TINT, ...PRAIRIE_CROWN_TINT);
-    if (column > 0) {
-      const a = positions.length / 3 - 4;
-      indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
-    }
-    column++;
   }
 
-  const geometry = new BufferGeometry();
-  geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
-  geometry.setAttribute("color", new BufferAttribute(new Float32Array(colors), 3));
-  geometry.setIndex(indices);
-  geometry.computeBoundingSphere();
-  return geometry;
+  return builder.build();
 }
 
 /** One deep step: an arc across the World's Edge sector, top below the lip. */
 function deepArc(step: DeepStep, noiseSeed: number, gapOutward: number): BufferGeometry {
-  const positions: number[] = [];
-  const colors: number[] = [];
-  const indices: number[] = [];
+  const builder = new SoftRingBuilder();
   const span = GAP_EDGE + 0.26;
   // Round 4: 64 columns put ~6 m of arc in each quad and the per-column
   // noise rendered as regular sawtooth teeth; at 160 the ridge is a line.
   const count = 160;
-  let column = 0;
 
   // R0.6 integration (the Deep Steps' flagged gate): the depth-2 corridor
   // crosses all four arcs dead-on at the outbound azimuth. Each arc parts
@@ -406,7 +456,7 @@ function deepArc(step: DeepStep, noiseSeed: number, gapOutward: number): BufferG
     const theta = gapOutward + off * span;
     const offCorridor = Math.abs(off * span);
     if (offCorridor < CORRIDOR_HALF) {
-      column = 0;
+      builder.gap();
       continue;
     }
     // The arc's ends sink so its cut edges never stand as walls — the
@@ -416,8 +466,13 @@ function deepArc(step: DeepStep, noiseSeed: number, gapOutward: number): BufferG
       smoothstep01((offCorridor - CORRIDOR_HALF) / CORRIDOR_EASE);
     const x = CENTER_X + Math.cos(theta) * step.radius;
     const z = CENTER_Z + Math.sin(theta) * step.radius;
-    // A broad drooping swell carries the skyline; the fine ripple only
-    // roughens it — a ridge runs a long way before it turns.
+    // Critic #1: the old 0.7–1.9 m relief was sub-pixel from across the
+    // void — the four tops compressed into one razor-straight line, the
+    // "flat teal card band" of the wall beats. The crest is now BROKEN:
+    // the broad swell carries real height (long ridge runs falling in
+    // shoulders), and a sparse notch term bites down through it, so the
+    // silhouette reads as shelf-country rock, not a rule. Same fbm
+    // calls, same seeds — only the amplitudes and the notch are new.
     const broad =
       fbm((i / count) * 2.3 + 0.4, step.radius * 0.011, {
         seed: noiseSeed,
@@ -427,22 +482,99 @@ function deepArc(step: DeepStep, noiseSeed: number, gapOutward: number): BufferG
     const fine =
       fbm(i * 0.11, step.radius * 0.017, { seed: noiseSeed ^ 0x5a5a, period: 7, octaves: 3 }) -
       0.5;
-    const ridge = step.top + broad * 2 * step.vary + fine * 0.5 * step.vary;
-    positions.push(x, DEEP_FOOT, z, x, DEEP_FOOT + Math.max(1.5, ridge - DEEP_FOOT) * end, z);
-    colors.push(...DEEP_FOOT_TINT, ...DEEP_CROWN_TINT);
-    if (column > 0) {
-      const a = positions.length / 3 - 4;
-      indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
-    }
-    column++;
+    const notch = smoothstep01((Math.abs(fine) - 0.32) / 0.1);
+    const ridge =
+      step.top +
+      broad * 2 * step.vary * 3.4 +
+      fine * 1.4 * step.vary -
+      notch * step.vary * 2.6;
+    // Strata down the face (the wall-face brief: value variation, not
+    // one flat ink): a slow runnel walk modulates the shoulder row per
+    // column, so the face carries vertical rock striations through fog.
+    const runnel =
+      fbm((i / count) * 5.1, step.radius * 0.021, {
+        seed: noiseSeed ^ 0x77aa,
+        period: 5,
+        octaves: 2,
+      }) - 0.5;
+    const shoulder: [number, number, number] = [
+      (DEEP_FOOT_TINT[0] + DEEP_CROWN_TINT[0]) * 0.5 * (1 + runnel * 0.34),
+      (DEEP_FOOT_TINT[1] + DEEP_CROWN_TINT[1]) * 0.5 * (1 + runnel * 0.3),
+      (DEEP_FOOT_TINT[2] + DEEP_CROWN_TINT[2]) * 0.5 * (1 + runnel * 0.22),
+    ];
+    builder.column(x, z, DEEP_FOOT, DEEP_FOOT + Math.max(1.5, ridge - DEEP_FOOT) * end, {
+      alpha: endAlpha(end),
+      tints: [DEEP_FOOT_TINT, shoulder, DEEP_CROWN_TINT],
+    });
   }
 
-  const geometry = new BufferGeometry();
-  geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
-  geometry.setAttribute("color", new BufferAttribute(new Float32Array(colors), 3));
-  geometry.setIndex(indices);
-  geometry.computeBoundingSphere();
-  return geometry;
+  return builder.build();
+}
+
+/**
+ * One Far Wall face curtain: an arc across the World's Edge sector whose
+ * crest is a broken line held under the dune lip, whose face carries
+ * runneled strata down to a drowned violet foot, and which parts over
+ * the crossing's corridor exactly the way the deep arcs part.
+ */
+function wallFaceCurtain(wall: WallFace, noiseSeed: number, gapOutward: number): BufferGeometry {
+  const builder = new SoftRingBuilder();
+  const span = GAP_EDGE + 0.3;
+  const count = 150;
+  const CORRIDOR_HALF = 0.11;
+  const CORRIDOR_EASE = 0.14;
+
+  for (let i = 0; i <= count; i++) {
+    const off = (i / count) * 2 - 1;
+    const theta = gapOutward + off * span;
+    const offCorridor = Math.abs(off * span);
+    if (offCorridor < CORRIDOR_HALF) {
+      builder.gap();
+      continue;
+    }
+    const end =
+      (1 - smoothstep01((Math.abs(off) - 0.7) / 0.26)) *
+      smoothstep01((offCorridor - CORRIDOR_HALF) / CORRIDOR_EASE);
+    const x = CENTER_X + Math.cos(theta) * wall.radius;
+    const z = CENTER_Z + Math.sin(theta) * wall.radius;
+
+    // The broken crest: long swells dipping in shoulders, bitten by
+    // sparse notches — a cliff line, never a rule. It only ever falls
+    // AWAY from the lip, so the terrain's own silhouette stays king.
+    const swell =
+      fbm((i / count) * 3.1 + 0.2, wall.radius * 0.014, {
+        seed: noiseSeed,
+        period: 3,
+        octaves: 2,
+      }) - 0.5;
+    const bite = fbm((i / count) * 9.3, wall.radius * 0.02, {
+      seed: noiseSeed ^ 0x3c3c,
+      period: 9,
+      octaves: 2,
+    });
+    const notch = smoothstep01((bite - 0.62) / 0.12);
+    const crest = WALL_TOP - Math.max(0, -swell) * 4.6 - notch * 5.2;
+
+    // Strata runnels down the face: the value walk that keeps a 50 m
+    // cliff from compressing to one flat band through fog.
+    const runnel =
+      fbm((i / count) * 6.4, wall.radius * 0.017, {
+        seed: noiseSeed ^ 0x9d2f,
+        period: 6,
+        octaves: 2,
+      }) - 0.5;
+    const shoulder: [number, number, number] = [
+      (WALL_FOOT_TINT[0] + WALL_CREST_TINT[0]) * 0.5 * (1 + runnel * 0.36),
+      (WALL_FOOT_TINT[1] + WALL_CREST_TINT[1]) * 0.5 * (1 + runnel * 0.32),
+      (WALL_FOOT_TINT[2] + WALL_CREST_TINT[2]) * 0.5 * (1 + runnel * 0.24),
+    ];
+    builder.column(x, z, WALL_FOOT, WALL_FOOT + Math.max(2, crest - WALL_FOOT) * end, {
+      alpha: endAlpha(end),
+      tints: [WALL_FOOT_TINT, shoulder, WALL_CREST_TINT],
+    });
+  }
+
+  return builder.build();
 }
 
 /**

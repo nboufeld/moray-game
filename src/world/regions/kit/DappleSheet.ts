@@ -277,12 +277,32 @@ export function buildDappleSheet(options: DappleSheetOptions): DappleSheetBuild 
       blending: AdditiveBlending,
       depthWrite: false,
       vertexColors: true,
-      fog: true,
+      // Hard-geometry purge (critic C4, the golden oasis mid-down): an
+      // ADDITIVE material with fog on does not dim toward the fog — it
+      // ADDS the fog colour across its whole footprint, so from above
+      // the sheet drew a teal haze rectangle whose grid cut crossed the
+      // frame corner-to-corner as a razor edge. The kit's own additive
+      // discipline (the canyon light-column rule) is fog:false; the
+      // fog's dimming job is done by hand below, exactly like the
+      // curtains do their own fog.
+      fog: false,
     });
 
     const mesh = new Mesh(geometry, material);
     mesh.name = `kit-dapple-layer-${index}`;
     mesh.renderOrder = 1 + index;
+    // The hand fog: the pool of light dims away with camera distance the
+    // way the water would have dimmed it, dissolving entirely before the
+    // range where the old fog-add painted rectangles.
+    mesh.onBeforeRender = (_renderer, _scene, camera) => {
+      const sphere = geometry.boundingSphere;
+      if (!sphere) {
+        return;
+      }
+      const distance = camera.position.distanceTo(sphere.center);
+      const dim = 1 - smoothstep01((distance - 30) / 55);
+      material.opacity = opacity * dim;
+    };
     group.add(mesh);
     geometries.push(geometry);
     materials.push(material);

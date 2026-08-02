@@ -283,10 +283,28 @@ function bakeDeepStepsPaint(geometry: PlaneGeometry, contacts: readonly ContactP
 }
 
 /**
+ * How much a point belongs to the OUTBOUND (depth-3) corridor over the
+ * Worldwall crest — the R0.9 ceiling opening's own arithmetic, so the
+ * crest treatment below never touches the road the crossing rides.
+ */
+function corridorOutGate(u: number, v: number): number {
+  return smoothstep01((u - 1128) / 24) * (1 - smoothstep01((Math.abs(v) - 18) / 12));
+}
+
+/**
  * Tucks the disc tiles' outermost trim edge under the crest (round 2):
  * a flat cut edge at dune level silhouetted as a razor line on distant
  * horizons (blue-1's round-5 sawtooth, one generation on). Gated off
- * the corridor, whose own sheet carries the crossing.
+ * the corridors, whose own sheets carry the crossings.
+ *
+ * Critic #1 (wall-crossing): the Worldwall's crest is a perfect level
+ * circle at dune 0, so from the crossing its silhouette was a
+ * razor-straight line with a stepped tile-cut corner — the "flat teal
+ * card band". The crest band now carries DOWNWARD-ONLY notching
+ * (sheet-only relief: the composed terrain target, the collision and
+ * every placement stream are untouched; a dip can never clip the
+ * camera the way a lift could), and the tuck's onset and depth wander
+ * with the same noise so no edge of this sheet is ever one line.
  */
 function tuckTrimEdge(geometry: PlaneGeometry): void {
   const position = geometry.attributes.position!;
@@ -294,13 +312,34 @@ function tuckTrimEdge(geometry: PlaneGeometry): void {
     const x = position.getX(i);
     const z = position.getZ(i);
     const rc = Math.hypot(x - CENTRE.x, z - CENTRE.z);
-    if (rc <= 230) {
+    if (rc <= 204) {
       continue;
     }
     const { u, v } = spokeOf(x, z);
-    const k = smoothstep01((rc - 232) / 8) * (1 - passGate(u, v));
+    const road = Math.max(passGate(u, v), corridorOutGate(u, v));
+
+    // The broken crest: a slow roll plus sparse deeper bites across the
+    // level plateau band, easing in past the wall's shoulder.
+    const band = smoothstep01((rc - 206) / 12);
+    if (band > 0 && road < 1) {
+      const roll = fbm(x * 0.014, z * 0.014, {
+        seed: SEED ^ B2_SEEDS.paintWall ^ 0x5ea1,
+        period: 6,
+        octaves: 2,
+      });
+      const bite = smoothstep01(
+        (fbm(x * 0.03, z * 0.03, { seed: SEED ^ 0xc4e5, period: 8, octaves: 2 }) - 0.56) / 0.12,
+      );
+      position.setY(i, position.getY(i) - (roll * 1.3 + bite * 2.6) * band * (1 - road));
+    }
+
+    // The tuck, its onset and depth wandering with the crest noise.
+    const wander = fbm(x * 0.011, z * 0.011, { seed: SEED ^ 0x71b3, period: 5, octaves: 2 });
+    const onset = 228 + wander * 8;
+    const k = smoothstep01((rc - onset) / (8 + wander * 6)) * (1 - passGate(u, v));
     if (k > 0) {
-      position.setY(i, position.getY(i) + k * (-8 - position.getY(i)));
+      const depth = -8 - wander * 4;
+      position.setY(i, position.getY(i) + k * (depth - position.getY(i)));
     }
   }
   position.needsUpdate = true;

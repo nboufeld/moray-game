@@ -15,6 +15,11 @@ import { fbm } from "../../../rendering/ProceduralTexture";
 import { Random, SEEDS } from "../../../util/Random";
 import { slabGeometry, stackGeometry } from "../../RockShapes";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
+import {
+  SoftRingBuilder,
+  applyCurtainDissolve,
+  softCurtainMaterial,
+} from "../../regions/kit/HorizonCurtain";
 import { buildParticulateField } from "../../regions/kit/ParticulateField";
 import { wedgeHalfAt } from "../WingGeometry";
 import type { WingDef, WingFlora } from "../WingTypes";
@@ -253,6 +258,45 @@ export function buildOpenBlueFlora(def: WingDef): WingFlora {
     opacity: 0.5,
   });
   dressing.add(snow.group);
+
+  // ── Critic #1, the wing-door frame: the doorway PROMISE. ──
+  // From the door the province read as a solid cobalt wall edge-to-edge
+  // — nothing stood inside the fog's range (the vale is 150 m out, the
+  // 0.2-opacity veil vanishes against its own fog-followed ink). Two
+  // broad silhouette planes now stand 14 and 26 m past the door in the
+  // Drop Plains' register: broken shelf-country crests, milky rims over
+  // violet-deep feet, a NEAR dissolve so the swim out passes through a
+  // fading painting and never a pane. Layered planes are the promise of
+  // the Worldwall — the province's identity — before the region streams
+  // in. Budget: 2 draws, ~470 triangles, inside the dressing's ledger.
+  const promiseInks: { material: MeshBasicMaterial; fade: number }[] = [];
+  for (const [index, plane] of PROMISE_PLANES.entries()) {
+    const material = softCurtainMaterial({ color: 0x2b3a68 });
+    material.opacity = plane.opacity;
+    applyCurtainDissolve(material, {
+      nearFrom: 7,
+      nearTo: 12.5,
+      cacheKey: "w4-openblue-promise-dissolve",
+    });
+    promiseInks.push({ material, fade: plane.fade });
+    const mesh = new Mesh(
+      promisePlane(plane, def.azimuth, (seed ^ (0xb7a1 + index * 131)) >>> 0),
+      material,
+    );
+    mesh.name = `w4-openblue-promise-${index}`;
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    mesh.renderOrder = -14 - index;
+    dressing.add(mesh);
+  }
+  const promiseInk = new FogInk(promiseInks, new Color(0.66, 0.56, 0.84));
+  const firstPromise = dressing.children.find((child) =>
+    child.name.startsWith("w4-openblue-promise"),
+  ) as Mesh | undefined;
+  if (firstPromise) {
+    promiseInk.hook(firstPromise);
+  }
+
   group.add(dressing);
 
   // The sill the mount samples stands high here (the carve is climbing
@@ -278,6 +322,66 @@ export function buildOpenBlueFlora(def: WingDef): WingFlora {
       snow.update(time);
     },
   };
+}
+
+/** The doorway promise planes: depth past the door, size, gauze weight. */
+interface PromisePlane {
+  readonly depth: number;
+  readonly halfWidth: number;
+  readonly foot: number;
+  readonly topBase: number;
+  readonly topVary: number;
+  readonly opacity: number;
+  readonly fade: number;
+}
+
+const PROMISE_PLANES: readonly PromisePlane[] = [
+  { depth: 14, halfWidth: 24, foot: -22, topBase: -5.5, topVary: 2.6, opacity: 0.85, fade: 0.16 },
+  { depth: 26, halfWidth: 34, foot: -26, topBase: -2.8, topVary: 3.6, opacity: 0.7, fade: 0.4 },
+];
+
+/** Foot → crest tints for the promise: violet-deep feet, milky rims. */
+const PROMISE_FOOT_TINT: readonly [number, number, number] = [0.55, 0.55, 0.74];
+const PROMISE_CREST_TINT: readonly [number, number, number] = [1.28, 1.22, 1.1];
+
+/**
+ * One promise plane: a straight soft curtain across the doorway's sight
+ * line, its crest a broken shelf-country line (long runs falling in
+ * shoulders, sparse notch bites), its ends drooping into the deep.
+ */
+function promisePlane(plane: PromisePlane, azimuth: number, seed: number): BufferGeometry {
+  const builder = new SoftRingBuilder();
+  const columns = 36;
+  const r = HOLE_R + plane.depth;
+  const cx = Math.cos(azimuth) * r;
+  const cz = Math.sin(azimuth) * r;
+  const tanX = -Math.sin(azimuth);
+  const tanZ = Math.cos(azimuth);
+
+  for (let i = 0; i <= columns; i++) {
+    const t = i / columns - 0.5;
+    const x = cx + tanX * t * plane.halfWidth * 2;
+    const z = cz + tanZ * t * plane.halfWidth * 2;
+    const end = 1 - smoothstep01((Math.abs(t) - 0.3) / 0.18);
+    const swell = fbm(t * 2.6 + 1.2, plane.depth * 0.13, { seed, period: 3, octaves: 2 }) - 0.5;
+    const bite = fbm(t * 7.4, plane.depth * 0.21, { seed: seed ^ 0x2ee2, period: 7, octaves: 2 });
+    const notch = smoothstep01((bite - 0.64) / 0.11);
+    const top =
+      plane.topBase + swell * 2 * plane.topVary - notch * plane.topVary * 1.7;
+    const runnel =
+      fbm(t * 4.2 + 0.6, plane.depth * 0.17, { seed: seed ^ 0x8b11, period: 4, octaves: 2 }) - 0.5;
+    const shoulder: [number, number, number] = [
+      (PROMISE_FOOT_TINT[0] + PROMISE_CREST_TINT[0]) * 0.5 * (1 + runnel * 0.3),
+      (PROMISE_FOOT_TINT[1] + PROMISE_CREST_TINT[1]) * 0.5 * (1 + runnel * 0.26),
+      (PROMISE_FOOT_TINT[2] + PROMISE_CREST_TINT[2]) * 0.5 * (1 + runnel * 0.2),
+    ];
+    builder.column(x, z, plane.foot, plane.foot + Math.max(2, top - plane.foot) * end, {
+      alpha: 0.25 + 0.75 * end,
+      tints: [PROMISE_FOOT_TINT, shoulder, PROMISE_CREST_TINT],
+    });
+  }
+
+  return builder.build();
 }
 
 /** Where the doorway's opening stands, and its frame vectors. */
