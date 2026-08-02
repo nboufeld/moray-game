@@ -10,6 +10,7 @@ import {
 } from "three";
 import { fbm } from "../../../rendering/ProceduralTexture";
 import { SEEDS } from "../../../util/Random";
+import { regionSlot } from "../RegionSlots";
 import { smoothstep01 } from "./GoldenShared";
 import { CENTER_X, CENTER_Z, GOLDEN_SLOT } from "./GoldenTerrain";
 
@@ -74,6 +75,29 @@ const GAP_HALF = 0.42;
  * (round 5) keeps the cut ends from reading as cliff edges.
  */
 const GAP_OUT_HALF = 0.15;
+
+/**
+ * Conviction fix (re-critique N2, `JOURNEY-great-blue-04`): the western
+ * arcs of these rings stand INSIDE great-blue-1's disc (centres 457 m
+ * apart; the far ring reaches within 171 m of the neighbour's centre),
+ * and once both regions attach naturally the arc hung in the gnomon
+ * frame as a hard-edged translucent slab — toggle-proven to
+ * `hourglass-distance-*`. The journey-close R0.10 precedent (pale-1 and
+ * blue-1 parting over the Calamity march) applied here in world space:
+ * columns over the neighbour's country are cut, and the cut's ends
+ * dissolve through the row alphas (the kit's endAlpha idiom) instead of
+ * running on as an opaque ribbon. Golden-1's own west-rim stands keep
+ * their horizon: the cut begins 16 m outside the neighbour's disc.
+ */
+const BLUE1 = regionSlot("great-blue-1");
+const BLUE1_X = Math.cos(BLUE1.azimuth) * BLUE1.centerR;
+const BLUE1_Z = Math.sin(BLUE1.azimuth) * BLUE1.centerR;
+const BLUE1_CLEAR = BLUE1.radius + 16;
+
+/** 0 inside the neighbour's country, easing to 1 over 30 m outside. */
+function blueEase(x: number, z: number): number {
+  return smoothstep01((Math.hypot(x - BLUE1_X, z - BLUE1_Z) - BLUE1_CLEAR) / 30);
+}
 
 export function buildGoldenDistance(): { meshes: Mesh[] } {
   const meshes: Mesh[] = [];
@@ -227,7 +251,10 @@ function duneRing(layer: DuneLayer, noiseSeed: number): BufferGeometry {
     const theta = (i / SEGMENTS) * Math.PI * 2;
     const off = angleBetween(theta, gapAt);
     const offOut = angleBetween(theta, gapOutAt);
-    if (off < GAP_HALF || offOut < GAP_OUT_HALF) {
+    const bx = CENTER_X + Math.cos(theta) * layer.radius;
+    const bz = CENTER_Z + Math.sin(theta) * layer.radius;
+    const overBlue = blueEase(bx, bz);
+    if (off < GAP_HALF || offOut < GAP_OUT_HALF || overBlue <= 0) {
       column = 0;
       continue;
     }
@@ -241,17 +268,20 @@ function duneRing(layer: DuneLayer, noiseSeed: number): BufferGeometry {
     const end = Math.min(
       smoothstep01((off - GAP_HALF) / 1.3),
       smoothstep01((offOut - GAP_OUT_HALF) / 0.5),
+      overBlue,
     );
-    const x = CENTER_X + Math.cos(theta) * layer.radius;
-    const z = CENTER_Z + Math.sin(theta) * layer.radius;
+    const x = bx;
+    const z = bz;
 
     // Three rows: opaque foot, near-opaque shoulder, transparent crest
     // — the drawn skyline survives (the perceived edge rides the fade)
-    // but no hard line ever meets the water.
+    // but no hard line ever meets the water. The neighbour cut's ends
+    // ALSO dissolve through the alphas (a height taper alone leaves an
+    // opaque ribbon running into the cut — the pale-10 class).
     const top = FOOT + Math.max(1.4, ridges[i]! - FOOT) * end + 0.2;
     const mid = FOOT + (top - FOOT) * 0.72;
     positions.push(x, FOOT, z, x, mid, z, x, top, z);
-    colors.push(1, 1, 1, 0.95, 1, 1, 1, 0.85, 1, 1, 1, 0);
+    colors.push(1, 1, 1, 0.95 * overBlue, 1, 1, 1, 0.85 * overBlue, 1, 1, 1, 0);
     if (column > 0) {
       const a = positions.length / 3 - 6;
       indices.push(a, a + 1, a + 3, a + 1, a + 4, a + 3);

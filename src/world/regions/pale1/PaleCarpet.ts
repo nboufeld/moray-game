@@ -558,7 +558,10 @@ export function buildPaleCarpet(
       // plate rows (the trim is a prefix cut — kept placements are
       // byte-identical, the reroll fence holds; the ossuary carpet and
       // stumps carry the white half's near field).
-      count: 1700,
+      // Conviction wave (#5): 1700 → 1500, funding the mother's rim
+      // segments (22 → 56 — the polygonal-rim cure); same prefix-cut
+      // discipline, the ledgered refund seat.
+      count: 1500,
       shapeSet: "shard",
       size: [0.1, 0.26],
       twoTone: true,

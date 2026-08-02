@@ -18,6 +18,7 @@ import { seabedHeight, type ContactPatch } from "../../Seabed";
 import {
   SoftRingBuilder,
   applyCurtainDissolve,
+  endAlpha,
   softCurtainMaterial,
 } from "../../regions/kit/HorizonCurtain";
 import { buildParticulateField } from "../../regions/kit/ParticulateField";
@@ -277,13 +278,14 @@ export function buildOpenBlueFlora(def: WingDef): WingFlora {
   // ── Critic #1, the wing-door frame: the doorway PROMISE. ──
   // From the door the province read as a solid cobalt wall edge-to-edge
   // — nothing stood inside the fog's range (the vale is 150 m out, the
-  // 0.2-opacity veil vanishes against its own fog-followed ink). Two
-  // broad silhouette planes now stand 14 and 26 m past the door in the
-  // Drop Plains' register: broken shelf-country crests, milky rims over
-  // violet-deep feet, a NEAR dissolve so the swim out passes through a
-  // fading painting and never a pane. Layered planes are the promise of
-  // the Worldwall — the province's identity — before the region streams
-  // in. Budget: 2 draws, ~470 triangles, inside the dressing's ledger.
+  // 0.2-opacity veil vanishes against its own fog-followed ink). Three
+  // ranks of layered WALL-FIN masses now stand 13/24/34 m past the door
+  // in the Drop Plains' register: staggered fin silhouettes with milky
+  // rims over violet-deep feet, troughs diving to the foot between
+  // them, a NEAR dissolve so the swim out passes through a fading
+  // painting and never a pane. Layered fins are the promise of the
+  // Worldwall — the province's identity — before the region streams in.
+  // Budget: 3 draws, ~530 triangles, inside the dressing's ledger.
   const promiseInks: { material: MeshBasicMaterial; fade: number }[] = [];
   for (const [index, plane] of PROMISE_PLANES.entries()) {
     const material = softCurtainMaterial({ color: 0x2b3a68 });
@@ -344,49 +346,108 @@ interface PromisePlane {
   readonly depth: number;
   readonly halfWidth: number;
   readonly foot: number;
-  readonly topBase: number;
-  readonly topVary: number;
+  /** The fin crowns' peak height (absolute y). */
+  readonly crest: number;
   readonly opacity: number;
   readonly fade: number;
+  /** Fin masses: [centre t, weight, width] across the plane's span. */
+  readonly fins: readonly (readonly [number, number, number])[];
 }
 
 // Widths sized to the connective-1 frustum guard: each plane's bounding
 // sphere must stay inside the doorway's sight cone (endHalf + 0.08), so
 // the panels are a layered centre-frame promise, and the fog owns the
 // frame's edges the way it always did.
+//
+// Conviction wave (re-critique #1, the wing-door frame): the r1 promise
+// was two straight full-width curtains, and their eased ends drew long
+// straight diagonal facets across the door's blue volume — "sharp
+// geometric faceting" — while their end columns held alpha 0.25 as a
+// low ribbon. The promise is now three ranks of WALL-FIN MASSES — the
+// Worldwall's own grammar, layered and staggered so the door frames a
+// fin country receding into the blue — and every rim dissolves to true
+// zero (endAlpha at the ends, troughs diving between the fins).
 const PROMISE_PLANES: readonly PromisePlane[] = [
-  { depth: 14, halfWidth: 11, foot: -19, topBase: -5.5, topVary: 2.6, opacity: 0.85, fade: 0.16 },
-  { depth: 26, halfWidth: 13, foot: -21, topBase: -2.8, topVary: 3.2, opacity: 0.7, fade: 0.4 },
+  {
+    depth: 13,
+    halfWidth: 10.5,
+    foot: -19,
+    crest: -5.2,
+    opacity: 0.9,
+    fade: 0.12,
+    fins: [
+      [-0.27, 1.0, 0.13],
+      [0.2, 0.62, 0.1],
+    ],
+  },
+  {
+    depth: 24,
+    halfWidth: 12.5,
+    foot: -21,
+    crest: -3.4,
+    opacity: 0.75,
+    fade: 0.36,
+    fins: [
+      [0.26, 1.0, 0.15],
+      [-0.18, 0.58, 0.09],
+      [-0.38, 0.36, 0.07],
+    ],
+  },
+  {
+    depth: 34,
+    halfWidth: 13.5,
+    foot: -23,
+    crest: -2.2,
+    opacity: 0.62,
+    fade: 0.55,
+    fins: [
+      [-0.05, 1.0, 0.2],
+      [0.38, 0.5, 0.1],
+    ],
+  },
 ];
 
-/** Foot → crest tints for the promise: violet-deep feet, milky rims. */
+/** Foot → crest tints for the promise: violet-deep feet, milky rims.
+ *  Round 2: crest 1.28 → 1.12 — the r1 fin rims rendered as glowing
+ *  pale triangles against the door's ink (they read as light beams,
+ *  not distant stone). */
 const PROMISE_FOOT_TINT: readonly [number, number, number] = [0.55, 0.55, 0.74];
-const PROMISE_CREST_TINT: readonly [number, number, number] = [1.28, 1.22, 1.1];
+const PROMISE_CREST_TINT: readonly [number, number, number] = [1.12, 1.08, 1.02];
 
 /**
- * One promise plane: a straight soft curtain across the doorway's sight
- * line, its crest a broken shelf-country line (long runs falling in
- * shoulders, sparse notch bites), its ends drooping into the deep.
+ * One promise rank: fin masses across the doorway's sight line — bells
+ * combined by max so each fin keeps its silhouette, troughs diving to
+ * the foot line between them, every end and rim fading to true zero.
  */
 function promisePlane(plane: PromisePlane, azimuth: number, seed: number): BufferGeometry {
   const builder = new SoftRingBuilder();
-  const columns = 36;
+  const columns = 44;
   const r = HOLE_R + plane.depth;
   const cx = Math.cos(azimuth) * r;
   const cz = Math.sin(azimuth) * r;
   const tanX = -Math.sin(azimuth);
   const tanZ = Math.cos(azimuth);
+  const bell = (t: number, at: number, width: number): number => {
+    const d = (t - at) / width;
+    return Math.exp(-d * d);
+  };
 
   for (let i = 0; i <= columns; i++) {
     const t = i / columns - 0.5;
     const x = cx + tanX * t * plane.halfWidth * 2;
     const z = cz + tanZ * t * plane.halfWidth * 2;
-    const end = 1 - smoothstep01((Math.abs(t) - 0.3) / 0.18);
-    const swell = fbm(t * 2.6 + 1.2, plane.depth * 0.13, { seed, period: 3, octaves: 2 }) - 0.5;
-    const bite = fbm(t * 7.4, plane.depth * 0.21, { seed: seed ^ 0x2ee2, period: 7, octaves: 2 });
-    const notch = smoothstep01((bite - 0.64) / 0.11);
+    const end = 1 - smoothstep01((Math.abs(t) - 0.34) / 0.14);
+
+    let fins = 0;
+    for (const [at, weight, width] of plane.fins) {
+      fins = Math.max(fins, bell(t, at, width) * weight);
+    }
+    // Round 2: roughness up a step — the r1 fins were too neat, their
+    // clean gaussian shoulders reading as a row of teeth.
+    const rough =
+      (fbm(t * 3.4 + 1.2, plane.depth * 0.13, { seed, period: 3, octaves: 2 }) - 0.5) * 0.17;
     const top =
-      plane.topBase + swell * 2 * plane.topVary - notch * plane.topVary * 1.7;
+      plane.foot + 2.2 + (plane.crest - plane.foot - 2.2) * Math.min(1, fins + rough) * end;
     const runnel =
       fbm(t * 4.2 + 0.6, plane.depth * 0.17, { seed: seed ^ 0x8b11, period: 4, octaves: 2 }) - 0.5;
     const shoulder: [number, number, number] = [
@@ -394,8 +455,8 @@ function promisePlane(plane: PromisePlane, azimuth: number, seed: number): Buffe
       (PROMISE_FOOT_TINT[1] + PROMISE_CREST_TINT[1]) * 0.5 * (1 + runnel * 0.26),
       (PROMISE_FOOT_TINT[2] + PROMISE_CREST_TINT[2]) * 0.5 * (1 + runnel * 0.2),
     ];
-    builder.column(x, z, plane.foot, plane.foot + Math.max(2, top - plane.foot) * end, {
-      alpha: 0.25 + 0.75 * end,
+    builder.column(x, z, plane.foot, top, {
+      alpha: endAlpha(end),
       tints: [PROMISE_FOOT_TINT, shoulder, PROMISE_CREST_TINT],
     });
   }

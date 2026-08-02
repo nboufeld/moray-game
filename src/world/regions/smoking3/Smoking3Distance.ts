@@ -175,6 +175,51 @@ export function buildSmoking3Distance(): { meshes: (Mesh | InstancedMesh)[] } {
     meshes.push(mesh);
   }
 
+  // ─── THE LAST LANTERNS (conviction wave, re-critique N6) ────────────────
+  // The ember-dawn terminus closed two-thirds empty: the dawn line and
+  // the fin tower could not carry the frame, and the seeded card bands
+  // above happen to leave the dawn sector bare at the authored pose.
+  // Three AUTHORED lantern silhouettes now stand inside the dawn's
+  // sector — nearer than the hills, dark against the rising light,
+  // their lit windows the last lights going out into morning. Authored
+  // stations, no stream consumed; one instanced draw, ~132 triangles.
+  {
+    const material = new MeshBasicMaterial({
+      color: new Color(0x635052),
+      fog: false,
+      side: DoubleSide,
+      toneMapped: true,
+      vertexColors: true,
+    });
+    cardMaterials.push({ material, fade: 0.36 });
+    const stations = [
+      { off: -0.3, radius: 214, height: 30, girth: 2.0 },
+      { off: -0.11, radius: 228, height: 22, girth: 1.6 },
+      { off: 0.12, radius: 220, height: 26, girth: 1.8 },
+    ] as const;
+    const mesh = new InstancedMesh(lanternCardGeometry(), material, stations.length);
+    mesh.name = "vigil-last-lanterns";
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    const dummy = new Object3D();
+    const dawnAt = SMOKING3_SLOT.azimuth;
+    for (const [i, station] of stations.entries()) {
+      const theta = dawnAt + station.off;
+      dummy.position.set(
+        CENTER_X + Math.cos(theta) * station.radius,
+        FOOT + 2,
+        CENTER_Z + Math.sin(theta) * station.radius,
+      );
+      dummy.rotation.set(0, theta + 0.4 + i, 0.015 * (i - 1));
+      dummy.scale.set(station.girth, station.height / CARD_HEIGHT, station.girth);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+    meshes.push(mesh);
+  }
+
   // ─── THE EMBER DAWN ─────────────────────────────────────────────────────
   meshes.push(buildDawnBand());
 

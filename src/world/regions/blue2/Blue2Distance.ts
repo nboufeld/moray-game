@@ -10,6 +10,12 @@ import {
 } from "three";
 import { fbm } from "../../../rendering/ProceduralTexture";
 import { SEEDS } from "../../../util/Random";
+import {
+  SoftRingBuilder,
+  applyCurtainDissolve,
+  endAlpha,
+  softCurtainMaterial,
+} from "../kit/HorizonCurtain";
 import { B2_SEEDS, smoothstep01 } from "./Blue2Shared";
 import { BLUE2_SLOT, CENTER_X, CENTER_Z } from "./Blue2Terrain";
 
@@ -62,9 +68,69 @@ const FOOT_TINT: readonly [number, number, number] = [0.52, 0.52, 0.68];
 const MID_TINT: readonly [number, number, number] = [0.85, 0.82, 0.92];
 const CROWN_TINT: readonly [number, number, number] = [1.14, 1.1, 1.06];
 
+/**
+ * THE HORNSGATE (conviction wave, critic #1 wall-crossing): the beat
+ * was cured of its razor but the look back through the Worldwall's
+ * notch read as empty teal — the door the whole province climbs
+ * through had no door-ness. Two ranks of layered wall-fin masses now
+ * rise from the Worldwall's crest flanking the crossing corridor:
+ * titanic jambs nearest the notch stepping down through lesser fins,
+ * the near rank a step darker, the far rank paler — the Horns' spires
+ * keep the sky (fin crowns cap at +6.4, under the horn crowns and
+ * under the surface glow), the fins give them shoulders. The corridor
+ * itself stays open (MASTER R4): the ranks gap over it, the inner
+ * edges dissolve through the row alphas, and a near guard melts any
+ * fin the swim-line grazes.
+ */
+interface GateRank {
+  readonly radius: number;
+  /** Peak crest height of the inner jamb, absolute y. */
+  readonly crest: number;
+  readonly ink: Color;
+  readonly fade: number;
+  /** Fin masses: [centre s, weight, width] out from the jamb. Round 2:
+   *  the ranks carry DIFFERENT fin stations — the r1 ranks shared one
+   *  profile and read as two parallel glass slabs from the crossing. */
+  readonly fins: readonly (readonly [number, number, number])[];
+}
+
+const GATE_RANKS: readonly GateRank[] = [
+  {
+    radius: 179,
+    crest: 6.4,
+    ink: new Color(0.52, 0.44, 0.66),
+    fade: 0.1,
+    fins: [
+      [0.07, 1.0, 0.075],
+      [0.4, 0.66, 0.1],
+      [0.74, 0.42, 0.12],
+    ],
+  },
+  {
+    radius: 192,
+    crest: 4.8,
+    ink: new Color(0.8, 0.68, 0.84),
+    fade: 0.42,
+    fins: [
+      [0.2, 1.0, 0.09],
+      [0.55, 0.6, 0.12],
+      [0.88, 0.36, 0.1],
+    ],
+  },
+];
+/** Half-angle of the gate's opening over the reserved corridor. */
+const GATE_GAP_HALF = 0.09;
+/** The gate arcs' outer reach off the outbound azimuth. */
+const GATE_SPAN = 0.44;
+/** The fins' feet, buried down the Worldwall's outer face. */
+const GATE_FOOT = -34;
+const GATE_FOOT_TINT: readonly [number, number, number] = [0.5, 0.49, 0.66];
+const GATE_CREST_TINT: readonly [number, number, number] = [1.16, 1.1, 1.05];
+
 export function buildBlue2Distance(): { meshes: Mesh[] } {
   const meshes: Mesh[] = [];
   const materials: MeshBasicMaterial[] = [];
+  const inked: { material: MeshBasicMaterial; ink: Color; fade: number }[] = [];
   let lastFog = -1;
 
   const followFog = (scene: Scene): void => {
@@ -80,6 +146,10 @@ export function buildBlue2Distance(): { meshes: Mesh[] } {
     for (const [index, layer] of LAYERS.entries()) {
       const ink = fog.color.clone().multiply(layer.ink);
       materials[index]?.color.copy(ink).lerp(fog.color, layer.fade);
+    }
+    for (const entry of inked) {
+      const ink = fog.color.clone().multiply(entry.ink);
+      entry.material.color.copy(ink).lerp(fog.color, entry.fade);
     }
   };
 
@@ -123,7 +193,94 @@ export function buildBlue2Distance(): { meshes: Mesh[] } {
     materials.push(material);
   }
 
+  // ── THE HORNSGATE's fin ranks. ──
+  for (const [index, rank] of GATE_RANKS.entries()) {
+    const material = softCurtainMaterial({ color: 0x5a5480 });
+    applyCurtainDissolve(material, {
+      nearFrom: 10,
+      nearTo: 22,
+      cacheKey: "deepsteps-hornsgate-dissolve",
+    });
+    inked.push({ material, ink: rank.ink, fade: rank.fade });
+    const geometry = gateFins(rank, SEEDS.regionBlue2 ^ (0xd471 + index * 131));
+    const mesh = new Mesh(geometry, material);
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    mesh.name = `deepsteps-hornsgate-${index}`;
+    // After the step rings (the gate stands nearer than every ring).
+    mesh.renderOrder = -1 - index;
+    meshes.push(mesh);
+  }
+
   return { meshes };
+}
+
+/**
+ * One gate rank: fin masses flanking the outbound corridor on both
+ * sides — a tall jamb at the notch, lesser fins stepping down and out,
+ * the troughs between them dropping below the Worldwall's own crest so
+ * the wall's terrain silhouette owns the gaps. Inner edges dissolve
+ * fast (a gate wants vertical jambs, but a raw cut is the razor sin);
+ * outer ends sink and fade long.
+ */
+function gateFins(rank: GateRank, noiseSeed: number): BufferGeometry {
+  const builder = new SoftRingBuilder();
+  const gapOut = BLUE2_SLOT.azimuth;
+  const count = 140;
+  const bell = (s: number, at: number, width: number): number => {
+    const d = (s - at) / width;
+    return Math.exp(-d * d);
+  };
+
+  for (let i = 0; i <= count; i++) {
+    const off = -GATE_SPAN + (i / count) * GATE_SPAN * 2;
+    if (Math.abs(off) < GATE_GAP_HALF) {
+      builder.gap();
+      continue;
+    }
+    // s: 0 at the corridor's jamb, 1 at the rank's outer end.
+    const s = (Math.abs(off) - GATE_GAP_HALF) / (GATE_SPAN - GATE_GAP_HALF);
+    const theta = gapOut + off;
+    const x = CENTER_X + Math.cos(theta) * rank.radius;
+    const z = CENTER_Z + Math.sin(theta) * rank.radius;
+
+    let fins = 0;
+    for (const [at, weight, width] of rank.fins) {
+      fins = Math.max(fins, bell(s, at, width) * weight);
+    }
+    const rough =
+      (fbm(s * 2.7 + (off > 0 ? 4.1 : 0.3), 0.53, {
+        seed: noiseSeed,
+        period: 3,
+        octaves: 2,
+      }) -
+        0.5) *
+      0.1;
+    // The troughs fall to −7: below the wall's own milky crest, so
+    // between the fins the terrain silhouette shows, not a bench.
+    const inner = smoothstep01(s / 0.045);
+    const outer = 1 - smoothstep01((s - 0.82) / 0.16);
+    const crest = -7 + (rank.crest + 7) * Math.min(1, fins + rough) * inner * outer;
+
+    const runnel =
+      fbm(s * 4.6 + (off > 0 ? 2.2 : 0), 0.29, {
+        seed: noiseSeed ^ 0x6d13,
+        period: 4,
+        octaves: 2,
+      }) - 0.5;
+    const shoulder: [number, number, number] = [
+      (GATE_FOOT_TINT[0] + GATE_CREST_TINT[0]) * 0.5 * (1 + runnel * 0.28),
+      (GATE_FOOT_TINT[1] + GATE_CREST_TINT[1]) * 0.5 * (1 + runnel * 0.24),
+      (GATE_FOOT_TINT[2] + GATE_CREST_TINT[2]) * 0.5 * (1 + runnel * 0.18),
+    ];
+    const end = inner * outer;
+    builder.column(x, z, GATE_FOOT, GATE_FOOT + Math.max(2, crest - GATE_FOOT) * (0.35 + 0.65 * end), {
+      alpha: endAlpha(end),
+      tints: [GATE_FOOT_TINT, shoulder, GATE_CREST_TINT],
+    });
+  }
+
+  return builder.build();
 }
 
 /**

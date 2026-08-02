@@ -327,6 +327,33 @@ function bakeVigilPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch
       value += halo * 0.05 + vein * 0.22;
     }
 
+    // THE EMBERS THAT WALKED ON (conviction wave, re-critique N6):
+    // the ember-dawn terminus read two-thirds bare grey-pink slope —
+    // the Vent's warm court ends at 34 m and nothing led the eye from
+    // it to the dawn line. Three ember pools now dim out of the court
+    // toward the rising light — the region's own "dimming guide-line"
+    // idiom (the night-threshold road's move), the last hearths on the
+    // road into morning. Paint only: zero draws, zero triangles; every
+    // pool stands clear of the Morning Shadow rest (r 10 at 1642, 14).
+    for (const pool of [
+      { u: 1630, v: -14, radius: 4.4, heat: 0.5 },
+      { u: 1646, v: -20, radius: 3.6, heat: 0.34 },
+      { u: 1662, v: -26, radius: 2.8, heat: 0.2 },
+    ]) {
+      const dPool = Math.hypot(u - pool.u, v - pool.v);
+      if (dPool < pool.radius) {
+        const glow =
+          (1 - smoothstep01((dPool - pool.radius * 0.3) / (pool.radius * 0.7))) * pool.heat;
+        const mottle = smoothstep01(
+          (fbm(x * 0.6, z * 0.6, { seed: SEED ^ 0x6e2c, period: 13, octaves: 2 }) - 0.4) / 0.3,
+        );
+        r += glow * (0.5 + mottle * 0.5) * (AMBER.r * 0.85 + EMBER.r * 0.4);
+        g += glow * (0.5 + mottle * 0.5) * (AMBER.g * 0.5);
+        b -= glow * 0.1;
+        value += glow * 0.16;
+      }
+    }
+
     // Contact shade under everything that stands on the night floor.
     let shade = 1;
     for (const contact of contacts) {

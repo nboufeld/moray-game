@@ -403,6 +403,89 @@ export function processionShadow(u: number, v: number): number {
   return shadow;
 }
 
+/**
+ * THE LAST PILGRIMS (conviction wave, re-critique #14): the
+ * evening-horizon terminus still closed on ~60 % featureless dune
+ * face — the recomposed pose gave the frame to the sunset, but the
+ * mid-ground between the Sun's Door and the rampart sill was bare.
+ * The Procession's story walks one chapter further: a diminishing
+ * file of dusk-stone pilgrims past the Door, stepping up the
+ * rampart's toe INTO the sunset, so the province's last frame reads
+ * "they went on toward the light" instead of "the sand ends here".
+ * Every station stands clear of the Pilgrim's Threshold rest (r 8 at
+ * the Door), the resident's circuit legs (u ≤ 1622), every close
+ * lens and wide stand. Fresh stream `SEED ^ 0x1af1`, one merged dusk
+ * draw, appended after every existing module — the fence holds by
+ * construction.
+ */
+const LAST_PILGRIMS: readonly { u: number; v: number; h: number; foot: number }[] = [
+  { u: 1626, v: -16, h: 3.2, foot: 0.85 },
+  { u: 1634, v: 2, h: 2.5, foot: 0.7 },
+  { u: 1641, v: -28, h: 4.8, foot: 1.1 },
+  { u: 1648, v: 12, h: 3.4, foot: 0.9 },
+  { u: 1652, v: -8, h: 2.2, foot: 0.65 },
+  { u: 1660, v: -34, h: 6.2, foot: 1.35 },
+  { u: 1666, v: 18, h: 4.2, foot: 1.0 },
+  { u: 1671, v: -16, h: 2.8, foot: 0.75 },
+  { u: 1676, v: 0, h: 5.0, foot: 1.15 },
+] as const;
+
+export function buildLastPilgrims(): Golden3RocksBuild {
+  const random = new Random(SEED ^ 0x1af1);
+  const colliders: SphereCollider[] = [];
+  const contacts: ContactPatch[] = [];
+  const parts: BufferGeometry[] = [];
+
+  for (const [i, stone] of LAST_PILGRIMS.entries()) {
+    // Walking INTO the sunset: the lean points AWAY from the Door,
+    // out along the pilgrim bearing (the Procession's lean, reversed).
+    const yaw = yawTowardDoor(stone.u, stone.v) + Math.PI + random.signed(0.16);
+    const lean = random.range(0.5, 0.95);
+    const geometry = stackGeometry(
+      [
+        {
+          radius: stone.foot * 1.15,
+          rise: 0.35,
+          stretch: (stone.h * 0.48) / (stone.foot * 1.15),
+          lean: lean * 0.5,
+        },
+        {
+          radius: stone.foot * 0.78,
+          rise: stone.h * 0.52,
+          stretch: (stone.h * 0.44) / (stone.foot * 0.78),
+          lean,
+        },
+      ],
+      { seed: SEED ^ (0x1b10 + i) },
+    );
+    const { x, z } = worldOf(stone.u, stone.v);
+    const y = seabedHeight(x, z);
+    geometry.applyMatrix4(new Matrix4().makeRotationY(yaw));
+    geometry.translate(x, y, z);
+    parts.push(geometry);
+    contacts.push({ x, z, radius: stone.foot * 1.5, strength: 0.4 });
+    colliders.push({
+      center: new Vector3(x, y + stone.h * 0.35, z),
+      radius: stone.foot * 0.98,
+    });
+    if (stone.h > stone.foot * 1.9) {
+      colliders.push({
+        center: new Vector3(x, y + stone.h * 0.75, z),
+        radius: stone.foot * 0.7,
+      });
+    }
+  }
+
+  const dusk = createRockMaterial(DUSK_STONE);
+  dusk.emissive.setHex(0x4a3a34);
+  dusk.emissiveIntensity = STONE_DUSK_INTENSITY;
+  return {
+    meshes: [mergedMesh(parts, dusk, "vesper-last-pilgrims")],
+    colliders,
+    contacts,
+  };
+}
+
 /** Spoke-space test the cover gates share: standing stone footprints. */
 export function processionFree(x: number, z: number): number {
   const { u, v } = spokeOf(x, z);

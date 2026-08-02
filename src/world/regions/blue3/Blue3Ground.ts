@@ -427,13 +427,24 @@ function tuckTrimEdge(geometry: PlaneGeometry): void {
     const x = position.getX(i);
     const z = position.getZ(i);
     const rc = Math.hypot(x - CENTRE.x, z - CENTRE.z);
-    if (rc <= 230) {
+    if (rc <= 224) {
       continue;
     }
     const { u, v } = spokeOf(x, z);
-    const k = smoothstep01((rc - 232) / 8) * (1 - passGate(u, v));
+    // Conviction fix (re-critique N2, `JOURNEY-great-blue-09`): across
+    // the crossing-facing sector the old −8 tuck left the trim edge
+    // hanging over the Worldwall's fall — from the pass stands the cut
+    // read as pale rectangle slabs floating either side of the
+    // corridor (toggle-proven to this mesh). The inbound sector now
+    // starts its dive earlier and pours to −26, under the shelf's own
+    // silhouette from every pass stand; every other bearing keeps the
+    // ledgered −8 tuck byte-identical.
+    const inbound = 1 - smoothstep01((u - 1252) / 24);
+    const from = 232 - inbound * 6;
+    const depth = -8 - inbound * 18;
+    const k = smoothstep01((rc - from) / 8) * (1 - passGate(u, v));
     if (k > 0) {
-      position.setY(i, position.getY(i) + k * (-8 - position.getY(i)));
+      position.setY(i, position.getY(i) + k * (depth - position.getY(i)));
     }
   }
   position.needsUpdate = true;

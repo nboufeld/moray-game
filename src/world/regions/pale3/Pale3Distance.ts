@@ -229,10 +229,21 @@ function buildMorningVeil(outAt: number): Mesh {
       // behind the region's own rings.
       const heart = Math.exp(-((t * 2.4) ** 2)) * Math.exp(-(((h - 0.48) / 0.34) ** 2));
       const skirt = Math.exp(-((t * 1.5) ** 2)) * Math.exp(-(((h - 0.66) / 0.5) ** 2)) * 0.42;
+      // Conviction fix (re-critique N2, `JOURNEY-pale-13`): the gaussians
+      // alone leave 15–25 % of peak brightness at the plane's rims, so at
+      // off-axis bearings the quad's straight edges catch the camera as a
+      // hard white band (the suns-doorstep left-edge slab). The pale-2
+      // Dayspring veil paid this exact debt in journey-close (D4): an
+      // edge window — smoothstep off every rim — multiplied into the
+      // falloff, true zero at the rims, the heart of the glow untouched.
+      const edge =
+        smoothstep01((0.5 - Math.abs(t)) / 0.18) *
+        smoothstep01(h / 0.16) *
+        smoothstep01((1 - h) / 0.22);
       colors.push(
-        0.66 * heart + 0.34 * skirt,
-        0.46 * heart + 0.19 * skirt,
-        0.2 * heart + 0.15 * skirt,
+        (0.66 * heart + 0.34 * skirt) * edge,
+        (0.46 * heart + 0.19 * skirt) * edge,
+        (0.2 * heart + 0.15 * skirt) * edge,
       );
     }
   }
