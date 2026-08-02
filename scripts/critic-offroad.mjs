@@ -7,6 +7,7 @@
  *
  *   node scripts/critic-offroad.mjs <tag>          # all sixteen regions
  *   REGION_ONLY=slot-id[,slot-id] node scripts/critic-offroad.mjs <tag>
+ *   STAND_ONLY=mid-down[,floor-up] node scripts/critic-offroad.mjs <tag>
  *
  * Requires a dev server (default http://localhost:5214, override with
  * SHOT_URL). Regions are forced (per-region QA idiom) — these judge
@@ -48,6 +49,11 @@ const only = (process.env.REGION_ONLY ?? "")
   .map((s) => s.trim())
   .filter(Boolean);
 const slots = only.length > 0 ? SLOTS.filter((s) => only.includes(s)) : SLOTS;
+
+const standOnly = (process.env.STAND_ONLY ?? "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 const tag = process.argv[2];
 if (!tag) {
@@ -102,6 +108,9 @@ let { browser, page } = await openPage();
 
 for (const slot of slots) {
   for (const [index, stand] of STANDS.entries()) {
+    if (standOnly.length > 0 && !standOnly.includes(stand.name)) {
+      continue;
+    }
     if (perLaunch) {
       await browser.close();
       ({ browser, page } = await openPage());
