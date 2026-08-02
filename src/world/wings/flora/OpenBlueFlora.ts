@@ -170,6 +170,13 @@ export function buildOpenBlueFlora(def: WingDef): WingFlora {
   group.add(motes);
 
   // ── The far curtains: two low planes of deeper water near the end wall. ──
+  // Hard-geometry purge (critic #1, the wing-door SHIP-BLOCKER): the
+  // authored wing-door stand is 1.4 m in front of these — raycast-proven
+  // to be the "solid blue wall edge-to-edge": two opaque fog-inked
+  // planes filling the whole frame and occluding the doorway's veil and
+  // promise behind them. They keep their read as relief on the abyss
+  // floor from the lip stands, and DISSOLVE when the camera closes so
+  // no stand ever meets them as a wall.
   const inkEntries: { material: MeshBasicMaterial; fade: number }[] = [];
   const curtainMeshes: Mesh[] = [];
   for (const [index, curtain] of CURTAINS.entries()) {
@@ -179,6 +186,13 @@ export function buildOpenBlueFlora(def: WingDef): WingFlora {
       side: DoubleSide,
       toneMapped: true,
       vertexColors: true,
+      transparent: true,
+      depthWrite: false,
+    });
+    applyCurtainDissolve(material, {
+      nearFrom: 6,
+      nearTo: 14,
+      cacheKey: "w4-openblue-curtain-dissolve",
     });
     inkEntries.push({ material, fade: curtain.fade });
     const geometry = wingCurtain({
@@ -197,6 +211,7 @@ export function buildOpenBlueFlora(def: WingDef): WingFlora {
     mesh.name = `w4-openblue-curtain-${index}`;
     mesh.castShadow = false;
     mesh.receiveShadow = false;
+    mesh.renderOrder = -12 - index;
     curtainMeshes.push(mesh);
     group.add(mesh);
   }

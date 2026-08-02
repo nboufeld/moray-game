@@ -266,6 +266,46 @@ function bakeCalamityPaint(geometry: PlaneGeometry, contacts: readonly ContactPa
   geometry.setAttribute("color", new BufferAttribute(colors, 3));
 }
 
+/**
+ * Notches the Quiet Rim's outer band (critic hard-geometry class, the
+ * blue-2 crest lesson one region over): the rim fade returns the
+ * authored ground to dune level before the weight feather ends, so the
+ * disc's outer band is a perfect LEVEL CIRCLE at y ≈ 0 — and from any
+ * shelf stand near eye height (last-grove) it silhouettes against the
+ * dark ruin curtains as a razor-straight rule. Downward-only bites
+ * (sheet-only relief: terrain target, collision and every placement
+ * stream untouched; a dip can never clip the camera the way a lift
+ * could), gated off the march tongue whose own sheets carry the
+ * approach.
+ */
+function notchRimEdge(geometry: PlaneGeometry): void {
+  const position = geometry.attributes.position!;
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i);
+    const z = position.getZ(i);
+    const rc = Math.hypot(x - CENTER_X, z - CENTER_Z);
+    if (rc <= 174) {
+      continue;
+    }
+    const { u, v } = spokeOf(x, z);
+    if (u >= 46 && u <= MARCH_TO + 6 && Math.abs(v) <= tongueHalfWidth(u) + 14) {
+      continue;
+    }
+    // Onset just inside the rim fade's own rise (rc 172 → 210): the
+    // eye-level grazing line from any shelf stand lands at rc ≈ 182–200.
+    const band = smoothstep01((rc - 178) / 14);
+    if (band <= 0) {
+      continue;
+    }
+    const roll = fbm(x * 0.014, z * 0.014, { seed: SEED ^ 0x0f1b, period: 6, octaves: 2 });
+    const bite = smoothstep01(
+      (fbm(x * 0.03, z * 0.03, { seed: SEED ^ 0xb17e, period: 8, octaves: 2 }) - 0.56) / 0.12,
+    );
+    position.setY(i, position.getY(i) - (roll * 1.8 + bite * 3.0) * band);
+  }
+  position.needsUpdate = true;
+}
+
 /** Builds the six painted ground sheets. */
 export function buildCalamityGround(contacts: readonly ContactPatch[]): Mesh[] {
   const material = createSandMaterial();
@@ -281,6 +321,7 @@ export function buildCalamityGround(contacts: readonly ContactPatch[]): Mesh[] {
   for (const [cx, cz] of centers) {
     const geometry = createSeabedGeometryAt(cx, cz, DISC_TILE, DISC_SEGMENTS);
     trimSheet(geometry, keepGround);
+    notchRimEdge(geometry);
     bakeCalamityPaint(geometry, contacts);
     const mesh = new Mesh(geometry, material);
     mesh.name = "calamity-ground-disc";

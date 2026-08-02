@@ -2,7 +2,7 @@ import { type MeshToonMaterial, type Texture } from "three";
 import { requestAlbedo } from "../rendering/AssetLibrary";
 import { readImage, textureFromPixels } from "../rendering/ImagePixels";
 import { buildColorTexture, buildNormalTexture, fbm } from "../rendering/ProceduralTexture";
-import { createToonMaterial } from "../rendering/ToonShading";
+import { applyFarClipDissolve, createToonMaterial } from "../rendering/ToonShading";
 import { SEEDS } from "../util/Random";
 
 const SIZE = 512;
@@ -90,6 +90,12 @@ export function createSandMaterial(): MeshToonMaterial {
     // shadows under everything resting on the sand.
     vertexColors: true,
   });
+
+  // Every region's ground sheet is built from this material, and the
+  // ground sheets are the one surface vast enough to be CUT by the
+  // camera's far plane in open frames (the wall-crossing razor line) —
+  // they melt into the backdrop across the last visible metres instead.
+  applyFarClipDissolve(material);
 
   for (const map of [material.map, material.normalMap]) {
     map?.repeat.set(SAND_REPEAT, SAND_REPEAT);

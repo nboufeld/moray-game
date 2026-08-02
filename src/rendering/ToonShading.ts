@@ -191,6 +191,46 @@ export function toonGradientMap(): DataTexture {
   return texture;
 }
 
+/**
+ * Melts a surface into the backdrop just inside the camera's 160 m far
+ * clip (critic #1, wall-crossing; the same line splits calamity-08).
+ *
+ * The defect class: a vast sheet (a region's ground disc) crossing the
+ * far plane is CUT by it, and plane∩plane is a razor-straight line. By
+ * 140 m the exp² fog has fully saturated the sheet to the fog colour,
+ * but the painted backdrop behind the clip is a gradient the fog colour
+ * only approximates — so the cut survives fog as a hard tonal step, a
+ * card edge no geometry owns. Density can never cure it (the mismatch
+ * is fog-vs-backdrop, not fog-vs-surface), so the last metres of the
+ * sheet hand themselves over instead: a screen-door dissolve across
+ * the last ~40 visible metres, dithered on the pixel grid, stable
+ * frame to frame. Interleaved gradient noise rather than a white-noise
+ * hash: the white hash clumps, and at the half-mixed middle of the
+ * band the clumps read as a speckled stripe — IGN's even distribution
+ * reads as a grade.
+ *
+ * Discard-based on purpose: no `transparent` flag, so the great opaque
+ * sheets keep their render order and depth writes.
+ */
+export function applyFarClipDissolve(material: MeshToonMaterial, from = 118, to = 156): void {
+  material.onBeforeCompile = (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <fog_fragment>",
+      `#include <fog_fragment>
+#ifdef USE_FOG
+	{
+		float clipFade = smoothstep(${from.toFixed(1)}, ${to.toFixed(1)}, vFogDepth);
+		if (clipFade > 0.0) {
+			float clipHash = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
+			if (clipHash < clipFade) discard;
+		}
+	}
+#endif`,
+    );
+  };
+  material.customProgramCacheKey = () => `far-clip-dissolve-${from}-${to}`;
+}
+
 export interface ToonMaterialOptions {
   readonly color?: ColorRepresentation;
   readonly map?: Texture | null;
