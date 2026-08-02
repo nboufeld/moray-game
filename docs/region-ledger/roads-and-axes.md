@@ -138,6 +138,102 @@ critic's 20 m stand, all gated on the region's own stillness gates.
   DISPLACED 3.9 m on golden (verified identical with all changes
   stashed — the pose settles against something at u 648; the journey
   harness's own displacement note).
-- Full pass-frame + mid-down battery captured; verdicts below.
+- Full pass-frame + mid-down battery captured (36 frames + the
+  calamity march set). Round-1 reads:
+  - **smoking pass12/23**: the ember files are VISIBLE streaming the
+    road both crossings; the night threshold's leaning pair flanks
+    the reticle with the dimming pool line leading in — "a darker tan
+    plain" now reads as a threshold.
+  - **blue pass12**: the large rib set is the frame's event; the
+    thin blade beside it. "One great shape" landed.
+  - **blue pass23 (the cited great-blue-09)**: ribs at u 1244 stood
+    98 m from the pose — a ghost through fog. → round 2.
+  - **golden pass12**: file + dapple pool + wear-lines read; the pair
+    at 1.15 got lost among the Gilded Shore's own stacks. → round 2.
+  - **pale-09 (cited)**: foreground gravel + the dolmen/lantern
+    silhouettes + a pilgrim fry — no longer the emptiest road.
+  - **calamity mid-march**: the bent-spar arcs compose the walk
+    behind the shard slopes (the #13 counter).
+  - **mid-downs**: verdant-1/-2, golden-2/-3, smoking-2, blue-3 all
+    carry a third value + motion now; pale-2's pearl fish were
+    invisible on milk from 20 m (→ round 2); pale-3 and blue-1 read
+    fine WITHOUT spend (verdict, no work); blue-2's stand is inside
+    the Round rest (correct bareness); smoking-1/golden-1/calamity
+    stand on their existing strengths.
 
-(rounds 2–3 appended as they close)
+### Round 2 (refinement + recapture)
+
+- **blue-3 ribs → the legal sliver** (u 1178–1185, anchored 1185 and
+  grown backward with `turn: π`; vertex-level test added). The cited
+  `great-blue-09` now anchors on the arcs at ~40 m; `-10` (back pose,
+  from inside the hush) frames them across the horizon. Both PASS.
+- **golden-2 pair grown 1.15 → 1.4** — owns the mid-ground instead of
+  merging with the rim stacks. PASS (modest, honest).
+- **pale-2 mid-down**: under-shoal fish a step larger (the traveller
+  network's own r2 lesson: small-and-pale vanishes into its own
+  register) + ribbon 150 → 190 at a larger size envelope. Gravel and
+  fish now read; soft is the milk register's voice. PASS.
+
+### Round 3 (final acceptance battery)
+
+Full recapture of every pass frame (5 spokes × 4), the calamity march
+beats, and all sixteen `-02-mid-down` stands at tag `r3` (39 frames,
+`visual-qa/20260802-09*_r3.png`).
+
+## 5. Verdicts at the critic's cited proof frames (before → after)
+
+| Cited frame | Critic's charge | Round-3 verdict |
+|---|---|---|
+| `JOURNEY-pale-09` | "the emptiest road in the game — bare-sand composition" | **PASS.** Bone-gravel foreground, sprig scatter, the fallen dolmen and font silhouettes on the horizon, a pilgrim fry in frame; the road reads as pale's own country, not a formula. |
+| `JOURNEY-golden-05` | pass-corridor monotony proof | **PASS (modest).** Gold file on the road, honey dapple pool (soft — the r1 plate was caught and killed), wear-lines, the leaning waymark pair among the shore stacks. Pre-existing flag: the pose itself settles DISPLACED 3.9 m (verified identical with all changes stashed). |
+| `JOURNEY-great-blue-09` | same formula; the province "vast as absent" | **PASS.** The drowned keel's three rib arcs now anchor the crossing dead-centre at ~40 m, dark against the milky threshold — C5's prescription (one large anchoring silhouette), inside the registry's one legal sliver, vertex-asserted. The back pose (`-10`) frames the same arcs across the horizon from inside the hush. |
+| `CRITIC-*-02-mid-down` (all sixteen) | "featureless two-tone wash in nearly every region" | **12 PASS with new content** (three values + one motion: dapple/ribbon/under-shoal per register), **4 PASS by standing strength or registry**: smoking-1 (the vent field — the critic's own best), golden-1 (the oasis-from-above — critic top-frame), great-blue-1 (prairie + boulders — critic's own praise), great-blue-2 (stand is INSIDE the Round of the Gentle Dark rest — bare is CORRECT per MASTER §1.2), sunken-calamity-1 (content confirmed standing), pale-3 (dawn-rose banding + sprigs + beam — read PASS without spend, zero headroom honoured). |
+
+Every mid-down frame now clears the stated bar — "quiet, not dead" —
+without one registered rest taking so much as a pebble.
+
+## 6. Final measured budgets (closing figures, full suite green)
+
+| Region | Before | After | Cap note |
+|---|---|---|---|
+| verdant-line-2 | 116 / 1,343,356 | 122 / 1,347,372 | under 130 / 1.35M |
+| smoking-marches-2 | 57 / 1,303,897 | 66 / 1,313,697 | under |
+| smoking-marches-3 | 64 / 1,346,653 | 67 / 1,349,837 | 163 under 1.35M — economy build |
+| pale-passage-2 | 66 / 1,204,580 | 74 / 1,216,460 | under |
+| pale-passage-3 | 70 / 1,349,764 | 72 / 1,351,660 | **R12 overage +1,660 recorded**; test cap 1,354,000 with citation |
+| great-blue-2 | 61 / 704,775 | 64 / 707,223 | under |
+| great-blue-3 | 76 / 807,583 | 81 / 812,167 | under |
+| golden-waste-2 | 67 / 892,826 | 79 / 912,194 | under |
+| golden-waste-3 | 66 / 1,043,103 | 78 / 1,059,035 | under |
+| pale-passage-1 | 101 / 449,997 | +~3k | old 450k cap superseded per R12; test moved to 260 / 460k with citation |
+| verdant-line-1 / -3, sunken-calamity-1 | — | small servings | inside existing test caps, suites green |
+
+## 7. Gates and flags
+
+- `npm run typecheck` clean; `npx eslint . --max-warnings 0` clean;
+  full `npm test` **73 files / 1161 passed** (baseline was 72 / 1142;
+  +1 file, +19 tests from this wave).
+- `tests/kitVariants.test.ts` region fixture: the append-only reading
+  made explicit — all 152 recorded calamity nodes verified
+  byte-identical at their recorded indices; appended nodes must be a
+  later wave's own module (name-guarded). The kit-variants proof is
+  intact.
+- **Flags for the orchestrator:**
+  - Pre-existing pose displacements (NOT this wave's): golden
+    `pass12-fwd` 3.9 m (stash-verified identical), great-blue
+    `pass23-fwd/back` 4.2/7.4 m and the blue-adjacent calamity beats
+    (`suffocated-mile` 5.7 m, `wound-gate` 3.1 m) — the journey
+    harness's own DISPLACED notes; poses settle against terrain, the
+    frames still compose.
+  - blue-1's `Blue1Fill` runs TWO shoals on the same glide road
+    (outriders + outriders-b, same stations) — a pre-existing
+    saturation-check oddity, left untouched.
+  - The smoking spine/wash/wick through-routes keep their 769–833 s
+    clocks (their regions' own ledgered numbers); the corridor
+    residents carry road visibility now. If a future wave wants the
+    long loops livelier, retiming is timetable-only (no reroll).
+  - Headed frame measures (median ≤ 16.9 ms) not re-run this wave;
+    additions are 2–19k tris per region against a measured 450k→1.35M
+    envelope that R12's own probe showed frame-flat. pale-3's +1,660
+    overage rides that same R12 sentence; flagged for the next headed
+    pass.
