@@ -1,11 +1,14 @@
 import {
   AdditiveBlending,
   BufferAttribute,
+  BufferGeometry,
   Color,
   DoubleSide,
+  FogExp2,
   Group,
   InstancedMesh,
   Matrix4,
+  Mesh,
   MeshBasicMaterial,
   Object3D,
   PlaneGeometry,
@@ -13,10 +16,12 @@ import {
   SphereGeometry,
   Vector3,
   type DataTexture,
+  type Scene,
 } from "three";
 import { buildColorTexture, fbm } from "../../../rendering/ProceduralTexture";
 import { createToonMaterial } from "../../../rendering/ToonShading";
 import { Random, SEEDS } from "../../../util/Random";
+import { buildBeamAndPool } from "../../regions/kit/BeamAndPool";
 import { buildCarpetField } from "../../regions/kit/CarpetField";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
 import { angleBetween, wedgeHalfAt } from "../WingGeometry";
@@ -399,14 +404,37 @@ export function buildCurrentRunFlora(def: WingDef): WingFlora {
     swayAmp: 0.05,
   });
   uplift.add(combedTurf.group);
+
+  // ── The critic's-wave re-pass: the far end's composed close ──────────
+  // The critic's verdict on the interior stand: "a seagrass corridor
+  // ending at a plain tan wall with one flat blue mound for a horizon".
+  // The run's whole identity is water GOING somewhere, so the far end
+  // now says where, in the wing's own register — three layers, back to
+  // front: two rushing-teal recession planes past the shelf's end
+  // (lightening with depth: the run continues into BRIGHT water, the
+  // glass-cove trick, under the gate-veil discipline — drooped fbm
+  // skylines, alpha-dissolved tops and sides, opacity ≤ 0.2, fog:false
+  // with self-mixed inks), one pale water-light column standing in the
+  // far notch (the light the run is racing toward), and a pair of tall
+  // worn sentinel stones leaning downstream at the channel's mouth with
+  // a trail of lower ones behind them. Everything keeps the channel law
+  // (solids ≥ 2.1 m off the axis); the planes and the column are
+  // intangible light PAST the run's end (r ≥ 46.9), exempted by name in
+  // tests/wingsTierB.test.ts with the exemption's own radial fence.
+  // Streams: fresh `^ 0xb40b` (stones) and `^ 0xb40c` (column) only.
+  addRunClose(uplift, def, frame, downstreamYaw, contacts);
   group.add(uplift);
 
   // The doorway: a rushing-turquoise veil with a pale water-light column —
   // the ride promised from the bowl, the channel's centre left open.
+  // Height 3.6 → 2.7 (the critic's-wave re-pass): the near plane's seeded
+  // ridge peak crested the saddle from the bowl stand and read as a
+  // translucent GHOST PYRAMID hovering in the doorway (the C4 family) —
+  // at 2.7 every skyline stays inside the notch.
   const veil = mountGateVeil(def, {
     doorR: 32,
     width: 3.8,
-    height: 3.6,
+    height: 2.7,
     sillLift: -1.0,
     palette: [0x2c4844, 0x40625c, 0x5c807a],
     column: { tint: 0xd8f0ea, opacity: 0.07 },
@@ -428,4 +456,219 @@ export function buildCurrentRunFlora(def: WingDef): WingFlora {
   };
 
   return { group, contacts, update };
+}
+
+/* ------------------------------------------------------------------ *
+ *  The far end's composed close (the critic's-wave re-pass)
+ * ------------------------------------------------------------------ */
+
+/** The recession planes: [radial station, full width, band height].
+ *  r3: bands 2.9/3.7 → 4.6/6.0 — from the low interior stand the end
+ *  wall towers over the run, and a waist-high recession left most of it
+ *  bare tan; the taller bands paint the teal "the water goes on" up the
+ *  face, tops still alpha-dissolved so no edge ever shows. */
+const CLOSE_PLANES = [
+  [47.3, 11, 4.6],
+  [49.2, 13, 6.0],
+] as const;
+/** Inks near → far, LIGHTENING with depth: the run ends in bright water. */
+const CLOSE_INKS = [0x3f6f66, 0x6fa79c] as const;
+const CLOSE_FOG_MIX = [0.3, 0.55] as const;
+const CLOSE_OPACITY = 0.18;
+/** Vertical value grade and dissolve, the gate-veil discipline. */
+const CLOSE_GRADE_FOOT = 0.82;
+const CLOSE_GRADE_TOP = 1.12;
+const CLOSE_DISSOLVE_FROM = 0.58;
+const CLOSE_FOOT = 2;
+
+/**
+ * The far-end close, mounted inside the Tier B uplift group so every
+ * containment sweep reads it. Solids (the sentinel stones) obey the
+ * channel law directly; the two recession planes and the light column
+ * are named `w3-run-close-*` and stand past r 46.9 — the tierb suite's
+ * channel case exempts exactly that name behind its own radial fence.
+ */
+function addRunClose(
+  uplift: Group,
+  def: WingDef,
+  frame: ReturnType<typeof wingFrame>,
+  downstreamYaw: number,
+  contacts: ContactPatch[],
+): void {
+  // ── The recession planes ──
+  const planeMaterials: { material: MeshBasicMaterial; ink: Color; mix: number }[] = [];
+  let firstPlane: Mesh | null = null;
+  for (const [index, [station, width, band]] of CLOSE_PLANES.entries()) {
+    const centreX = frame.axisX * station;
+    const centreZ = frame.axisZ * station;
+    const groundY = seabedHeight(centreX, centreZ);
+    const ridgeSeed = (SEEDS[def.seedKey] ^ (0xb40d + index * 0x9e37)) >>> 0;
+
+    const columns = 24;
+    const rows = 4;
+    const positions = new Float32Array((columns + 1) * (rows + 1) * 3);
+    const colors = new Float32Array((columns + 1) * (rows + 1) * 4);
+    const indices: number[] = [];
+    for (let c = 0; c <= columns; c++) {
+      const u = c / columns;
+      const ridge = fbm(u * 2, index * 0.41, { seed: ridgeSeed, period: 2, octaves: 2 });
+      let top = band * (0.72 + 0.28 * ridge);
+      // Drooped ends — no rectangular corner ever shows (the veil rule).
+      top *= 1 - 0.4 * smoothstep01((Math.abs(u - 0.5) - 0.28) / 0.2);
+      const across = (u - 0.5) * width;
+      const x = centreX + frame.perpX * across;
+      const z = centreZ + frame.perpZ * across;
+      for (let r = 0; r <= rows; r++) {
+        const rowFrac = r / rows;
+        const y = groundY - CLOSE_FOOT + (top + CLOSE_FOOT) * rowFrac;
+        const vertex = c * (rows + 1) + r;
+        positions[vertex * 3] = x;
+        positions[vertex * 3 + 1] = y;
+        positions[vertex * 3 + 2] = z;
+        const grade = CLOSE_GRADE_FOOT + (CLOSE_GRADE_TOP - CLOSE_GRADE_FOOT) * rowFrac;
+        const topFade = 1 - smoothstep01((rowFrac - CLOSE_DISSOLVE_FROM) / (1 - CLOSE_DISSOLVE_FROM));
+        const sideFade = 1 - smoothstep01((Math.abs(u - 0.5) - 0.34) / 0.16);
+        colors[vertex * 4] = grade;
+        colors[vertex * 4 + 1] = grade;
+        colors[vertex * 4 + 2] = grade;
+        colors[vertex * 4 + 3] = topFade * sideFade;
+      }
+    }
+    for (let c = 0; c < columns; c++) {
+      for (let r = 0; r < rows; r++) {
+        const a = c * (rows + 1) + r;
+        const b = (c + 1) * (rows + 1) + r;
+        indices.push(a, b, a + 1, b, b + 1, a + 1);
+      }
+    }
+    const geometry = new BufferGeometry();
+    geometry.setAttribute("position", new BufferAttribute(positions, 3));
+    geometry.setAttribute("color", new BufferAttribute(colors, 4));
+    geometry.setIndex(indices);
+    geometry.computeBoundingSphere();
+
+    const ink = new Color(CLOSE_INKS[index]!);
+    const mix = CLOSE_FOG_MIX[index]!;
+    const material = new MeshBasicMaterial({
+      color: ink.clone().lerp(new Color(0x53b2bb), mix),
+      transparent: true,
+      opacity: CLOSE_OPACITY,
+      depthWrite: false,
+      side: DoubleSide,
+      forceSinglePass: true,
+      vertexColors: true,
+      fog: false,
+    });
+    const mesh = new Mesh(geometry, material);
+    mesh.name = `w3-run-close-plane-${index}`;
+    mesh.renderOrder = 1;
+    uplift.add(mesh);
+    planeMaterials.push({ material, ink, mix });
+    firstPlane ??= mesh;
+  }
+
+  // The DistantReef self-mix: the inks follow every mood and weather.
+  if (firstPlane) {
+    let lastFog = -1;
+    firstPlane.onBeforeRender = (_renderer, scene) => {
+      const fog = (scene as Scene).fog;
+      if (!(fog instanceof FogExp2)) {
+        return;
+      }
+      const hex = fog.color.getHex();
+      if (hex === lastFog) {
+        return;
+      }
+      lastFog = hex;
+      for (const plane of planeMaterials) {
+        plane.material.color.copy(plane.ink).lerp(fog.color, plane.mix);
+      }
+    };
+  }
+
+  // ── The far light column ──
+  const columnX = frame.axisX * 48.3;
+  const columnZ = frame.axisZ * 48.3;
+  const columnGround = seabedHeight(columnX, columnZ);
+  const column = buildBeamAndPool({
+    seed: (SEEDS[def.seedKey] ^ 0xb40c) >>> 0,
+    tint: 0xdcf4ee,
+    ground: () => columnGround,
+    beams: [
+      // Upright on purpose: a slanted head would walk the quad corners
+      // past the r 50.5 containment fence the tierb suite sweeps.
+      // r3: 2.6 @ 0.09 → 3.1 @ 0.12 — the light the run races toward
+      // was a whisper against the recession; still far under the 0.3 cap.
+      {
+        pos: [columnX, columnZ],
+        top: columnGround + 7.2,
+        width: 3.1,
+        opacity: 0.12,
+      },
+    ],
+    pools: [],
+  });
+  // The name prefix is the tierb channel-law exemption's handle — rename
+  // every drawable, not just the group, so the sweep's `from` carries it.
+  column.group.traverse((node) => {
+    node.name = `w3-run-close-${node.name || "column"}`;
+  });
+  uplift.add(column.group);
+
+  // ── The sentinel stones ──
+  const stream = new Random((SEEDS[def.seedKey] ^ 0xb40b) >>> 0);
+  const dummy = new Object3D();
+  const tint = new Color();
+  const spots: { matrix: Matrix4; value: number }[] = [];
+  /** [r, lateral, along, height, across, lean] — solids ≥ 2.1 m off axis.
+   *  r2: the first cut's squat eggs read as MUSHROOM CAPS — the pair is
+   *  slimmer and taller now (standing stones, not dishes), and the trail
+   *  stones sit low and close so nothing perches on the far wall's crest
+   *  silhouetting as a floating cap. */
+  const stones = [
+    [46.9, -2.7, 0.95, 3.7, 0.8, 0.24],
+    [47.1, 2.8, 0.9, 3.2, 0.75, 0.28],
+    // r3: the trail pulled in under r 47.6 and flattened — at 47.7+ the
+    // pads rode the rising end wall and silhouetted at its crest as
+    // floating caps from the canonical stand.
+    [47.4, -3.2, 1.5, 0.42, 0.85, 0.08],
+    [47.6, 3.2, 1.4, 0.38, 0.8, 0.06],
+    [47.2, -2.3, 1.2, 0.34, 0.7, 0.05],
+    [47.5, 2.3, 1.1, 0.3, 0.65, 0.05],
+  ] as const;
+  for (const [r, lateral, along, height, across, lean] of stones) {
+    const jr = r + stream.signed(0.15);
+    const jl = lateral + Math.sign(lateral) * stream.range(0, 0.2);
+    const x = frame.axisX * jr + frame.perpX * jl;
+    const z = frame.axisZ * jr + frame.perpZ * jl;
+    const ground = seabedHeight(x, z);
+    dummy.position.set(x, ground + height * (height > 2 ? 0.34 : 0.16), z);
+    // Yawed onto the flow, tipped downstream about the across axis: the
+    // run's worn stones lean the way the banners do.
+    dummy.rotation.set(0, downstreamYaw + stream.signed(0.1), -lean);
+    dummy.scale.set(along, height, across);
+    dummy.updateMatrix();
+    spots.push({ matrix: dummy.matrix.clone(), value: stream.range(0.85, 1.05) });
+    contacts.push({ x, z, radius: Math.max(along, across) * 0.7, strength: 0.35 });
+  }
+  const material = createToonMaterial({ color: 0xffffff });
+  const sentinels = new InstancedMesh(new SphereGeometry(0.5, 9, 6), material, spots.length);
+  sentinels.name = "w3-run-sentinels";
+  sentinels.userData.floorBound = "rest";
+  // Uplift discipline (R2): no shadow work in either direction.
+  sentinels.receiveShadow = false;
+  sentinels.castShadow = false;
+  spots.forEach((spot, index) => {
+    sentinels.setMatrixAt(index, spot.matrix);
+    // A step deeper than the channel's pale stones, so the pair reads as
+    // silhouette against the bright far water rather than more tan.
+    tint.setHex(0x6f9e96).multiplyScalar(spot.value);
+    sentinels.setColorAt(index, tint);
+  });
+  sentinels.instanceMatrix.needsUpdate = true;
+  if (sentinels.instanceColor) {
+    sentinels.instanceColor.needsUpdate = true;
+  }
+  sentinels.computeBoundingSphere();
+  uplift.add(sentinels);
 }

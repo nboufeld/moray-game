@@ -380,3 +380,20 @@ wing over its R2 ceiling.
   as a rerunnable spot-check (exits 1 on regression); the sargassum
   horizon band is verified closed at the canonical look-up in r1 and
   r3; REGIONS.md now carries the R12 doctrine numbers per R1.
+
+## Addendum — the critic's-wave polish (wings-polish)
+
+The critic's-wave punch items re-opened two of this batch's wings; the
+diagnosis, rounds and amendments live in
+`docs/region-ledger/wings-polish.md`. The measured numbers moved:
+**lumen-garden +4 → +7 draws / 10,896 → 18,336 tris** (glow
+constellations ×2 draws + door motes ×1; the interior pose is
+y −6.0 / pitch −0.38 now) and **current-run +6 → +10 draws /
+5,936 → 7,180 tris** (the far-end composed close: two recession
+planes, a light column, a sentinel-stone draw; door veil height
+3.6 → 2.7). Both ride the polish allowance the brief granted ("≤ +6 /
+≤ 20k on top of what it already carries"), asserted per wing in
+`tests/wingsTierB.test.ts`; the program envelope is now
+**+118 draws / +195.0k tris of ≤ +120 / ≤ 380k**, printed and
+re-asserted every run. The nursery-shallows interior stand is
+across 0.085 / y 3.6 / pitch −0.2 (the cramped-frame fix, pose only).

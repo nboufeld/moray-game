@@ -363,10 +363,23 @@ describe("W1 wing flora: motion", () => {
   }
 
   it("keeps the lumen motes' drift bounded under reduced motion", () => {
+    // Scoped to the named constellation sets (wings-polish, stated): the
+    // law is the MOTES breathe rather than travel. The all-Points sweep
+    // was only ever safe because lumen had no doorway drift; its door
+    // particulate now rides the same wrapping `particulateField` every
+    // other wing's veil already carries, and a wrapped speck is a
+    // recycled one, not a travelled one.
     const flora = buildLumenGardenFlora(LUMEN_GARDEN);
-    const before = pointPositions(flora);
+    const before = [
+      ...pointPositions(flora, "lumen-motes"),
+      ...pointPositions(flora, "lumen-polyp-halos"),
+    ];
     flora.update?.(3, true);
-    const after = pointPositions(flora);
+    const after = [
+      ...pointPositions(flora, "lumen-motes"),
+      ...pointPositions(flora, "lumen-polyp-halos"),
+    ];
+    expect(before.length).toBeGreaterThan(200);
     expect(after.length).toBe(before.length);
     for (let i = 0; i < before.length; i++) {
       const drift = after[i]!.distanceTo(before[i]!);
