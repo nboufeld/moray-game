@@ -14,6 +14,12 @@ import {
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { fbm } from "../../../rendering/ProceduralTexture";
 import { Random, SEEDS } from "../../../util/Random";
+import {
+  SoftRingBuilder,
+  applyCurtainDissolve,
+  endAlpha,
+  softCurtainMaterial,
+} from "../kit/HorizonCurtain";
 import { smoothstep01 } from "./VerdantShared";
 import { CENTER_X, CENTER_Z, VERDANT_SLOT } from "./VerdantTerrain";
 
@@ -108,17 +114,18 @@ export function buildVerdantDistance(): { meshes: (Mesh | InstancedMesh)[] } {
   };
 
   for (const [index, layer] of LAYERS.entries()) {
-    const material = new MeshBasicMaterial({
+    // Critic F3 (the class fix): soft three-row curtain, dissolved
+    // crest, gap ends fading out, far-clip self-dissolve.
+    const material = softCurtainMaterial({
       color: new Color(0x53b2bb).lerp(new Color(0x53b2bb).multiply(INK), 1 - layer.fade),
-      fog: false,
-      side: DoubleSide,
-      toneMapped: true,
     });
+    applyCurtainDissolve(material, { cacheKey: "verdant-distance-dissolve" });
     const geometry = forestRing(layer, random, SEEDS.regionVerdant1 ^ (0xd200 + index * 131));
     const mesh = new Mesh(geometry, material);
     mesh.castShadow = false;
     mesh.receiveShadow = false;
     mesh.name = `verdant-distance-${index}`;
+    mesh.renderOrder = -(index + 3);
     if (index === 0) {
       mesh.onBeforeRender = (_renderer, scene) => followFog(scene);
     }
@@ -249,9 +256,7 @@ function forestRing(layer: ForestLayer, random: Random, noiseSeed: number): Buff
     });
   }
 
-  const positions: number[] = [];
-  const indices: number[] = [];
-  let column = 0;
+  const builder = new SoftRingBuilder();
 
   // The near gap faces back down the spoke toward the origin, where the
   // vale comes in: from the disc's centre that is the slot azimuth plus π.
@@ -264,7 +269,7 @@ function forestRing(layer: ForestLayer, random: Random, noiseSeed: number): Buff
     const off = angleBetween(theta, gapAt);
     const offPass = angleBetween(theta, passAt);
     if (off < GAP_HALF || offPass < PASS_GAP_HALF) {
-      column = 0;
+      builder.gap();
       continue;
     }
     // The arc's ends sink into the ground over a short run, so the gaps'
@@ -293,19 +298,12 @@ function forestRing(layer: ForestLayer, random: Random, noiseSeed: number): Buff
       }
     }
 
-    positions.push(x, FOOT, z, x, FOOT + Math.max(1.4, canopy + spike - FOOT) * end + 0.2, z);
-    if (column > 0) {
-      const a = positions.length / 3 - 4;
-      indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
-    }
-    column++;
+    builder.column(x, z, FOOT, FOOT + Math.max(1.4, canopy + spike - FOOT) * end + 0.2, {
+      alpha: endAlpha(end),
+    });
   }
 
-  const geometry = new BufferGeometry();
-  geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
-  geometry.setIndex(indices);
-  geometry.computeBoundingSphere();
-  return geometry;
+  return builder.build();
 }
 
 function angleBetween(a: number, b: number): number {

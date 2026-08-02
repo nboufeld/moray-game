@@ -195,7 +195,9 @@ export function buildMooring(): MooringBuild {
   // Round 2: the Weir joins the pale family outright — the r1 arch
   // wore the rock wash's rust and read as a different country's stone.
   palenStone(arch, 0.45);
-  const weirMaterial = createRockMaterial(0xd2d8de);
+  // Stretch #11 (critic NICE): the arch's wash noise calmed — the
+  // twilight beat is soft; the ochre patches fought it.
+  const weirMaterial = createRockMaterial(0xd2d8de, { washCalm: 0.65 });
   weirMaterial.emissive.setHex(STONE_DUSK);
   weirMaterial.emissiveIntensity = 0.38;
   meshes.push(mergedMesh([arch], weirMaterial, "deepsteps-weir"));

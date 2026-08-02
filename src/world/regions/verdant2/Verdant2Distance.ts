@@ -14,6 +14,12 @@ import {
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { fbm } from "../../../rendering/ProceduralTexture";
 import { Random, SEEDS } from "../../../util/Random";
+import {
+  SoftRingBuilder,
+  applyCurtainDissolve,
+  endAlpha,
+  softCurtainMaterial,
+} from "../kit/HorizonCurtain";
 import { smoothstep01 } from "./Verdant2Shared";
 import { CENTER_X, CENTER_Z, VERDANT2_SLOT } from "./Verdant2Terrain";
 
@@ -107,17 +113,17 @@ export function buildVerdant2Distance(): { meshes: (Mesh | InstancedMesh)[] } {
   };
 
   for (const [index, layer] of LAYERS.entries()) {
-    const material = new MeshBasicMaterial({
-      color: new Color(0x4f9a86),
-      fog: false,
-      side: DoubleSide,
-      toneMapped: true,
-    });
+    // Critic F3 (the class fix): soft three-row curtain, dissolved
+    // crest — the terraced mesa skylines keep their treads, but a step
+    // is now a painted terrace edge, never a floating rectangle.
+    const material = softCurtainMaterial({ color: new Color(0x4f9a86) });
+    applyCurtainDissolve(material, { cacheKey: "verdant2-distance-dissolve" });
     const geometry = cliffRing(layer, SEEDS.regionVerdant2 ^ (0xd300 + index * 131));
     const mesh = new Mesh(geometry, material);
     mesh.castShadow = false;
     mesh.receiveShadow = false;
     mesh.name = `verdant2-distance-${index}`;
+    mesh.renderOrder = -(index + 3);
     if (index === 0) {
       mesh.onBeforeRender = (_renderer, scene) => followFog(scene);
     }
@@ -282,9 +288,7 @@ function pillarCardGeometry(): BufferGeometry {
  * azimuth sector is skipped; the arc ends sink into the fog's floor.
  */
 function cliffRing(layer: CliffLayer, noiseSeed: number): BufferGeometry {
-  const positions: number[] = [];
-  const indices: number[] = [];
-  let column = 0;
+  const builder = new SoftRingBuilder();
 
   const gapAt = VERDANT2_SLOT.azimuth + Math.PI;
   const gapOutAt = VERDANT2_SLOT.azimuth;
@@ -293,7 +297,7 @@ function cliffRing(layer: CliffLayer, noiseSeed: number): BufferGeometry {
     const off = angleBetween(theta, gapAt);
     const offOut = angleBetween(theta, gapOutAt);
     if (off < GAP_HALF || offOut < GAP_OUT_HALF) {
-      column = 0;
+      builder.gap();
       continue;
     }
     const end = Math.min(
@@ -321,19 +325,12 @@ function cliffRing(layer: CliffLayer, noiseSeed: number): BufferGeometry {
       (fbm(t * 40, layer.radius, { seed: noiseSeed ^ 0x99, period: 40, octaves: 1 }) - 0.5) * 1.5;
     const top = layer.meanTop + stepped + wobble;
 
-    positions.push(x, FOOT, z, x, FOOT + Math.max(1.4, top - FOOT) * end + 0.2, z);
-    if (column > 0) {
-      const a = positions.length / 3 - 4;
-      indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
-    }
-    column++;
+    builder.column(x, z, FOOT, FOOT + Math.max(1.4, top - FOOT) * end + 0.2, {
+      alpha: endAlpha(end),
+    });
   }
 
-  const geometry = new BufferGeometry();
-  geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
-  geometry.setIndex(indices);
-  geometry.computeBoundingSphere();
-  return geometry;
+  return builder.build();
 }
 
 function angleBetween(a: number, b: number): number {

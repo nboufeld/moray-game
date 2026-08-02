@@ -335,9 +335,13 @@ interface PromisePlane {
   readonly fade: number;
 }
 
+// Widths sized to the connective-1 frustum guard: each plane's bounding
+// sphere must stay inside the doorway's sight cone (endHalf + 0.08), so
+// the panels are a layered centre-frame promise, and the fog owns the
+// frame's edges the way it always did.
 const PROMISE_PLANES: readonly PromisePlane[] = [
-  { depth: 14, halfWidth: 24, foot: -22, topBase: -5.5, topVary: 2.6, opacity: 0.85, fade: 0.16 },
-  { depth: 26, halfWidth: 34, foot: -26, topBase: -2.8, topVary: 3.6, opacity: 0.7, fade: 0.4 },
+  { depth: 14, halfWidth: 11, foot: -19, topBase: -5.5, topVary: 2.6, opacity: 0.85, fade: 0.16 },
+  { depth: 26, halfWidth: 13, foot: -21, topBase: -2.8, topVary: 3.2, opacity: 0.7, fade: 0.4 },
 ];
 
 /** Foot → crest tints for the promise: violet-deep feet, milky rims. */

@@ -14,6 +14,12 @@ import {
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { fbm } from "../../../rendering/ProceduralTexture";
 import { Random, SEEDS } from "../../../util/Random";
+import {
+  SoftRingBuilder,
+  applyCurtainDissolve,
+  endAlpha,
+  softCurtainMaterial,
+} from "../kit/HorizonCurtain";
 import { regionSlot } from "../RegionSlots";
 import { smoothstep01 } from "./PaleShared";
 import { CENTER_X, CENTER_Z, PALE_SLOT } from "./PaleTerrain";
@@ -135,18 +141,17 @@ export function buildPaleDistance(): { meshes: (Mesh | InstancedMesh)[] } {
   };
 
   for (const [index, layer] of LAYERS.entries()) {
-    const material = new MeshBasicMaterial({
-      color: new Color(0x9fc4c4),
-      fog: false,
-      side: DoubleSide,
-      toneMapped: true,
-      vertexColors: true,
-    });
+    // Critic F3 (the class fix): soft three-row curtain + the far-clip
+    // self-dissolve; the F2 wall-card slab the off-road lost-bearing
+    // frame caught was this family's razor grammar.
+    const material = softCurtainMaterial({ color: new Color(0x9fc4c4) });
+    applyCurtainDissolve(material, { cacheKey: "pale-distance-dissolve" });
     const geometry = reefRing(layer, SEEDS.regionPale1 ^ (0xd210 + index * 131), gapAt);
     const mesh = new Mesh(geometry, material);
     mesh.castShadow = false;
     mesh.receiveShadow = false;
     mesh.name = `pale-distance-${index}`;
+    mesh.renderOrder = -(index + 3);
     if (index === 0) {
       mesh.onBeforeRender = (_renderer, scene) => followFog(scene);
     }
@@ -313,10 +318,7 @@ function moundCardGeometry(): BufferGeometry {
  * over the ravine and vertex-painted bone→bloom by azimuth.
  */
 function reefRing(layer: ReefLayer, noiseSeed: number, gapAt: number): BufferGeometry {
-  const positions: number[] = [];
-  const colors: number[] = [];
-  const indices: number[] = [];
-  let column = 0;
+  const builder = new SoftRingBuilder();
 
   const ink = new Color();
   const gapOutAt = PALE_SLOT.azimuth;
@@ -325,14 +327,14 @@ function reefRing(layer: ReefLayer, noiseSeed: number, gapAt: number): BufferGeo
     const off = angleBetween(theta, gapAt);
     const offOut = angleBetween(theta, gapOutAt);
     if (off < GAP_HALF || offOut < GAP_OUT_HALF) {
-      column = 0;
+      builder.gap();
       continue;
     }
     const x = CENTER_X + Math.cos(theta) * layer.radius;
     const z = CENTER_Z + Math.sin(theta) * layer.radius;
     const overSpur = spurEase(x, z);
     if (overSpur === 0) {
-      column = 0;
+      builder.gap();
       continue;
     }
     // A long ease: round 1's 0.14 rad cut rendered the arc ends as
@@ -350,29 +352,26 @@ function reefRing(layer: ReefLayer, noiseSeed: number, gapAt: number): BufferGeo
         2 *
         layer.crestVary;
 
-    positions.push(x, FOOT, z, x, FOOT + Math.max(1.4, crest - FOOT) * end + 0.2, z);
-
     // The healing ink, per column: bone (barely under the fog) on the
     // white side, rose-violet on the bloom side, blended toward the fog
     // by the layer's own fade so far layers dissolve first.
     const healing = healingAt(theta, gapAt);
     ink.copy(INK_BONE).lerp(INK_BLOOM, healing);
     ink.lerp(new Color(1, 1, 1), layer.fade);
-    colors.push(ink.r, ink.g, ink.b, ink.r, ink.g, ink.b);
 
-    if (column > 0) {
-      const a = positions.length / 3 - 4;
-      indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
-    }
-    column++;
+    // Critic F3 (the class fix): soft three-row grammar — dissolved
+    // crest, gap ends fading out instead of running as slab ribbons.
+    builder.column(x, z, FOOT, FOOT + Math.max(1.4, crest - FOOT) * end + 0.2, {
+      alpha: endAlpha(end),
+      tints: [
+        [ink.r * 0.92, ink.g * 0.92, ink.b * 0.92],
+        [ink.r, ink.g, ink.b],
+        [ink.r * 1.06, ink.g * 1.06, ink.b * 1.06],
+      ],
+    });
   }
 
-  const geometry = new BufferGeometry();
-  geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
-  geometry.setAttribute("color", new BufferAttribute(new Float32Array(colors), 3));
-  geometry.setIndex(indices);
-  geometry.computeBoundingSphere();
-  return geometry;
+  return builder.build();
 }
 
 function angleBetween(a: number, b: number): number {

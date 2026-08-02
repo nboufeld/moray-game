@@ -103,9 +103,14 @@ interface WallFace {
   readonly ink: Color;
 }
 
+// Round 2 (wall-face recapture): 183/196 stood AT the wall-face
+// camera's own station (u ≈ 628–641) — behind the lens, not across the
+// void it looks into. The cliff the beat faces is the drop's near face
+// UNDER blue-1's rim lip, u ≈ 603–615: the curtains now hang there,
+// 26–38 m ahead of the authored stand.
 const WALL_FACES: readonly WallFace[] = [
-  { radius: 183, ink: new Color(0.6, 0.5, 0.7) },
-  { radius: 196, ink: new Color(0.72, 0.61, 0.79) },
+  { radius: 158, ink: new Color(0.6, 0.5, 0.7) },
+  { radius: 170, ink: new Color(0.72, 0.61, 0.79) },
 ];
 /** The curtain's crest, tucked under the dune lip (~0) from every pose. */
 const WALL_TOP = -2.4;
@@ -256,8 +261,8 @@ export function buildBlue1Distance(): { meshes: (Mesh | InstancedMesh)[] } {
   for (const [index, wall] of WALL_FACES.entries()) {
     const material = softCurtainMaterial({ color: 0x4a4676 });
     applyCurtainDissolve(material, {
-      nearFrom: 20,
-      nearTo: 48,
+      nearFrom: 12,
+      nearTo: 26,
       cacheKey: "blue1-wall-face-dissolve",
     });
     entries.push({ material, ink: wall.ink });

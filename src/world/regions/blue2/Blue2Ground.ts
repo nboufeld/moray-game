@@ -312,15 +312,17 @@ function tuckTrimEdge(geometry: PlaneGeometry): void {
     const x = position.getX(i);
     const z = position.getZ(i);
     const rc = Math.hypot(x - CENTRE.x, z - CENTRE.z);
-    if (rc <= 204) {
+    if (rc <= 188) {
       continue;
     }
     const { u, v } = spokeOf(x, z);
     const road = Math.max(passGate(u, v), corridorOutGate(u, v));
 
     // The broken crest: a slow roll plus sparse deeper bites across the
-    // level plateau band, easing in past the wall's shoulder.
-    const band = smoothstep01((rc - 206) / 12);
+    // level plateau band, easing in from the ramp's upper shoulder
+    // (round 2: the wall-crossing lip at rc ≈ 190–205 was still a level
+    // circle — the razor line survived just inside the old 206 onset).
+    const band = smoothstep01((rc - 190) / 12);
     if (band > 0 && road < 1) {
       const roll = fbm(x * 0.014, z * 0.014, {
         seed: SEED ^ B2_SEEDS.paintWall ^ 0x5ea1,
