@@ -131,3 +131,24 @@ touching anything the wave built. Showcase captures:
 `visual-qa/*wave8-merged*`. The open flags list at the end of AGENTS.md is
 the next polish wave's starting brief; an independent critic pass over the
 new wings has not run yet and should be the next visual step.
+
+---
+
+## Waves 9–11 addendum (2026-08-02)
+
+The Great Expansion is built and twice-critiqued: sixteen streamed regions
+(five provinces × three depths + the Sunken Calamity), all corridors open
+both ways, all wings uplifted, the traveller network live, and two
+independent critic passes driven to "NOT YET but CLOSE — the distance is
+now measurable in artifacts, not absences," with that artifact list then
+closed by the conviction and edges waves. Full state: the Waves 9–11
+epilogue at the end of AGENTS.md, the rulings in docs/fill-plans/MASTER.md,
+per-region ledgers in docs/region-ledger/, and the two critiques
+(docs/CRITIC-REPORT.md, docs/CRITIC-REPORT-2.md) with committed evidence
+frames in docs/report-frames/. Canonical capture entry points:
+scripts/journey-shots.mjs (six spoke chains), scripts/region-shots.mjs +
+region-sweep.mjs (per region), scripts/critic-offroad.mjs (the off-road
+battery). The full suite is 73 files / 1161 tests; every merge in these
+waves ran typecheck + eslint --max-warnings 0 + the UNPIPED full suite.
+Next visual step: a third critic pass — the last one said it should be
+arguing about which twelve frames to leave out.

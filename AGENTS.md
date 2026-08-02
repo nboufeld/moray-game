@@ -3700,3 +3700,50 @@ built. The design reference (frozen wing geometry, cast, invariants) is
   the kraken showed its fallback in the first cove capture — GLB adoption
   worth a headed spot-check; `CoralField.CLEARANCES` still reserves the
   vacated anemone disc.
+
+## Waves 9–11 — the streamed world, the two critics, the edges (orchestrator epilogue, 2026-08-02)
+
+The world grew from one bowl to a **sixteen-region streamed map** — five
+provinces of three regions chained down frozen spokes (RegionSlots), plus
+the Sunken Calamity spur — every region built or reworked to the R12
+standard (≤260 draws / ≤1.35M tris bound by the ≤16.9 ms headed gate,
+three-layer law, ≥11/12 sweeps, no-assets survival). The journey:
+Kelp Sea → Emerald Terraces → Canopy Deep; Smoulder → Forge Combs →
+Lantern Vigil; Bone Meadows → Lantern Combs → Dayspring; Drop Plains →
+Deep Steps → First Sea; Hourglass Sea → Carillon Waste → Vesper Strand;
+and the Calamity. Every pass corridor is cut open from BOTH sides (the
+R0.3–R0.10 reciprocal-cut idiom — grep those markers for the pattern),
+wings are all uplifted (Tier A + Tier B), the traveller network runs, and
+the fill program's kit carries per-instance silhouette variants with a
+byte-exact placement fixture (tests/kitVariants.test.ts, prefix
+semantics: recorded nodes frozen, appends legal, re-records only for
+ledgered re-authoring).
+
+Two independent critics then judged the whole against the owner's bar.
+CRITIC-REPORT.md (verdict NOT YET: "jewels on a string of bare sand")
+drove a six-branch remediation wave — hard-geometry purge (the great-blue
+"wall" razor was the 160 m far-plane clip; cured by clip-dissolve, later
+refined to alpha-to-coverage through the MSAA resolve), kit variants,
+beat repairs, roads-and-axes (every corridor: one reveal, one companion
+shoal, one light change; the mid-down axis authored world-wide; traveller
+timetables fixed), wings polish, wave-close verification.
+CRITIC-REPORT-2.md re-scored it (9 FIXED / 5 SHORT / 1 REGRESSED,
+verdict "NOT YET but CLOSE — artifacts, not absences") and its edge list
+was closed by the conviction wave (the wall's three anchoring events:
+Fallen Colossus, Hornsgate, Worldwall Promise; veil rims to true zero;
+the sand-normal-map seam truth) and the edges wave (stipple → sub-pixel
+coverage; analytic seabed normals kill the crease class; HorizonFogBand;
+the kelp blade finally a ribbon via fence-safe lateral spine sway).
+Evidence frames are COMMITTED at docs/report-frames/ — never again lost
+to a reclaimed worktree.
+
+Load-bearing lessons this era: pipe nothing over `npm test` (a masked
+exit code hid a real failure for a day); every cross-region visual claim
+is verified at the cited pose on the INTEGRATED tree (cross-branch
+stacking twice produced artifacts no branch had); silhouettes read
+through their notches; vastness needs an anchoring shape; and the
+protected-stillness registry (MASTER §1.2) held through every wave —
+composed emptiness is content. Region ledgers live in
+docs/region-ledger/*; the rulings in docs/fill-plans/MASTER.md bind all
+future work. The next critic should be arguing about which twelve frames
+to leave out.
