@@ -93,13 +93,17 @@ const SPLIT_CRAG: readonly ProfilePoint[] = [
   [0, 0.58],
   [0.13, 0.9],
   [0.3, 1.0],
-  [0.48, 0.9],
-  [0.6, 0.52],
-  [0.72, 0.66],
-  [0.86, 0.54],
-  [0.95, 0.3],
+  [0.5, 0.86],
+  [0.64, 0.6],
+  [0.75, 0.68],
+  [0.87, 0.52],
+  [0.95, 0.28],
   [1, 0],
 ];
+
+/** The crag's head drifts a little off-axis (r2: a symmetric collar read
+ *  as two stacked buns — the lean is what makes it ONE cleaved stone). */
+const CRAG_LEAN = 0.16;
 
 /**
  * The keeled stone: the potato's second sibling. Widest low, a straighter
@@ -150,13 +154,17 @@ const SHELF_STACK: readonly ProfilePoint[] = [
   [0, 0.92],
   [0.16, 1.02],
   [0.32, 0.98],
-  [0.42, 0.72],
-  [0.55, 0.8],
+  [0.42, 0.75],
+  [0.55, 0.82],
   [0.7, 0.76],
-  [0.82, 0.5],
+  [0.82, 0.52],
   [0.92, 0.42],
   [1, 0],
 ];
+
+/** The bench tilt (r2): straight-stacked benches read as two slabs piled
+ *  by a mason; a drifted upper bench is one ledged stone. */
+const SHELF_LEAN = 0.1;
 
 /**
  * The prow: the slab's second sibling. A low wedge whose crown drifts
@@ -189,6 +197,45 @@ const WAIST_DEPTH = 0.13;
 const WAIST_AT = 0.52;
 const WAIST_WIDTH = 0.24;
 
+/**
+ * The stack's silhouette variants (critic punch #9). The two-segment
+ * bulb-over-bulb stack is the "double-lobe" the critic caught wearing
+ * six recolours — golden's Honey Gate jambs, calamity's rim sentinels
+ * and bank teeth, verdant and pale waysides. A stack's outline is
+ * DERIVED from its measured blocks and may only ever lose material
+ * (colliders and sightlines rely on it — see {@link stackSpan}), so a
+ * sibling here is a different *carving* of the same union: a table of
+ * Gaussian notches plus an optional crown taper, every term ≤ 1.
+ *
+ * - variant 0 — the original single waist, byte-identical arithmetic;
+ * - variant 1 — the collared spire: a deep low collar over a pedestal
+ *   foot, the crown pinched through the last quarter, so the upper
+ *   lobe reads as a tapering finger instead of a second bulb;
+ * - variant 2 — the cleft head: one thin, deep notch high on the stone
+ *   and a faint belly trim, the split-crown read at fog distance.
+ */
+interface StackCarving {
+  readonly notches: readonly { depth: number; at: number; width: number }[];
+  /** Crown taper: radius × (1 − taper·s³) with s ramping over the top
+   *  40% — zero keeps the profile exactly as measured. */
+  readonly crownTaper: number;
+}
+
+const STACK_CARVINGS: readonly StackCarving[] = [
+  { notches: [{ depth: WAIST_DEPTH, at: WAIST_AT, width: WAIST_WIDTH }], crownTaper: 0 },
+  {
+    notches: [{ depth: 0.24, at: 0.34, width: 0.2 }],
+    crownTaper: 0.34,
+  },
+  {
+    notches: [
+      { depth: 0.3, at: 0.74, width: 0.11 },
+      { depth: 0.09, at: 0.42, width: 0.3 },
+    ],
+    crownTaper: 0.12,
+  },
+];
+
 /** One of the ellipsoids a sea stack's silhouette is measured from. */
 export interface StackSegment {
   readonly radius: number;
@@ -218,13 +265,13 @@ export interface RockShapeOptions {
  */
 const BOULDER_FAMILY: readonly { profile: readonly ProfilePoint[]; lean: number }[] = [
   { profile: BOULDER, lean: 0 },
-  { profile: SPLIT_CRAG, lean: 0 },
+  { profile: SPLIT_CRAG, lean: CRAG_LEAN },
   { profile: KEELED, lean: KEEL_LEAN },
 ];
 
 const SLAB_FAMILY: readonly { profile: readonly ProfilePoint[]; lean: number }[] = [
   { profile: SLAB, lean: 0 },
-  { profile: SHELF_STACK, lean: 0 },
+  { profile: SHELF_STACK, lean: SHELF_LEAN },
   { profile: PROW, lean: PROW_LEAN },
 ];
 
@@ -240,12 +287,17 @@ const VARIANT_SALT = 0x5eed_c2a6;
  * scale and rotation are the caller's and stay byte-identical.
  * Exported for the variant tests; regions have no reason to call it.
  */
-export function rockVariantIndex(seed: number, kind: "boulder" | "slab"): number {
-  const family = kind === "boulder" ? BOULDER_FAMILY : SLAB_FAMILY;
+export function rockVariantIndex(seed: number, kind: "boulder" | "slab" | "stack"): number {
+  const count =
+    kind === "boulder"
+      ? BOULDER_FAMILY.length
+      : kind === "slab"
+        ? SLAB_FAMILY.length
+        : STACK_CARVINGS.length;
   let t = (seed ^ VARIANT_SALT) >>> 0;
   t = Math.imul(t ^ (t >>> 15), t | 1);
   t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-  return ((t ^ (t >>> 14)) >>> 0) % family.length;
+  return ((t ^ (t >>> 14)) >>> 0) % count;
 }
 
 export function boulderGeometry(options: RockShapeOptions): BufferGeometry {
@@ -288,12 +340,22 @@ export function stackGeometry(
   // because a surface of revolution has one axis by definition.
   const centres: number[] = [0];
 
+  const carving = STACK_CARVINGS[rockVariantIndex(options.seed, "stack")]!;
   let axis = 0;
   for (let i = 0; i <= rings; i++) {
     const t = i / rings;
     const y = -SINK + t * (top + SINK);
     const span = stackSpan(segments, y);
-    const waist = 1 - WAIST_DEPTH * Math.exp(-(((t - WAIST_AT) / WAIST_WIDTH) ** 2));
+    // Every carving term multiplies by ≤ 1, so the profile can only ever
+    // fit deeper inside the measured blocks (the stackSpan guarantee).
+    let waist = 1;
+    for (const notch of carving.notches) {
+      waist *= 1 - notch.depth * Math.exp(-(((t - notch.at) / notch.width) ** 2));
+    }
+    if (carving.crownTaper > 0) {
+      const s = Math.min(1, Math.max(0, (t - 0.6) / 0.4));
+      waist *= 1 - carving.crownTaper * s * s * s;
+    }
     radii.push(Math.max(0, span.radius * waist));
     heights.push(y);
     // The topmost ring closes on nothing — the highest block's own apex is

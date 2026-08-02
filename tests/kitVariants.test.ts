@@ -3,8 +3,14 @@ import path from "node:path";
 import { InstancedMesh, Scene, type Object3D } from "three";
 import { describe, expect, it } from "vitest";
 import { SEEDS } from "../src/util/Random";
-import { boulderGeometry, rockVariantIndex, slabGeometry } from "../src/world/RockShapes";
-import { buildCarpetField } from "../src/world/regions/kit/CarpetField";
+import {
+  boulderGeometry,
+  rockVariantIndex,
+  slabGeometry,
+  stackGeometry,
+  type StackSegment,
+} from "../src/world/RockShapes";
+import { buildCarpetField, carpetFormIndex } from "../src/world/regions/kit/CarpetField";
 import { buildGroundLitter } from "../src/world/regions/kit/GroundLitter";
 import { CALAMITY_1 } from "../src/world/regions/calamity1/Calamity1";
 import { GOLDEN_1 } from "../src/world/regions/golden1/Golden1";
@@ -171,7 +177,14 @@ const ROCK_SWEEP_SEEDS: readonly number[] = Array.from(
   (_, i) => SEEDS.rockShapes ^ (0x0a00 + i * 131),
 );
 
-function rockSweepHashes(): { boulders: string[]; slabs: string[] } {
+/** The double-lobe sentinel/gatepost idiom, verbatim from the region
+ *  callers (calamity's teeth, golden's Honey Gate jambs). */
+const SENTINEL_SEGMENTS: readonly StackSegment[] = [
+  { radius: 1.1, rise: 0.5, stretch: 1.8, lean: 0.3 },
+  { radius: 0.75, rise: 3.1, stretch: 1.6, lean: 0.8 },
+];
+
+function rockSweepHashes(): { boulders: string[]; slabs: string[]; stacks: string[] } {
   const boulders = ROCK_SWEEP_SEEDS.map((seed) => {
     const geometry = boulderGeometry({ seed, radius: 1.4, height: 1.8 });
     const hash = hashFloats(geometry.attributes.position!.array as Float32Array);
@@ -184,7 +197,13 @@ function rockSweepHashes(): { boulders: string[]; slabs: string[] } {
     geometry.dispose();
     return hash;
   });
-  return { boulders, slabs };
+  const stacks = ROCK_SWEEP_SEEDS.map((seed) => {
+    const geometry = stackGeometry(SENTINEL_SEGMENTS, { seed });
+    const hash = hashFloats(geometry.attributes.position!.array as Float32Array);
+    geometry.dispose();
+    return hash;
+  });
+  return { boulders, slabs, stacks };
 }
 
 // ─── Region builds (the critic's gatepost + sentinel provinces) ─────────────
@@ -206,9 +225,9 @@ function regionSignatures(): Record<string, NodeSignature[]> {
 // ─── Fixture shape ───────────────────────────────────────────────────────────
 
 interface Fixture {
-  readonly reference: Record<string, NodeSignature[]>;
-  readonly regions: Record<string, NodeSignature[]>;
-  readonly rocks: { boulders: string[]; slabs: string[] };
+  reference: Record<string, NodeSignature[]>;
+  regions: Record<string, NodeSignature[]>;
+  rocks: { boulders: string[]; slabs: string[]; stacks?: string[] };
 }
 
 function currentFixture(): Fixture {
@@ -222,7 +241,20 @@ function currentFixture(): Fixture {
 describe("kit variants: placements byte-unchanged vs the pre-change build", () => {
   if (RECORD) {
     it("records the fixture", () => {
+      // APPEND-ONLY: anything already recorded was recorded against the
+      // pre-change tree and is the truth this suite exists to defend —
+      // re-recording it against a changed tree would erase the proof.
       const fixture = currentFixture();
+      if (existsSync(FIXTURE_PATH)) {
+        const previous = JSON.parse(readFileSync(FIXTURE_PATH, "utf8")) as Fixture;
+        fixture.reference = previous.reference;
+        fixture.regions = previous.regions;
+        fixture.rocks.boulders = previous.rocks.boulders;
+        fixture.rocks.slabs = previous.rocks.slabs;
+        if (previous.rocks.stacks) {
+          fixture.rocks.stacks = previous.rocks.stacks;
+        }
+      }
       mkdirSync(path.dirname(FIXTURE_PATH), { recursive: true });
       writeFileSync(FIXTURE_PATH, JSON.stringify(fixture, null, 1));
       expect(existsSync(FIXTURE_PATH)).toBe(true);
@@ -255,14 +287,22 @@ describe("kit variants: placements byte-unchanged vs the pre-change build", () =
     expect(fixture.rocks.slabs.length).toBe(ROCK_SWEEP_SEEDS.length);
   });
 
-  for (const kind of ["boulder", "slab"] as const) {
+  for (const kind of ["boulder", "slab", "stack"] as const) {
     it(`${kind}s on the original profile stay byte-identical; siblings differ`, () => {
       // Pre-change, every seed produced the one profile; the fixture holds
       // those bytes. Post-change the selector routes each seed: original-
       // profile picks must reproduce the recorded bytes exactly (lathe,
       // roughing and finish all untouched), sibling picks must differ.
-      const recorded = kind === "boulder" ? fixture.rocks.boulders : fixture.rocks.slabs;
-      const live = kind === "boulder" ? now.rocks.boulders : now.rocks.slabs;
+      const recorded =
+        kind === "boulder"
+          ? fixture.rocks.boulders
+          : kind === "slab"
+            ? fixture.rocks.slabs
+            : fixture.rocks.stacks!;
+      const live =
+        kind === "boulder" ? now.rocks.boulders : kind === "slab" ? now.rocks.slabs : now.rocks.stacks!;
+      expect(recorded).toBeDefined();
+      expect(live).toBeDefined();
       let originals = 0;
       for (const [i, seed] of ROCK_SWEEP_SEEDS.entries()) {
         if (rockVariantIndex(seed, kind) === 0) {
@@ -284,6 +324,102 @@ describe("kit variants: placements byte-unchanged vs the pre-change build", () =
       for (const [variant, count] of counts.entries()) {
         expect(count, `${kind} variant ${variant}`).toBeGreaterThan(240 * 0.2);
       }
+    });
+  }
+
+  it("every stack carving stays inside the measured blocks, poles sealed", () => {
+    // The stackSpan guarantee (colliders, sightlines) must hold for every
+    // sibling: the carvings only remove material. Sample seeds that land
+    // on each carving and re-run the rockShapes containment walk.
+    const top = SENTINEL_SEGMENTS.reduce(
+      (h, s) => Math.max(h, s.rise + s.radius * s.stretch),
+      0,
+    );
+    for (let variant = 0; variant < 3; variant++) {
+      let seed = 0x7e57_a000 + variant;
+      while (rockVariantIndex(seed, "stack") !== variant) {
+        seed++;
+      }
+      const geometry = stackGeometry(SENTINEL_SEGMENTS, { seed });
+      const position = geometry.attributes.position!;
+      for (let i = 0; i < position.count; i++) {
+        const x = position.getX(i);
+        const y = position.getY(i);
+        const z = position.getZ(i);
+        if (y < 0) {
+          continue;
+        }
+        expect(y).toBeLessThanOrEqual(top + 0.01);
+        const inside = SENTINEL_SEGMENTS.some((segment) => {
+          const halfHeight = segment.radius * segment.stretch;
+          const dx = (x - segment.lean) / segment.radius;
+          const dy = (y - segment.rise) / halfHeight;
+          const dz = z / segment.radius;
+          return dx * dx + dy * dy + dz * dz <= 1.2;
+        });
+        expect(inside, `carving ${variant} vertex escaped`).toBe(true);
+      }
+      geometry.dispose();
+    }
+  });
+
+  for (const profile of ["tuft", "blade"] as const) {
+    it(`${profile} carpets wear three real forms, deterministically`, () => {
+      const options = {
+        seed: SEEDS.regionSmoking1 ^ 0x7e57_0001,
+        palette: DARK_PALETTE,
+        area: { center: [4, -3] as [number, number], radius: 20 },
+        gate: REF_GATE,
+        ground: REF_GROUND,
+        count: 420,
+        profile,
+      };
+      const build = buildCarpetField(options);
+      const mesh = build.group.children[0] as InstancedMesh;
+      const geometry = mesh.geometry;
+
+      // The per-instance pick: present, in range, matching the pure hash,
+      // and non-degenerate across the field.
+      const forms = geometry.getAttribute("aKitForm")!;
+      expect(forms).toBeDefined();
+      expect(forms.count).toBe(mesh.count);
+      const counts = [0, 0, 0];
+      for (let i = 0; i < forms.count; i++) {
+        const form = forms.getX(i);
+        expect(form).toBe(carpetFormIndex(options.seed, i));
+        counts[form]!++;
+      }
+      for (const [form, count] of counts.entries()) {
+        expect(count, `${profile} form ${form}`).toBeGreaterThan(forms.count * 0.2);
+      }
+
+      // The sibling deltas are real silhouette moves, not noise.
+      for (const name of ["aKitFormB", "aKitFormC"]) {
+        const delta = geometry.getAttribute(name)!;
+        expect(delta, `${profile} ${name}`).toBeDefined();
+        let magnitude = 0;
+        for (let i = 0; i < delta.count; i++) {
+          magnitude = Math.max(
+            magnitude,
+            Math.hypot(delta.getX(i), delta.getY(i), delta.getZ(i)),
+          );
+        }
+        expect(magnitude, `${profile} ${name} max delta`).toBeGreaterThan(0.15);
+        // ...and bounded: the honest-bounds inflation must stay sane.
+        expect(magnitude, `${profile} ${name} max delta`).toBeLessThan(2);
+      }
+
+      // Deterministic: a second build welds byte-identical form buffers.
+      const again = buildCarpetField(options);
+      const meshAgain = again.group.children[0] as InstancedMesh;
+      expect(hashFloats(forms.array as Float32Array)).toBe(
+        hashFloats(meshAgain.geometry.getAttribute("aKitForm")!.array as Float32Array),
+      );
+      expect(
+        hashFloats(geometry.getAttribute("aKitFormB")!.array as Float32Array),
+      ).toBe(hashFloats(meshAgain.geometry.getAttribute("aKitFormB")!.array as Float32Array));
+      build.dispose();
+      again.dispose();
     });
   }
 });
