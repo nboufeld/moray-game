@@ -26,8 +26,13 @@ import { CENTER_X, CENTER_Z, GOLDEN_SLOT } from "./GoldenTerrain";
  *
  * The inks re-derive from `scene.fog` per frame (one hex compare), and
  * each layer carries its own ink so the stack runs gold → violet with
- * red above green throughout. The rings hold an open gap over the
- * saddle's azimuth: the approach's own dune walls close that view.
+ * red above green throughout. The rings hold two open gaps. Over the
+ * saddle's azimuth: the approach's own dune walls close that view. And
+ * over the OUTBOUND (depth-2) corridor per MASTER R4 — journey-close
+ * found the rings un-parted here, so the swim home from the Gilded
+ * Shore handover faced all three arcs point-blank (u ≈ 691/709/731 on
+ * the spoke, opaque inside the 140 m dissolve window) as a
+ * screen-filling amber curtain.
  */
 
 interface DuneLayer {
@@ -56,6 +61,19 @@ const FOOT = -12;
 
 /** Half-angle of the gap the rings leave over the saddle's approach. */
 const GAP_HALF = 0.42;
+
+/**
+ * Half-angle of the second gap, over the OUTBOUND (depth-2) corridor —
+ * the R4 pass pattern (verdant PASS_GAP_HALF / pale GAP_OUT_HALF /
+ * smoking GAP_OUT_HALF): distance rings part over the pass corridor on
+ * both sides. The pass tongue's half-width at the ring radii is ≤ 43 m
+ * (halfWidthFrom 16 at u 630 → halfWidthTo 56 at u 780), an angle of
+ * ≤ 0.149 rad from the disc's centre — 0.15 clears the swim-line.
+ * The taper stays shorter than the saddle's 1.3 rad: the corridor is
+ * seen head-on from the road, not near-tangent, and the RGBA crest fade
+ * (round 5) keeps the cut ends from reading as cliff edges.
+ */
+const GAP_OUT_HALF = 0.15;
 
 export function buildGoldenDistance(): { meshes: Mesh[] } {
   const meshes: Mesh[] = [];
@@ -151,8 +169,9 @@ export function buildGoldenDistance(): { meshes: Mesh[] } {
 /**
  * One ring: a curtain whose top edge is a slow dune swell — crescent
  * backs drawn as a rolling line with softly peaked crests, no benches
- * and no verticals. The saddle's azimuth sector is skipped; the cut
- * ends taper long into the ground (short ramps read as buildings).
+ * and no verticals. The saddle's azimuth sector is skipped, and so is
+ * the outbound pass corridor's (R4); the cut ends taper into the ground
+ * (short ramps read as buildings).
  */
 function duneRing(layer: DuneLayer, noiseSeed: number): BufferGeometry {
   const positions: number[] = [];
@@ -161,6 +180,7 @@ function duneRing(layer: DuneLayer, noiseSeed: number): BufferGeometry {
   let column = 0;
 
   const gapAt = GOLDEN_SLOT.azimuth + Math.PI;
+  const gapOutAt = GOLDEN_SLOT.azimuth;
 
   // First pass: the drawn skyline, one ridge height per column.
   const ridges = new Float32Array(SEGMENTS + 1);
@@ -206,15 +226,22 @@ function duneRing(layer: DuneLayer, noiseSeed: number): BufferGeometry {
   for (let i = 0; i <= SEGMENTS; i++) {
     const theta = (i / SEGMENTS) * Math.PI * 2;
     const off = angleBetween(theta, gapAt);
-    if (off < GAP_HALF) {
+    const offOut = angleBetween(theta, gapOutAt);
+    if (off < GAP_HALF || offOut < GAP_OUT_HALF) {
       column = 0;
       continue;
     }
     // A long taper: shorter ramps stood at the gap's edge as flat-topped
     // blocks that read as buildings (round 1, oasis and flats horizons).
     // Lengthened again in round 5 — seen near-tangent, a 0.85 rad ramp
-    // compresses into a vertical cliff edge.
-    const end = smoothstep01((off - GAP_HALF) / 1.3);
+    // compresses into a vertical cliff edge. The outbound cut's taper is
+    // shorter (0.5): it is seen head-on down the road, and the canonical
+    // gilded-shore three-line view lives just off its shoulder — a long
+    // ramp would thin those lines to nothing.
+    const end = Math.min(
+      smoothstep01((off - GAP_HALF) / 1.3),
+      smoothstep01((offOut - GAP_OUT_HALF) / 0.5),
+    );
     const x = CENTER_X + Math.cos(theta) * layer.radius;
     const z = CENTER_Z + Math.sin(theta) * layer.radius;
 
