@@ -45,6 +45,7 @@ import { regionBySlot } from "./regions/RegionRegistry";
 import { CoralField } from "./CoralField";
 import { CorridorDressing } from "./CorridorDressing";
 import { DistantReef } from "./DistantReef";
+import { buildHorizonFogBand } from "./HorizonFogBand";
 import { TravellerShoals } from "./TravellerShoals";
 import { Kelp } from "./Kelp";
 import { createRockMaterial, weatherRock } from "./RockMaterial";
@@ -1039,6 +1040,11 @@ export class Reef {
    */
   private buildDistantReef(): void {
     this.group.add(new DistantReef(SEEDS.distantReef).group);
+    // The horizon-step class fix (edges-fix): one fog-coloured band that
+    // eases the painted backdrop into the live fog at every horizon —
+    // see HorizonFogBand.ts. Backdrop like the rings above it: never in
+    // `obstructionMeshes`, never in `colliders`.
+    this.group.add(buildHorizonFogBand());
   }
 
   /**

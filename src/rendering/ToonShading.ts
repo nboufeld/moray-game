@@ -202,17 +202,31 @@ export function toonGradientMap(): DataTexture {
  * only approximates — so the cut survives fog as a hard tonal step, a
  * card edge no geometry owns. Density can never cure it (the mismatch
  * is fog-vs-backdrop, not fog-vs-surface), so the last metres of the
- * sheet hand themselves over instead: a screen-door dissolve across
- * the last ~40 visible metres, dithered on the pixel grid, stable
- * frame to frame. Interleaved gradient noise rather than a white-noise
- * hash: the white hash clumps, and at the half-mixed middle of the
- * band the clumps read as a speckled stripe — IGN's even distribution
- * reads as a grade.
+ * sheet hand themselves over instead.
  *
- * Discard-based on purpose: no `transparent` flag, so the great opaque
- * sheets keep their render order and depth writes.
+ * How they hand over is the second critic's N1. The first cut was a
+ * binary IGN screen-door: one whole-pixel discard per threshold test,
+ * which at the half-mixed middle of the band puts fog-colour pixels
+ * against backdrop pixels in a checkerboard the eye finds from across
+ * the frame — the "dotted stipple band" over golden's afterglow garden
+ * and pale's daybreak. No noise re-ordering can cure that: a 50 % mix
+ * of two different values at one dot per pixel IS a visible pattern.
+ * The cure is sub-pixel coverage instead of whole-pixel discard:
+ * `alphaToCoverage` on the composer's 4× multisampled targets turns
+ * the same fade into per-sample coverage, so a half-dissolved pixel
+ * resolves to a true 50 % blend of sheet and backdrop — a grade, not
+ * a grid. The four coverage levels would band across a 40 m melt, so
+ * one IGN jitter of ±half a coverage step stays, now hidden inside
+ * the resolve instead of printed on the frame.
+ *
+ * Still no `transparent` flag: coverage is an opaque-queue device, so
+ * the great sheets keep their render order and their depth writes. The
+ * final metre keeps a hard discard so the sheet ends before the clip
+ * can slice it even where multisampling is absent (a plain target
+ * ignores coverage and would otherwise fall back to the razor line).
  */
 export function applyFarClipDissolve(material: MeshToonMaterial, from = 118, to = 156): void {
+  material.alphaToCoverage = true;
   material.onBeforeCompile = (shader) => {
     shader.fragmentShader = shader.fragmentShader.replace(
       "#include <fog_fragment>",
@@ -220,15 +234,16 @@ export function applyFarClipDissolve(material: MeshToonMaterial, from = 118, to 
 #ifdef USE_FOG
 	{
 		float clipFade = smoothstep(${from.toFixed(1)}, ${to.toFixed(1)}, vFogDepth);
+		if (clipFade >= 0.995) discard;
 		if (clipFade > 0.0) {
 			float clipHash = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
-			if (clipHash < clipFade) discard;
+			gl_FragColor.a = clamp(1.0 - clipFade + (clipHash - 0.5) * 0.25, 0.0, 1.0);
 		}
 	}
 #endif`,
     );
   };
-  material.customProgramCacheKey = () => `far-clip-dissolve-${from}-${to}`;
+  material.customProgramCacheKey = () => `far-clip-dissolve-a2c-${from}-${to}`;
 }
 
 export interface ToonMaterialOptions {

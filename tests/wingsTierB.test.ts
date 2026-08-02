@@ -73,6 +73,10 @@ const MAX_UPLIFT_TRIS = 20_000;
 const POLISH_DRAW_ALLOWANCE: Record<string, number> = {
   "lumen-garden": 3,
   "current-run": 4,
+  // edges-fix (#7 IMPROVED-BUT-SHORT): the moonlit brim glow — one arc
+  // of additive silver breaking the razor rim line at the crest. The
+  // program envelope below still gates the sum.
+  "moonlit-lagoon": 1,
 };
 
 /**

@@ -329,6 +329,14 @@ export function createSeabedGeometry(size: number, segments: number, lift = 0): 
  * not at render), so region builders can treat every coordinate in their
  * geometry as world truth.
  */
+/**
+ * Finite-difference step for the analytic normals below, in metres. Half a
+ * metre reads the terrain at the scale the paint and the light care about:
+ * smaller steps resolve the dune grain the normal map already carries,
+ * larger ones flatten the carve slopes the creases live on.
+ */
+const NORMAL_STEP = 0.5;
+
 export function createSeabedGeometryAt(
   centerX: number,
   centerZ: number,
@@ -340,17 +348,37 @@ export function createSeabedGeometryAt(
   geometry.rotateX(-Math.PI / 2);
 
   const position = geometry.attributes.position;
-  if (position) {
+  const normal = geometry.attributes.normal;
+  if (position && normal) {
     for (let i = 0; i < position.count; i++) {
       const x = position.getX(i) + centerX;
       const z = position.getZ(i) + centerZ;
       position.setX(i, x);
       position.setZ(i, z);
       position.setY(i, seabedHeight(x, z) + lift);
+
+      // Analytic normals off the height function itself (edges-fix, N4),
+      // replacing `computeVertexNormals`. Mesh-derived normals have two
+      // defects on these sheets: a boundary vertex only averages the faces
+      // of ITS OWN sheet, so two abutting (or overlapping) tiles disagree
+      // along their shared line and the light prints the join as a hard
+      // seam; and every quad splits along the same diagonal, so on strong
+      // carve curvature the split direction shades as a diagonal crease.
+      // The height field is one continuous world function, so a normal
+      // sampled from it is identical whichever sheet asks — seams and
+      // triangulation vanish from the shading by construction. The `lift`
+      // never enters: a raised copy of the ground is still the ground.
+      const slopeX =
+        seabedHeight(x + NORMAL_STEP, z) - seabedHeight(x - NORMAL_STEP, z);
+      const slopeZ =
+        seabedHeight(x, z + NORMAL_STEP) - seabedHeight(x, z - NORMAL_STEP);
+      const inverse =
+        1 / Math.hypot(slopeX, 2 * NORMAL_STEP, slopeZ);
+      normal.setXYZ(i, -slopeX * inverse, 2 * NORMAL_STEP * inverse, -slopeZ * inverse);
     }
     position.needsUpdate = true;
+    normal.needsUpdate = true;
   }
-  geometry.computeVertexNormals();
 
   return geometry;
 }

@@ -195,8 +195,21 @@ function padGeometry(random: Random): BufferGeometry {
     position.setX(i, x * lobe);
     position.setZ(i, z * lobe);
     // Rim droop: the outer skirt bends down past the belly line.
+    //
+    // The droop jitter is keyed on the vertex DIRECTION, not drawn from
+    // the stream (edges-fix N3/#17): the icosphere is a non-indexed soup,
+    // so a per-vertex draw handed each copy of a shared edge vertex a
+    // different fall — the mesh tore along every skirt edge, and the
+    // bright backdrop shone through the cracks as the "hard polygon
+    // outlines" the floor-up frame shows. A direction-keyed field gives
+    // the same organic variation and gives every copy the same answer,
+    // so the skirt is watertight by construction. The old draw is still
+    // consumed so every pad placed after this one keeps its exact stand.
+    random.range(0.5, 0.8);
+    const droop =
+      0.5 + 0.3 * fbm(nx * 1.1 + 4, nz * 1.1 + 13, { seed: noiseSeed ^ 0x2b, period: 4, octaves: 2 });
     const reach = Math.min(1, radial * lobe);
-    position.setY(i, position.getY(i) - reach * reach * squash * random.range(0.5, 0.8));
+    position.setY(i, position.getY(i) - reach * reach * squash * droop);
   }
   position.needsUpdate = true;
   geometry.computeVertexNormals();

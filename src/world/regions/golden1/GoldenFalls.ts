@@ -1,5 +1,7 @@
 import {
   BufferAttribute,
+  Color,
+  FogExp2,
   InstancedMesh,
   Mesh,
   MeshBasicMaterial,
@@ -203,7 +205,16 @@ function buildCurtains(falls: readonly Fall[]): Mesh {
       const streak =
         0.35 +
         1.0 * fbm(u * 2.5, index * 7.3, { seed: SEED ^ 0x5a1f, period: 3, octaves: 2 });
-      const alpha = Math.min(fall.alpha, bell * envelope * streak * fall.alpha);
+      // The cap clamps the STREAK term, never the product (edges-fix N5):
+      // the old `min(fall.alpha, bell·env·streak·alpha)` flattened the
+      // bell and envelope wherever a bright streak column pushed the
+      // product past the cap — a constant-alpha plateau with the fades
+      // squeezed to its border, which is a hard-edged translucent
+      // rectangle. From the golden wing-door the vale falls hang
+      // dead-centre at 55–130 m, and that plateau was exactly the
+      // critic's "faint white quads". Capping the streak keeps the peak
+      // where it was and the bell/envelope gradients everywhere.
+      const alpha = bell * envelope * Math.min(1, streak) * fall.alpha;
       // Brighter than the wing's: these veils must separate from sand
       // walls of nearly their own colour at ten times the distance.
       const lift = 0.9 + 0.3 * v;
@@ -238,7 +249,37 @@ function buildCurtains(falls: readonly Fall[]): Mesh {
     // a bright mark pays its own way through the water.
     fog: false,
   });
+  // …but a bright mark seventy metres out that IGNORES the water is a
+  // paper cut-out (edges-fix N5): the same self-mixed-ink discipline the
+  // gate veils use, hand-rolled — the cream converges most of the way to
+  // the live fog colour across 30→100 m, so the vale falls sink into the
+  // door's haze while every terrace up-shot inside 30 m keeps the full
+  // cream, and the cross-chasm ring keeps the 15 % that still reads as a
+  // pale mark. Alpha untouched: the shape survives, the glare does not.
+  const fogTint = { value: new Color(0x53b2bb) };
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uFallFog = fogTint;
+    shader.vertexShader = shader.vertexShader
+      .replace("#include <common>", "#include <common>\nvarying float vFallDist;")
+      .replace("#include <project_vertex>", "#include <project_vertex>\nvFallDist = -mvPosition.z;");
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        "#include <common>",
+        "#include <common>\nvarying float vFallDist;\nuniform vec3 uFallFog;",
+      )
+      .replace(
+        "#include <color_fragment>",
+        "#include <color_fragment>\n\tdiffuseColor.rgb = mix(diffuseColor.rgb, uFallFog, smoothstep(30.0, 100.0, vFallDist) * 0.85);",
+      );
+  };
+  material.customProgramCacheKey = () => "hourglass-fall-fog-mix";
   const mesh = new Mesh(merged, material);
+  mesh.onBeforeRender = (_renderer, scene) => {
+    const fog = scene.fog;
+    if (fog instanceof FogExp2) {
+      fogTint.value.copy(fog.color);
+    }
+  };
   mesh.name = "hourglass-sandfall-curtains";
   mesh.renderOrder = 1;
   mesh.castShadow = false;

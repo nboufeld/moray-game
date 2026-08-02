@@ -844,13 +844,30 @@ function shapeLeaf(
   const ruffle = detail.range(fine ? 0.02 : 0.012, fine ? 0.04 : 0.022) * length;
   const ruffleFreq = fine ? detail.range(1.6, 2.7) : detail.range(1.0, 1.8);
   const rufflePhase = detail.range(0, Math.PI * 2);
-  // 0.1225–0.18 → 0.07–0.105 (the critic's-wave softening, #17): the cup
-  // is a V-fold down the midline, and at the old depth its ~17° crease
-  // regularly straddled a toon band boundary — one half of a blade lit,
-  // the other dark, the "faceted/graphic" hub read. Halved, both halves
-  // land in one band far more often and the blade still never reads as
-  // a flat card. Same draws from the detail hash, so no stream moves.
-  const cupBack = detail.range(0.07, 0.105);
+  // The cup, third form (edges-fix N3/#17). W-N2's cup was a V-fold down
+  // the midline: at 0.1225–0.18 its ~17° crease straddled toon band
+  // boundaries (one half lit, one dark — the "faceted/graphic" hub
+  // read), so the wings-polish halved it to 0.07–0.105. That traded one
+  // defect for a worse one: a nearly-flat blade caught edge-on or from
+  // below IS a razor-edged card — the huge olive triangle over the
+  // calamity bowl. The depth comes back to the W-N2 range, but as a
+  // PARABOLA rather than a fold (see `cup` below): curvature has no
+  // crease to park on a band boundary, and a curved sheet always turns
+  // a face somewhere along its width. Draws stay on the per-leaf detail
+  // hash — no placement stream moves.
+  const cupBack = detail.range(0.12, 0.18);
+  // The twist (edges-fix N3): the blade turns about its own spine, zero
+  // at the root, up to ~24° at the tip. A flat ribbon has one bearing
+  // per surface at which its whole length is a razor edge; a twisted
+  // one has none, and the toon bands sweep along it as the face turns.
+  // Horizontal reach only ever shrinks (`across · cos`), so the lane
+  // fences hold by construction; the vertical component rides the same
+  // licence as the ruffle. The FLOOR (r2): a plain signed draw hands one
+  // leaf in six a twist under 4°, and the calamity bowl's sky-filling
+  // pad drew one — flat is the one shape this term exists to forbid, so
+  // the magnitude starts at ~10° and the draw only adds to it.
+  const twistDraw = detail.signed(1);
+  const twist = (twistDraw < 0 ? -1 : 1) * (0.17 + Math.abs(twistDraw) * 0.25);
 
   for (let i = 0; i < position.count; i++) {
     const v = position.getY(i);
@@ -886,8 +903,24 @@ function shapeLeaf(
     // line without moving a single vertex in the plane the lane tests sweep.
     const fall =
       -bent.drop * length + Math.sin(v * ruffleFreq * Math.PI * 2 + rufflePhase) * ruffle * v;
-    const cup = Math.abs(across) * cupBack;
-    position.setXYZ(i, reach - cup, fall, across);
+    // Parabolic, not |across|: same depth at the margins, no crease at
+    // the midline — see the `cupBack` note. Two applications of the one
+    // parabola (r2): along the growth axis it sweeps the margins back
+    // (inward-only, so the lane fences cannot notice), and along the
+    // VERTICAL it is the actual cross-section curl — the r1 cut spent it
+    // on the sweep alone, which left the blade a swept-back PLANE: seen
+    // flat from below (the calamity bowl's overhead pad) it was still a
+    // card with razor margins. The vertical share rides the ruffle's
+    // licence; nothing moves in the plane the sweeps police.
+    const cup = ((across * across) / (0.5 * width + 1e-4)) * cupBack;
+    // The spine twist: rotate the width vector about the blade's run.
+    const theta = twist * v;
+    position.setXYZ(
+      i,
+      reach - cup,
+      fall - cup + across * Math.sin(theta),
+      across * Math.cos(theta),
+    );
 
     // Toward golden-olive at the tip (W-L9): the sun sits over the crowns, so
     // the newest tissue is the sunlit tissue — and a crown strap, living in

@@ -19,6 +19,7 @@ export default tseslint.config(
         Image: "readonly",
         performance: "readonly",
         requestAnimationFrame: "readonly",
+        setTimeout: "readonly",
       },
     },
   },
