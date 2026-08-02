@@ -7,6 +7,7 @@ import { buildSmoking3Ground } from "./Smoking3Ground";
 import { buildSmoking3Lanterns } from "./Smoking3Lanterns";
 import { buildSmoking3Life } from "./Smoking3Life";
 import { buildSmoking3Light } from "./Smoking3Light";
+import { buildSmoking3Roads } from "./Smoking3Roads";
 import { WRIGHT_SPECIES_ID, buildSmoking3Wright } from "./Smoking3Wright";
 import {
   CRADLE,
@@ -232,6 +233,9 @@ export const SMOKING_3: RegionDef = {
     const distance = buildSmoking3Distance();
     const flora = buildSmoking3Flora(lanterns);
     const life = buildSmoking3Life(lanterns.perchTops);
+    // ROADS-AND-AXES (critic #2/#6/#10): fresh substream, appended after
+    // every existing module — the reroll fence holds by construction.
+    const roads = buildSmoking3Roads();
     const ground = buildSmoking3Ground(lanterns.contacts);
 
     for (const child of [
@@ -243,11 +247,16 @@ export const SMOKING_3: RegionDef = {
       ...distance.meshes,
       ...flora.groups,
       ...life.groups,
+      ...roads.map((build) => build.group),
     ]) {
       group.add(child);
     }
 
-    const colliders = [...lanterns.colliders, ...buildSeals()];
+    const colliders = [
+      ...lanterns.colliders,
+      ...buildSeals(),
+      ...roads.flatMap((build) => [...build.colliders]),
+    ];
 
     return {
       group,
@@ -262,6 +271,9 @@ export const SMOKING_3: RegionDef = {
         flora.update(kitTime);
         life.update(kitTime);
         light.update(kitTime);
+        for (const build of roads) {
+          build.update(kitTime);
+        }
       },
     };
   },

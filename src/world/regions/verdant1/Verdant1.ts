@@ -8,6 +8,7 @@ import { buildVerdantGround } from "./VerdantGround";
 import { buildVerdantKelp } from "./VerdantKelp";
 import { buildVerdantLife } from "./VerdantLife";
 import { buildVerdantLight } from "./VerdantLight";
+import { buildVerdantRoads } from "./VerdantRoads";
 import { buildVerdantMeadow } from "./VerdantMeadow";
 import { buildVerdantRocks } from "./VerdantRocks";
 import { buildVerdantUnderstory } from "./VerdantUnderstory";
@@ -258,6 +259,9 @@ export const VERDANT_1: RegionDef = {
     const cover = buildVerdantCover(kelp.giants);
     const understory = buildVerdantUnderstory(kelp.giants);
     const fillLife = buildVerdantFillLife(kelp.giants);
+    // ROADS-AND-AXES (critic #6): the mid-down serving, fresh substream,
+    // appended after every existing module (the reroll fence).
+    const roads = buildVerdantRoads();
     const ground = buildVerdantGround([...kelp.contacts, ...rocks.contacts]);
 
     for (const mesh of [
@@ -274,11 +278,17 @@ export const VERDANT_1: RegionDef = {
       ...understory.meshes,
       ...fillLife.groups,
       ...fillLife.meshes,
+      ...roads.map((build) => build.group),
     ]) {
       group.add(mesh);
     }
 
-    const colliders = [...kelp.colliders, ...rocks.colliders, ...buildSeals()];
+    const colliders = [
+      ...kelp.colliders,
+      ...rocks.colliders,
+      ...buildSeals(),
+      ...roads.flatMap((build) => [...build.colliders]),
+    ];
 
     return {
       group,
@@ -293,6 +303,9 @@ export const VERDANT_1: RegionDef = {
         // The fill's motion is closed-form off simulated time (kit law 5).
         cover.update(ctx.time * calm);
         fillLife.update(ctx.time * calm);
+        for (const build of roads) {
+          build.update(ctx.time * calm);
+        }
       },
     };
   },

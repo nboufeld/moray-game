@@ -168,14 +168,13 @@ describe("pale-passage-1 build", () => {
         }
       }
     });
-    // The fill doctrine's Phase 3 ceilings (MASTER R1): the pilot's
-    // 120/250k caps are superseded; the measured numbers go in the
-    // region ledger.
-    expect(draws).toBeLessThanOrEqual(160);
-    // Hard-geometry purge: the horizon rings' soft three-row grammar
-    // (crest dissolve — critic F3) costs ~0.8k tris over the old cap;
-    // recorded in docs/region-ledger/hard-geometry-fix.md.
-    expect(triangles).toBeLessThanOrEqual(455_000);
+    // MASTER R12 superseded the old 160/450k figures (≤260 / ≤1.35M,
+    // bound by the headed frame gate). The fill closed at 449,997 of
+    // the OLD cap; the critic wave spends the first R12 headroom — the
+    // horizon rings' three-row grammar (~0.8k, hard-geometry-fix.md)
+    // and the mid-down serving (~3k, roads-and-axes.md).
+    expect(draws).toBeLessThanOrEqual(260);
+    expect(triangles).toBeLessThanOrEqual(460_000);
     // Honest floors as well as caps: an empty region passes no bar, and
     // a FILLED region must actually be filled.
     expect(draws).toBeGreaterThan(85);

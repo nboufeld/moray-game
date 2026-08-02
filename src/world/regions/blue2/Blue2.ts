@@ -8,6 +8,7 @@ import { buildBlue2Distance } from "./Blue2Distance";
 import { buildBlue2Ground } from "./Blue2Ground";
 import { buildBlue2Life } from "./Blue2Life";
 import { buildBlue2Light } from "./Blue2Light";
+import { buildBlue2Roads } from "./Blue2Roads";
 import { buildMooring } from "./Blue2Mooring";
 import { buildBlue2Stones } from "./Blue2Stones";
 import {
@@ -275,6 +276,9 @@ export const BLUE_2: RegionDef = {
     const light = buildBlue2Light();
     const distance = buildBlue2Distance();
     const cover = buildBlue2Cover();
+    // ROADS-AND-AXES (critic #2/#6/#10): fresh substream, appended after
+    // every existing module — the reroll fence holds by construction.
+    const roads = buildBlue2Roads();
     const ground = buildBlue2Ground([...stones.contacts, ...mooring.contacts]);
 
     for (const child of [
@@ -287,11 +291,17 @@ export const BLUE_2: RegionDef = {
       ...light.groups,
       ...distance.meshes,
       ...cover.groups,
+      ...roads.map((build) => build.group),
     ]) {
       group.add(child);
     }
 
-    const colliders = [...stones.colliders, ...mooring.colliders, ...buildSeals()];
+    const colliders = [
+      ...stones.colliders,
+      ...mooring.colliders,
+      ...buildSeals(),
+      ...roads.flatMap((build) => [...build.colliders]),
+    ];
 
     return {
       group,
@@ -305,6 +315,9 @@ export const BLUE_2: RegionDef = {
         life.update(ctx.time * calm);
         current.update(ctx.time * calm);
         cover.update(ctx.time * calm);
+        for (const build of roads) {
+          build.update(ctx.time * calm);
+        }
         void dt;
       },
     };

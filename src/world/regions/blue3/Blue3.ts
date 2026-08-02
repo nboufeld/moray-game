@@ -6,6 +6,7 @@ import { buildBlue3Distance } from "./Blue3Distance";
 import { buildBlue3Ground } from "./Blue3Ground";
 import { buildBlue3Life } from "./Blue3Life";
 import { buildBlue3Light } from "./Blue3Light";
+import { buildBlue3Roads } from "./Blue3Roads";
 import { buildBlue3Stones } from "./Blue3Stones";
 import { buildBlue3Wellspring } from "./Blue3Wellspring";
 import { MORNING_WHALE_SPECIES_ID, buildMorningWhale } from "./Blue3Whale";
@@ -280,6 +281,9 @@ export const BLUE_3: RegionDef = {
     const light = buildBlue3Light();
     const distance = buildBlue3Distance();
     const cover = buildBlue3Cover();
+    // ROADS-AND-AXES (critic #2/#6/#10): fresh substreams, appended after
+    // every existing module — the reroll fence holds by construction.
+    const roads = buildBlue3Roads();
     const ground = buildBlue3Ground(stones.contacts);
 
     for (const child of [
@@ -291,11 +295,17 @@ export const BLUE_3: RegionDef = {
       ...light.groups,
       ...distance.meshes,
       ...cover.groups,
+      ...roads.map((build) => build.group),
     ]) {
       group.add(child);
     }
 
-    const colliders = [...stones.colliders, ...light.colliders, ...buildSeals()];
+    const colliders = [
+      ...stones.colliders,
+      ...light.colliders,
+      ...buildSeals(),
+      ...roads.flatMap((build) => [...build.colliders]),
+    ];
 
     return {
       group,
@@ -309,6 +319,9 @@ export const BLUE_3: RegionDef = {
         life.update(ctx.time * calm);
         wellspring.update(ctx.time * calm);
         cover.update(ctx.time * calm);
+        for (const build of roads) {
+          build.update(ctx.time * calm);
+        }
         void dt;
       },
     };

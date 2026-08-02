@@ -65,6 +65,17 @@ export interface TravellerRouteSpec {
  * two-region journey). Palettes per MASTER §1.1's shoal-light row:
  * silver-green, gold, pearl-white, ember-dark with warm bellies, and
  * calamity's sparse grey file — fewer, slower, melancholy.
+ *
+ * ROADS-AND-AXES retiming (critic #10 — "shoal-network doctrine
+ * invisible in captures"): the audit found the wing legs' 200–280 s
+ * loops made any door crossing a once-per-4-minutes event, so a swim
+ * through the gateway — and every capture without a pin — almost
+ * always found still water. The four bright routes tighten to the
+ * band's floor (182–232 s, still inside the plan's 3-minute lower
+ * bound, pairwise distinct); calamity keeps its slow grief clock
+ * (300–345), preserving the melancholy-row contrast the tests
+ * assert. Periods are timetable data drawn from each route's own
+ * substream — no placement stream is touched (the fence holds).
  */
 export const TRAVELLER_ROUTES: readonly TravellerRouteSpec[] = [
   {
@@ -75,7 +86,7 @@ export const TRAVELLER_ROUTES: readonly TravellerRouteSpec[] = [
     // the bowl's own greens at the route poses' range.
     fish: { scale: 0.88, color: 0xc2e2b6, profile: "fusilier" },
     count: 56,
-    period: [200, 260],
+    period: [182, 212],
     braid: { lateral: 0.34, vertical: 0.22 },
     glint: { count: 22, size: 0.11 },
     lift: 2.5,
@@ -88,7 +99,7 @@ export const TRAVELLER_ROUTES: readonly TravellerRouteSpec[] = [
     // legs read as one commute meeting at the Honey Gate.
     fish: { scale: 0.82, color: 0xf2da9a, emissive: 0x9a7a30, profile: "fusilier" },
     count: 44,
-    period: [220, 280],
+    period: [188, 224],
     braid: { lateral: 0.4, vertical: 0.24 },
     glint: { count: 20, size: 0.12 },
     lift: 2.4,
@@ -100,7 +111,7 @@ export const TRAVELLER_ROUTES: readonly TravellerRouteSpec[] = [
     // Pearl-white with a faint floor so the milk never eats the file.
     fish: { scale: 0.8, color: 0xeef2ea, emissive: 0x3c3e3a, profile: "tetra" },
     count: 44,
-    period: [190, 250],
+    period: [180, 206],
     braid: { lateral: 0.32, vertical: 0.2 },
     glint: { count: 16, size: 0.1 },
     lift: 2.4,
@@ -113,7 +124,7 @@ export const TRAVELLER_ROUTES: readonly TravellerRouteSpec[] = [
     // light from below, the emissive holds the warm underside.
     fish: { scale: 0.84, color: 0x5a4038, emissive: 0x7a3a1a, profile: "fusilier" },
     count: 40,
-    period: [210, 270],
+    period: [194, 232],
     braid: { lateral: 0.36, vertical: 0.26 },
     lift: 2.6,
   },

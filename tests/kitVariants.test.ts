@@ -281,14 +281,25 @@ describe("kit variants: placements byte-unchanged vs the pre-change build", () =
     it(`keeps every ${key} region placement byte-identical`, () => {
       const before = fixture.regions[key]!;
       const after = now.regions[key]!;
-      // Prefix semantics, matching the reroll fence's actual law: every
-      // placement recorded against the pre-change tree stays byte-identical,
-      // while later waves may legitimately APPEND new content on fresh
-      // substreams after the existing draws (e.g. the beat-repair wave's
-      // calamity wreck slabs). Shrinkage or reordering still convicts.
+      // The fence is APPEND-ONLY, not frozen: later waves (the beat
+      // repairs' calamity wreck slabs, roads-and-axes' fresh-substream
+      // servings) may add nodes AFTER the recorded truth — region builds
+      // mount new modules last, so the walk keeps every pre-change node
+      // at its recorded index. Every recorded node must still stand,
+      // byte-identical, in order; only net-new nodes may follow.
+      // Shrinkage or reordering still convicts; deliberate ledgered
+      // re-authoring re-records (KIT_FIXTURE_RECORD=1).
       expect(after.length).toBeGreaterThanOrEqual(before.length);
       for (let i = 0; i < before.length; i++) {
         expect(after[i], `${key} node #${i} (${before[i]!.name})`).toEqual(before[i]);
+      }
+      for (const extra of after.slice(before.length)) {
+        expect(
+          extra.name.startsWith("road-") ||
+            extra.name.startsWith("kit-") ||
+            extra.name === "road-dressing",
+          `appended node '${extra.name}' must be a later wave's own module`,
+        ).toBe(true);
       }
     });
   }
