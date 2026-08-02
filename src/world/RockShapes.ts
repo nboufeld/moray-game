@@ -223,16 +223,18 @@ interface StackCarving {
 
 const STACK_CARVINGS: readonly StackCarving[] = [
   { notches: [{ depth: WAIST_DEPTH, at: WAIST_AT, width: WAIST_WIDTH }], crownTaper: 0 },
+  // r3: both siblings cut deeper — at fog distance (where the sentinel
+  // parade lives) the r2 carvings still read as the same two bulbs.
   {
-    notches: [{ depth: 0.24, at: 0.34, width: 0.2 }],
-    crownTaper: 0.34,
+    notches: [{ depth: 0.3, at: 0.3, width: 0.22 }],
+    crownTaper: 0.45,
   },
   {
     notches: [
-      { depth: 0.3, at: 0.74, width: 0.11 },
-      { depth: 0.09, at: 0.42, width: 0.3 },
+      { depth: 0.45, at: 0.74, width: 0.13 },
+      { depth: 0.1, at: 0.42, width: 0.3 },
     ],
-    crownTaper: 0.12,
+    crownTaper: 0.22,
   },
 ];
 

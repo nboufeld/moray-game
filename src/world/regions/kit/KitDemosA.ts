@@ -725,6 +725,16 @@ export const KIT_DEMOS_A: KitDemoRegistry = {
           profile: "tuft",
           ...shared,
         }),
+        // The charcoal card stubble in front — smoking's "dark shard"
+        // spike, now card / low hook / kinked shard per instance.
+        buildCarpetField({
+          seed: 0xa11c_0f33,
+          palette: { base: 0x7b6c78, tip: 0x94818a, shade: 0x554a64 },
+          area: { center: [-2.6, 0.6], radius: 1.7 },
+          count: 90,
+          size: [0.4, 0.75],
+          ...shared,
+        }),
       ]);
     },
   },

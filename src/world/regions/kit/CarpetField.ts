@@ -50,9 +50,11 @@ import {
  *
  * **Per-instance silhouette forms (critic punch #9 / C2 — "one blade-tuft
  * kit and one dark-shard tuft kit carry nearly every plain").** The
- * "tuft" and "blade" profiles each carry THREE same-topology forms: the
- * original, plus two siblings (tuft: a low fan and a broken-tip shard
- * cluster; blade: an arcing sheaf and a low splayed rosette). The
+ * "card", "tuft" and "blade" profiles each carry THREE same-topology
+ * forms: the original, plus two siblings (card: a low hook and a kinked
+ * shard — the card stubble is the dark spike that carries the smoking
+ * and pale plains; tuft: a low fan and a broken-tip shard cluster;
+ * blade: an arcing sheaf and a low splayed rosette). The
  * geometry stays ONE instanced draw at the SAME triangle count: sibling
  * forms are baked as per-vertex position/normal deltas and selected in
  * the vertex shader by a per-instance attribute, whose value is a pure
@@ -242,9 +244,11 @@ export function buildCarpetField(options: CarpetFieldOptions): CarpetFieldBuild 
 
   const geometry = profileGeometry(profile, options.seed, midRatio, rootRatio);
 
-  // The formed profiles (the critic's two over-recognised slots) carry
-  // their sibling silhouettes as baked deltas; see the module header.
-  const formed = profile === "tuft" || profile === "blade";
+  // The formed profiles (the critic's over-recognised slots — the card
+  // stubble is the "dark-shard" spike that carries the smoking and pale
+  // plains) carry their sibling silhouettes as baked deltas; see the
+  // module header.
+  const formed = profile === "card" || profile === "tuft" || profile === "blade";
   const formPad = formed
     ? bakeFormDeltas(geometry, siblingForms(profile, options.seed, midRatio, rootRatio))
     : 0;
@@ -416,11 +420,22 @@ function profileGeometry(
  * existing geometry stream moves.
  */
 function siblingForms(
-  profile: "tuft" | "blade",
+  profile: "card" | "tuft" | "blade",
   seed: number,
   midRatio: readonly [number, number, number],
   rootRatio: readonly [number, number, number],
 ): readonly [BufferGeometry, BufferGeometry] {
+  if (profile === "card") {
+    // B — the low hook: squat, broad, bowed right over; C — the kinked
+    // shard: a straighter spike snapped above two-thirds. At stubble
+    // range these are the three distinct marks a plain's near field
+    // needs where one bent quad used to repeat six thousand times.
+    const hook = bladeGeometry(1.35, 0.25, midRatio, rootRatio);
+    hook.scale(1.25, 0.62, 1);
+    const shard = bladeGeometry(0.35, 0.15, midRatio, rootRatio);
+    snapTip(shard, 0.8);
+    return [hook, shard];
+  }
   if (profile === "tuft") {
     return [
       lowFanTuftGeometry(midRatio, rootRatio),

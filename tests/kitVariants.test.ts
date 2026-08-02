@@ -363,7 +363,7 @@ describe("kit variants: placements byte-unchanged vs the pre-change build", () =
     }
   });
 
-  for (const profile of ["tuft", "blade"] as const) {
+  for (const profile of ["card", "tuft", "blade"] as const) {
     it(`${profile} carpets wear three real forms, deterministically`, () => {
       const options = {
         seed: SEEDS.regionSmoking1 ^ 0x7e57_0001,
