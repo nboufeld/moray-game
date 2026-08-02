@@ -14,6 +14,7 @@ import {
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { fbm } from "../../../rendering/ProceduralTexture";
 import { Random, SEEDS } from "../../../util/Random";
+import { regionSlot } from "../RegionSlots";
 import { smoothstep01 } from "./Blue1Shared";
 import { BLUE1_SLOT, CENTER_X, CENTER_Z } from "./Blue1Terrain";
 
@@ -108,6 +109,32 @@ const GAP_APPROACH = 0.4;
 /** Half-angle of the World's Edge sector, where the deep steps stand. */
 const GAP_EDGE = 0.62;
 
+/**
+ * R0.10 (journey-close): the Sunken Calamity's march runs down azimuth
+ * 4.59, and the perpendicular distance from our centre to that line is
+ * ≈ 293 m — 5 m outside the outermost prairie radius. The rings ran
+ * tangent ALONG the march corridor, so once this region attaches
+ * naturally beside the spur (the region's own QA always forced a lone
+ * region and never saw it) the arcs stood in the swim-line as opaque
+ * `fog:false` sheets. Part the curtain over the corridor: the R4 cut,
+ * taken in world space against the spur's line rather than by our own
+ * azimuth. The deep steps (radii ≤ 224, ≥ 69 m clear) stay whole.
+ */
+const SPUR = regionSlot("sunken-calamity-1");
+const SPUR_COS = Math.cos(SPUR.azimuth);
+const SPUR_SIN = Math.sin(SPUR.azimuth);
+/** Lateral clearance the painted distance keeps off the spur's swim-line. */
+const SPUR_CLEAR = 40;
+
+/** True where a ring column would stand inside the spur's corridor. */
+function overSpur(x: number, z: number): boolean {
+  const along = x * SPUR_COS + z * SPUR_SIN;
+  if (along < 100) {
+    return false;
+  }
+  return Math.abs(z * SPUR_COS - x * SPUR_SIN) < SPUR_CLEAR;
+}
+
 export function buildBlue1Distance(): { meshes: (Mesh | InstancedMesh)[] } {
   const random = new Random(SEEDS.regionBlue1 ^ 0xd15b);
   const meshes: (Mesh | InstancedMesh)[] = [];
@@ -145,9 +172,15 @@ export function buildBlue1Distance(): { meshes: (Mesh | InstancedMesh)[] } {
     const geometry = horizonRing(
       layer,
       SEEDS.regionBlue1 ^ (0xd200 + index * 131),
+      // R0.10: the spur-corridor test rides the same callback, so
+      // endEase tapers the cut ends exactly like the angular gaps'.
       (theta) =>
         angleBetween(theta, gapToOrigin) < GAP_APPROACH ||
-        angleBetween(theta, gapOutward) < GAP_EDGE,
+        angleBetween(theta, gapOutward) < GAP_EDGE ||
+        overSpur(
+          CENTER_X + Math.cos(theta) * layer.radius,
+          CENTER_Z + Math.sin(theta) * layer.radius,
+        ),
     );
     const mesh = new Mesh(geometry, material);
     mesh.castShadow = false;
@@ -232,7 +265,9 @@ export function buildBlue1Distance(): { meshes: (Mesh | InstancedMesh)[] } {
       const px = m.elements[12]!;
       const pz = m.elements[14]!;
       const theta = Math.atan2(pz - CENTER_Z, px - CENTER_X);
-      if (angleBetween(theta, gapOutward) < GAP_EDGE + 0.34) {
+      // R0.10: the outer band reaches within 11 m of the Calamity march's
+      // swim-line — cards over its corridor collapse with the void ones.
+      if (angleBetween(theta, gapOutward) < GAP_EDGE + 0.34 || overSpur(px, pz)) {
         // Collapse in place (position kept, so the instance-aware bounds
         // stay honest about where the draw lives).
         const collapsed = new Matrix4().makeScale(0, 0, 0);
