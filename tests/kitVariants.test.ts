@@ -1,9 +1,9 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { InstancedMesh, Mesh, Scene, type Object3D } from "three";
+import { InstancedMesh, Scene, type Object3D } from "three";
 import { describe, expect, it } from "vitest";
-import { Random, SEEDS } from "../src/util/Random";
-import { boulderGeometry, slabGeometry } from "../src/world/RockShapes";
+import { SEEDS } from "../src/util/Random";
+import { boulderGeometry, rockVariantIndex, slabGeometry } from "../src/world/RockShapes";
 import { buildCarpetField } from "../src/world/regions/kit/CarpetField";
 import { buildGroundLitter } from "../src/world/regions/kit/GroundLitter";
 import { CALAMITY_1 } from "../src/world/regions/calamity1/Calamity1";
@@ -255,12 +255,35 @@ describe("kit variants: placements byte-unchanged vs the pre-change build", () =
     expect(fixture.rocks.slabs.length).toBe(ROCK_SWEEP_SEEDS.length);
   });
 
-  it("rocks with the original profile stay byte-identical; siblings differ", () => {
-    // Pre-change, every seed produced the one profile. Post-change the
-    // selector routes each seed to a profile; original-profile picks must
-    // reproduce the recorded bytes exactly (the roughing, the finish and
-    // the lathe all untouched), sibling picks must differ, and both
-    // groups must be non-empty across the sweep (non-degenerate).
-    void 0; // superseded by the dedicated distribution suite once variants land
-  });
+  for (const kind of ["boulder", "slab"] as const) {
+    it(`${kind}s on the original profile stay byte-identical; siblings differ`, () => {
+      // Pre-change, every seed produced the one profile; the fixture holds
+      // those bytes. Post-change the selector routes each seed: original-
+      // profile picks must reproduce the recorded bytes exactly (lathe,
+      // roughing and finish all untouched), sibling picks must differ.
+      const recorded = kind === "boulder" ? fixture.rocks.boulders : fixture.rocks.slabs;
+      const live = kind === "boulder" ? now.rocks.boulders : now.rocks.slabs;
+      let originals = 0;
+      for (const [i, seed] of ROCK_SWEEP_SEEDS.entries()) {
+        if (rockVariantIndex(seed, kind) === 0) {
+          originals++;
+          expect(live[i], `${kind} seed #${i} (original pick)`).toBe(recorded[i]);
+        } else {
+          expect(live[i], `${kind} seed #${i} (sibling pick)`).not.toBe(recorded[i]);
+        }
+      }
+      expect(originals).toBeGreaterThan(0);
+      expect(originals).toBeLessThan(ROCK_SWEEP_SEEDS.length);
+    });
+
+    it(`${kind} variant distribution is non-degenerate across 240 seeds`, () => {
+      const counts = [0, 0, 0];
+      for (let i = 0; i < 240; i++) {
+        counts[rockVariantIndex(SEEDS.rockShapes ^ (i * 977 + 13), kind)]!++;
+      }
+      for (const [variant, count] of counts.entries()) {
+        expect(count, `${kind} variant ${variant}`).toBeGreaterThan(240 * 0.2);
+      }
+    });
+  }
 });

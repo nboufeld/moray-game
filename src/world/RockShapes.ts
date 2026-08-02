@@ -82,6 +82,46 @@ const BOULDER: readonly ProfilePoint[] = [
 ];
 
 /**
+ * The split crag (critic punch #9): the potato's first sibling. A full
+ * shoulder that cleaves in at two thirds height and throws up a second,
+ * narrower head — the one thing the convex potato can never be is
+ * *concave*, and the collar is what a silhouette reads at fifty metres.
+ * Same envelope: nothing exceeds the declared radius, foot at SINK,
+ * crown closed.
+ */
+const SPLIT_CRAG: readonly ProfilePoint[] = [
+  [0, 0.58],
+  [0.13, 0.9],
+  [0.3, 1.0],
+  [0.48, 0.9],
+  [0.6, 0.52],
+  [0.72, 0.66],
+  [0.86, 0.54],
+  [0.95, 0.3],
+  [1, 0],
+];
+
+/**
+ * The keeled stone: the potato's second sibling. Widest low, a straighter
+ * fall to a narrow crest, and the whole spine *leaned* off the lathe axis
+ * (see {@link leanRings}) — the asymmetry a body of revolution cannot
+ * otherwise have. Callers already yaw every stone from their own streams,
+ * so the lean direction distributes for free.
+ */
+const KEELED: readonly ProfilePoint[] = [
+  [0, 0.7],
+  [0.1, 0.94],
+  [0.24, 1.0],
+  [0.46, 0.8],
+  [0.68, 0.56],
+  [0.88, 0.34],
+  [1, 0],
+];
+
+/** How far the keeled profiles' crowns shift off-axis, per unit radius. */
+const KEEL_LEAN = 0.32;
+
+/**
  * A low wide shelf: full width from the sand to well past half height, then a
  * quick fall to a broad flat crown.
  *
@@ -99,6 +139,41 @@ const SLAB: readonly ProfilePoint[] = [
   [0.96, 0.5],
   [1, 0],
 ];
+
+/**
+ * The shelf-stack (critic punch #9): the slab's first sibling. Two benched
+ * ledges — full width, a bitten waist, a narrower second bench — the
+ * stepped strata read the single-overhang slab cannot give. Stays inside
+ * the slab's own 1.02 overhang ceiling.
+ */
+const SHELF_STACK: readonly ProfilePoint[] = [
+  [0, 0.92],
+  [0.16, 1.02],
+  [0.32, 0.98],
+  [0.42, 0.72],
+  [0.55, 0.8],
+  [0.7, 0.76],
+  [0.82, 0.5],
+  [0.92, 0.42],
+  [1, 0],
+];
+
+/**
+ * The prow: the slab's second sibling. A low wedge whose crown drifts
+ * off-axis (the keel lean again, gentler) — the leaning ship-bow stone a
+ * roadside verge wants where the potato used to squat.
+ */
+const PROW: readonly ProfilePoint[] = [
+  [0, 0.96],
+  [0.2, 1.02],
+  [0.42, 0.9],
+  [0.64, 0.68],
+  [0.84, 0.46],
+  [1, 0],
+];
+
+/** The prow leans less than the keeled boulder: it is broad, not tall. */
+const PROW_LEAN = 0.2;
 
 /**
  * The waist a sea stack is given, as a fraction taken out at mid height.
@@ -136,12 +211,51 @@ export interface RockShapeOptions {
   readonly rings?: number;
 }
 
+/**
+ * The silhouette families (critic punch #9 — "buy two more silhouettes
+ * per kit slot"). Index 0 is always the original profile, byte-for-byte:
+ * a seed that selects it builds exactly the stone it always built.
+ */
+const BOULDER_FAMILY: readonly { profile: readonly ProfilePoint[]; lean: number }[] = [
+  { profile: BOULDER, lean: 0 },
+  { profile: SPLIT_CRAG, lean: 0 },
+  { profile: KEELED, lean: KEEL_LEAN },
+];
+
+const SLAB_FAMILY: readonly { profile: readonly ProfilePoint[]; lean: number }[] = [
+  { profile: SLAB, lean: 0 },
+  { profile: SHELF_STACK, lean: 0 },
+  { profile: PROW, lean: PROW_LEAN },
+];
+
+/** A fresh XOR substream for the variant pick, so it can never collide
+ *  with the roughing streams (`seed`, `seed ^ 0x4d21`) already in use. */
+const VARIANT_SALT = 0x5eed_c2a6;
+
+/**
+ * Which sibling a seed selects — the deployment device. Every caller
+ * already passes a per-stone seed drawn from its own fenced stream, so
+ * hashing that seed (mulberry32's avalanche, no stream consumed) swaps
+ * the geometry profile under a placement without moving it: position,
+ * scale and rotation are the caller's and stay byte-identical.
+ * Exported for the variant tests; regions have no reason to call it.
+ */
+export function rockVariantIndex(seed: number, kind: "boulder" | "slab"): number {
+  const family = kind === "boulder" ? BOULDER_FAMILY : SLAB_FAMILY;
+  let t = (seed ^ VARIANT_SALT) >>> 0;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) % family.length;
+}
+
 export function boulderGeometry(options: RockShapeOptions): BufferGeometry {
-  return latheRock(BOULDER, options);
+  const variant = BOULDER_FAMILY[rockVariantIndex(options.seed, "boulder")]!;
+  return latheRock(variant.profile, options, { lean: variant.lean });
 }
 
 export function slabGeometry(options: RockShapeOptions): BufferGeometry {
-  return latheRock(SLAB, options);
+  const variant = SLAB_FAMILY[rockVariantIndex(options.seed, "slab")]!;
+  return latheRock(variant.profile, options, { lean: variant.lean });
 }
 
 /**
@@ -304,6 +418,8 @@ export function archGeometry(options: ArchOptions): BufferGeometry {
 interface LatheRockFlags {
   /** Off while a part is on its way into a merge; see {@link archGeometry}. */
   readonly finish?: boolean;
+  /** Crown drift off the lathe axis, per unit radius; see {@link leanRings}. */
+  readonly lean?: number;
 }
 
 function latheRock(
@@ -336,7 +452,40 @@ function latheRock(
 
   const geometry = new LatheGeometry(points, options.segments ?? 13);
   roughLathe(geometry, options.seed, options.amount ?? 0.14);
+  if (flags.lean) {
+    leanRings(geometry, points, flags.lean * options.radius, options.height);
+  }
   return flags.finish === false ? geometry : finish(geometry, options.seed);
+}
+
+/**
+ * Drifts a lathe's rings off the axis as they climb — the keeled stones'
+ * asymmetry. The same ring-stride walk as {@link shiftRings}, with the
+ * shift a smooth power of height so the foot stays planted where the
+ * caller put it and only the crown leans. Applied AFTER the roughing
+ * (whose noise is sampled around the original axis, so the seam column
+ * still displaces identically) and BEFORE the finish (which computes the
+ * welded normals off the final shape). The crown shift never exceeds a
+ * third of the radius, so a leaned stone stays inside the footprint its
+ * caller's clearances were authored against.
+ */
+function leanRings(
+  geometry: BufferGeometry,
+  points: readonly Vector2[],
+  crownShift: number,
+  height: number,
+): void {
+  const position = geometry.attributes.position;
+  if (!position) {
+    return;
+  }
+  const perSlice = points.length;
+  for (let i = 0; i < position.count; i++) {
+    const ring = i % perSlice;
+    const t = Math.max(0, (points[ring]!.y + SINK) / (height + SINK));
+    position.setX(i, position.getX(i) + crownShift * Math.pow(t, 1.6));
+  }
+  position.needsUpdate = true;
 }
 
 /**
