@@ -33,7 +33,9 @@ A region that misses these is not done:
    for the eye (the pinnacle/arch/repoussoir discipline), each one worth
    a screenshot, arranged so wandering keeps producing reveals at
    fog-distance rhythm (something new should breach the fog every
-   ~30–60 m of travel).
+   **20–40 m** of travel — FILL-DOCTRINE rule 2 tightened the old
+   30–60 m; MASTER ruling R1 makes that figure canon, and §1.2's
+   protected rests are the only exemption).
 3. **Real verticality**: ≥ 20 m of terrain range inside the disc
    (terraces, drops, overlooks, swim-throughs). The approach vale
    (depth 1) is an authored journey, not a corridor: a reveal at its
@@ -50,10 +52,18 @@ A region that misses these is not done:
 6. **Its own painted distance**: silhouette layers at the disc's edge
    (the `DistantReef` idiom re-authored per region) so every vista ends
    in layered depth, never in bare fog.
-7. **Budgets** (per region, honest and measured): ≤ ~120 draw calls
-   attached, ≤ ~250k triangles, instancing for everything repeated, no
-   castShadow on smallwork, ground sheets ~1.2 m/vertex. State overruns
-   in the ledger; never hide them.
+7. **Budgets** (per region, honest and measured — superseded twice, per
+   MASTER rulings R1 and R12): ≤ **260 draw calls** attached, ≤ **1.35M
+   triangles**, and the BINDING gate is the measurement, not the cap —
+   every rework ships a headed frame measure at its densest interior
+   pose and must hold **median ≤ 16.9 ms at render scale 1.00**
+   (`SHOT_HEADED=1 ... node scripts/measure-frames.mjs`). A region under
+   the caps that misses the gate fails; one over a cap that holds the
+   gate may ship with the overage recorded. The added headroom is
+   licensed for per-instance QUALITY first, density second (R12).
+   Instancing for everything repeated, no castShadow on smallwork,
+   ground sheets ~1.2 m/vertex. State overruns in the ledger; never
+   hide them.
 
 ## The contracts (same as they ever were)
 

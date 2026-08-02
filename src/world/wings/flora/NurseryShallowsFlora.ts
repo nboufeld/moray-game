@@ -15,9 +15,12 @@ import { buildColorTexture, fbm } from "../../../rendering/ProceduralTexture";
 import { createToonMaterial } from "../../../rendering/ToonShading";
 import { Random, SEEDS } from "../../../util/Random";
 import { coralGeometry, coralSkin, type CoralKind } from "../../CoralShapes";
+import { buildGroundLitter } from "../../regions/kit/GroundLitter";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
 import { angleBetween, wedgeHalfAt } from "../WingGeometry";
 import type { WingDef, WingFlora } from "../WingTypes";
+import { mountGateVeil } from "./GateVeilMount";
+import { TIERB_GROUP_NAME } from "./TierBUplift";
 import { clampInsideWedge, polarPoint, sampleWedgePoint } from "./W1FloraShared";
 
 /**
@@ -167,6 +170,53 @@ export function buildNurseryShallowsFlora(def: WingDef): WingFlora {
 
   group.add(buildTufts(grassRandom, def, sway, wind));
 
+  // ── Batch 4: the Tier B uplift (MASTER §4 closure, R2 ≤ +6 / ≤ 20k) ──
+  // The T1 statement in the nursery's own voice: a shell-grit drift — the
+  // broods' spent shell, warm cream over a rosy underside — carpeting the
+  // terrace between the pastel clusters. A fresh `^` substream fed to a
+  // kit-private Random, appended after every wave-8 draw: nothing above
+  // re-rolls (the sentinel pins in tests/wingsTierB.test.ts hold it). The
+  // gate keeps the den corridor law (0.06 rad, held at 0.075 + footprint)
+  // and stays out of the r 30–34 gate corridor entirely.
+  const uplift = new Group();
+  uplift.name = TIERB_GROUP_NAME;
+  const shellDrift = buildGroundLitter({
+    seed: (SEEDS.wingNurseryShallows ^ 0xb401) >>> 0,
+    palette: { base: 0xead9bc, shade: 0xc09a90 },
+    area: { center: [Math.cos(def.azimuth) * 41, Math.sin(def.azimuth) * 41], radius: 7.5 },
+    gate: (x, z) => {
+      const r = Math.hypot(x, z);
+      if (r < 35 || r > 47) {
+        return 0;
+      }
+      const away = angleBetween(Math.atan2(z, x), def.azimuth);
+      if (away < 0.075 || away > wedgeHalfAt(def, r) - 0.02) {
+        return 0;
+      }
+      return 1;
+    },
+    ground: seabedHeight,
+    count: 420,
+    shapeSet: "pebble",
+    size: [0.04, 0.12],
+    grade: 0.4,
+  });
+  uplift.add(shellDrift.group);
+  group.add(uplift);
+
+  // The doorway: a warm sand-rose veil — the terrace's morning promised to
+  // the bowl — with a sun-pale column and a drift of shell-gold motes.
+  const veil = mountGateVeil(def, {
+    doorR: 32,
+    width: 4.0,
+    height: 3.4,
+    sillLift: 0.7,
+    palette: [0x6a5240, 0x94765a, 0xc0a482],
+    column: { tint: 0xfff0cc, opacity: 0.09 },
+    particulate: { tint: 0xf6e6c0, count: 55 },
+  });
+  group.add(veil.group);
+
   return {
     group,
     contacts,
@@ -175,6 +225,7 @@ export function buildNurseryShallowsFlora(def: WingDef): WingFlora {
       // at a third of the rate and two fifths of the strength.
       sway.value += dt * (reducedMotion ? 0.3 : 1);
       wind.value = reducedMotion ? 0.4 : 1;
+      veil.update(dt, reducedMotion);
     },
   };
 }

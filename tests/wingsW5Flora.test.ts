@@ -111,15 +111,21 @@ function acrossOf(def: WingDef, x: number, z: number): number {
 /**
  * Connective-3 (MASTER R2, the connective-2 precedent): the budget pin
  * below holds the ORIGINAL wave-8 flora. Phase 3 uplift subtrees — the
- * Batch 1 gate veil and the Batch 3 `wing-uplift-conn3` density — are
- * measured against R2's own ceilings in `tests/wingsConnective3.test.ts`
- * (and the veil in `tests/wingsConnective1.test.ts`), so they are
- * excluded from THIS count only. Determinism and confinement still read
- * every uplift vertex and instance.
+ * Batch 1 gate veil, the Batch 3 `wing-uplift-conn3` density, and the
+ * Batch 4 Tier B `wing-uplift-tierb` (ice-grotto + sargassum-sky here) —
+ * are measured against R2's own ceilings in
+ * `tests/wingsConnective3.test.ts` / `tests/wingsTierB.test.ts` (and the
+ * veil in `tests/wingsConnective1.test.ts`), so they are excluded from
+ * THIS count only. Determinism and confinement still read every uplift
+ * vertex and instance.
  */
 function insidePhase3Uplift(object: Object3D): boolean {
   for (let o: Object3D | null = object; o; o = o.parent) {
-    if (o.name === "wing-gate-veil" || o.name === "wing-uplift-conn3") {
+    if (
+      o.name === "wing-gate-veil" ||
+      o.name === "wing-uplift-conn3" ||
+      o.name === "wing-uplift-tierb"
+    ) {
       return true;
     }
   }

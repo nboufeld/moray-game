@@ -17,9 +17,12 @@ import { buildColorTexture, fbm } from "../../../rendering/ProceduralTexture";
 import { smoothNormals } from "../../../rendering/SmoothNormals";
 import { createToonMaterial } from "../../../rendering/ToonShading";
 import { Random, SEEDS } from "../../../util/Random";
+import { buildCarpetField } from "../../regions/kit/CarpetField";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
-import { wedgeHalfAt } from "../WingGeometry";
+import { angleBetween, wedgeHalfAt } from "../WingGeometry";
 import type { WingDef, WingFlora } from "../WingTypes";
+import { mountGateVeil } from "./GateVeilMount";
+import { TIERB_GROUP_NAME } from "./TierBUplift";
 import { buildBladeMeadow } from "./WreckMeadowBlades";
 
 /**
@@ -163,12 +166,76 @@ export function buildMoonlitLagoonFlora(def: WingDef): WingFlora {
   // that brightens nothing it points at is a decal.
   group.add(buildMoonPool(def));
 
+  // ── Batch 4: the Tier B uplift (MASTER §4 closure, R2 ≤ +6 / ≤ 20k) ──
+  // The T1 statement in the lagoon's own silver: a moon-grass blade carpet
+  // over the basin floor — pale lavender-silver, tips toward the moonlit
+  // crown, sway barely above stillness (serenity is the register). Every
+  // blade tops out far under the koi circle's 1.25 m ceiling, and the
+  // moon pool's mirror stays bare. Fresh `^` substream, kit-private
+  // Random, appended after every wave-8 draw.
+  const uplift = new Group();
+  uplift.name = TIERB_GROUP_NAME;
+  const poolX = axisX * MOON_POOL.r;
+  const poolZ = axisZ * MOON_POOL.r;
+  const moonGrass = buildCarpetField({
+    seed: (SEEDS.wingMoonlitLagoon ^ 0xb404) >>> 0,
+    palette: { base: 0x8e97b4, tip: 0xcdd3ea, shade: 0x565270 },
+    area: { center: [axisX * 40.5, axisZ * 40.5], radius: 7.5 },
+    gate: (x, z) => {
+      const r = Math.hypot(x, z);
+      if (r < 34.5 || r > 47) {
+        return 0;
+      }
+      const away = angleBetween(Math.atan2(z, x), def.azimuth);
+      if (away > wedgeHalfAt(def, r) - 0.02) {
+        return 0;
+      }
+      // The mirror stays a mirror: nothing grows through the moon pool.
+      if (Math.hypot(x - poolX, z - poolZ) < MOON_POOL.radius + 0.3) {
+        return 0;
+      }
+      // A quiet swim line down the axis, the lagoon's own restraint.
+      return Math.abs(x * perpX + z * perpZ) < 1.0 ? 0 : 1;
+    },
+    ground: seabedHeight,
+    count: 220,
+    profile: "blade",
+    size: [0.3, 0.62],
+    swayAmp: 0.015,
+  });
+  uplift.add(moonGrass.group);
+  group.add(uplift);
+
+  // The doorway: a violet-silver gauze hung NARROW — two planes only,
+  // their depths sized so every vertex stands radially short of the koi's
+  // circle (r 36; the circle's law reads every world vertex and this veil
+  // never enters it) — with a moon-pale column and a slow dust of pale
+  // motes. The stillness promised from the bowl.
+  // r3: the gauze read as nearly nothing at the door stand — taller
+  // planes, a lighter far ink and a touch more column so the moon-gauze
+  // silhouettes against the bright bowl water. Width unchanged: the koi
+  // circle stays untouched by geometry.
+  const veil = mountGateVeil(def, {
+    doorR: 32,
+    width: 1.85,
+    height: 4.6,
+    sillLift: -0.6,
+    palette: [0x342e48, 0x6a6690],
+    column: { tint: 0xe2e6f4, opacity: 0.1 },
+    particulate: { tint: 0xdadff0, count: 50 },
+  });
+  group.add(veil.group);
+
+  let kitTime = 0;
   return {
     group,
     contacts,
     update(dt: number, reducedMotion: boolean): void {
       tufts.update(dt, reducedMotion);
       motes.update(dt, reducedMotion);
+      kitTime += dt * (reducedMotion ? 0.3 : 1);
+      moonGrass.update(kitTime);
+      veil.update(dt, reducedMotion);
     },
   };
 }

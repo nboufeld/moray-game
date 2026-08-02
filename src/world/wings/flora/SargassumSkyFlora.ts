@@ -19,10 +19,13 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 import { buildColorTexture, fbm } from "../../../rendering/ProceduralTexture";
 import { createToonMaterial } from "../../../rendering/ToonShading";
 import { Random, SEEDS } from "../../../util/Random";
+import { buildCarpetField } from "../../regions/kit/CarpetField";
 import { seabedHeight } from "../../Seabed";
 import { createSunViewUniform, injectLeafGlow, trackSunView } from "../../SeaGrass";
-import { wedgeHalfAt } from "../WingGeometry";
+import { angleBetween, wedgeHalfAt } from "../WingGeometry";
 import type { WingDef, WingFlora } from "../WingTypes";
+import { mountGateVeil } from "./GateVeilMount";
+import { TIERB_GROUP_NAME } from "./TierBUplift";
 
 /**
  * The Sargassum Sky's flora (wave 8, `SEEDS.wingSargassumSky` + substreams):
@@ -89,6 +92,51 @@ export function buildSargassumSkyFlora(def: WingDef): WingFlora {
   group.add(patches.mesh);
   group.add(buildTufts(def));
 
+  // ── Batch 4: the Tier B uplift (MASTER §4 closure, R2 ≤ +6 / ≤ 20k) ──
+  // The T1 statement in the inversion's own voice, kept DELIBERATELY thin:
+  // fallen canopy litter — a sparse drift of curled amber cards on the
+  // sand, the roof's slow shedding. The floor stays a held breath (a busy
+  // floor under a busy ceiling is two scenes fighting), so this is the
+  // quietest T1 of the batch: 150 cards, no more. Fresh `^` substream,
+  // kit-private Random, appended after every wave-8 draw; every card lies
+  // far below the turtle's y 4–6 corridor.
+  const uplift = new Group();
+  uplift.name = TIERB_GROUP_NAME;
+  const fallenPads = buildCarpetField({
+    seed: (SEEDS.wingSargassumSky ^ 0xb409) >>> 0,
+    palette: { base: 0x9a7c36, tip: 0xd8b45e, shade: 0x5c481e },
+    area: { center: [Math.cos(def.azimuth) * 40.5, Math.sin(def.azimuth) * 40.5], radius: 8 },
+    gate: (x, z) => {
+      const r = Math.hypot(x, z);
+      if (r < 34 || r > 47.5) {
+        return 0;
+      }
+      const away = angleBetween(Math.atan2(z, x), def.azimuth);
+      return away > wedgeHalfAt(def, r) - 0.02 ? 0 : 1;
+    },
+    ground: seabedHeight,
+    count: 150,
+    profile: "card",
+    size: [0.12, 0.26],
+  });
+  uplift.add(fallenPads.group);
+  group.add(uplift);
+
+  // The doorway: a deep amber-gold veil hung narrow like the weed itself,
+  // a gold column and gold motes — the golden roof promised from the
+  // bowl. Width sized so every plane stands BEFORE r 38: the Island That
+  // Swims owns r 38–46, y 4–6, and that volume stays empty by
+  // construction, veil included (asserted in tests/wingsTierB.test.ts).
+  const veil = mountGateVeil(def, {
+    doorR: 32,
+    width: 1.6,
+    height: 3.0,
+    palette: [0x453317, 0x685026, 0x92763c],
+    column: { tint: 0xffe8ac, opacity: 0.09 },
+    particulate: { tint: 0xf4dc9c, count: 50 },
+  });
+  group.add(veil.group);
+
   let time = 0;
   return {
     group,
@@ -97,6 +145,7 @@ export function buildSargassumSkyFlora(def: WingDef): WingFlora {
       sway.value = time;
       windStrength.value = reducedMotion ? 0.35 : 1;
       patches.update(time);
+      veil.update(dt, reducedMotion);
     },
   };
 }

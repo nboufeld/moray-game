@@ -65,13 +65,21 @@ interface DrawStats {
  * density uplift are Phase 3 work on their own budget (≤ +10 draws /
  * ≤ 35k tris per Tier A wing), measured and asserted in
  * `tests/wingsConnective1.test.ts` / `tests/wingsConnective2.test.ts`.
- * The wave-8 cap below keeps pinning the ORIGINAL flora, so those two
- * named subtrees are excluded here — and only here; the determinism,
- * confinement and aisle checks still read them.
+ * Batch 4 (MASTER §4 closure): the Tier B side rooms' uplift subtree
+ * (`wing-uplift-tierb`, nursery + lumen here) is likewise Phase 3 budget
+ * on R2's Tier B ceiling (≤ +6 / ≤ 20k), measured in
+ * `tests/wingsTierB.test.ts`. The wave-8 cap below keeps pinning the
+ * ORIGINAL flora, so those named subtrees are excluded here — and only
+ * here; the determinism, confinement, corridor and heart checks still
+ * read them.
  */
 function insidePhase3Uplift(object: Object3D): boolean {
   for (let o: Object3D | null = object; o; o = o.parent) {
-    if (o.name === "wing-gate-veil" || o.name === "wing-uplift-conn2") {
+    if (
+      o.name === "wing-gate-veil" ||
+      o.name === "wing-uplift-conn2" ||
+      o.name === "wing-uplift-tierb"
+    ) {
       return true;
     }
   }

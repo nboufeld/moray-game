@@ -122,14 +122,24 @@ function trianglesOf(meshes: readonly (Mesh | InstancedMesh | Points)[]): number
  * Connective-2 (MASTER R2): the vent wing's Batch 2 density uplift is
  * Phase 3 budget on its own ceiling (≤ +10 draws / ≤ 35k tris per Tier A
  * wing including the Batch 1 veil), measured and asserted in
- * `tests/wingsConnective2.test.ts`. The wave-8 cap below keeps pinning
- * the ORIGINAL flora (plus the veil, which fits it) — only the budget
- * case excludes the uplift subtree; the determinism, confinement and den
- * corridor checks above still read every vertex of it.
+ * `tests/wingsConnective2.test.ts`. Batch 4 (MASTER §4 closure): the
+ * wreck-meadow and moonlit-lagoon Tier B uplift (`wing-uplift-tierb` +
+ * their new `wing-gate-veil`s) is Phase 3 budget on R2's Tier B ceiling
+ * (≤ +6 / ≤ 20k), measured in `tests/wingsTierB.test.ts`. Only the
+ * budget case excludes these subtrees; the determinism, confinement,
+ * den-corridor and koi-circle checks above still read every vertex of
+ * them. (Excluding the veil name leaves the vent wing's own Batch 1 veil
+ * out of the wave-8 count too — it was only ever counted because it
+ * happened to fit, per the comment above; its budget home is the
+ * connective suite.)
  */
 function insideConn2Uplift(object: Object3D): boolean {
   for (let o: Object3D | null = object; o; o = o.parent) {
-    if (o.name === "wing-uplift-conn2") {
+    if (
+      o.name === "wing-uplift-conn2" ||
+      o.name === "wing-uplift-tierb" ||
+      o.name === "wing-gate-veil"
+    ) {
       return true;
     }
   }

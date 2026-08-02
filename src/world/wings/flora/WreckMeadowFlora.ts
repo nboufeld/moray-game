@@ -1,8 +1,12 @@
 import { Color, Group, InstancedMesh, Mesh, Object3D } from "three";
 import { createToonMaterial } from "../../../rendering/ToonShading";
 import { Random, SEEDS } from "../../../util/Random";
+import { buildGroundLitter } from "../../regions/kit/GroundLitter";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
+import { angleBetween, wedgeHalfAt } from "../WingGeometry";
 import type { WingDef, WingFlora } from "../WingTypes";
+import { mountGateVeil } from "./GateVeilMount";
+import { TIERB_GROUP_NAME } from "./TierBUplift";
 import { buildBladeMeadow } from "./WreckMeadowBlades";
 import { keelGeometry, ribArcGeometry, timberGeometry } from "./WreckMeadowRibs";
 
@@ -269,11 +273,67 @@ export function buildWreckMeadowFlora(def: WingDef): WingFlora {
   });
   group.add(meadow.mesh);
 
+  // ── Batch 4: the Tier B uplift (MASTER §4 closure, R2 ≤ +6 / ≤ 20k) ──
+  // The T1 statement in the wreck's own voice: a rust-and-bone gravel
+  // drift through the meadow floor — the ship's slow undoing, ground fine
+  // and combed gently seaward (rake off the bowl, low strength: settled
+  // silt, not a blast). Fresh `^` substream fed to a kit-private Random,
+  // appended after every wave-8 draw; the gate stretch below r 34.6 stays
+  // the meadow's own (the doorway keeps its two timbers and nothing else).
+  const uplift = new Group();
+  uplift.name = TIERB_GROUP_NAME;
+  // r2: the r1 capture read the drift as nearly invisible — stones sized
+  // up, the hierarchy anchored (grade 0.7), and a second BONE tone family
+  // (twoTone via `accent`) so the field reads rust-and-bone against the
+  // rust-tinted floor instead of dissolving into it. The second litter
+  // draw is paid for by the veil's mote cloud (dropped below): 6 draws
+  // stays 6.
+  const rustDrift = buildGroundLitter({
+    seed: (SEEDS.wingWreckMeadow ^ 0xb403) >>> 0,
+    palette: { base: 0x8a644c, shade: 0x46362e, accent: 0xc2b49c },
+    area: { center: [axisX * 40.5, axisZ * 40.5], radius: 7.5 },
+    gate: (x, z) => {
+      const r = Math.hypot(x, z);
+      if (r < 34.6 || r > 47) {
+        return 0;
+      }
+      const away = angleBetween(Math.atan2(z, x), def.azimuth);
+      return away > wedgeHalfAt(def, r) - 0.02 ? 0 : 1;
+    },
+    ground: seabedHeight,
+    count: 340,
+    shapeSet: "gravel",
+    // r3: the r2 field still dissolved into the wing's rust haze at the
+    // canonical stand — one more size step; the drift must read as
+    // debris grain, not dust.
+    size: [0.09, 0.24],
+    rake: { from: [0, 0], strength: 0.5, jitter: 0.3 },
+    twoTone: true,
+    grade: 0.7,
+  });
+  uplift.add(rustDrift.group);
+  group.add(uplift);
+
+  // The doorway: a grey-teal veil with a pale sea-light column — the
+  // melancholy promised quietly from the bowl. No mote cloud: its draw
+  // went to the drift's bone family (r2), and the meadow's stillness is
+  // better served by light than by dust.
+  const veil = mountGateVeil(def, {
+    doorR: 32,
+    width: 3.8,
+    height: 3.6,
+    sillLift: -1.2,
+    palette: [0x35403a, 0x4c5852, 0x6a746c],
+    column: { tint: 0xd6e2da, opacity: 0.07 },
+  });
+  group.add(veil.group);
+
   return {
     group,
     contacts,
     update(dt: number, reducedMotion: boolean): void {
       meadow.update(dt, reducedMotion);
+      veil.update(dt, reducedMotion);
     },
   };
 }

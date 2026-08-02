@@ -17,11 +17,16 @@ import {
 import { buildColorTexture, fbm } from "../../../rendering/ProceduralTexture";
 import { createToonMaterial } from "../../../rendering/ToonShading";
 import { Random, SEEDS } from "../../../util/Random";
+import { buildCarpetField } from "../../regions/kit/CarpetField";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
+import { angleBetween, wedgeHalfAt } from "../WingGeometry";
 import type { WingDef, WingFlora } from "../WingTypes";
+import { mountGateVeil } from "./GateVeilMount";
+import { TIERB_GROUP_NAME } from "./TierBUplift";
 import {
   bubbleRingSprite,
   drawFloorSpot,
+  lateralOf,
   smoothstep01,
   swayClock,
   wingFrame,
@@ -362,6 +367,54 @@ export function buildCurrentRunFlora(def: WingDef): WingFlora {
   };
   poseBubbles();
 
+  // ── Batch 4: the Tier B uplift (MASTER §4 closure, R2 ≤ +6 / ≤ 20k) ──
+  // The T1 statement in the run's own voice: a combed turf of short
+  // turquoise tufts, every one raked downstream with the banners — the
+  // floor itself streaming the way the water is going. The channel law
+  // (≥ 1.9 m off the axis) is kept with the tufts' own footprint on top.
+  // Fresh `^` substream, kit-private Random, appended after every wave-8
+  // draw.
+  const uplift = new Group();
+  uplift.name = TIERB_GROUP_NAME;
+  const combedTurf = buildCarpetField({
+    seed: (SEEDS.wingCurrentRun ^ 0xb406) >>> 0,
+    palette: { base: 0x5da890, tip: 0x9adcc8, shade: 0x2f5f54 },
+    area: { center: [frame.axisX * 40, frame.axisZ * 40], radius: 7.5 },
+    gate: (x, z) => {
+      const r = Math.hypot(x, z);
+      if (r < 34.5 || r > 46.5) {
+        return 0;
+      }
+      const away = angleBetween(Math.atan2(z, x), def.azimuth);
+      if (away > wedgeHalfAt(def, r) - 0.02) {
+        return 0;
+      }
+      return Math.abs(lateralOf(frame, x, z)) < CHANNEL_CLEAR + 0.3 ? 0 : 1;
+    },
+    ground: seabedHeight,
+    count: 360,
+    profile: "tuft",
+    size: [0.2, 0.42],
+    rake: { yaw: downstreamYaw, strength: 0.75 },
+    swayAmp: 0.05,
+  });
+  uplift.add(combedTurf.group);
+  group.add(uplift);
+
+  // The doorway: a rushing-turquoise veil with a pale water-light column —
+  // the ride promised from the bowl, the channel's centre left open.
+  const veil = mountGateVeil(def, {
+    doorR: 32,
+    width: 3.8,
+    height: 3.6,
+    sillLift: -1.0,
+    palette: [0x2c4844, 0x40625c, 0x5c807a],
+    column: { tint: 0xd8f0ea, opacity: 0.07 },
+    particulate: { tint: 0xcfe8e2, count: 45 },
+  });
+  group.add(veil.group);
+
+  let kitTime = 0;
   const update = (dt: number, reducedMotion: boolean): void => {
     // One clock governs both motions: under reduced motion it advances at
     // 0.3×, which becalms the banners' sway and the streams' tear alike —
@@ -369,6 +422,9 @@ export function buildCurrentRunFlora(def: WingDef): WingFlora {
     clock.advance(dt, reducedMotion, 0.25);
     wobbleScale = reducedMotion ? 0.4 : 1;
     poseBubbles();
+    kitTime += dt * (reducedMotion ? 0.3 : 1);
+    combedTurf.update(kitTime);
+    veil.update(dt, reducedMotion);
   };
 
   return { group, contacts, update };

@@ -13,16 +13,21 @@ import {
   type MeshToonMaterial,
 } from "three";
 import { coralGeometry, coralSkin } from "../../CoralShapes";
+import { buildGroundLitter } from "../../regions/kit/GroundLitter";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
 import { smoothNormals } from "../../../rendering/SmoothNormals";
 import { createToonMaterial } from "../../../rendering/ToonShading";
 import { Random, SEEDS } from "../../../util/Random";
+import { angleBetween, wedgeHalfAt } from "../WingGeometry";
 import type { WingDef, WingFlora } from "../WingTypes";
+import { mountGateVeil } from "./GateVeilMount";
+import { TIERB_GROUP_NAME } from "./TierBUplift";
 import {
   drawFloorSpot,
   drawGateSpot,
   floorWindowHalf,
   glintStarSprite,
+  lateralOf,
   swayClock,
   wingFrame,
 } from "./W3FloraKit";
@@ -379,11 +384,61 @@ export function buildGlassCoveFlora(def: WingDef): WingFlora {
   glints.userData.floorBound = "no";
   group.add(glints);
 
+  // ── Batch 4: the Tier B uplift (MASTER §4 closure, R2 ≤ +6 / ≤ 20k) ──
+  // The T1 statement in the cove's own voice: glass GRIT — the drifts'
+  // smallest change, two pastel tone families (aqua and rose, twoTone's
+  // two draws) strewn fine between the banks so the sand itself reads
+  // tumbled. The cove's own corridor law is kept by construction: the
+  // full 3 m clearing plus the grit's own footprint, off the axis through
+  // the whole approach. Fresh `^` substream, kit-private Random, appended
+  // after every wave-8 draw.
+  const uplift = new Group();
+  uplift.name = TIERB_GROUP_NAME;
+  const glassGrit = buildGroundLitter({
+    seed: (SEEDS.wingGlassCove ^ 0xb405) >>> 0,
+    palette: { base: 0xa8d8d0, shade: 0x8898a0, accent: 0xe8b7c3 },
+    area: { center: [frame.axisX * 40, frame.axisZ * 40], radius: 8 },
+    gate: (x, z) => {
+      const r = Math.hypot(x, z);
+      if (r < 34.6 || r > 46.5) {
+        return 0;
+      }
+      const away = angleBetween(Math.atan2(z, x), def.azimuth);
+      if (away > wedgeHalfAt(def, r) - 0.02) {
+        return 0;
+      }
+      return Math.abs(lateralOf(frame, x, z)) < AXIS_CLEAR + 0.1 ? 0 : 1;
+    },
+    ground: seabedHeight,
+    count: 560,
+    shapeSet: "grit",
+    // r3: one step of presence — 0.025–0.08 read as sub-pixel dust at the
+    // canonical stand; tumbled glass CHIPS, not powder.
+    size: [0.03, 0.1],
+    twoTone: true,
+  });
+  uplift.add(glassGrit.group);
+  group.add(uplift);
+
+  // The doorway: a pastel veil that LIGHTENS with depth (teal → seafoam →
+  // blush, the toybox's promise) and a drift of glinting pale motes. No
+  // column — this is already the brightest water in the game; the glints
+  // are the light. Two extra grit draws spent the column's budget.
+  const veil = mountGateVeil(def, {
+    doorR: 32,
+    width: 3.6,
+    height: 3.0,
+    palette: [0x3a5450, 0x5c7670, 0x8c8a92],
+    particulate: { tint: 0xe8f6ee, count: 60 },
+  });
+  group.add(veil.group);
+
   const clock = swayClock();
   let calmScale = 1;
   const update = (dt: number, reducedMotion: boolean): void => {
     clock.advance(dt, reducedMotion, 0.25);
     calmScale = reducedMotion ? 0.65 : 1;
+    veil.update(dt, reducedMotion);
     const attribute = glintGeometry.attributes.color as BufferAttribute | undefined;
     if (!attribute) {
       return;
