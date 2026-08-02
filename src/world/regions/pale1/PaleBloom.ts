@@ -687,18 +687,26 @@ function buildMother(random: Random): {
     // Round 2: the plate is a LATHE, not a cylinder — a cylinder's caps
     // hold vertices only at centre and rim, so the underside's radial
     // growth rings had nothing to paint on (r1/r2's flat magenta).
+    // Beat-repair (#5, the critic's mother-crown finding): the r2 lathe
+    // held only FOUR radial stations per face — a 7-cycle ring bake
+    // aliased across them into one flat wash, which is exactly the
+    // "unlit magenta polygon" the journey pose caught (golden-2 paid the
+    // same debt on its tower rows: paint needs rows to live on). The
+    // profile is now SAMPLED — ten stations across the top, sixteen up
+    // the underside where the rings live — tri delta funded by the grit
+    // and petal-fall trims beside it.
     const r = tier.radius;
-    const platePoints: Vector2[] = [
-      new Vector2(0.02, 0.1),
-      new Vector2(r * 0.3, 0.11),
-      new Vector2(r * 0.6, 0.09),
-      new Vector2(r * 0.9, 0.03),
-      new Vector2(r, -0.03),
-      new Vector2(r * 0.9, -0.08),
-      new Vector2(r * 0.6, -0.11),
-      new Vector2(r * 0.3, -0.13),
-      new Vector2(0.02, -0.14),
-    ];
+    const plateTopY = (t: number): number => 0.1 + t * 0.01 - smoothstep01((t - 0.55) / 0.45) * 0.13;
+    const plateUnderY = (t: number): number => -0.14 + smoothstep01((t - 0.35) / 0.65) * 0.11;
+    const platePoints: Vector2[] = [];
+    for (let s = 0; s <= 6; s++) {
+      const t = s / 6;
+      platePoints.push(new Vector2(Math.max(0.02, t * r), plateTopY(t)));
+    }
+    for (let s = 15; s >= 0; s--) {
+      const t = s / 15;
+      platePoints.push(new Vector2(Math.max(0.02, t * r), plateUnderY(t)));
+    }
     const plate = new LatheGeometry(platePoints, 22);
     const position = plate.attributes.position!;
     for (let i = 0; i < position.count; i++) {
@@ -717,8 +725,11 @@ function buildMother(random: Random): {
       const crownLift = 0.24 * (1 - radial * radial);
       // The growth rings as geometry too: a gentle corrugation on the
       // underside, so the rings catch the toon shade as well as paint.
+      // #5: frequency 14 → 9 half-turns — at 14 the sixteen underside
+      // stations still alias; at 9 each band owns ~3.5 rows and reads
+      // as a soft swell instead of noise.
       const ripple =
-        position.getY(i) < -0.04 ? Math.sin(radial * Math.PI * 14) * 0.03 : 0;
+        position.getY(i) < -0.04 ? Math.sin(radial * Math.PI * 9) * 0.035 : 0;
       position.setXYZ(i, x * lobe, position.getY(i) + warp + crownLift - ripple, z * lobe);
     }
     position.needsUpdate = true;
@@ -750,9 +761,14 @@ function buildMother(random: Random): {
         plateShade.copy(rose).lerp(cream, smoothstep01((radial - 0.78) / 0.22));
         const under = smoothstep01((-plateNormal.getY(i) - 0.1) / 0.4);
         if (under > 0) {
-          const ring = 0.5 + 0.5 * Math.sin(radial * Math.PI * 14);
+          const ring = 0.5 + 0.5 * Math.sin(radial * Math.PI * 9);
           plateShade.lerp(roseDeepRing, under * (1 - ring) * 0.85);
           plateShade.multiplyScalar(1 - under * (1 - ring) * 0.16);
+          // #5: the margins carry cream BELOW as well as above — from
+          // the crown pose the underside rim is the plate's whole edge,
+          // and a deep-rose rim read as the hard polygon the critique
+          // flagged; a lit margin reads soft.
+          plateShade.lerp(cream, under * smoothstep01((radial - 0.62) / 0.32) * 0.45);
         }
         plateColors[i * 3] = plateShade.r;
         plateColors[i * 3 + 1] = plateShade.g;

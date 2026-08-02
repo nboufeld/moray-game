@@ -160,7 +160,11 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // the mother's shadow side and the raise fed her to the milk.)
   { name: "seed-grove", u: 540, v: 28, lift: 2.6, atU: 558, atV: 38, pitch: -0.08, settle: 5 },
   // Under the mother's crown, looking up through the petal river's birth.
-  { name: "mother-crown", u: 553, v: 33, lift: 2.0, atU: 558, atV: 38, pitch: 0.85, settle: 4 },
+  // Beat-repair (#5): the old bearing, a body LOWER (lift 2.0 → 1.3) —
+  // the journey capture caught the bottom tier's lobed rim ON the lens
+  // (the critic's "camera inside a petal"); from below the rim plane the
+  // whole pagoda stacks up the frame instead of one plate swallowing it.
+  { name: "mother-crown", u: 553, v: 33, lift: 1.3, atU: 558, atV: 38, pitch: 0.92, settle: 4 },
   // Looking back the way we came: the petal current head-on, the white
   // horizon behind it — the whole story in one frame.
   { name: "white-lookback", u: 500, v: 2, lift: 3.2, atU: 420, atV: -8, pitch: 0.02, settle: 4 },

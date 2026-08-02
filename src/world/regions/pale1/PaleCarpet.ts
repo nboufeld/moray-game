@@ -554,7 +554,11 @@ export function buildPaleCarpet(
       // Round 4: 3000 → 2400 — the grit's near-field job is done by the
       // ossuary and stumps now; the trim part-funds the pioneer sprigs.
       // Round 5: 2400 → 2050, funding the south-flank sprig patch.
-      count: 2050,
+      // Beat-repair (#5): 2050 → 1700, funding the mother's resampled
+      // plate rows (the trim is a prefix cut — kept placements are
+      // byte-identical, the reroll fence holds; the ossuary carpet and
+      // stumps carry the white half's near field).
+      count: 1700,
       shapeSet: "shard",
       size: [0.1, 0.26],
       twoTone: true,
