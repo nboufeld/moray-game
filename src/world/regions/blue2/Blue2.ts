@@ -60,8 +60,8 @@ import {
 // weight = 0, so the domain's open edges are walled with spheres: a
 // ring just inside the disc's rim (where the ceiling has already
 // closed to floor + 3), gated open over the inbound corridor only —
-// the reserved depth-3 corridor stays SEALED until great-blue-3 opens
-// it — plus shoulder rows down the pass. The corridor's far end needs
+// the depth-3 corridor parts at the far pole since the First Sea landed
+// (R0.9) — plus shoulder rows down the pass. The corridor's far end needs
 // no seal of ours: past u ≈ 665 the Drop Plains' own domain and walls
 // take over (its rim seal ring at its rc 164 stands across the
 // corridor until the orchestrator cuts it — flagged in the ledger).
@@ -78,6 +78,14 @@ function buildSeals(): SphereCollider[] {
     const z = CENTER_Z + Math.sin(theta) * rimR;
     const { u, v } = spokeOf(x, z);
     if (passGate(u, v) > 0.25) {
+      continue;
+    }
+    // R0.9 integration (the First Sea's flagged gate): the depth-3 pass
+    // leaves this disc at the far pole (stations i = 78–81, u ≈ 1145),
+    // and now that the First Sea exists past the Worldwall, the ring
+    // parts on the outbound side too — the First Sea's shoulder rows
+    // seal the flanks.
+    if (Math.abs(v) < 24 && Math.cos(theta - BLUE2_SLOT.azimuth) > 0) {
       continue;
     }
     seals.push({

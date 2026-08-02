@@ -421,6 +421,14 @@ export function blue2Ceiling(x: number, z: number): number {
   if (wall < 0) {
     c = Math.min(c, wall + 3.2);
   }
-  c += (blue2TerrainTarget(x, z) + 3.0 - c) * smoothstep01((rc - 184) / 26) * (1 - passGate(u, v));
+  // R0.9 (the First Sea's recommended term): the outbound corridor opens
+  // the closure too, so the Worldwall crossing keeps its full column
+  // instead of a duck under the world's lid.
+  const corridorOpenOut =
+    smoothstep01((u - 1128) / 24) * (1 - smoothstep01((Math.abs(v) - 18) / 12));
+  c +=
+    (blue2TerrainTarget(x, z) + 3.0 - c) *
+    smoothstep01((rc - 184) / 26) *
+    (1 - Math.max(passGate(u, v), corridorOpenOut));
   return c;
 }
