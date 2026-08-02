@@ -180,8 +180,11 @@ const POSE_SPECS: readonly PoseSpec[] = [
   // On the balcony beside the door, looking straight into the painted
   // sunset: the province's last horizon, looked at on-axis.
   // Round 3: raised to 9 m (over the rampart's mid-band, more sky and
-  // sunset in frame — the r2 frame was half flat wall).
-  { name: "evening-horizon", u: 1596, v: 18, lift: 9.0, atU: 1650, atV: -4, pitch: 0.02, settle: 3 },
+  // sunset in frame — the r2 frame was half flat wall). Beat-repair
+  // (#14): raised again to 11.5 with pitch 0.05 — the critique read the
+  // terminus as "closing on a bare dune face"; the province's last
+  // frame belongs to the sunset, with the wall as its sill.
+  { name: "evening-horizon", u: 1596, v: 18, lift: 11.5, atU: 1650, atV: -4, pitch: 0.05, settle: 3 },
   // The window with the Pilgrim crossing — the resident's own frame
   // (a round that cannot leave the door needs little phase luck).
   { name: "pilgrim", u: 1586, v: -16, lift: 3.0, atU: 1600, atV: -2, pitch: 0.1, settle: 8 },
@@ -224,7 +227,12 @@ export const GOLDEN_3: RegionDef = {
     // over the Carillon Waste's (the register is later in the day),
     // blue kept low, density paid for the warm sky. The gradient map's
     // Golden row ends here — honey over violet, resolved into evening.
-    fog: { colorScale: [3.6, 0.56, 0.3], densityGain: 0.009, backdropFade: 0.63 },
+    // Beat-repair (#14): densityGain 0.009 → 0.0078 — the critique's
+    // "featureless dune face" at evening-horizon was ~90% fog at the
+    // wall band's 110–180 m; a step of clarity lets the rampart and
+    // ripple paint reach the terminus frame while the colour register
+    // (colorScale, backdropFade) stays the authored evening.
+    fog: { colorScale: [3.6, 0.56, 0.3], densityGain: 0.0078, backdropFade: 0.63 },
     light: { sun: 0.24, hemisphere: 0.26, ambient: 0.15 },
   },
   moodSurface: 20,

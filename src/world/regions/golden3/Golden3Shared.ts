@@ -103,12 +103,16 @@ export const G3_SEEDS = {
   terrainSwell: 0x7e12,
   terrainComb: 0x7e13,
   terrainFine: 0x7e14,
+  // Beat-repair (#14): the rampart-toe wrinkle (fbm constant, pure).
+  terrainToe: 0x7e15,
   // Ground paint.
   paintDrift: 0x5a11,
   paintGrain: 0x5a12,
   paintCrust: 0x5a13,
   paintLife: 0x5a14,
   paintStain: 0x5a15,
+  // Beat-repair (#14): the off-spine dunes' wind-ripple paint.
+  paintRipple: 0x5a16,
   // Stone.
   rocks: 0x51cb,
   procession: 0x0aa1,
@@ -149,6 +153,9 @@ export const G3_SEEDS = {
   closeCombBed: 0xf112,
   closeGardenBed: 0xf113,
   closeDoorBed: 0xf114,
+  // Beat-repair (#14): sparse stragglers on the off-spine dune faces —
+  // fresh stream, appended after every existing draw (the reroll fence).
+  duneWire: 0xf115,
   // Life.
   motes: 0xe411,
   plankton: 0xe412,

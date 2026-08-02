@@ -242,7 +242,35 @@ function mesaRing(layer: MesaLayer, noiseSeed: number): BufferGeometry {
     const top = FOOT + Math.max(1.4, ridges[i]! - FOOT) * end + 0.2;
     const mid = FOOT + (top - FOOT) * 0.72;
     positions.push(x, FOOT, z, x, mid, z, x, top, z);
-    colors.push(1, 1, 1, 0.95, 1, 1, 1, 0.85, 1, 1, 1, 0);
+    // Beat-repair (#14): the curtains carry a DRAWING. The journey's
+    // evening-horizon closes on these ring bodies and they rendered as
+    // one flat value edge to edge — the terrain rampart got three
+    // rounds of runnels while the built wall behind it got none. Per-
+    // column folds (a runnel family + a slow fbm swell), a violet lean
+    // in the fold shade, a faint crest catch-light; the fog-follow
+    // material multiplies on top, so the mood still owns the wall.
+    const foldRoll =
+      fbm(theta * 0.49, layer.radius * 0.07, { seed: noiseSeed ^ 0x21, period: 8, octaves: 2 }) -
+      0.5;
+    const fold =
+      0.9 +
+      0.12 * Math.max(0, Math.sin(theta * 41 + foldRoll * 5)) +
+      foldRoll * 0.18;
+    const crest = Math.min(1.16, fold * 1.09);
+    colors.push(
+      fold * 0.9,
+      fold * 0.86,
+      fold * 0.96,
+      0.95,
+      fold,
+      fold * 0.97,
+      fold * 1.01,
+      0.85,
+      crest,
+      crest,
+      crest,
+      0,
+    );
     if (column > 0) {
       const a = positions.length / 3 - 6;
       indices.push(a, a + 1, a + 3, a + 1, a + 4, a + 3);
