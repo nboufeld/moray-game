@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Reef Between Seas</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="reef-canvas"></canvas>
+
+      <div id="hud" class="hud">
+        <div class="hud__objective" data-testid="objective">
+          Objective: <span id="objective-text">Find the hidden moray</span>
+        </div>
+        <div class="hud__progress" data-testid="progress">
+          Morays found: <span id="found-count">0</span> / <span id="total-count">1</span>
+        </div>
+        <div class="hud__hint" id="hint-text"></div>
+      </div>
+
+      <div class="reticle" id="reticle" data-testid="reticle">
+        <div class="reticle__ring" id="reticle-ring"></div>
+        <svg class="reticle__progress" viewBox="0 0 48 48" aria-hidden="true">
+          <circle class="reticle__track" cx="24" cy="24" r="20" />
+          <circle class="reticle__fill" id="reticle-fill" cx="24" cy="24" r="20" />
+        </svg>
+      </div>
+
+      <div class="controls-help" id="controls-help">
+        <strong>Dive controls</strong>
+        <ul>
+          <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> swim</li>
+          <li>Look up or down and swim to rise or dive · <kbd>Space</kbd>/<kbd>Shift</kbd> also work</li>
+          <li>Mouse or <kbd>←</kbd><kbd>→</kbd> to look around</li>
+          <li>Center the reticle on a moray and hold to focus</li>
+          <li><kbd>H</kbd> hint · <kbd>C</kbd> codex · <kbd>V</kbd> sanctuary · <kbd>O</kbd> options</li>
+        </ul>
+      </div>
+
+      <div class="codex" id="codex" data-testid="codex" hidden>
+        <div class="codex__panel">
+          <h2>Moray Codex</h2>
+          <div class="codex__entries" id="codex-entries">
+            <p class="codex__empty">No morays discovered yet. Dive in and look closely.</p>
+          </div>
+          <button class="codex__close" id="codex-close" type="button">Close (C)</button>
+        </div>
+      </div>
+
+      <div
+        class="discovery-plate"
+        id="discovery-toast"
+        data-testid="discovery-toast"
+        role="status"
+        hidden
+      ></div>
+
+      <div class="sanctuary-overlay" id="sanctuary-overlay" data-testid="sanctuary-overlay" hidden>
+        <div class="sanctuary-overlay__header">
+          <h2>Dream Sanctuary</h2>
+          <p>A place where impossible reefs coexist. Press <kbd>V</kbd> to return to the dive.</p>
+        </div>
+        <div class="sanctuary-overlay__cards" id="sanctuary-cards"></div>
+      </div>
+
+      <div class="settings" id="settings-panel" data-testid="settings-panel" hidden>
+        <div class="settings__panel">
+          <h2>Comfort &amp; Accessibility</h2>
+          <button class="settings__calm" id="settings-calm" type="button">Enable Calm Mode</button>
+          <label><input type="checkbox" id="opt-bob" /> Camera bob</label>
+          <label><input type="checkbox" id="opt-roll" /> Camera roll</label>
+          <label><input type="checkbox" id="opt-autolevel" /> Auto-level camera</label>
+          <label><input type="checkbox" id="opt-reduced" /> Reduced motion</label>
+          <label class="settings__range">
+            <span>Field of view <span id="opt-fov-value">70</span>°</span>
+            <input type="range" id="opt-fov" min="55" max="95" step="1" value="70" />
+          </label>
+          <label class="settings__range">
+            <span>Look sensitivity <span id="opt-sensitivity-value">1</span>&times;</span>
+            <input type="range" id="opt-sensitivity" min="0.4" max="2" step="0.05" value="1" />
+          </label>
+          <label class="settings__range">
+            <span>Sound volume <span id="opt-volume-value">70</span>%</span>
+            <input type="range" id="opt-volume" min="0" max="1" step="0.05" value="0.7" />
+          </label>
+          <button class="settings__close" id="settings-close" type="button">Close (O)</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

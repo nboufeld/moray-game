@@ -1,0 +1,440 @@
+import { BufferAttribute, Color, Group, IcosahedronGeometry, InstancedMesh, Object3D } from "three";
+import { smoothNormals } from "../../../rendering/SmoothNormals";
+import { createToonMaterial } from "../../../rendering/ToonShading";
+import { Random, SEEDS } from "../../../util/Random";
+import { fbm } from "../../../rendering/ProceduralTexture";
+import { seabedHeight, type ContactPatch } from "../../Seabed";
+import { wedgeHalfAt } from "../WingGeometry";
+import type { WingDef, WingFlora } from "../WingTypes";
+import { VentSpringsBubbles, type VentSource } from "./VentSpringsBubbles";
+import { applyVeinGlow, chimneyGeometry } from "./VentSpringsChimneys";
+import { mountGateVeil } from "./GateVeilMount";
+import { buildGlowColony } from "../../regions/kit/GlowColony";
+import { buildGroundLitter } from "../../regions/kit/GroundLitter";
+import { buildWallDrapeBank, type DrapeAnchor } from "../../regions/kit/WallDrape";
+
+/**
+ * Wing 4 — the Vent Springs. Otherworldly warmth: mineral chimneys on a
+ * charcoal floor, thin columns of shimmer above them, and amber held in
+ * the gloom.
+ *
+ * The field is four clusters standing off the wing's axis, alternating
+ * flanks, so the descent corridor the ember moray owns runs between banks
+ * of warm silhouettes — the canyon's fronds-off-the-corridor argument, one
+ * biome hotter. That corridor is a hard rule here: the den sits on the
+ * axis around r 40–43 and another worker's animal approaches down it, so
+ * every piece in this wing — chimney, stone, fissure and the bubbles above
+ * them — keeps its whole footprint at least 0.06 rad off the axis for
+ * r 30–46, and the gate corridor (r 30–34) holds nothing at all.
+ *
+ * Five draw calls: three chimney archetypes instanced across the clusters,
+ * one instanced amber-stone field, one instanced bubble system. The
+ * chimneys' amber veins and the stones' warm cores carry the only
+ * emissive in the wing, both shaped by their vertex bakes and both far
+ * under the bloom threshold.
+ */
+
+/** The chimney field: radial stations, alternating flanks off the axis. */
+const CLUSTERS = [
+  { r: 38.2, side: 1 },
+  { r: 40.8, side: -1 },
+  { r: 43.4, side: 1 },
+  { r: 45.8, side: -1 },
+] as const;
+
+/** Flat fissures that breathe without a chimney over them. */
+const FISSURES = [
+  { r: 36.6, side: -1 },
+  { r: 39.4, side: 1 },
+  { r: 44.6, side: -1 },
+] as const;
+
+const STONE_COUNT = 12;
+const BUBBLE_COUNT = 120;
+
+/** Connective-2's named uplift subtree — the same literal all three
+ *  uplifted wings use; see `KelpCathedralFlora.CONN2_GROUP_NAME`. */
+const CONN2_GROUP_NAME = "wing-uplift-conn2";
+
+/** The scoria drift: charcoal cinder with a warm under-shade, the floor's
+ *  T1 between the chimney banks. One tone family, one draw. */
+const SCORIA_PALETTE = { base: 0x554038, shade: 0x2e2328 } as const;
+
+/** The ember polyp fringe: the Smoulder register — warm, rising, and far
+ *  under the bloom (the kit caps emissive at 0.36, halos at 0.28). */
+const POLYP_TINT = 0xff9a4a;
+
+/** The wall drapes: heat-cured olive-umber straps, rust pads. */
+const VENT_DRAPE = { base: 0x6a5140, tip: 0x9a7448, shade: 0x38282a, accent: 0x7a4a30 } as const;
+
+/** The den corridor's fence for the uplift, a shade wider than the law's
+ *  0.06 rad so a bud cluster's 0.45 m scatter can never cross it. */
+const UPLIFT_FENCE_RAD = 0.075;
+
+export function buildVentSpringsFlora(def: WingDef): WingFlora {
+  const group = new Group();
+  group.name = "vent-springs-flora";
+  const random = new Random(SEEDS.wingVentSprings);
+  const contacts: ContactPatch[] = [];
+  const vents: VentSource[] = [];
+
+  const axisX = Math.cos(def.azimuth);
+  const axisZ = Math.sin(def.azimuth);
+  const perpX = -axisZ;
+  const perpZ = axisX;
+
+  /**
+   * The corridor rule, as a lateral distance in metres: 0.06 rad off the
+   * axis for the whole radial run the den's approach crosses, plus the
+   * piece's own footprint — and inside the gate corridor, never nearer
+   * than the doorway's swimmable width either.
+   */
+  const minLateral = (r: number, itemRadius: number): number =>
+    Math.max(r * 0.06, r < 34.5 ? 1.6 : 0) + itemRadius;
+
+  const solveLateral = (
+    r: number,
+    side: number,
+    drawn: number,
+    itemRadius: number,
+  ): number => {
+    const low = minLateral(r, itemRadius);
+    const high = wedgeHalfAt(def, r) * r - itemRadius * 0.6;
+    return side * Math.min(Math.max(drawn, low), Math.max(low, high));
+  };
+
+  // ── The chimneys. ──
+  // Three archetype geometries, instanced: the field reads as fourteen
+  // chimneys, the GPU sees three shapes.
+  const chimneyMaterial = createToonMaterial({
+    vertexColors: true,
+    emissive: 0xff8c3a,
+    emissiveIntensity: 0.34,
+  });
+  applyVeinGlow(chimneyMaterial);
+
+  const archetypes = [0, 1, 2].map((variant) =>
+    chimneyGeometry(SEEDS.wingVentSprings ^ 0x7a11, variant),
+  );
+  // Drawn up front so a count tune never re-rolls what a cluster drew.
+  const perCluster = CLUSTERS.map(() => 3 + (random.next() < 0.5 ? 1 : 0));
+  // Each archetype's arena: its share of the whole field plus slack, so no
+  // cluster's variant draw can overrun the mesh it lands in.
+  const totalChimneys = perCluster.reduce((sum, count) => sum + count, 0);
+  const perArchetype = Math.ceil(totalChimneys / archetypes.length) + 2;
+  const chimneys = archetypes.map(
+    (geometry) => new InstancedMesh(geometry, chimneyMaterial, perArchetype),
+  );
+  for (const mesh of chimneys) {
+    mesh.name = "vent-chimneys";
+    mesh.castShadow = false;
+    mesh.receiveShadow = true;
+    group.add(mesh);
+  }
+
+  const dummy = new Object3D();
+  const color = new Color();
+  const counts = [0, 0, 0];
+
+  for (const [clusterIndex, cluster] of CLUSTERS.entries()) {
+    for (let c = 0; c < perCluster[clusterIndex]!; c++) {
+      const variant = Math.floor(random.next() * archetypes.length);
+      const scaleR = random.range(0.72, 1.2);
+      const scaleH = random.range(1.5, 2.9);
+      const r = cluster.r + random.signed(1.1);
+      // The footprint a chimney needs off the axis: its fattest ring.
+      const itemRadius = scaleR * 1.25;
+      const lateral = solveLateral(r, cluster.side, random.range(2.4, 4.4), itemRadius);
+      const yaw = random.range(0, Math.PI * 2);
+      const squash = random.range(0.85, 1);
+      const warm = random.range(0.9, 1.05);
+      const mid = random.range(0.85, 1);
+      const cool = random.range(0.8, 0.95);
+      const value = random.range(0.8, 1.1);
+
+      const x = axisX * r + perpX * lateral;
+      const z = axisZ * r + perpZ * lateral;
+      const foot = seabedHeight(x, z);
+      dummy.position.set(x, foot - 0.06, z);
+      dummy.rotation.set(0, yaw, 0);
+      dummy.scale.set(scaleR, scaleH, scaleR * squash);
+      dummy.updateMatrix();
+
+      const mesh = chimneys[variant]!;
+      const index = counts[variant]!;
+      mesh.setMatrixAt(index, dummy.matrix);
+      color.setRGB(warm, mid, cool).multiplyScalar(value);
+      mesh.setColorAt(index, color);
+      counts[variant] = index + 1;
+
+      contacts.push({ x, z, radius: itemRadius * 1.9, strength: 0.45 });
+      // The mouth breathes: a bubble source at the crater rim.
+      vents.push({ x, y: foot + scaleH * 0.98, z });
+    }
+  }
+
+  // The fissures: flat vents breathing between the clusters.
+  for (const fissure of FISSURES) {
+    const lateral = solveLateral(fissure.r, fissure.side, random.range(2.6, 3.6), 0.35);
+    const x = axisX * fissure.r + perpX * lateral;
+    const z = axisZ * fissure.r + perpZ * lateral;
+    vents.push({ x, y: seabedHeight(x, z) + 0.08, z });
+  }
+
+  // Park the instances a cluster did not take.
+  dummy.position.set(0, -200, 0);
+  dummy.rotation.set(0, 0, 0);
+  dummy.scale.setScalar(0.0001);
+  dummy.updateMatrix();
+  for (const [variant, mesh] of chimneys.entries()) {
+    for (let i = counts[variant]!; i < perArchetype; i++) {
+      mesh.setMatrixAt(i, dummy.matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) {
+      mesh.instanceColor.needsUpdate = true;
+    }
+    mesh.computeBoundingSphere();
+  }
+
+  // ── The amber accent stones. ──
+  // Heat-worn lumps holding the floor's warm note between the clusters:
+  // smooth water-and-mineral-worn icosahedra, baked pale at the crown,
+  // glowing faintly from their own bake like the chimneys do.
+  const stoneGeometry = new IcosahedronGeometry(1, 1);
+  roughenStone(stoneGeometry, SEEDS.wingVentSprings ^ 0x3c5a);
+  smoothNormals(stoneGeometry);
+  bakeStone(stoneGeometry);
+  const stoneMaterial = createToonMaterial({
+    vertexColors: true,
+    emissive: 0xff9a44,
+    emissiveIntensity: 0.16,
+  });
+  applyVeinGlow(stoneMaterial);
+  const stones = new InstancedMesh(stoneGeometry, stoneMaterial, STONE_COUNT);
+  stones.name = "vent-amber-stones";
+  stones.castShadow = false;
+  stones.receiveShadow = true;
+  for (let i = 0; i < STONE_COUNT; i++) {
+    const r = random.range(35.5, 46);
+    const side = random.next() < 0.5 ? -1 : 1;
+    const scale = random.range(0.24, 0.58);
+    const lateral = solveLateral(r, side, random.range(1.8, 4.2), scale * 1.1);
+    const x = axisX * r + perpX * lateral;
+    const z = axisZ * r + perpZ * lateral;
+    dummy.position.set(x, seabedHeight(x, z) - scale * 0.35, z);
+    dummy.rotation.set(random.signed(0.4), random.range(0, Math.PI * 2), random.signed(0.4));
+    dummy.scale.set(scale, scale * random.range(0.7, 1), scale);
+    dummy.updateMatrix();
+    stones.setMatrixAt(i, dummy.matrix);
+    color.setRGB(random.range(0.9, 1.05), random.range(0.85, 1), random.range(0.8, 0.95));
+    stones.setColorAt(i, color);
+  }
+  stones.instanceMatrix.needsUpdate = true;
+  if (stones.instanceColor) {
+    stones.instanceColor.needsUpdate = true;
+  }
+  stones.computeBoundingSphere();
+  group.add(stones);
+
+  // ── The shimmer columns. ──
+  const bubbles = new VentSpringsBubbles(vents, BUBBLE_COUNT, SEEDS.wingVentSprings ^ 0x5b22);
+  group.add(bubbles.mesh);
+
+  // ── Connective-2: the Tier A uplift (MASTER Batch 2). ──
+  // The charcoal floor's T1 scoria drift, the ember polyp fringe along the
+  // chimney banks (the connective plan's own row — warm and RISING, the
+  // Smoulder register), and a drape bank on the strata walls. Every piece
+  // rides a fresh `^` substream fed to a kit-private Random, appended
+  // after every existing draw — nothing above re-rolls, and the whole den
+  // corridor law (r > 34.4, ≥ 0.06 rad off the axis through r 30–46)
+  // keeps reading every vertex added here.
+  const uplift = new Group();
+  uplift.name = CONN2_GROUP_NAME;
+
+  const point = (r: number, lateral: number): { x: number; z: number } => ({
+    x: axisX * r + perpX * lateral,
+    z: axisZ * r + perpZ * lateral,
+  });
+  const lateralAt = (x: number, z: number): number => x * perpX + z * perpZ;
+
+  const scoriaGate = (x: number, z: number): number => {
+    const r = Math.hypot(x, z);
+    if (r < 34.8 || r > 46.2) {
+      return 0;
+    }
+    const lateral = Math.abs(lateralAt(x, z));
+    if (lateral < UPLIFT_FENCE_RAD * r + 0.2) {
+      return 0;
+    }
+    if (lateral > (wedgeHalfAt(def, r) - 0.012) * r) {
+      return 0;
+    }
+    return 1;
+  };
+  const scoria = buildGroundLitter({
+    seed: (SEEDS.wingVentSprings ^ 0x2c1a) >>> 0,
+    palette: SCORIA_PALETTE,
+    area: {
+      polyline: [
+        [point(35, 3).x, point(35, 3).z],
+        [point(46, 3.4).x, point(46, 3.4).z],
+        [point(46, -3.4).x, point(46, -3.4).z],
+        [point(35, -3).x, point(35, -3).z],
+      ],
+      width: 3.4,
+    },
+    gate: scoriaGate,
+    ground: seabedHeight,
+    count: 640,
+    shapeSet: "gravel",
+    grade: 0.55,
+  });
+  uplift.add(scoria.group);
+
+  // The fringe's anchors carry their own fences: corridor plus the bud
+  // scatter's 0.45 m, wall less a metre — so no bud can leave either law.
+  const fringeRandom = new Random(SEEDS.wingVentSprings ^ 0x2c2b);
+  const fringeAnchors: (readonly [number, number, number])[] = [];
+  for (let i = 0; i < 12; i++) {
+    const r = fringeRandom.range(36, 46);
+    const side = i % 2 === 0 ? 1 : -1;
+    const low = UPLIFT_FENCE_RAD * r + 0.5;
+    const high = Math.max(low + 0.2, wedgeHalfAt(def, r) * r - 1.0);
+    const lateral = side * fringeRandom.range(low, high);
+    const { x, z } = point(r, lateral);
+    fringeAnchors.push([x, seabedHeight(x, z), z]);
+  }
+  const polyps = buildGlowColony({
+    seed: (SEEDS.wingVentSprings ^ 0x2c2b) >>> 0,
+    tint: POLYP_TINT,
+    anchors: fringeAnchors,
+    budsPerAnchor: 5,
+    glow: 0.33,
+  });
+  uplift.add(polyps.group);
+
+  const drapeRandom = new Random(SEEDS.wingVentSprings ^ 0x2c3c);
+  const drapeAnchors: DrapeAnchor[] = [];
+  // r3: ten holdfasts — a merged bank costs no extra draw, and eight
+  // left the strata walls' lower bands reading flat from the pose range.
+  for (let i = 0; i < 10; i++) {
+    const r = 36 + i * 1.05 + drapeRandom.signed(0.4);
+    const side = i % 2 === 0 ? -1 : 1;
+    const lift = drapeRandom.range(1.3, 2.7);
+    drapeAnchors.push(ventWallAnchor(def, r, side, lift));
+  }
+  const drapes = buildWallDrapeBank({
+    seed: (SEEDS.wingVentSprings ^ 0x2c3c) >>> 0,
+    palette: VENT_DRAPE,
+    anchors: drapeAnchors,
+    strandsPerAnchor: 4,
+    length: 1.1,
+    swayAmp: 0.045,
+  });
+  uplift.add(drapes.group);
+
+  group.add(uplift);
+
+  // ── The gate veil (connective-1). ──
+  // The end wall dressed with the Smoulder's own inks — charcoal-rust
+  // silhouettes and a warm amber column, light from BELOW held warm and
+  // rising per the province's register. The doorway is kept narrow and a
+  // half-metre deeper than the others so the mote drift stays wholly past
+  // r 46 — the den corridor law reads every vertex under that radius.
+  // Appended after every existing draw, on its own `^` substream.
+  const veil = mountGateVeil(def, {
+    doorR: 48.9,
+    width: 4.6,
+    height: 5,
+    palette: [0x2c1c14, 0x513226, 0x7a5138],
+    column: { tint: 0xffc27a, opacity: 0.11 },
+    particulate: { tint: 0xffb680, count: 70 },
+  });
+  group.add(veil.group);
+
+  let upliftTime = 0;
+  return {
+    group,
+    contacts,
+    update(dt: number, reducedMotion: boolean): void {
+      bubbles.update(dt, reducedMotion);
+      upliftTime += dt * (reducedMotion ? 0.3 : 1);
+      drapes.update(upliftTime);
+      veil.update(dt, reducedMotion);
+    },
+  };
+}
+
+/**
+ * A drape holdfast on the vent wing's strata wall at radius `r`, standing
+ * `lift` metres over the wing's own floor — the angle is searched, never
+ * drawn from a stream, and the normal faces the axis so the strands droop
+ * into the gorge.
+ */
+function ventWallAnchor(def: WingDef, r: number, side: number, lift: number): DrapeAnchor {
+  const axisX = Math.cos(def.azimuth);
+  const axisZ = Math.sin(def.azimuth);
+  const perpX = -axisZ;
+  const perpZ = axisX;
+  const floorY = seabedHeight(axisX * r, axisZ * r);
+  // The angular window: the den corridor's 0.06 rad plus a full strand's
+  // horizontal reach on the inside, a pad's slip off the wedge edge on
+  // the outside — so no vertex this bank grows can cross either law.
+  let lo = Math.max(def.wedge.floorHalf, (0.06 * r + 1.25) / r);
+  let hi = wedgeHalfAt(def, r) - 0.015;
+  for (let i = 0; i < 14; i++) {
+    const mid = (lo + hi) / 2;
+    const lateral = side * mid * r;
+    if (seabedHeight(axisX * r + perpX * lateral, axisZ * r + perpZ * lateral) - floorY < lift) {
+      lo = mid;
+    } else {
+      hi = mid;
+    }
+  }
+  const lateral = side * ((lo + hi) / 2) * r;
+  const x = axisX * r + perpX * lateral;
+  const z = axisZ * r + perpZ * lateral;
+  return {
+    pos: [x, seabedHeight(x, z) + 0.04, z],
+    normal: [-side * perpX, 0.12, -side * perpZ],
+  };
+}
+
+/** Water-and-mineral-worn: gentle radial noise, nothing like the chimneys' tooth. */
+function roughenStone(geometry: IcosahedronGeometry, seed: number): void {
+  const position = geometry.attributes.position;
+  if (!position) {
+    return;
+  }
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i);
+    const y = position.getY(i);
+    const z = position.getZ(i);
+    const lump =
+      fbm(x * 0.5 + 0.5, z * 0.5 + y * 0.3, { seed, period: 3, octaves: 2 }) - 0.5;
+    const scale = 1 + lump * 0.3;
+    position.setXYZ(i, x * scale, y * (1 + lump * 0.2), z * scale);
+  }
+  position.needsUpdate = true;
+}
+
+/** Pale warm crown over a deep amber base — a stone that holds heat. */
+function bakeStone(geometry: IcosahedronGeometry): void {
+  const position = geometry.attributes.position;
+  if (!position) {
+    return;
+  }
+  const colors = new Float32Array(position.count * 3);
+  const base = new Color(0x7a4218);
+  const crown = new Color(0xc28a4a);
+  const tint = new Color();
+  for (let i = 0; i < position.count; i++) {
+    const t = Math.min(1, Math.max(0, position.getY(i) * 0.5 + 0.5));
+    tint.copy(base).lerp(crown, t * t);
+    colors[i * 3] = tint.r;
+    colors[i * 3 + 1] = tint.g;
+    colors[i * 3 + 2] = tint.b;
+  }
+  geometry.setAttribute("color", new BufferAttribute(colors, 3));
+}

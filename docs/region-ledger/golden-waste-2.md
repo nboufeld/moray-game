@@ -1,0 +1,562 @@
+# golden-waste-2 — THE CARILLON WASTE (the Golden Waste's depth 2)
+
+Region worker ledger. Slot `golden-waste-2`, province The Golden Waste,
+depth 2 — no gateway wing; the inbound connection is the inter-region
+pass the Hourglass Sea's ledger reserved at its Gilded Shore stacks.
+Disc centre r = 940 on azimuth 6.39 (world ≈ (934.6, 100.2)), radius
+220. Seed `SEEDS.regionGolden2` (0x5a4d_0c0e) and `^` substreams only.
+Built to the full R12 standard from the first draft: no wedge era, no
+separate fill pass — density, quality, light and life ARE the build.
+
+## Concept
+
+The Hourglass Sea was the desert's sand; this is the desert's BONE —
+the wind-carved honey sandstone country the dunes were milled from,
+and the place the desert's wind LIVES. Ten thousand years of moving
+water fluted the stone until the currents ring it: capped hoodoo
+spires ranked across a carved pavement under long violet shadows; a
+pierced wall with sky in its windows and one Great Arch for a door;
+a slot canyon — the Ribbon — cut to a violet deep with a well of
+amber light burning at its elbow; spring pools benched down
+travertine terraces where the region's densest life gathers; and at
+the heart THE CARILLON — five great fluted towers over a swept stone
+pavement, where the Noon Bell falls, golden swifts ride one closed
+thermal around the spires, and the Bell Ringer — an ancient chambered
+nautilus — rises out of the Belfry's hollow crown once a breath, slow
+as a struck note. The far shelf's leaning spires frame the painted
+mesa-lines that promise depth 3.
+
+The province's palette journey continues (MASTER §1.1, the Golden
+row): honey over violet and gold dapple arrive with the diver from
+the Gilded Shore, then become carved amber — the register shifts from
+dune-gold to stone, the violet stays warm, the light stays honey.
+
+## The depth-2 pass (the Gilded Shore handover)
+
+The Hourglass Sea's disc ends at u ≈ 665 on the spoke; ours begins at
+720. The pass tongue is `approachTongue("golden-waste-2", { fromR:
+630, toR: 780, halfWidthFrom: 16, halfWidthTo: 56 })` — it starts
+35 m INSIDE golden-waste-1's rim, so the two domains genuinely
+overlap and the bounds handover has no gap (asserted in
+`tests/regionGolden2.test.ts`: both weights > 0 on the spoke between
+636 and 660, and our weight > 0 continuously along the spine
+632–1080).
+
+Three authored bands (the Emerald Terraces' device, third use):
+
+- **The Shore Road** (u 630–745): a milky-gold shelf at base level
+  past the Gilded Shore stacks (their spoke ≈ (596, 30) — the pilot's
+  own `gilded-shore` pose looks straight down this road). Our weight
+  is a whisper (0.14, the threshold gate) so the Hourglass Sea keeps
+  carrying water, mood and terrain across the overlap; we own only
+  the bounds. The gate also hides the framework's depth-boundary
+  reject circle (`RegionField` consults us only within radius + 40 =
+  260 m of centre, u ≥ ~680): out there our target is held at the
+  probed base level (≈ 0 ± 0.4 m — measured before authoring), so the
+  step at the reject circle is centimetres (asserted).
+- **The Chime Gate + the Wind Gully** (u 745–818): the pass is a
+  place — two fluted jamb spires past the pilot's outermost distance
+  ring (u ≈ 731; the Emerald Gate lesson applied at authoring time —
+  NOTHING of ours composes before that line, because nothing behind
+  an opaque `fog:false` ring exists to a camera in front of it), then
+  a fluted walled gully ramping ~11 m down in two chutes with a
+  landing breath between.
+- **The country** (the disc).
+
+## Sub-biome map (spoke coordinates: u along azimuth 6.39, v lateral CCW)
+
+| Sub-biome | Where | Floor |
+|---|---|---|
+| The Shore Road (threshold) | u 630–745 along the pass | ≈ 0 milky shelf |
+| The Wind Gully | u 748–818, fluted walled ramp | 0 → −11 in two chutes |
+| The Hoodoo Court | the disc's resting ground | −11 carved pavement, swales ±1.3 |
+| The Windows wall | ridge (838, 36) → (896, 84) | crest to ≈ +2; arch doorway dips to court |
+| The Ribbon | slot spine (898,−30) → (1004,−96) | −32 floor, wind-lip +0.8 rims |
+| The Seep Terraces | (975, 72) r 52 | −4.6 → −11 travertine benches, pool dishes |
+| The Carillon | (1030, −18) r 42 | −11.8/−12.3 swept plinth; towers to ≈ +11 (built) |
+| The Sunset Shelf | u > 1080 to the rim | −6 rise fading to base by rc 210 |
+
+Seven sub-biomes plus the pass bands. Vertical terrain range ≈ 34 m
+(Windows crest ≈ +2 → Ribbon floor ≈ −32; test holds range ≥ 28,
+lowest ≤ −30, highest ≥ +1.2); the towers carry built verticality to
+≈ +11. Ceiling: 3.8 m over the Shore Road (meeting the Hourglass
+Sea's closed rim), vaulting to ~13 down the gully, opening to 26 over
+the country, closing to 3.4 at the far rim (gated off the inbound
+pass corridor only — the reserved depth-3 corridor stays sealed).
+
+## Registered rests (MASTER §1.2 — this region's contributions)
+
+| Rest | Where | Licence |
+|---|---|---|
+| THE PAVEMENT | r 14 at (1030, −18), the Carillon's swept circle | ring paint only; its ONLY light is the Noon Bell (one beam + cool pool); its only motion is the Bell Ringer's breath above and the swifts crossing — the resident's own circle (the Drain's Eye precedent) |
+| THE ANCHORITE'S CELL | r 7 at (962, −78), off the Ribbon's elbow | bare carved stone; one THIN light blade (half the Light Well's voice); no scatter, no fauna, nothing moves |
+
+## Landmarks (a reveal every 20–40 m)
+
+1. **The Shore Road waymarks** — leaning stone pairs pacing the road
+   every ~26 m (the Gilded Shore stacks' idiom carried forward).
+2. **The Chime Gate** (u ≈ 748) — two fluted jambs standing against
+   the water, the door into the carved country.
+3. **The Wind Gully** — the two-chute fluted descent, shoulder
+   boulders alternating flanks, wind pockets pacing it.
+4. **The court reveal** (u ≈ 818) — the Hoodoo Court opens in one
+   breath; a road beam lands at the gully's foot.
+5. **THE HOODOO FIELD** — ~33 capped spires (three tall sentinels
+   authored), each throwing one long painted violet shadow.
+6. **The Windows wall** — seven pierced fins on a 13 m ridge.
+7. **THE GREAT ARCH** — the swim-through doorway between court and
+   seeps, a beam falling through it.
+8. **THE RIBBON** — the slot canyon: lip slabs pacing its rim, shed
+   blocks on its floor, crabs darting, the LIGHT WELL's three slanted
+   amber blades at the elbow.
+9. **The Anchorite's Cell** — the carved side-chamber rest.
+10. **The Seep Terraces** — three travertine benches, three ringed
+    spring pools with bubble columns, the region's densest gardens.
+11. **THE CARILLON** — five fluted towers (the Belfry's crown is an
+    open bell mouth), eight chime-stones, the swept Pavement, the
+    Noon Bell, the swift wheel, the Bell Ringer.
+12. **The Sunset Spires** (u ≈ 1100, v ±14) — two leaning stacks
+    framing the reserved depth-3 pass azimuth over the painted
+    mesa-lines.
+
+## Life (T4/T5 systemic, short of saturation)
+
+- **Gold motes** (700) + **midwater plankton** (1,100 large soft
+  sparks at 0.4 m — the verdant-2 sweep arithmetic adopted at its
+  proven density, so random midwater frames keep a foreground).
+- **The traveller shoal** (kit shoalRunner, 48 gold fusiliers — the
+  province's one shoal light): the whole journey as one closed
+  commute — shore road, gully, court road, around the Carillon,
+  home. Life as wayfinding.
+- **THE TOWER SWIFTS** — the moving centrepiece: nine small golden
+  rays on one closed thermal — up the Belfry in two turns, across the
+  Pavement's sky, down the far tower, home low over the court. The
+  whole wheel fits inside the Carillon poses' frames (the caravan's
+  phase-luck lesson, pre-paid).
+- **Perchers on every surface type**: cushion-star trios at hoodoo
+  feet, blennies on the Windows' sills, darting crabs on the Ribbon's
+  floor (gated off the Cell), hover-fry over the seep pools.
+- **THE BELL RINGER** — the findable resident (`carillon-nautilus`,
+  *Nautilus tintinnabuli*): an ancient chambered nautilus rising out
+  of the Belfry's bell mouth on a 46 s breath — up, hang, sink —
+  vein-glow gold spiral, fog-free lantern (the Keeper's lesson).
+  Codex entry in the def's pure half; DiscoveryTarget above the bell
+  mouth, crossed at every crest of the breath.
+
+## Density tiers (doctrine table, per zone)
+
+- **T1**: ripple-grit (5,200 two-tone, graded), shell drift (2,200),
+  road pebble runs (760); ground paint carries joints, swales, hoodoo
+  shadows, seep stains, pavement rings, Ribbon rim-lines.
+- **T2**: road wire blades (1,050) + court wire (1,600) + shelf tufts
+  (460) — all kit BLADE profile, never wedges; wind-pocket fronds
+  (980) in 17 authored pockets pacing every road at 20–40 m; seep
+  sward (900 blades) + seep fronds (640); three bush banks (72);
+  split-stone runs (340) at every standing stone's foot; shard aprons
+  (460) under the Windows; slot-floor blocks (320); three wrack
+  drift-lines; four authored close-pose beds (the lily-bench law paid
+  up front).
+- **T3**: ~33 hoodoos + 3 sentinels (two merged draws), five towers +
+  eight chime-stones (one draw), seven fins + the Great Arch (one
+  draw), waymarks/jambs/boulders/lip slabs/Sunset Spires (merged).
+- **T4**: as Life above. **T5**: the gold dapple (court road + seep
+  gardens at the golden fill's earned whisper opacities), THE NOON
+  BELL (named light peak), THE LIGHT WELL, road beams (drift-line,
+  reveal, arch), seep glints, travertine rims (kit matRings), bubble
+  columns.
+
+## Budgets (measured by the region test's own walk; caps R12 260/1.35M)
+
+- Draft 1: **67 draws / 618,842 tris**; colliders > 100, all inside
+  the domain by test. Headroom held for the critique rounds.
+- Round 2: **67 draws / 763,762 tris** (stone value pass, Windows
+  rebuild, counts up).
+- Round 4 (final): **67 draws / 892,826 tris** — 26% of the R12 draw
+  cap, 66% of the tri cap, bound by the measured frame gate (16.7 ms
+  median at scale 1.00 at both probe poses).
+
+## Seeds
+
+`SEEDS.regionGolden2` (0x5a4d_0c0e) with `^` substreams: terrain
+0x7e01–0x7e05, ground paint 0x5a01–0x5a07, rocks 0x50cb + 0x0a31–0x0d0f
+shape seeds, towers 0x61a1–0x61c7, windows/arch 0x62a1–0x62b6, seeps
+0x63a1–0x63c4, cover 0xf001–0xf017, life 0xe401–0xe409, nautilus
+0x0ee1–0x0ee3, light 0x11f1–0x11f7, distance 0xd401+. Runtime updates
+spend no randomness — captures settle deterministically (the
+connective-3 traveller-phase lesson: every mover is closed-form off
+`ctx.time`).
+
+## The depth-3 reservation (for golden-waste-3)
+
+- The **Sunset Spires** (u ≈ 1098–1102, v −12/+16) frame the outbound
+  spoke azimuth — the torch passed exactly as the Gilded Shore passed
+  it here.
+- Our **distance rings part over the outbound corridor** (gap
+  half-angle 0.30 rad at azimuth 6.39, long tapers) per MASTER R4 —
+  golden-waste-3's gate composition can live past our rings without a
+  cut.
+- Our **rim seal ring and rim ceiling-closure stay CLOSED** at the
+  outbound azimuth until golden-waste-3 opens them — the orchestrator
+  cuts the gate when the depth-3 connection goes live (R4's precedent,
+  third use).
+- Recommended tongue for golden-waste-3: `fromR ≈ 1130` (30 m inside
+  our rim at 1160), `toR ≈ 1300`, threshold whisper against OUR far
+  shelf (−6 fading to base by rc 210); our Sunset Shelf paint and
+  shelf tufts already stage the decrescendo.
+
+## Critique history (silhouette → value → colour → detail, per round)
+
+### Round 1 (`gw2-r1`) — the country composes; the stone is a value problem
+
+Captured against the prebuilt bundle on :5206 (`npm run build` + `vite
+preview` + `SHOT_PER_LAUNCH=1 SHOT_NAV_TIMEOUT=900000
+SHOT_COMPILE_WAIT=5000` — the verdant-3 load-wall workaround, needed
+from the first session: the dev server blew the 180 s nav ceiling at
+1-min load 28–33 with two sibling workers live). All 21 authored poses
+captured and READ; the sweep (12 seeded poses via `SHOT_POSES_FILE`,
+drawn offline by the identical arithmetic) ran after.
+
+**Silhouette.** The region EXISTS: `court-reveal` opens on a genuine
+ranked hoodoo skyline with caps; `ribbon-mouth` cracks the pavement
+under a towering capped sentinel; `ribbon-depths` is the round's best
+frame — violet slot walls, three gold light-well blades, shed blocks;
+`carillon`/`noon-bell` rank five towers around the swept Pavement with
+the Noon Bell striking it AND the Bell Ringer visibly rising over the
+Belfry in both frames; `close-arch-shards` frames the Great Arch as a
+door of rusty gold. Fails, by size: **`windows-wall` is a smooth dune
+flank** (the 13 m terrain ridge at the 2.2 m grid reads as a soft
+mountain, fins buried behind its crest — the "pierced wall" identity
+lives entirely in the fins, so the ridge must come down and the fins
+must grow); **`great-arch` is photobombed by a fin at 2 m** (the pose
+stands on the fin line; the arch is a distant mound); **`belfry` is a
+flat maroon wall** (10 m from a 23 m tower, whole shaft in toon shade);
+**`close-flute-foot` is one featureless maroon frame** (2.4 m from the
+same shade side — camera inside the subject); **`anchorite-cell` looks
+down the slot from above and frames nothing** (the cell is invisible
+from the rim; the pose must go INSIDE); **`sunset-shelf` frames the
+promise straight down the outbound ring GAP** — the reserved corridor
+parts the rings exactly where this pose looks, so the "painted mesa
+lines" are absent from their own promise shot (aim must swing off-gap
+so the flanking rings carry the vista); the swifts are INVISIBLE in
+`swift-wheel` (0.62–0.85 scale reads as specks at 40 m) and read as
+torn orange paper at close range in `belfry`.
+
+**Value — the round's headline, the province's own lesson relearned on
+towers.** Every vertical stone's shade side collapses to flat MAROON:
+the near tower in `carillon`, the whole frame of `close-flute-foot`,
+the caprock boulders (`wind-gully`), the sentinel in `ribbon-mouth`,
+the Sunset Spires. Sun-side stone reads warm and right (`swift-wheel`'s
+two towers are the proof). The toon ramp under the region's
+quarter-sun multiplies the whole shade side down and the violet-warm
+paint terms push it to eggplant — the golden-1 stone-warming lesson
+plus the verdant re-pass dusk-lift lesson, both due at once: warm the
+family hexes AND give the stone materials a small emissive floor so
+the shade side stays a colour.
+
+**Colour.** The honey reads at the horizon band and on the ground
+(paint is right: gully honey stain, joint seams, hoodoo shadows all
+carry); the zenith is the dimmed painted backdrop at backdropFade
+0.68 — the same arithmetic the Hourglass Sea ships at 0.66, one shade
+darker here; nudge 0.68 → 0.65 and verify against a same-session
+golden-1 control. The wrack drift-lines read as PALE PAPER SCRAPS
+(value above their ground — down a step). Seep greens read true.
+
+**Detail.** `close-court-garden` nearly passes draft one (pocket
+fronds read as painted plants; graded splits and pebbles anchor);
+`close-seep-rim` passes with notes (hover fry charming; bubbles are
+white PUFFBALLS — size 0.3 → 0.2, opacity down); the seep pools
+themselves hide under bushes that grew ON the rims (gate must exclude
+the pool discs); the mid-band of the open court is thin (courtWire
+1600 over ~90k m² — the sweep will say it louder); `shore-road` is
+near-empty and the Hourglass Sea's far-side distance rings are
+MISSING from its backdrop (they cross the corridor at u 691/709/731
+and should be the road's whole distance layer — attachment probed
+after the sweep; if they render, the road still needs taller waymarks
+and denser shoulder wire).
+
+**Sweep (r1, 12/12 captured and read): ~2 pass / 5 marginal / 5 fail —
+the verifier's verdict is the round's real work order,** and it is the
+Emerald Terraces' fill curve verbatim: every miss is one class. 03
+(near hoodoo + towers + tufts) and 12 (the ranked hoodoo skyline from
+the south court) pass; 01 (bare outer plinth — the calm gate swept
+r 16–40 bare when only r 14 is the licensed rest), 05 (midwater over
+the slot — plankton too sparse for a foreground), 09/10/11 marginal;
+02/04/06/07/08 FAIL on bare open flanks: the south court past
+v −90, the north shoulder at v +112, the pass shoulders at |v| ≈ 50 —
+everywhere the hoodoo field (|v| ≤ 122) and the road bands never
+reached. Answers, all landed in r2: hoodoo field 30 → 42 wider
+(±140), six flank/shoulder wind pockets, court wire 1,600 → 3,000
+with the flank floor raised, road wire band widened, plankton to the
+Terraces' PROVEN 1,600, motes 900, the plinth ring released from the
+calm gate (the rest keeps r 14 exactly).
+
+**Neighbour probe** (scratch playwright, deleted): golden-waste-1 IS
+attached beside us during captures (streamer active = both goldens)
+and its three `hourglass-distance-*` rings exist and are visible from
+the Shore Road — their above-ground portion is the alpha-faded crest
+(foot 0.95 alpha sits at −12, below ground), so at 33 m they read as
+the soft warm haze band on the r1 frame's horizon, not a wall. No
+cross-region bug; the threshold's backdrop is honestly soft.
+
+### Round 2 (`gw2-r2`) — the country reads; three poses and one law still owed
+
+Same prebuilt-bundle harness. All 20 authored poses + 12 sweep poses
+captured and read.
+
+**Passes (13/20 authored).** `chime-gate` frames the saddle between
+its two jambs with the chime-stones on the skyline — the door reads;
+`wind-gully` descends between fluted walls with wire pacing it;
+`court-reveal` opens on the ranked hoodoo skyline; `hoodoo-court`
+holds its central sentinel over a sward patch; `great-arch` is a
+carved rusty-gold door from the court side (the r1 photobomb gone);
+`ribbon-mouth` cracks the pavement under the big sentinel;
+`ribbon-depths` keeps its violet walls and shard floor;
+`close-arch-shards` PASSES (arch as doorway, shard drift, tuft bed —
+the beam now a whisper, correct); `close-court-garden` passes;
+`noon-bell` and `carillon` compose (towers ranked, Bell Ringer
+rising); `belfry` sells the wheel — the grown swifts read as golden
+deltas around the shaft; `swift-wheel` holds the whole thermal.
+
+**Fails and marginals, with diagnoses (all structural, none paint):**
+
+- **`anchorite-cell` FAIL** — the r2 stand sat on the slot's SPINE
+  (958, −64) and its sightline died in the sill: between spine and
+  chamber the carve interpolation rises to ≈ −14 m, a seven-metre wall
+  2 m from the lens. The camera must already be over the sill —
+  round 3 moves it INSIDE the mouth at (962.5, −71.5).
+- **`sunset-shelf` FAIL on its distance** — the spires now read pale
+  and the shelf carries tufts, but the painted mesa-lines are ABSENT
+  from the promise shot. Root cause found by arithmetic, not paint:
+  the outbound ring gap's taper was 1.1 rad long, so columns reach
+  full height only ~1.3 rad off the reserved corridor — but the
+  rings' self-dissolve (140–157 m) means a shelf camera can only SEE
+  ~0.45 rad off the corridor. The whole visible sector was inside the
+  taper, topping out below ground. Round 3: taper 1.1 → 0.32,
+  ridgeBase +5 per layer, aim swung to atV 30.
+- **`shore-road` FAIL on its near field** — and the diagnosis is the
+  round's law: every cover gate multiplied `golden2Weight`, which on
+  the tongue is the 0.14 TREATY whisper — the treaty is about
+  terrain and mood ownership, but the gates read it as a bareness
+  licence and starved the road's own fill to 14%. Round 3 gives the
+  gates `fillOwn` = max(weight, raw tongue membership) — identical
+  support, so containment holds. Pose also walks forward to u 668 so
+  the first waymark pair stops standing behind its own camera.
+- **`carillon`/`close-flute-foot` MARGINAL — the r2 headline.** The
+  dusk-lift WORKED (shade sides are a colour) and over-worked: a FLAT
+  emissive floor lifts every texel equally, so the drawing the paint
+  carries was ironed off the shade side — 20 m shafts read as smooth
+  slugs, and the chime-stones (same amber family) fused into the
+  tower feet. Round 3: `applyVeinGlow` on the tower material (the
+  emissive rides the baked paint — grooves stay dusk, strata carry
+  the lift), paint contrast up (strata 0.28 / grain 0.24), a fine
+  high-frequency grain term for the 2–4 m lenses, and the
+  chime-stones lerped 0.42 toward the pale crest family.
+- **`seep-terraces` MARGINAL** — every pool out of shot left; the
+  stand swings to the east bench (980, 46 → 966, 86). **
+  `close-seep-rim` MARGINAL** — the lens stood ON the rim and cut the
+  pool out of its own shot; backed to (963.5, 82.5), lens registry
+  moved with it (the seep close-bed rides the lens constant).
+- **`windows-wall` MARGINAL** — fins read on the skyline but the
+  near court is thin; two round-3 wind pockets land at (849, 18) and
+  (836, 4) in the pose's near field.
+
+**Sweep (r2, 12 read): ~4 pass / 6 marginal / 2 fail — the r1 curve
+repeats one octave quieter.** 03/07/09/10 pass outright (10 proves
+the hoodoo paint at 2 m); 01/02/05/08/11 marginal with thin
+foreground strips; 04/06 still FAIL on high open shoulders where
+only the broad base term reaches — no pocket, no hoodoo lee, no
+road. Round 3: courtWire 3,000 → 4,200 with the gate's base floor
+0.55 → 0.62, grit 5,200 → 6,600 (the shoulder frames held paint but
+no grain inside ten metres), and the road-band fill rebalance above
+(fillOwn) feeds the pass shoulders too.
+
+**Round-2 orders** (the full list lives in the r2 commit): stone
+value/hue pass (hex warm + dusk-lift emissive, flutes deepened,
+tower paint contrast up); Windows rebuilt (ridge 13 → 9 with broken
+crest, fins 8 taller/tighter, arch grown); five poses re-authored
+(great-arch → court side, windows-wall → along the wall, belfry
+backed out, anchorite-cell → inside the slot at the cell mouth,
+close-flute-foot backed out, sunset-shelf re-aimed off-gap +
+spires grown/warmed); swifts grown to 1.0–1.3 and brightened; seep
+bushes off the rims, sward/frond counts up, bubbles calmed; court
+wire 1600 → 2400 + bushes 30 → 42; wrack re-valued down; two
+authored hoodoos planted in `hoodoo-court`'s near field; slot-wall
+flute striping; lip slabs leaned off the "manhole" read; waymarks
+grown; Anchorite's Cell rest radius trimmed to 5.5 so the mouth can
+take its two flank stones (the carve keeps r 7).
+
+### Round 3 (`gw2-r3`) — the laws land; two frames still owed to composition
+
+Prebuilt-bundle harness again, `SHOT_PER_LAUNCH=1`. All 20 authored
+poses captured and read; a throwaway sightline probe
+(`tests/probeGolden2Poses.test.ts`, kept) now walks every re-authored
+ray over the composed ground BEFORE captures spend an hour proving
+what arithmetic could have said — it caught two bad stands this round
+(seep-terraces' east bench looked UP a riser wall; sunset-shelf's
+lift-3 ray died in the shelf's own 8 m rise) and both were re-authored
+before their captures could fail.
+
+**Passes (17/20 authored).** The r2 core holds: `chime-gate`,
+`wind-gully`, `court-reveal`, `hoodoo-court`, `great-arch`,
+`ribbon-mouth`, `ribbon-depths`, `noon-bell`, `carillon`, `belfry`,
+`swift-wheel`, `close-court-garden`, `close-arch-shards` all pass
+again. New this round: `windows-wall` PASSES (the two near-field
+pockets seat its foreground); `seep-terraces` PASSES from the high
+shoulder — pools stepping down the travertine staircase, sward and
+bubbles in their gardens; `close-seep-rim` PASSES backed off its rim
+(pool, rim, fry all in frame). The vein-glow patch is the round's
+win: `carillon` and `noon-bell` show strata and grooves surviving on
+the shade side — the towers are DRAWN again, and the pale
+chime-stones separate from the tower feet.
+
+**Fails and marginals:**
+
+- **`anchorite-cell` FAIL, differently** — the mouth stand cleared
+  its sightline (the probe said so, truthfully) but the FRAME is a
+  featureless amber wall: a 19 m curved chamber wall 12 m out fills a
+  70° lens. A rest reads only against its own door. Round 4 shoots
+  from the chamber's BACK WALL looking out at (962, −81 → 964, −71):
+  the licensed thin blade centre-frame over the bare floor, the
+  mouth's sill and the slot's lit wall stacked behind it.
+- **`shore-road` FAIL, differently** — the fill law WORKED (grit,
+  wire, wrack and pebbles pace the road now) but the walked-forward
+  stand overshot: the 678 waymark pair fell abeam and got cut at the
+  frame's left edge over a 60%-water sky. Round 4: half a pace back
+  to (663, 4), horizon dropped (pitch −0.04 — the probe grazed at
+  −0.06), the 678 pair leading the eye down the road.
+- **`sunset-shelf` MARGINAL — and the root cause is ARITHMETIC
+  again:** the r3 aim (atV 30) is 45° off the outbound axis, and at
+  that bearing the mesa ring stands ~146 m from the camera — inside
+  its own 140–157 m self-dissolve. The promise dissolved itself out
+  of its own shot; only a faint band survives at frame left. Round 4
+  swings the aim to ~24° (atV 8): ring at ~129 m, fully opaque, both
+  framing spires bracketing the reserved gap.
+- **`close-flute-foot` MARGINAL** — better (fine grain reads on the
+  lit flank) but the foot is still a saturated rust mass that
+  separates from the region's pale family, and the strata do NOT read
+  at 3 m. Diagnosis is structural, not paint: the lathe profile has
+  ~9 rows over a 23 m shaft, and per-vertex paint interpolates every
+  band across those spans into one smooth gradient — no fbm contrast
+  can survive that vertex density. Round 4: the profile RESAMPLED to
+  0.8 m rows before lathing (the paint gets rows to live on;
+  +75k tris, budget 838k of 1.35M), and the foot joins the pale
+  family (bright floor 0.26 — a 0-bright foot under the dusk emissive
+  read as rust while every other stone held warm pale).
+
+**Sweep (r3, 12 read, poses PINNED via `SHOT_POSES_FILE` so every
+round re-judges the same ground): 10 pass / 1 marginal / 1 fail.**
+01/03/05/06/07/08/09/10/11/12 pass — 09 and 10 prove the hoodoo paint
+at one to three metres, 08 catches the traveller shoal in frame, 12
+holds the whole court panorama with the Carillon on its horizon. 02
+MARGINAL (u≈1001, v≈−140 — the deep south flank: tufts present now,
+mid-band thin). 04 FAIL (u≈770, v≈50 — the Wind Gully's HIGH south
+shoulder): and the diagnosis closed the round's last law — the
+open-country gates all started at u 806/824, so the shoulders above
+the gully owned NO grain and NO standing layer at all; one 5.5 m wind
+pocket cannot carry a 60 × 90 m shoulder. Round 4:
+`gullyShoulder(u, v)` joins the country to `gritGate` and
+`courtWireGate` from the gully's rim (u 744) outward, off-road only —
+the descent stays a road — with counts keeping pace over the grown
+support (courtWire 4,200 → 5,200, grit 6,600 → 7,400).
+
+**Round-4 orders (all landed before the r4 captures):**
+anchorite-cell from the chamber's back wall looking OUT;
+shore-road half a pace back, horizon dropped to pitch −0.04 (the
+probe grazed −0.06); sunset-shelf aim 45° → 24° off the outbound
+axis (out of the ring's own self-dissolve window); tower profiles
+resampled to 0.8 m rows + foot bright floor 0.26; the gully
+shoulders join the country; budgets re-measured 67 draws /
+892,826 tris.
+
+### Round 4 (`gw2-r4`) — the standard met
+
+Same prebuilt-bundle harness, same PINNED sweep poses.
+
+**Authored: 19/20 pass on the first pull; 20/20 with the r4b
+re-shoot.** The r2 core holds again in full. New this round:
+`anchorite-cell` PASSES — from the back wall the rest finally reads
+against its own door (the sill's violet V opening to the lit gold
+upper walls, the lip stones hanging on the rims, the light shaft
+falling through, the bare floor in front — composed stillness, the
+licence earned); `shore-road` PASSES — the waymark stack whole at
+frame-left over its wrack and pebbles, wire pacing the right
+shoulder, the light shaft marking the road, the doorstep's thinness
+the treaty handshake it always was; `close-flute-foot` PASSES — the
+resampled rows carry banding down the shaft and the foot sits in the
+pale family, the chime-stone clean beside it; `carillon` and
+`noon-bell` are the region's hero frames (the Bell Ringer risen into
+the noon shaft); `great-arch`/`close-arch-shards` show the fin and
+arch paint richer for the same resample; `court-reveal` is the
+region's best road frame (the gully-foot pocket carpeting the
+reveal). And the gullyShoulder law showed up in every gully frame:
+`chime-gate` and `wind-gully` now carry their shoulders.
+
+- **`sunset-shelf` FAILED its first r4 pull — the taper this time.**
+  The dissolve arithmetic was right and insufficient: the 24° aim
+  crossed the ring at offOut 0.20 rad, where the 0.32 taper still
+  held the column at end ≈ 0.02 (below ground). Joint-constraint
+  arithmetic closed it: from u 1064 EVERY full-height column under
+  the 0.32 taper stood ≥ 156 m away — inside the dissolve. Taper
+  0.32 → 0.16 (full flanks at ±0.33 rad = 129–142 m, opaque; the cut
+  edge is the pass canyon's own mouth — a legislated parting has an
+  edge) and the aim brought ON-AXIS (atU 1110, atV 0): the
+  reservation looked at straight, spires bracketing the gap. Probe
+  clears 1.6 m; re-shot as `gw2-r4b` after the chain.
+
+**Sweep (r4, same pinned poses): 12/12 PASS — exceeds the ≥11/12
+standard, with no misses anywhere.** 04 (the Wind Gully's high south
+shoulder, the r3 FAIL) now carries its standing layer up the whole
+slope; 02 (the deep south flank, the r3 marginal) filled in from the
+count raise; 03 catches the Bell Ringer's glow on the skyline; 08
+holds the traveller shoal.
+
+**Headed frame gate: median 16.7 ms (59.9 fps), p95 18.6 ms,
+settled scale 1.00 at BOTH probe poses** (`noon-bell`
+1029.8,−9.6,75.2 — the densest interior — and `court-reveal`
+809.3,−7.6,87.8), measured on the shared box with a sibling capture
+chain running; 16.7 ms is the 60 Hz vsync cadence, i.e. the region
+holds refresh at full scale. Gate ≤16.9 ms: **PASS**.
+
+**`sunset-shelf` re-shoot (`gw2-r4b`): PASS — authored 20/20.** The
+0.16 taper delivers exactly what the joint-constraint arithmetic
+promised: mesa flanks standing OPAQUE at full height on both sides of
+the frame, parting over the pass mouth; both waymark spires bracket
+the gap; the on-axis aim looks the depth-3 reservation straight in
+the eye. The cut edge between the flanks reads as the canyon mouth —
+a legislated parting with an edge, not a dissolve accident. The shelf
+road runs under the stand with its sward and grit carrying the near
+field. The vista pose finally does the one job it exists for: it
+frames the promise.
+
+### The no-assets pass (`gw2-noassets`) — 20/20 SURVIVE
+
+All twenty authored poses captured with every `public/assets` request
+aborted at the network. The region is procedural to the bone — every
+stone, tower, fin, hoodoo and shard is lathed/merged geometry wearing
+baked vertex paint; the kit cover, the light shafts, the seep pools,
+the Bell Ringer's gold spiral and the swift wheel all hold their
+frames unchanged. The only visible shift is the world's own fallback
+water/ambience tint (teal against the painted build's honey) — a
+shipping configuration, not a degradation. No frame goes black, no
+surface loses its paint, no landmark drops out.
+
+**Harness finding (for the orchestrator and the next worker):**
+`blockAssets` routes `**/assets/**` — and a PREVIEW bundle serves its
+own compiled JS from `/assets/` too, so a no-assets run against
+`vite preview` blocks the app's own bundle and `__reef` never
+appears (the 900 s wait at region-shots.mjs:87 times out; a sibling
+worker hit the identical crash). **Run the no-assets pass against
+the DEV server**, where source modules come from `/src/` and only
+authored art lives under `/assets/`. Everything else in this round
+ran on the prebuilt bundle as documented.
+
+### Final gates
+
+- `npm run typecheck` — exit 0.
+- `npx eslint . --max-warnings 0` — exit 0.
+- `npm test` (full) — 60 files, 844 tests, all green, exit 0
+  (includes `tests/regionGolden2.test.ts`: containment, rest
+  emptiness, determinism/no-reroll, world-map separation, budget
+  walk, pass-handover overlap, reject-circle step).
+- Authored 20/20; sweep 12/12 pinned; no-assets 20/20; frame gate
+  16.7 ms median / scale 1.00 at both probe poses. Standard met.

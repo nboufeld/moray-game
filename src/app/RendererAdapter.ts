@@ -1,0 +1,432 @@
+import {
+  NeutralToneMapping,
+  PCFSoftShadowMap,
+  SRGBColorSpace,
+  Vector2,
+  Vector3,
+  WebGLRenderer,
+  WebGLRenderTarget,
+  type Camera,
+  type DataTexture,
+  type Scene,
+} from "three";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
+import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+import { ColorGradeShader, createPaperGrain, grainRepeatFor } from "../rendering/ColorGradeShader";
+
+/** How far below display resolution the bloom mips are rendered. */
+const BLOOM_DIVISOR = 4;
+
+/** Multisampling on the composer targets. WebGL2 is a given here. */
+const MSAA_SAMPLES = 4;
+
+/** Frame budget either side of which the internal resolution is adjusted. */
+const SLOW_FRAME_MS = 30;
+const FAST_FRAME_MS = 18;
+/**
+ * Low enough that a machine with no hardware acceleration still reaches an
+ * interactive frame time. A blurry reef that responds is worth more than a
+ * sharp one at three frames a second, and hardware that can keep up never
+ * leaves 1.0.
+ */
+const MIN_RENDER_SCALE = 0.34;
+const SCALE_INTERVAL_MS = 900;
+
+/** Off-screen stills are rendered this much larger, then scaled down. */
+const PORTRAIT_SUPERSAMPLE = 2;
+
+/**
+ * Thin adapter around WebGLRenderer and the post chain. The blueprint
+ * recommends starting on WebGL2 and hiding the renderer behind an adapter so a
+ * future WebGPU migration touches exactly one file, so the composer lives here
+ * rather than leaking passes into `Game`.
+ */
+export class RendererAdapter {
+  readonly renderer: WebGLRenderer;
+
+  private readonly composer: EffectComposer;
+  private readonly renderPass: RenderPass;
+  private readonly bloomPass: UnrealBloomPass;
+  private readonly gradePass: ShaderPass;
+  private readonly grain: DataTexture;
+  /** The grade's shipped tilt, so W-M1's weather always multiplies the base. */
+  private readonly gradeBaseHighlight = new Vector3(1, 1, 1);
+  private gradeBaseSaturation = 1;
+  private pixelRatioCap = 1.5;
+  private width = 1;
+  private height = 1;
+  private renderScale = 1;
+  private adaptive = true;
+  private frameMs = 16;
+  private lastFrameAt = 0;
+  private lastScaleAt = 0;
+
+  constructor(canvas: HTMLCanvasElement) {
+    this.renderer = new WebGLRenderer({
+      canvas,
+      // No `antialias` here: every frame goes through the composer, so scene
+      // geometry never rasterises into the canvas's MSAA buffer. It was pure
+      // wasted memory. The multisampling that matters is on the composer
+      // targets below.
+      powerPreference: "high-performance",
+    });
+    this.renderer.outputColorSpace = SRGBColorSpace;
+    // Neutral rather than ACES. ACES is a film curve: it has a long toe that
+    // pulls everything under the midtone toward black and a saturating shoulder
+    // that warms and crushes the top. Both are wrong for a painted key — the
+    // toe manufactures exactly the near-black this pivot is removing, and the
+    // shoulder turns bright turquoise water grey-cyan as it rolls off. Neutral
+    // (Khronos PBR Neutral) is close to linear until it has to compress, so a
+    // value chosen in the grade survives to the screen as the value chosen.
+    this.renderer.toneMapping = NeutralToneMapping;
+    this.renderer.toneMappingExposure = 1.2;
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = PCFSoftShadowMap;
+
+    // EffectComposer already defaults its targets to half float, which is what
+    // keeps bloom highlights from banding before tone mapping. What it does not
+    // do is multisample them, and without that every edge in the scene is
+    // stair-stepped no matter what the canvas was asked for.
+    this.composer = new EffectComposer(this.renderer);
+    this.composer.renderTarget1.samples = MSAA_SAMPLES;
+    this.composer.renderTarget2.samples = MSAA_SAMPLES;
+
+    // The scene and camera are swapped per frame: the reef and the sanctuary
+    // are separate scenes that share this one chain.
+    this.renderPass = new RenderPass(undefined as unknown as Scene, undefined as unknown as Camera);
+    this.composer.addPass(this.renderPass);
+
+    // The threshold has to sit between the brightest sand and the light sources
+    // themselves, and both of those are properties of this scene rather than
+    // round numbers — and the pivot moved both. The fill-heavy key lifted the
+    // sunlit sand a long way up this buffer, so the old 0.55 now sits *inside*
+    // the floor and hazes it over; the threshold has to climb with it. What
+    // bloom is for here also changed: not a highlight effect on light sources
+    // but the soft bleed of a wet-in-wet edge. So it passes far less of the
+    // frame than it used to and spreads what it does pass much wider, which is
+    // what the extra strength is spent on rather than on a brighter halo.
+    this.bloomPass = new UnrealBloomPass(new Vector2(1, 1), 0.55, 0.9, 0.82);
+    this.composer.addPass(this.bloomPass);
+
+    // `ShaderPass` clones the shader's uniforms, so the live grade is driven
+    // through this pass rather than through `ColorGradeShader.uniforms`.
+    this.gradePass = new ShaderPass(ColorGradeShader);
+    // The paper is owned here rather than by the shader definition, because
+    // `ShaderPass` clones every uniform it is handed and clones textures with
+    // them. One sheet, uploaded once, released in `dispose`.
+    this.grain = createPaperGrain();
+    this.gradePass.uniforms.tGrain!.value = this.grain;
+    // Snapshot the shipped grade values off the pass's own cloned uniforms,
+    // so `setWeatherGrade` scales the base rather than compounding on itself.
+    const baseHighlight = this.gradePass.uniforms.uHighlightTint?.value as Vector3 | undefined;
+    if (baseHighlight) {
+      this.gradeBaseHighlight.copy(baseHighlight);
+    }
+    this.gradeBaseSaturation =
+      (this.gradePass.uniforms.uSaturation?.value as number | undefined) ?? 1;
+    this.composer.addPass(this.gradePass);
+
+    // Last: applies the renderer's tone mapping and output colour space.
+    this.composer.addPass(new OutputPass());
+  }
+
+  setPixelRatioCap(cap: number): void {
+    this.pixelRatioCap = cap;
+  }
+
+  /** Strength of the discovery swell in the grade, 0 (neutral) to 1. */
+  setGradePulse(value: number): void {
+    const uniform = this.gradePass.uniforms.uPulse;
+    if (uniform) {
+      uniform.value = Math.max(0, Math.min(1, value));
+    }
+  }
+
+  /**
+   * W-M1's weather tilt on the grade: multipliers on the *shipped* highlight
+   * tint and saturation, through the same one door `setGradePulse` uses —
+   * the pass's uniforms are cloned, so nothing but this adapter can reach
+   * them. All-ones restores the shipped values exactly (x × 1 is exact in
+   * IEEE floats), and `Game` writes it only while a mood is on, so the
+   * default frame's grade is untouched arithmetic.
+   */
+  setWeatherGrade(red: number, green: number, blue: number, saturation: number): void {
+    const tint = this.gradePass.uniforms.uHighlightTint?.value as Vector3 | undefined;
+    tint?.set(
+      this.gradeBaseHighlight.x * red,
+      this.gradeBaseHighlight.y * green,
+      this.gradeBaseHighlight.z * blue,
+    );
+    const sat = this.gradePass.uniforms.uSaturation;
+    if (sat) {
+      sat.value = this.gradeBaseSaturation * saturation;
+    }
+  }
+
+  /**
+   * Where the adaptive scaler currently sits (W-L8). Read-only, for the QA
+   * harness: "what scale does this pose settle at" is a question the global
+   * ledger has to answer with a number rather than an inference.
+   */
+  get currentRenderScale(): number {
+    return this.renderScale;
+  }
+
+  /**
+   * Fixes the internal resolution and stops it adapting. Screenshot review
+   * depends on it: a shot taken while the scaler happened to be throttled is
+   * not comparable with the shot it is supposed to be measured against.
+   */
+  pinRenderScale(scale: number): void {
+    this.adaptive = false;
+    this.renderScale = scale;
+    this.applySize();
+  }
+
+  setSize(width: number, height: number): void {
+    this.width = width;
+    this.height = height;
+    this.applySize();
+  }
+
+  private applySize(): void {
+    const ratio = Math.min(window.devicePixelRatio ?? 1, this.pixelRatioCap);
+    // The canvas keeps its full resolution; only the offscreen chain shrinks.
+    this.renderer.setPixelRatio(ratio);
+    this.renderer.setSize(this.width, this.height, false);
+    this.composer.setPixelRatio(ratio * this.renderScale);
+    this.composer.setSize(this.width, this.height);
+    // Bloom is low-frequency by definition, so it is blurred at quarter
+    // resolution. It is the most expensive pass in the chain by a wide margin
+    // and the difference is not visible in a halo that is already this soft.
+    this.bloomPass.setSize(
+      Math.max(1, Math.round((this.width * this.renderScale) / BLOOM_DIVISOR)),
+      Math.max(1, Math.round((this.height * this.renderScale) / BLOOM_DIVISOR)),
+    );
+
+    // Both of the grade's screen-space effects are measured in *buffer* pixels
+    // rather than canvas ones, because that is the raster they actually run on:
+    // the composer's targets are what the pass reads and writes, and the
+    // adaptive scaler moves them out from under it.
+    const bufferWidth = Math.max(1, this.width * ratio * this.renderScale);
+    const bufferHeight = Math.max(1, this.height * ratio * this.renderScale);
+    const texel = this.gradePass.uniforms.uTexel?.value as Vector2 | undefined;
+    texel?.set(1 / bufferWidth, 1 / bufferHeight);
+    const repeat = this.gradePass.uniforms.uGrainRepeat?.value as Vector2 | undefined;
+    repeat?.copy(grainRepeatFor(bufferWidth, bufferHeight));
+  }
+
+  render(scene: Scene, camera: Camera): void {
+    this.renderPass.scene = scene;
+    this.renderPass.camera = camera;
+    this.readPoolTint(scene);
+    this.composer.render();
+    this.adaptResolution();
+  }
+
+  /**
+   * Takes the pooling colour from whichever scene is about to be drawn.
+   *
+   * The reef and the sanctuary share this one chain but not one ocean, and a
+   * wash boundary pools the pigment of the water it is in. Reading it off the
+   * fog each frame is what keeps the two rooms honest without `Game` having to
+   * hand the grade a colour it already told the scene about. Normalised to a
+   * peak of 1 so the shader's multiply can only ever darken.
+   */
+  private readPoolTint(scene: Scene): void {
+    const fog = scene.fog;
+    const tint = this.gradePass.uniforms.uPoolTint?.value as Vector3 | undefined;
+    if (!fog || !tint) {
+      return;
+    }
+    const peak = Math.max(fog.color.r, fog.color.g, fog.color.b, 1e-4);
+    tint.set(fog.color.r / peak, fog.color.g / peak, fog.color.b / peak);
+  }
+
+  /**
+   * Renders one throwaway scene off-screen and returns it as a PNG data URL —
+   * the codex portraits, and anything else that needs a still of a scene that
+   * is never on screen.
+   *
+   * It deliberately skips the composer: bloom and the grade are tuned for a
+   * full frame of reef and would wash out a 256px card. What it cannot skip is
+   * tone mapping. Three disables both tone mapping and the sRGB transfer when
+   * the destination is a render target, so what comes back from
+   * `readRenderTargetPixels` is raw scene-linear light — displayed as-is it is
+   * the flat, milky image that makes people think their portrait is broken.
+   * Both are applied here on the CPU with the same curve and exposure the
+   * screen gets, so a portrait matches the game it came from.
+   */
+  captureToDataUrl(scene: Scene, camera: Camera, size: number): string | null {
+    if (typeof document === "undefined") {
+      return null;
+    }
+
+    // Supersampled rather than multisampled: a portrait is nearly all
+    // silhouette, and reading a multisampled target back is a resolve step
+    // this does not need when the whole render is a few thousand pixels.
+    const rendered = size * PORTRAIT_SUPERSAMPLE;
+    const target = new WebGLRenderTarget(rendered, rendered);
+    const pixels = new Uint8Array(rendered * rendered * 4);
+    const previousTarget = this.renderer.getRenderTarget();
+    try {
+      this.renderer.setRenderTarget(target);
+      this.renderer.render(scene, camera);
+      this.renderer.readRenderTargetPixels(target, 0, 0, rendered, rendered, pixels);
+    } finally {
+      this.renderer.setRenderTarget(previousTarget);
+      target.dispose();
+    }
+
+    return toDataUrl(pixels, rendered, size, this.renderer.toneMappingExposure);
+  }
+
+  /**
+   * Dynamic resolution. The post chain and the reef together are comfortable on
+   * a GPU and hopeless on a software rasteriser, which is exactly what a
+   * machine without hardware acceleration falls back to. Rather than cut the
+   * art for everyone, the internal render targets shrink until frames land in
+   * budget and grow back when there is headroom. The canvas itself never
+   * changes size, so the upscale is the only visible cost.
+   */
+  private adaptResolution(): void {
+    if (!this.adaptive) {
+      return;
+    }
+
+    const now = performance.now();
+    const elapsed = now - this.lastFrameAt;
+    this.lastFrameAt = now;
+
+    // Ignore the first frame and any hitch from a tab returning to the front.
+    if (elapsed <= 0 || elapsed > 500) {
+      return;
+    }
+    this.frameMs = this.frameMs * 0.9 + elapsed * 0.1;
+
+    // Resizing reallocates every render target, so change rarely and decisively.
+    if (now - this.lastScaleAt < SCALE_INTERVAL_MS) {
+      return;
+    }
+
+    const previous = this.renderScale;
+    if (this.frameMs > SLOW_FRAME_MS) {
+      this.renderScale = Math.max(MIN_RENDER_SCALE, this.renderScale - 0.15);
+    } else if (this.frameMs < FAST_FRAME_MS) {
+      this.renderScale = Math.min(1, this.renderScale + 0.1);
+    }
+
+    if (this.renderScale !== previous) {
+      this.lastScaleAt = now;
+      this.applySize();
+    }
+  }
+
+  dispose(): void {
+    this.grain.dispose();
+    this.composer.dispose();
+    this.renderer.dispose();
+  }
+}
+
+/**
+ * Turns the linear pixels of an off-screen render into a displayable image:
+ * flipped (GL reads bottom row first), tone mapped, sRGB encoded, and scaled
+ * down to the requested size, which is where the supersampling is cashed in.
+ */
+function toDataUrl(
+  pixels: Uint8Array,
+  rendered: number,
+  size: number,
+  exposure: number,
+): string | null {
+  const source = document.createElement("canvas");
+  source.width = rendered;
+  source.height = rendered;
+  const sourceContext = source.getContext("2d");
+  if (!sourceContext) {
+    return null;
+  }
+
+  const image = sourceContext.createImageData(rendered, rendered);
+  const rgb: [number, number, number] = [0, 0, 0];
+  for (let y = 0; y < rendered; y++) {
+    const readRow = (rendered - 1 - y) * rendered * 4;
+    const writeRow = y * rendered * 4;
+    for (let x = 0; x < rendered; x++) {
+      const read = readRow + x * 4;
+      const write = writeRow + x * 4;
+      rgb[0] = (pixels[read] ?? 0) / 255;
+      rgb[1] = (pixels[read + 1] ?? 0) / 255;
+      rgb[2] = (pixels[read + 2] ?? 0) / 255;
+      neutralToneMap(rgb, exposure);
+      image.data[write] = Math.round(sRgbTransfer(rgb[0]) * 255);
+      image.data[write + 1] = Math.round(sRgbTransfer(rgb[1]) * 255);
+      image.data[write + 2] = Math.round(sRgbTransfer(rgb[2]) * 255);
+      image.data[write + 3] = 255;
+    }
+  }
+  sourceContext.putImageData(image, 0, 0);
+
+  const output = document.createElement("canvas");
+  output.width = size;
+  output.height = size;
+  const outputContext = output.getContext("2d");
+  if (!outputContext) {
+    return null;
+  }
+  outputContext.imageSmoothingQuality = "high";
+  outputContext.drawImage(source, 0, 0, size, size);
+  return output.toDataURL("image/png");
+}
+
+/**
+ * Three's Khronos PBR Neutral curve, in place, and it has to stay a port of
+ * whatever `renderer.toneMapping` is set to rather than a curve of its own: the
+ * portrait sits beside the live reef in the same UI, and a different shoulder
+ * would show up as a different animal. This is
+ * `NeutralToneMapping` from `tonemapping_pars_fragment.glsl.js`, line for line.
+ */
+function neutralToneMap(rgb: [number, number, number], exposure: number): void {
+  const startCompression = 0.8 - 0.04;
+  const desaturation = 0.15;
+
+  let r = rgb[0] * exposure;
+  let g = rgb[1] * exposure;
+  let b = rgb[2] * exposure;
+
+  const x = Math.min(r, g, b);
+  const offset = x < 0.08 ? x - 6.25 * x * x : 0.04;
+  r -= offset;
+  g -= offset;
+  b -= offset;
+
+  const peak = Math.max(r, g, b);
+  if (peak >= startCompression) {
+    const d = 1 - startCompression;
+    const newPeak = 1 - (d * d) / (peak + d - startCompression);
+    const scale = newPeak / peak;
+    r *= scale;
+    g *= scale;
+    b *= scale;
+    const t = 1 - 1 / (desaturation * (peak - newPeak) + 1);
+    r += (newPeak - r) * t;
+    g += (newPeak - g) * t;
+    b += (newPeak - b) * t;
+  }
+
+  rgb[0] = clamp01(r);
+  rgb[1] = clamp01(g);
+  rgb[2] = clamp01(b);
+}
+
+function sRgbTransfer(value: number): number {
+  return value <= 0.0031308 ? value * 12.92 : Math.pow(value, 0.41666) * 1.055 - 0.055;
+}
+
+function clamp01(value: number): number {
+  return value < 0 ? 0 : value > 1 ? 1 : value;
+}
