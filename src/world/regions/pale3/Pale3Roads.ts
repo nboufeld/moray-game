@@ -18,9 +18,11 @@ import { PALE3_SLOT, pale3TerrainTarget, worldOf } from "./Pale3Terrain";
  *
  * - ONE reveal — a fallen bone dolmen (u 1198): the standing-stone
  *   sentence of sun's-doorstep, prefigured on the road as a ruin.
- * - ONE companion shoal — the pearl tetra file, confined u 1145–1262;
- *   it turns home before THE UNDAWN (u 1276–1302, held-breath dark —
- *   no shoal, no scatter, per the registry).
+ * - The companion shoal is the region's EXISTING pilgrim file
+ *   (Pale3Life, 28 fry confined to u 1142–1242 on a 95 s loop) — a
+ *   second file would break the "never two shoals on a road at once"
+ *   saturation check, and it already turns home before THE UNDAWN
+ *   (u 1276–1302, held-breath dark — no shoal, per the registry).
  * - ONE light change — a run of three mint-pearl FLOOR POOLS stepping
  *   toward daybreak (C7: light landing with no visible column; pale
  *   forbids dapple — upheld — and the Undawn stays beam-free).
@@ -36,13 +38,6 @@ const corridorFrame: RoadFrame = {
   ground: (x, z) => Math.max(pale2TerrainTarget(x, z), pale3TerrainTarget(x, z)),
 };
 
-const PEARL_FISH = {
-  scale: 0.8,
-  color: 0xeef2ea,
-  emissive: 0x3c3e3a,
-  profile: "tetra",
-} as const;
-
 export function buildPale3Roads(): RoadDressingBuild[] {
   const corridor = buildRoadDressing({
     seed: CORRIDOR_SEED,
@@ -54,16 +49,6 @@ export function buildPale3Roads(): RoadDressingBuild[] {
       gap: 5,
       scale: 0.95,
       color: 0xe3e4f0,
-    },
-    corridorShoal: {
-      u0: 1145,
-      u1: 1262,
-      sideV: 5,
-      lift: 2.5,
-      count: 14,
-      fish: PEARL_FISH,
-      periodSec: 110,
-      braid: { lateral: 0.3, vertical: 0.2 },
     },
     lights: [
       {

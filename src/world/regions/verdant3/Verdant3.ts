@@ -10,6 +10,7 @@ import { buildVerdant3Gardens } from "./Verdant3Gardens";
 import { buildVerdant3Ground } from "./Verdant3Ground";
 import { buildVerdant3Life } from "./Verdant3Life";
 import { buildVerdant3Light } from "./Verdant3Light";
+import { buildVerdant3Roads } from "./Verdant3Roads";
 import { buildVerdant3Mesas } from "./Verdant3Mesas";
 import {
   HOLLOW,
@@ -223,6 +224,9 @@ export const VERDANT_3: RegionDef = {
     const life = buildVerdant3Life();
     const elder = buildElderleaf(mesas.mouth);
     const distance = buildVerdant3Distance();
+    // ROADS-AND-AXES (critic #2/#6/#10): fresh substreams, appended after
+    // every existing module — the reroll fence holds by construction.
+    const roads = buildVerdant3Roads();
     const ground = buildVerdant3Ground([...mesas.contacts, ...canopy.contacts]);
 
     for (const mesh of [
@@ -236,11 +240,17 @@ export const VERDANT_3: RegionDef = {
       ...life.meshes,
       elder.mesh,
       ...distance.meshes,
+      ...roads.map((build) => build.group),
     ]) {
       group.add(mesh);
     }
 
-    const colliders = [...mesas.colliders, ...canopy.colliders, ...buildSeals()];
+    const colliders = [
+      ...mesas.colliders,
+      ...canopy.colliders,
+      ...buildSeals(),
+      ...roads.flatMap((build) => [...build.colliders]),
+    ];
 
     return {
       group,
@@ -256,6 +266,9 @@ export const VERDANT_3: RegionDef = {
         gardens.update(kitTime);
         cover.update(kitTime);
         colonies.update(kitTime);
+        for (const build of roads) {
+          build.update(kitTime);
+        }
       },
     };
   },

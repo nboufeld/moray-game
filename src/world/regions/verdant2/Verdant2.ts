@@ -8,6 +8,7 @@ import { buildVerdant2Gardens } from "./Verdant2Gardens";
 import { buildVerdant2Ground } from "./Verdant2Ground";
 import { buildVerdant2Life } from "./Verdant2Life";
 import { buildVerdant2Light } from "./Verdant2Light";
+import { buildVerdant2Roads } from "./Verdant2Roads";
 import { buildMistfall } from "./Verdant2Mistfall";
 import { buildVerdant2Stone } from "./Verdant2Stone";
 import { WARDEN_SPECIES_ID, buildWarden } from "./Verdant2Warden";
@@ -259,6 +260,9 @@ export const VERDANT_2: RegionDef = {
     // substreams, appended after every module above — the reroll fence).
     const carpets = buildVerdant2Carpets();
     const colonies = buildVerdant2Colonies();
+    // ROADS-AND-AXES (critic #2/#6/#10): fresh substreams, appended after
+    // every existing module — the reroll fence holds by construction.
+    const roads = buildVerdant2Roads();
     const ground = buildVerdant2Ground([...stone.contacts, ...gardens.contacts]);
 
     for (const mesh of [
@@ -272,11 +276,16 @@ export const VERDANT_2: RegionDef = {
       ...distance.meshes,
       ...carpets.groups,
       ...colonies.groups,
+      ...roads.map((build) => build.group),
     ]) {
       group.add(mesh);
     }
 
-    const colliders = [...stone.colliders, ...buildSeals()];
+    const colliders = [
+      ...stone.colliders,
+      ...buildSeals(),
+      ...roads.flatMap((build) => [...build.colliders]),
+    ];
 
     return {
       group,
@@ -293,6 +302,9 @@ export const VERDANT_2: RegionDef = {
         const kitTime = ctx.time * (ctx.reducedMotion ? 0.45 : 1);
         carpets.update(kitTime);
         colonies.update(kitTime);
+        for (const build of roads) {
+          build.update(kitTime);
+        }
       },
     };
   },

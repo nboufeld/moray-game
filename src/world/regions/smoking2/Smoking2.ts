@@ -7,6 +7,7 @@ import { buildSmoking2Flora } from "./Smoking2Flora";
 import { buildSmoking2Ground } from "./Smoking2Ground";
 import { buildSmoking2Life } from "./Smoking2Life";
 import { buildSmoking2Light } from "./Smoking2Light";
+import { buildSmoking2Roads } from "./Smoking2Roads";
 import { SKATE_SPECIES_ID, buildSmoking2Skate } from "./Smoking2Skate";
 import {
   ANVIL,
@@ -228,6 +229,9 @@ export const SMOKING_2: RegionDef = {
     const distance = buildSmoking2Distance();
     const flora = buildSmoking2Flora(combs);
     const life = buildSmoking2Life(combs.perchTops);
+    // ROADS-AND-AXES (critic #2/#6/#10): fresh substreams, appended after
+    // every existing module — the reroll fence holds by construction.
+    const roads = buildSmoking2Roads();
     const ground = buildSmoking2Ground(combs.contacts);
 
     for (const child of [
@@ -239,11 +243,16 @@ export const SMOKING_2: RegionDef = {
       ...distance.meshes,
       ...flora.groups,
       ...life.groups,
+      ...roads.map((build) => build.group),
     ]) {
       group.add(child);
     }
 
-    const colliders = [...combs.colliders, ...buildSeals()];
+    const colliders = [
+      ...combs.colliders,
+      ...buildSeals(),
+      ...roads.flatMap((build) => [...build.colliders]),
+    ];
 
     return {
       group,
@@ -258,6 +267,9 @@ export const SMOKING_2: RegionDef = {
         flora.update(kitTime);
         life.update(kitTime);
         light.update(kitTime);
+        for (const build of roads) {
+          build.update(kitTime);
+        }
       },
     };
   },

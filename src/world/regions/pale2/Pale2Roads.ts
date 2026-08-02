@@ -17,12 +17,14 @@ import {
  *
  * - **The pass-1→2 corridor** (u 630–780): ONE reveal — a pair of bone
  *   menhirs bowed over the road (the standing-stone vocabulary the
- *   province ends on, cooled white); ONE companion shoal — the
- *   pearl-white tetra file confined to the corridor; ONE light change
- *   — TWO BROKEN SLANTED BLADES (C7: not the god-shaft; pale's paper
- *   light arrives sideways through milk), with their floor pools.
- *   NO dapple anywhere in pale — upheld. Bone-gravel wear lines carry
- *   the mid-down read.
+ *   province ends on, cooled white); the companion shoal is the
+ *   region's EXISTING threshold file (Pale2Life, 28 fry confined to
+ *   u 648–746 on a 95 s loop — adding a second file would break the
+ *   "never two shoals on a road at once" saturation check); ONE light
+ *   change — TWO BROKEN SLANTED BLADES (C7: not the god-shaft; pale's
+ *   paper light arrives sideways through milk), with their floor
+ *   pools. NO dapple anywhere in pale — upheld. Bone-gravel wear
+ *   lines carry the mid-down read.
  *
  * - **The mid-down interior** at the critic's stand (985, −60): a bone
  *   drift-line and a slow pearl under-shoal — colour restraint, milk
@@ -76,17 +78,6 @@ export function buildPale2Roads(): RoadDressingBuild[] {
       gap: 5.5,
       scale: 1.0,
       color: 0xe1e2ef,
-    },
-    corridorShoal: {
-      u0: 645,
-      u1: 755,
-      sideV: 5,
-      lift: 2.5,
-      count: 22,
-      fish: PEARL_FISH,
-      periodSec: 105,
-      braid: { lateral: 0.32, vertical: 0.2 },
-      glint: { count: 12, size: 0.1 },
     },
     lights: [
       {
