@@ -868,15 +868,59 @@ function shapeLeaf(
   // the magnitude starts at ~10° and the draw only adds to it.
   const twistDraw = detail.signed(1);
   const twist = (twistDraw < 0 ? -1 : 1) * (0.17 + Math.abs(twistDraw) * 0.25);
+  // The lengthwise bow (kelp-silhouette follow-up). The integrated
+  // calamity-bowl control caught what the cup and twist cannot fix: they
+  // roll the CROSS-SECTION, but the blade's spine is still a ruled line
+  // from root to tip, and at a grazing bearing the margin's projection is
+  // that line — a razor-straight silhouette across half the frame. The
+  // spine now arcs: a sub-wavelength sine along the length, in the
+  // VERTICAL only (the ruffle's own licence — the lane sweeps police the
+  // ground plane, and the canopy-mass floors sit metres below the wiggle).
+  // Ramped by `v` so the root stays welded to its stalk. Floored like the
+  // twist: a bow this term forgets to draw is the razor coming back.
+  const bowDraw = detail.signed(1);
+  const bow = (bowDraw < 0 ? -1 : 1) * (0.05 + Math.abs(bowDraw) * 0.04) * length;
+  const bowFreq = detail.range(0.5, 0.9);
+  const bowPhase = detail.range(0, Math.PI * 2);
+  // The margin swell: a second, much slower wave on the width, so the
+  // edge LINE breathes along the length instead of tapering linearly —
+  // the lanceolate outline's long straight run from widest point to tip
+  // is the other half of the razor read. Inward-only, like every term
+  // the plan-space fence sees.
+  const swell = detail.range(0.1, fine ? 0.24 : 0.16);
+  const swellFreq = detail.range(0.5, 0.9);
+  const swellPhase = detail.range(0, Math.PI * 2);
+  // How much of the ruffle the margins carry over the spine: scaled by
+  // |edge| and phase-split per side, so each margin undulates as its own
+  // line rather than the whole cross-section lifting as one — which is
+  // what kept the r3 edge ruled however hard the blade rippled.
+  const edgeRuffle = detail.range(fine ? 0.6 : 0.4, fine ? 1.1 : 0.8);
+  // The spine sway (r3) — the one the hanging ribbons needed. A crown
+  // ribbon falls near-vertically, so every VERTICAL term above runs
+  // parallel to its silhouette line and buys it nothing: the bowl's
+  // overhead ribbon kept its ruler edge through two rounds of vertical
+  // undulation. The spine must move LATERALLY — and there is a fenced-
+  // safe way to do it: blend each cross-section toward a swaying
+  // centreline, `across·(1−A) + A·halfWidth·sin(…)`. Every vertex stays
+  // inside the leaf's own width envelope by arithmetic (at the sway's
+  // peak one margin touches the envelope exactly while the other pulls
+  // in), so the plan-space fence holds by construction — the blade
+  // trades a fraction A of its width for a centreline that snakes.
+  const swayAmp = detail.range(0.16, fine ? 0.3 : 0.22);
+  const swayFreq = detail.range(0.6, 1.1);
+  const swayPhase = detail.range(0, Math.PI * 2);
 
   for (let i = 0; i < position.count; i++) {
     const v = position.getY(i);
     const edge = position.getX(i);
-    // The margin wave: inward-only serration, offset per side.
+    // The margin wave: inward-only serration, offset per side, times the
+    // slow swell above.
     const wave =
-      1 -
-      margin *
-        (0.5 + 0.5 * Math.sin(v * marginFreq * Math.PI * 2 + marginPhase + (edge < 0 ? 2.1 : 0)));
+      (1 -
+        margin *
+          (0.5 +
+            0.5 * Math.sin(v * marginFreq * Math.PI * 2 + marginPhase + (edge < 0 ? 2.1 : 0)))) *
+      (1 - swell * (0.5 + 0.5 * Math.sin(v * swellFreq * Math.PI * 2 + swellPhase)));
     // The tip eases in early (#17): at five rows the lanceolate point is
     // one long triangle from the second-to-last row's full width to a
     // needle — the "cut paper" tooth. Shedding a third of the width over
@@ -885,7 +929,12 @@ function shapeLeaf(
     const tipT = Math.min(1, Math.max(0, (v - 0.78) / 0.22));
     const tipSoft = 1 - 0.35 * tipT * tipT * (3 - 2 * tipT);
     const half = Math.min(outline(v, peak), outline(v)) * wave * tipSoft;
-    const across = edge * half * 0.5 * width;
+    // The spine sway blend — see the `swayAmp` note. `half` is 0 at the
+    // root and the tip, so the sway needs no ramp of its own: the
+    // centreline is pinned wherever the blade has no width to trade.
+    const across =
+      edge * half * 0.5 * width * (1 - swayAmp) +
+      swayAmp * half * 0.5 * width * Math.sin(v * swayFreq * Math.PI * 2 + swayPhase);
     // Out along the stalk's local +x, arcing over as it goes, with a shallow
     // cup across it so the leaf is never a flat card in the light.
     //
@@ -901,8 +950,24 @@ function shapeLeaf(
     // The ruffle rides the fall: an undulation growing toward the tip, in the
     // vertical only, which is what stops a metre of margin reading as a ruled
     // line without moving a single vertex in the plane the lane tests sweep.
+    // Three vertical terms now (kelp-silhouette follow-up), same licence:
+    // the whole-blade ruffle, the lengthwise bow arcing the spine itself,
+    // and the per-margin ruffle that lets each edge wave on its own phase.
+    // The ramp is √v, not v (r2): a linear ramp left the root HALF of a
+    // blade nearly flat, and on the calamity bowl's overhead pad — seen
+    // root-on, tip toward the frame's edge — that half was still a ruler
+    // line. √v is at full amplitude by mid-blade and still welds v=0 to
+    // the stalk.
+    const undulate = Math.sqrt(v);
     const fall =
-      -bent.drop * length + Math.sin(v * ruffleFreq * Math.PI * 2 + rufflePhase) * ruffle * v;
+      -bent.drop * length +
+      Math.sin(v * ruffleFreq * Math.PI * 2 + rufflePhase) * ruffle * undulate +
+      Math.sin(v * bowFreq * Math.PI * 2 + bowPhase) * bow * undulate +
+      Math.sin(v * ruffleFreq * Math.PI * 2 + rufflePhase + (edge < 0 ? 2.6 : 0.9)) *
+        ruffle *
+        edgeRuffle *
+        Math.abs(edge) *
+        undulate;
     // Parabolic, not |across|: same depth at the margins, no crease at
     // the midline — see the `cupBack` note. Two applications of the one
     // parabola (r2): along the growth axis it sweeps the margins back
