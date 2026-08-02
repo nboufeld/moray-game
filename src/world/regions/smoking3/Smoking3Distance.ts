@@ -175,6 +175,59 @@ export function buildSmoking3Distance(): { meshes: (Mesh | InstancedMesh)[] } {
     meshes.push(mesh);
   }
 
+  // ─── THE LAST LANTERNS (conviction wave, re-critique N6) ────────────────
+  // The ember-dawn terminus closed two-thirds empty: the dawn line and
+  // the fin tower could not carry the frame, and the seeded card bands
+  // above happen to leave the dawn sector bare at the authored pose.
+  // Three AUTHORED lantern silhouettes now stand inside the dawn's
+  // sector — nearer than the hills, dark against the rising light,
+  // their lit windows the last lights going out into morning. Authored
+  // stations, no stream consumed; one instanced draw, ~132 triangles.
+  {
+    const material = new MeshBasicMaterial({
+      color: new Color(0x635052),
+      fog: false,
+      side: DoubleSide,
+      toneMapped: true,
+      vertexColors: true,
+    });
+    cardMaterials.push({ material, fade: 0.36 });
+    // Round 3 (the r2 frame was byte-similar at the pose): the r2
+    // stations stood at radius 214–228 — INSIDE the region's 220 m
+    // disc, where the country's real floor runs at y ≈ 0 and a card
+    // whose foot is −26 is buried to its crown (the far lantern bands
+    // at 242–282 work precisely because they stand past the rim, over
+    // the fall). The towers now stand just past the rim, short of the
+    // first hill ring at 246, and their crowns rise to +14…+21 — above
+    // the kneeling hill line (~+4), dark against the dawn band's glow.
+    const stations = [
+      { off: -0.28, radius: 236, height: 44, girth: 2.4 },
+      { off: -0.1, radius: 244, height: 40, girth: 1.9 },
+      { off: 0.11, radius: 239, height: 47, girth: 2.15 },
+    ] as const;
+    const mesh = new InstancedMesh(lanternCardGeometry(), material, stations.length);
+    mesh.name = "vigil-last-lanterns";
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    const dummy = new Object3D();
+    const dawnAt = SMOKING3_SLOT.azimuth;
+    for (const [i, station] of stations.entries()) {
+      const theta = dawnAt + station.off;
+      dummy.position.set(
+        CENTER_X + Math.cos(theta) * station.radius,
+        FOOT + 2,
+        CENTER_Z + Math.sin(theta) * station.radius,
+      );
+      dummy.rotation.set(0, theta + 0.4 + i, 0.015 * (i - 1));
+      dummy.scale.set(station.girth, station.height / CARD_HEIGHT, station.girth);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+    meshes.push(mesh);
+  }
+
   // ─── THE EMBER DAWN ─────────────────────────────────────────────────────
   meshes.push(buildDawnBand());
 

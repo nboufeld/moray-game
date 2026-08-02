@@ -707,7 +707,15 @@ function buildMother(random: Random): {
       const t = s / 15;
       platePoints.push(new Vector2(Math.max(0.02, t * r), plateUnderY(t)));
     }
-    const plate = new LatheGeometry(platePoints, 22);
+    // Conviction wave (re-critique #5): the beat-repair pass gave the
+    // plates their rings, but 22 lathe segments left both rims plainly
+    // polygonal from the crown pose's metres — straight chords the eye
+    // counts. 56 segments put a chord every ~0.5 m at the widest rim
+    // (sub-pixel curvature at the pose), and a rim RUFFLE — a gentle
+    // scalloped undulation gated to the outer third — makes the margin
+    // read as living growth instead of a cut disc. Paid by the fill
+    // grit prefix trim beside it (the ledgered refund seat).
+    const plate = new LatheGeometry(platePoints, 56);
     const position = plate.attributes.position!;
     for (let i = 0; i < position.count; i++) {
       const x = position.getX(i);
@@ -727,10 +735,18 @@ function buildMother(random: Random): {
       // underside, so the rings catch the toon shade as well as paint.
       // #5: frequency 14 → 9 half-turns — at 14 the sixteen underside
       // stations still alias; at 9 each band owns ~3.5 rows and reads
-      // as a soft swell instead of noise.
+      // as a soft swell instead of noise. Conviction wave: amplitude
+      // 0.035 → 0.055 — the rings survived as paint but the crown
+      // pose's raking light still read the inner faces flat.
       const ripple =
-        position.getY(i) < -0.04 ? Math.sin(radial * Math.PI * 9) * 0.035 : 0;
-      position.setXYZ(i, x * lobe, position.getY(i) + warp + crownLift - ripple, z * lobe);
+        position.getY(i) < -0.04 ? Math.sin(radial * Math.PI * 9) * 0.055 : 0;
+      // The rim ruffle: 9 + tier scallops per turn (integer, so the
+      // lathe seam stays continuous), swelling from radius 0.62 out.
+      const ruffle =
+        Math.sin(angle * Math.PI * 2 * (9 + index)) *
+        0.11 *
+        smoothstep01((radial - 0.62) / 0.32);
+      position.setXYZ(i, x * lobe, position.getY(i) + warp + crownLift - ripple + ruffle, z * lobe);
     }
     position.needsUpdate = true;
     plate.computeVertexNormals();
@@ -758,10 +774,19 @@ function buildMother(random: Random): {
         const x = platePosition.getX(i);
         const z = platePosition.getZ(i);
         const radial = Math.min(1, Math.hypot(x, z) / (tier.radius * 1.2));
+        const spoke = Math.atan2(z, x);
         plateShade.copy(rose).lerp(cream, smoothstep01((radial - 0.78) / 0.22));
         const under = smoothstep01((-plateNormal.getY(i) - 0.1) / 0.4);
         if (under > 0) {
-          const ring = 0.5 + 0.5 * Math.sin(radial * Math.PI * 9);
+          // Conviction wave (#5): the rings wander with angle (real
+          // growth is never compass-true) and radial VEINS cross them
+          // at a whisper — the two structures together give the crown
+          // pose's flattest surface a drawing at every scale.
+          const ring =
+            0.5 +
+            0.5 * Math.sin(radial * Math.PI * 9 + Math.sin(spoke * 3 + index * 1.7) * 0.55);
+          const vein = 1 - 0.07 * (0.5 + 0.5 * Math.sin(spoke * 13 + index)) * under;
+          plateShade.multiplyScalar(vein);
           plateShade.lerp(roseDeepRing, under * (1 - ring) * 0.85);
           plateShade.multiplyScalar(1 - under * (1 - ring) * 0.16);
           // #5: the margins carry cream BELOW as well as above — from

@@ -327,6 +327,39 @@ function bakeVigilPaint(geometry: PlaneGeometry, contacts: readonly ContactPatch
       value += halo * 0.05 + vein * 0.22;
     }
 
+    // THE EMBERS THAT WALKED ON (conviction wave, re-critique N6):
+    // the ember-dawn terminus read two-thirds bare grey-pink slope —
+    // the Vent's warm court ends at 34 m and nothing led the eye from
+    // it to the dawn line. Three ember pools now dim out of the court
+    // toward the rising light — the region's own "dimming guide-line"
+    // idiom (the night-threshold road's move), the last hearths on the
+    // road into morning. Paint only: zero draws, zero triangles; every
+    // pool stands clear of the Morning Shadow rest (r 10 at 1642, 14).
+    // Round 3: the r2 pools (radii 2.8–4.4, off the sightline) read as
+    // nothing at the pose — a 3 m mark 50 m out on a grazing slope is
+    // a sliver. The chain now hugs the pose's own sight line (stand
+    // 1600,14 looking at 1660,−14) and the pools grow to read: nearest
+    // 6 m wide on the visible mound, each still clear of the Morning
+    // Shadow rest (1642,14 r10; nearest pool 25.1 m out).
+    for (const pool of [
+      { u: 1622, v: -4, radius: 6.0, heat: 0.55 },
+      { u: 1640, v: -11, radius: 4.8, heat: 0.38 },
+      { u: 1658, v: -19, radius: 3.6, heat: 0.24 },
+    ]) {
+      const dPool = Math.hypot(u - pool.u, v - pool.v);
+      if (dPool < pool.radius) {
+        const glow =
+          (1 - smoothstep01((dPool - pool.radius * 0.3) / (pool.radius * 0.7))) * pool.heat;
+        const mottle = smoothstep01(
+          (fbm(x * 0.6, z * 0.6, { seed: SEED ^ 0x6e2c, period: 13, octaves: 2 }) - 0.4) / 0.3,
+        );
+        r += glow * (0.5 + mottle * 0.5) * (AMBER.r * 0.85 + EMBER.r * 0.4);
+        g += glow * (0.5 + mottle * 0.5) * (AMBER.g * 0.5);
+        b -= glow * 0.1;
+        value += glow * 0.16;
+      }
+    }
+
     // Contact shade under everything that stands on the night floor.
     let shade = 1;
     for (const contact of contacts) {

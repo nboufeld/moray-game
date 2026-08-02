@@ -118,6 +118,37 @@ const WALL_FOOT = -52;
 const WALL_FOOT_TINT: readonly [number, number, number] = [0.4, 0.39, 0.58];
 const WALL_CREST_TINT: readonly [number, number, number] = [1.18, 1.12, 1.04];
 
+/**
+ * THE FALLEN COLOSSUS (conviction wave, critic #1 wall-face): the wall
+ * beat was cured of its artifacts but still read as empty water — C5's
+ * law says vastness reads through one large anchoring silhouette, and
+ * the Far Wall had none. This is the Drop Plains' own myth at titanic
+ * scale: a toppled megalith king lying along the wall face — the
+ * Fallen King's elder — sixty metres of crowned head, shoulder and
+ * long back, drawn A STEP DARKER than the wall curtains it lies in so
+ * the figure reads as a dark event on the lit cliff. Its whole crest
+ * stays under the dune lip (crown −4.2), so from inside blue-1 nothing
+ * breaches the steppe's horizon; it exists only for the beat that
+ * needed it — the look back across the void.
+ */
+const COLOSSUS_RADIUS = 164;
+/** Arc span (radians off the outbound azimuth). Round 2: the r1 figure
+ *  lay on the −v arc, which the wall-face camera's yaw puts at the far
+ *  RIGHT frame edge (verified by projecting the authored stand) — the
+ *  +v arc is the one that fills the frame's centre-left. Head at 0.14
+ *  (≈ 14° left of the beat's reticle at 41 m), feet trailing to 0.52. */
+const COLOSSUS_FROM = 0.14;
+const COLOSSUS_TO = 0.52;
+/** Round 2: a full step darker — the r1 ink sat inside the walls' own
+ *  value band and the figure vanished into the cliff it lay in. */
+const COLOSSUS_INK = new Color(0.33, 0.29, 0.5);
+/** Round 2: the figure's foot rises to −36 (the wall curtains own the
+ *  lower cliff) so the soft-grammar dissolve band tightens around the
+ *  authored silhouette instead of smearing it over a 47 m column. */
+const COLOSSUS_FOOT = -36;
+const COLOSSUS_FOOT_TINT: readonly [number, number, number] = [0.4, 0.4, 0.55];
+const COLOSSUS_CREST_TINT: readonly [number, number, number] = [0.86, 0.8, 0.95];
+
 const SEGMENTS = 220;
 
 /** The monolith cards' inks: a step deeper than the rings they pierce. */
@@ -272,6 +303,28 @@ export function buildBlue1Distance(): { meshes: (Mesh | InstancedMesh)[] } {
     mesh.receiveShadow = false;
     mesh.name = `blue1-wall-face-${index}`;
     mesh.renderOrder = -11 - index;
+    meshes.push(mesh);
+  }
+
+  // ── THE FALLEN COLOSSUS: the wall-face beat's anchoring event. ──
+  {
+    const material = softCurtainMaterial({ color: 0x3a3560 });
+    applyCurtainDissolve(material, {
+      nearFrom: 12,
+      nearTo: 26,
+      cacheKey: "blue1-colossus-dissolve",
+    });
+    entries.push({ material, ink: COLOSSUS_INK });
+    const mesh = new Mesh(
+      colossusCurtain(SEEDS.regionBlue1 ^ 0xd7c1, gapOutward),
+      material,
+    );
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    mesh.name = "blue1-fallen-colossus";
+    // Drawn after both wall faces so the dark figure blends over the
+    // lit cliff it lies in (depth writes are off on the whole family).
+    mesh.renderOrder = -10;
     meshes.push(mesh);
   }
 
@@ -577,6 +630,80 @@ function wallFaceCurtain(wall: WallFace, noiseSeed: number, gapOutward: number):
       alpha: endAlpha(end),
       tints: [WALL_FOOT_TINT, shoulder, WALL_CREST_TINT],
     });
+  }
+
+  return builder.build();
+}
+
+/**
+ * The Fallen Colossus's silhouette: an authored profile — broken crown,
+ * neck, shoulder, the long back, a knee, the feet trailing out — laid
+ * along the wall face as a curtain in the soft grammar. The masses are
+ * gaussian bells combined by max (sum would blur them into one lump);
+ * a small fbm term roughens every line so nothing runs ruler-straight.
+ */
+function colossusCurtain(noiseSeed: number, gapOutward: number): BufferGeometry {
+  const builder = new SoftRingBuilder();
+  const count = 96;
+  const span = COLOSSUS_TO - COLOSSUS_FROM;
+  const bell = (s: number, at: number, width: number): number => {
+    const d = (s - at) / width;
+    return Math.exp(-d * d);
+  };
+  /** The figure's baseline in the face, well under the wall crest. */
+  const base = -15.5;
+
+  for (let i = 0; i <= count; i++) {
+    // s: 0 at the head (corridor end), 1 at the feet (far end).
+    const s = i / count;
+    const theta = gapOutward + COLOSSUS_FROM + s * span;
+    const x = CENTER_X + Math.cos(theta) * COLOSSUS_RADIUS;
+    const z = CENTER_Z + Math.sin(theta) * COLOSSUS_RADIUS;
+
+    const masses = Math.max(
+      bell(s, 0.09, 0.05) * 13.4, // the crown's fore peak
+      bell(s, 0.19, 0.045) * 11.2, // the crown's aft peak (broken)
+      bell(s, 0.37, 0.08) * 9.6, // the shoulder
+      bell(s, 0.58, 0.15) * 6.8, // the long back
+      bell(s, 0.78, 0.06) * 5.0, // the knee
+      bell(s, 0.92, 0.05) * 2.6, // the feet, trailing out
+    );
+    // Round 3: the r2 figure was IN frame but read as one draped mass —
+    // adjacent bells combined by max leave shallow saddles, and a
+    // silhouette's legibility lives in its NOTCHES. Authored notches now
+    // carve the profile down between the masses: the neck behind the
+    // crown, the hollow behind the shoulder, the waist before the knee,
+    // the ankle. The eye gets a figure, not a curtain.
+    const notch = Math.max(
+      bell(s, 0.28, 0.045) * 10.5, // the neck
+      bell(s, 0.485, 0.05) * 6.2, // behind the shoulder
+      bell(s, 0.7, 0.045) * 5.0, // the waist
+      bell(s, 0.855, 0.04) * 3.4, // the ankle
+    );
+    const rough =
+      (fbm(s * 3.1, 0.37, { seed: noiseSeed, period: 3, octaves: 2 }) - 0.5) * 1.1;
+    const end = smoothstep01(s / 0.05) * smoothstep01((1 - s) / 0.07);
+    const crest = base + (Math.max(0, masses - notch) + rough) * end;
+
+    // The figure's own value walk: the crown and shoulder catch a
+    // little of the crest light, the underbody sinks toward the foot.
+    const runnel =
+      fbm(s * 5.3, 0.61, { seed: noiseSeed ^ 0x44c2, period: 5, octaves: 2 }) - 0.5;
+    const shoulder: [number, number, number] = [
+      (COLOSSUS_FOOT_TINT[0] + COLOSSUS_CREST_TINT[0]) * 0.5 * (1 + runnel * 0.3),
+      (COLOSSUS_FOOT_TINT[1] + COLOSSUS_CREST_TINT[1]) * 0.5 * (1 + runnel * 0.26),
+      (COLOSSUS_FOOT_TINT[2] + COLOSSUS_CREST_TINT[2]) * 0.5 * (1 + runnel * 0.2),
+    ];
+    builder.column(
+      x,
+      z,
+      COLOSSUS_FOOT,
+      COLOSSUS_FOOT + Math.max(2, crest - COLOSSUS_FOOT) * end,
+      {
+        alpha: endAlpha(end),
+        tints: [COLOSSUS_FOOT_TINT, shoulder, COLOSSUS_CREST_TINT],
+      },
+    );
   }
 
   return builder.build();

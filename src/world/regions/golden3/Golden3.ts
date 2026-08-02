@@ -12,7 +12,7 @@ import { buildGolden3Light } from "./Golden3Light";
 import { buildPans } from "./Golden3Pans";
 import { PILGRIM_SPECIES_ID, buildPilgrim } from "./Golden3Pilgrim";
 import { buildGolden3Roads } from "./Golden3Roads";
-import { buildGolden3Rocks } from "./Golden3Rocks";
+import { buildGolden3Rocks, buildLastPilgrims } from "./Golden3Rocks";
 import {
   CENTER_X,
   CENTER_Z,
@@ -256,10 +256,14 @@ export const GOLDEN_3: RegionDef = {
     // ROADS-AND-AXES (critic #2/#6/#10): fresh substreams, appended after
     // every existing module — the reroll fence holds by construction.
     const roads = buildGolden3Roads();
+    // CONVICTION (re-critique #14): the Last Pilgrims past the Sun's
+    // Door — fresh stream, appended after everything above.
+    const lastPilgrims = buildLastPilgrims();
     const ground = buildGolden3Ground([
       ...rocks.contacts,
       ...door.contacts,
       ...garden.contacts,
+      ...lastPilgrims.contacts,
     ]);
 
     for (const child of [
@@ -276,6 +280,7 @@ export const GOLDEN_3: RegionDef = {
       ...distance.meshes,
       ...cover.groups,
       ...roads.map((build) => build.group),
+      ...lastPilgrims.meshes,
     ]) {
       group.add(child);
     }
@@ -286,6 +291,7 @@ export const GOLDEN_3: RegionDef = {
       ...garden.colliders,
       ...buildSeals(),
       ...roads.flatMap((build) => [...build.colliders]),
+      ...lastPilgrims.colliders,
     ];
 
     return {
