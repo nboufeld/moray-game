@@ -232,7 +232,15 @@ export const CALAMITY_1: RegionDef = {
     // near-white milk washed every subject into a dark cut-out). Red cut
     // hardest so the haze goes grey-cool, never electric; density keeps
     // the devastation's weather but lets the vistas breathe to ~65 m.
-    fog: { colorScale: [0.66, 0.75, 0.82], densityGain: 0.0035, backdropFade: 0.35 },
+    // Wave-close (hard-geometry residual, calamity-08): the straight
+    // two-tone division at the shelf horizon was the fogged shelf
+    // (fog-saturated ground, ~12% brighter) meeting the backdrop's dark
+    // ash band (dimmed by the fade) on the flat world's horizon line —
+    // a VALUE mismatch, not geometry. Harmony is met from both sides:
+    // the ash haze a step darker, the backdrop dimmed a step less, so
+    // shelf and painting arrive at the horizon at one value and the
+    // line dissolves. Register held: grey-cool, red still cut hardest.
+    fog: { colorScale: [0.6, 0.64, 0.74], densityGain: 0.0035, backdropFade: 0.2 },
     light: { sun: 0.16, hemisphere: 0.22, ambient: 0.08 },
   },
   // The mood fades out above 14 m: climbing the crater's open column back
