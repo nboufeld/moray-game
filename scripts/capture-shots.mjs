@@ -202,7 +202,17 @@ await page.goto(`${BASE_URL}/?reset=1`, { waitUntil: "load" });
 await page.waitForFunction(() => "__reef" in window);
 
 const prefix = stamp();
+// `SHOT_ONLY=Z-kelp-canopy,A-opening-hero` narrows a run to the named poses —
+// the tierb script's WING_ONLY convention, for re-shooting one pose without
+// paying for the whole canonical set.
+const shotOnly = (process.env.SHOT_ONLY ?? "")
+  .split(",")
+  .map((name) => name.trim())
+  .filter(Boolean);
 for (const shot of SHOTS) {
+  if (shotOnly.length > 0 && !shotOnly.includes(shot.name)) {
+    continue;
+  }
   if (shot.seedDiscoveries) {
     // The sanctuary is empty until morays have been found, so plant a save.
     await page.evaluate(

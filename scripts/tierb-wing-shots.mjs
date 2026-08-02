@@ -33,11 +33,20 @@ const NAV_TIMEOUT_MS = 240_000;
  */
 const WING_POSES = [
   // r2: across 0.07 — the axis stand is the den arch's own lens.
-  ["nursery-shallows", 1.71, 3.4, -0.18, 4, 0.07, 36.5, 2.6, -0.12, 0],
+  // wings-polish: across 0.095, y 3.6, pitch −0.2 — the critic called the
+  // old frame compositionally CRAMPED (the den arch owned two thirds of
+  // it). r1's 0.115 overshot: the arch turned its back and the moray
+  // cropped at the frame edge; 0.095 keeps the arch a left-third
+  // repoussoir with its mouth readable and the terrace breathing right.
+  ["nursery-shallows", 1.71, 3.6, -0.2, 4, 0.085, 36.5, 2.6, -0.12, 0],
   // r2: pitch −0.32; r3: y −6.5, pitch −0.5 — the wave8 stand looks
   // level and the floor at −10 never enters the frame; the garden's T1
   // is judged on its floor.
-  ["lumen-garden", 2.07, -6.5, -0.5, 5, 0, 42, 2.8, -0.3, 0],
+  // wings-polish r3: y −6.0, pitch −0.38 — the tierb pose stared at the
+  // heart's deliberately-bare floor; a hair higher and shallower holds
+  // the floor constellations in the lower two thirds AND the midwater
+  // bulbs and wall beds in the top — the premise, in one frame.
+  ["lumen-garden", 2.07, -6.0, -0.38, 5, 0, 42, 2.8, -0.3, 0],
   ["wreck-meadow", 2.43, -2.2, -0.12, 4, 0, 36.5, 3.0, -0.2, 0],
   ["moonlit-lagoon", 3.15, -0.6, -0.1, 5, 0, 36.5, 1.4, -0.06, 0],
   ["glass-cove", 3.51, -0.3, -0.22, 4, 0, 36.5, 3.0, -0.2, 0],

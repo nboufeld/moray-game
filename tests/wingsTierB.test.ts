@@ -61,6 +61,21 @@ const MAX_UPLIFT_DRAWS = 6;
 const MAX_UPLIFT_TRIS = 20_000;
 
 /**
+ * The critic's-wave polish (wings-polish ledger): two wings carry a
+ * second Tier B allowance ON TOP of the Batch 4 uplift they already
+ * ship, per the punch-list brief (≤ +6 draws / ≤ 20k tris measured, on
+ * top of current numbers — see docs/region-ledger/wings-polish.md):
+ * lumen-garden's glow constellations + door motes (#8, +3 draws), and
+ * current-run's far-end composed close (+4 draws). Every other wing
+ * keeps the plain Batch 4 ceiling. The program envelope below still
+ * gates the sum, so the polish cannot quietly spend past MASTER R2.
+ */
+const POLISH_DRAW_ALLOWANCE: Record<string, number> = {
+  "lumen-garden": 3,
+  "current-run": 4,
+};
+
+/**
  * Pre-uplift sentinels, printed from the registry at commit 50504b4
  * (HEAD of the merged program tree, before any Tier B code existed):
  * the first contact patch and the first drawn position of the first
@@ -288,7 +303,8 @@ describe("tier B: R2's ceilings, measured", () => {
       const tris = pieces.reduce((sum, piece) => sum + trianglesOf(piece), 0);
       console.info(`[tierb-budget] ${id}: +${draws} draws, +${Math.round(tris)} tris (veil included)`);
       expect(draws, `${id} uplift draws`).toBeGreaterThan(1); // T1 + a veil both landed
-      expect(draws, `${id} uplift draws`).toBeLessThanOrEqual(MAX_UPLIFT_DRAWS);
+      const drawCeiling = MAX_UPLIFT_DRAWS + (POLISH_DRAW_ALLOWANCE[id] ?? 0);
+      expect(draws, `${id} uplift draws`).toBeLessThanOrEqual(drawCeiling);
       expect(tris, `${id} uplift triangles`).toBeLessThanOrEqual(MAX_UPLIFT_TRIS);
       totalDraws += draws;
       totalTris += tris;
@@ -407,9 +423,18 @@ describe("tier B: containment and the wave-8 laws, re-asserted", () => {
     }
   });
 
-  it("keeps the current-run channel (≥ 1.9 m) against the combed turf", () => {
+  it("keeps the current-run channel (≥ 1.9 m) against the combed turf and the close's solids", () => {
     const def = wingById("current-run");
     for (const spot of t1Positions(build("current-run"))) {
+      // The far-end close's recession planes and light column are
+      // intangible light PAST the run's end, and the composition needs
+      // them ON the axis — the wings-polish ledger's stated amendment.
+      // The exemption carries its own radial fence so it can never
+      // quietly swallow the channel the law protects.
+      if (spot.from.startsWith("w3-run-close-")) {
+        expect(Math.hypot(spot.x, spot.z), `${spot.from} stays past the run`).toBeGreaterThan(46.6);
+        continue;
+      }
       expect(
         Math.abs(lateralOf(def, spot.x, spot.z)),
         `${spot.from} channel`,

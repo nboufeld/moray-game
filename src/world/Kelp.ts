@@ -844,7 +844,13 @@ function shapeLeaf(
   const ruffle = detail.range(fine ? 0.02 : 0.012, fine ? 0.04 : 0.022) * length;
   const ruffleFreq = fine ? detail.range(1.6, 2.7) : detail.range(1.0, 1.8);
   const rufflePhase = detail.range(0, Math.PI * 2);
-  const cupBack = detail.range(0.1225, 0.18);
+  // 0.1225–0.18 → 0.07–0.105 (the critic's-wave softening, #17): the cup
+  // is a V-fold down the midline, and at the old depth its ~17° crease
+  // regularly straddled a toon band boundary — one half of a blade lit,
+  // the other dark, the "faceted/graphic" hub read. Halved, both halves
+  // land in one band far more often and the blade still never reads as
+  // a flat card. Same draws from the detail hash, so no stream moves.
+  const cupBack = detail.range(0.07, 0.105);
 
   for (let i = 0; i < position.count; i++) {
     const v = position.getY(i);
@@ -854,7 +860,14 @@ function shapeLeaf(
       1 -
       margin *
         (0.5 + 0.5 * Math.sin(v * marginFreq * Math.PI * 2 + marginPhase + (edge < 0 ? 2.1 : 0)));
-    const half = Math.min(outline(v, peak), outline(v)) * wave;
+    // The tip eases in early (#17): at five rows the lanceolate point is
+    // one long triangle from the second-to-last row's full width to a
+    // needle — the "cut paper" tooth. Shedding a third of the width over
+    // the last fifth blunts it into a leaf's point. Inward-only, so the
+    // lane-sweep fence holds by construction.
+    const tipT = Math.min(1, Math.max(0, (v - 0.78) / 0.22));
+    const tipSoft = 1 - 0.35 * tipT * tipT * (3 - 2 * tipT);
+    const half = Math.min(outline(v, peak), outline(v)) * wave * tipSoft;
     const across = edge * half * 0.5 * width;
     // Out along the stalk's local +x, arcing over as it goes, with a shallow
     // cup across it so the leaf is never a flat card in the light.

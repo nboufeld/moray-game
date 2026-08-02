@@ -21,7 +21,7 @@ import { buildColorTexture } from "../../../rendering/ProceduralTexture";
 import { smoothNormals } from "../../../rendering/SmoothNormals";
 import { createToonMaterial } from "../../../rendering/ToonShading";
 import { Random, SEEDS } from "../../../util/Random";
-import { buildCarpetField } from "../../regions/kit/CarpetField";
+import { buildCarpetField, type CarpetFieldBuild } from "../../regions/kit/CarpetField";
 import { seabedHeight, type ContactPatch } from "../../Seabed";
 import { angleBetween, wedgeHalfAt } from "../WingGeometry";
 import type { WingDef, WingFlora } from "../WingTypes";
@@ -205,9 +205,12 @@ export function buildLumenGardenFlora(def: WingDef): WingFlora {
   // ── Batch 4: the Tier B uplift (MASTER §4 closure, R2 ≤ +6 / ≤ 20k) ──
   // The T1 statement in the garden's own dark: an ink-violet frond carpet
   // over the night floor, tips leaning toward the beds' slate-cyan — a
-  // painted echo of the living light, carrying none of its own (no
-  // emissive, no additive; the garden's sparse violet gloom is the
-  // point). Fresh `^` substream, kit-private Random, appended after every
+  // painted echo of the living light. The critic's-wave re-pass (#8)
+  // retired "carrying none of its own": under this wing's mood the
+  // unlit carpet measured as murk, so it now takes the verdant-2
+  // dusk-lift — an emissive floor on the wing's own materials,
+  // region-side, the kit staying palette-pure (the Blue3Cover device).
+  // Fresh `^` substream, kit-private Random, appended after every
   // wave-8 draw; the heart law (0.065 rad, r 39–45) is held at 0.075 in
   // the gate below and re-asserted in tests/wingsTierB.test.ts.
   const uplift = new Group();
@@ -236,22 +239,99 @@ export function buildLumenGardenFlora(def: WingDef): WingFlora {
     size: [0.3, 0.55],
     swayAmp: 0.02,
   });
+  // r2: 0x2c4256 @ 0.34 still measured as murk from the interior stand —
+  // the mood eats two thirds of it. Slate-cyan a step brighter.
+  duskLift(nightFronds, 0x36506a, 0.5);
   uplift.add(nightFronds.group);
+
+  // ── The critic's-wave re-pass (#8): the glow massed into constellations ──
+  // The interior stand looks down the descent lane at the floor band
+  // r ≈ 43–50, which the wave-8 beds deliberately avoid (they hug the
+  // walls) — so the premise read as "three glow dots in murk". Authored
+  // constellations now string through exactly the band the frame holds,
+  // built with the WING'S OWN bed recipe (the glowColony kit's bud+halo
+  // discipline at the garden's proven brightness: apex-gradient domes
+  // whose emissive wears the tint, halos hung just above the tips).
+  // r1 used the kit itself with flank strings at r 40–44 — measured
+  // invisible: the stand is AT r 42, so anything beside it is out of
+  // frame, and the kit's 0.2 m halos vanish under this wing's fog.
+  // Every position keeps the heart law by construction — nothing inside
+  // 0.064 rad for r 39–45, scatter counted — and the descent lane's
+  // near stretch stays bare. Fresh `^ 0xb40a` substream; two draws.
+  const axisX = Math.cos(def.azimuth);
+  const axisZ = Math.sin(def.azimuth);
+  const perpX = -axisZ;
+  const perpZ = axisX;
+  /** [r, lateral] anchors: the visible band, both flanks of the far lane. */
+  const CONSTELLATION_ANCHORS = [
+    // The near-axis run past the heart's far rim (r − scatter > 45).
+    [45.8, 0.9],
+    [46.4, -1.1],
+    [47.1, 1.6],
+    [47.9, -0.8],
+    [48.5, 1.0],
+    [46.8, 2.4],
+    [47.5, -2.3],
+    // Up the end wall, so the glow climbs into the frame's midline.
+    [48.9, -1.7],
+    [49.2, 1.9],
+    // The in-band flanks, ≥ 0.064 rad off the axis with scatter counted.
+    [43.6, -4.4],
+    [44.6, 4.5],
+    [42.8, 4.2],
+    [41.9, -4.6],
+    // The gate-side pair, for the diver coming down the lane.
+    [37.1, -2.0],
+    [37.9, 1.9],
+  ] as const;
+  const constellationRandom = new Random((SEEDS.wingLumenGarden ^ 0xb40a) >>> 0);
+  const constellationDomes: GlowDome[] = [];
+  for (const [i, [r, lateral]] of CONSTELLATION_ANCHORS.entries()) {
+    const family = i % 4 === 3 ? INDIGO_FAMILY : CYAN_FAMILY;
+    const buds = 5 + Math.floor(constellationRandom.next() * 3);
+    for (let b = 0; b < buds; b++) {
+      const around = constellationRandom.range(0, Math.PI * 2);
+      const spread = 0.5 * Math.sqrt(constellationRandom.next());
+      const x = axisX * r + perpX * lateral + Math.cos(around) * spread;
+      const z = axisZ * r + perpZ * lateral + Math.sin(around) * spread;
+      constellationDomes.push({
+        x,
+        z,
+        scaleXZ: constellationRandom.range(0.6, 1.35),
+        scaleY: constellationRandom.range(0.6, 1.05),
+        yaw: constellationRandom.range(0, Math.PI * 2),
+        hex: family[b % family.length]!,
+        value: constellationRandom.range(0.8, 1.2),
+      });
+    }
+  }
+  const constellationBeds = buildDomes(constellationDomes);
+  constellationBeds.name = "lumen-constellation-beds";
+  const constellationHalos = buildHalos(constellationDomes);
+  constellationHalos.name = "lumen-constellation-halos";
+  uplift.add(constellationBeds);
+  uplift.add(constellationHalos);
   group.add(uplift);
 
-  // The doorway: a deep indigo-violet veil, planes only — the night
-  // promised from the bowl. No column and no motes: the dark registers
-  // earn their darkness, and the garden's light belongs to its beds.
-  // r3: the r2 door frame showed the saddle crest hiding most of the
-  // veil — the base rises a metre and the planes grow so their skylines
-  // crest over the sill from the bowl stand. Radial extent unchanged:
-  // every vertex stays short of the jelly's heart (r < 39).
+  // The doorway: a deep indigo-violet veil — the night promised from the
+  // bowl. The critic's-wave re-pass (#8) re-proportioned it: the tierb-r3
+  // "soft shaft" (w 2.0 × h 5.2) measured as a dark VERTICAL BAND from
+  // the door stand — a plane a third as wide as it is tall, towering
+  // over the saddle against the bright backdrop, reads as an artifact,
+  // not a doorway. Wider than tall now (w 2.15 × h 2.6), the planes
+  // stack as a dusk INSIDE the notch instead of a stripe above it; and
+  // the no-motes ruling is retired — a thin drift of dim cyan motes over
+  // the sill is the one mark that says "bioluminescent night" from the
+  // bowl, at a fraction of the interior's own glow. Radial extent still
+  // short of the jelly's heart: far plane centre r 31 + 2.15·3.6 = 38.74,
+  // corner vertices r ≤ 38.8 < 39 (tests/wingsTierB.test.ts sweeps it).
   const veil = mountGateVeil(def, {
     doorR: 31,
-    width: 2.0,
-    height: 5.2,
-    sillLift: -0.6,
+    width: 2.15,
+    height: 2.6,
+    sillLift: -0.2,
     palette: [0x241a30, 0x3a2c4c, 0x554468],
+    particulate: { tint: 0x8fd4e8, count: 40 },
   });
   group.add(veil.group);
 
@@ -270,6 +350,24 @@ export function buildLumenGardenFlora(def: WingDef): WingFlora {
       veil.update(dt, reducedMotion);
     },
   };
+}
+
+/**
+ * The verdant-2 dusk-lift, wing-side (the Blue3Cover device): an emissive
+ * floor on the wing's OWN materials so silhouettes exist under a mood
+ * that takes nearly all of the rig away. The kit stays palette-pure —
+ * `createToonMaterial` mints per-build materials, so nothing leaks.
+ */
+function duskLift(build: CarpetFieldBuild, hex: number, intensity: number): void {
+  build.group.traverse((node) => {
+    const material = (
+      node as { material?: { emissive?: { setHex(h: number): void }; emissiveIntensity?: number } }
+    ).material;
+    if (material?.emissive) {
+      material.emissive.setHex(hex);
+      material.emissiveIntensity = intensity;
+    }
+  });
 }
 
 /** The angular fence at a radius: the heart's corridor, then the edge. */
@@ -407,7 +505,10 @@ function buildHalos(domes: readonly GlowDome[]): Points {
   geometry.computeBoundingSphere();
 
   const material = new PointsMaterial({
-    size: 0.32,
+    // 0.32 → 0.5 (#8): at the interior stand's 5–10 m a 0.32 m halo is a
+    // few pixels — the "glow dot" read. Opacity holds the cap; size is
+    // what makes a bud read as a LAMP in its own pool of light.
+    size: 0.5,
     map: haloSprite(),
     vertexColors: true,
     sizeAttenuation: true,
@@ -482,7 +583,10 @@ function buildStrands(
     side: DoubleSide,
     vertexColors: true,
     emissive: 0x3a6a5a,
-    emissiveIntensity: 0.12,
+    // 0.12 → 0.3 (the critic's-wave dusk lift, #8, r2): at 0.12 the
+    // strands measured as near-black quills — the ghost-kelp rule,
+    // re-earned; 0.24 was still a whisper under this wing's mood.
+    emissiveIntensity: 0.3,
   });
   material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
     injectWingSway(shader, sway, wind, DRIFT_X, DRIFT_Z);
@@ -507,11 +611,14 @@ function buildBulbs(
   const parts: BufferGeometry[] = [];
   const shade = new Color();
   for (const strand of strands) {
-    const geometry = new IcosahedronGeometry(0.085, 1);
+    // 0.085 → 0.115 (#8 r2): the lanterns are the premise's brightest
+    // word and at 0.085 m they read as two pixels from the stand. Same
+    // topology, no stream touched.
+    const geometry = new IcosahedronGeometry(0.115, 1);
     const position = geometry.attributes.position!;
     const colors = new Float32Array(position.count * 3);
     for (let i = 0; i < position.count; i++) {
-      const t = Math.min(1, Math.max(0, position.getY(i) / 0.085 * 0.5 + 0.5));
+      const t = Math.min(1, Math.max(0, position.getY(i) / 0.115 * 0.5 + 0.5));
       const value = (0.55 + 0.45 * t) * strand.value;
       shade.setHex(strand.hex).multiplyScalar(value);
       colors[i * 3] = shade.r;
@@ -608,7 +715,8 @@ function buildMotes(
   geometry.computeBoundingSphere();
 
   const material = new PointsMaterial({
-    size: 0.09,
+    // 0.09 → 0.11 (#8 r2): a breath more presence for the constellations.
+    size: 0.11,
     map: moteSprite(),
     vertexColors: true,
     sizeAttenuation: true,

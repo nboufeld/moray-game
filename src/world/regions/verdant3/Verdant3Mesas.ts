@@ -94,8 +94,14 @@ function mesaRadius(spec: MesaSpec, t: number, log = false): number {
   }
   let r = foot * (0.5 + 0.5 * Math.pow(1 - t, 1.7));
   r += foot * 0.05 * Math.sin(t * Math.PI);
-  // The crown flare: the garden lip the drapes hang from.
-  r += foot * 0.32 * smoothstep01((t - 0.8) / 0.13) * (1 - smoothstep01((t - 0.955) / 0.045));
+  // The crown flare: the garden lip the drapes hang from. The fade
+  // window widened (0.955/0.045 → 0.93/0.07) in the critic's-wave
+  // softening pass (#17): the old window held the flare at ~0.28·foot
+  // one ring below the cap and then cliffed to 0.55·foot — a hard
+  // polygonal under-cut lip that read faceted from every canopy pose.
+  // The wider fade sheds the flare over the last three rings instead —
+  // a rounded shoulder, same rings, same triangles.
+  r += foot * 0.32 * smoothstep01((t - 0.8) / 0.13) * (1 - smoothstep01((t - 0.93) / 0.07));
   if (t >= 1) {
     r = spec.hollow ? 2.4 : foot * 0.55;
   }
@@ -131,10 +137,17 @@ function mesaGeometry(spec: MesaSpec, mouthAngle: number, log = false): BufferGe
       const a = (s / SEGMENTS) * Math.PI * 2;
       const nx = Math.cos(a);
       const nz = Math.sin(a);
+      // The rough jitter calms toward the crown (#17, the critic's-wave
+      // softening): ±16% of radius on the shaft is stone tooth; the same
+      // jitter on the flare lip and cap rim ricocheted ring to ring and
+      // read as jagged graphic edges against the sky in every canopy
+      // pose. Damped to ~±6% past t 0.78 — profile easing, no new
+      // vertices, and the shaft below is untouched to the bit.
+      const roughAmp = 0.32 * (1 - 0.62 * smoothstep01((t - 0.78) / 0.14));
       const rough =
         1 +
         (fbm(nx * 1.3 + 5, nz * 1.3 + t * 7, { seed: noiseSeed, period: 5, octaves: 2 }) - 0.5) *
-          0.32;
+          roughAmp;
       const r = base * rough;
       positions.push(cx + nx * r, y, cz + nz * r);
 
