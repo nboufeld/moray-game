@@ -3,6 +3,7 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
+  DoubleSide,
   Group,
   IcosahedronGeometry,
   InstancedMesh,
@@ -53,6 +54,18 @@ const KOI_BAND = MOONLIT_KOI_CIRCLE;
 
 /** Where the pool of moonlight lies: under the koi's circle, on the axis. */
 const MOON_POOL = { r: 40, radius: 2.3, opacity: 0.2 } as const;
+
+/**
+ * The pool DECAL's own reach and strength (edges-fix #7). The re-critic's
+ * frame shows the interior stand reading no pool at all — 2.3 m at 0.2
+ * additive is sub-threshold under the night mood at four metres'
+ * distance. The decal grows and brightens; `MOON_POOL.radius` itself is
+ * untouched because the moon-grass gate is measured from it, and moving
+ * that gate would re-place every blade the Tier B probe pins. Light
+ * spilling over the grass fringe is what a pool of light does anyway.
+ */
+const POOL_GLOW_RADIUS = 3.4;
+const POOL_GLOW_OPACITY = 0.34;
 
 /** Silver-green tufts, two drifts — pale, never white. */
 const TUFT_PALETTE = {
@@ -204,6 +217,18 @@ export function buildMoonlitLagoonFlora(def: WingDef): WingFlora {
     swayAmp: 0.015,
   });
   uplift.add(moonGrass.group);
+
+  // ── edges-fix #7: the luminous brim. ──
+  // The re-critic's residual: the far crest against the backdrop is "one
+  // razor-straight full-width line", and the water band above it reads
+  // as sky rather than as the lagoon's own water. The wing's geometry is
+  // frozen, so the line is broken with LIGHT instead: a soft silver glow
+  // hugging the crest silhouette, brightest exactly on the rim line and
+  // dissolved both ways — the moonlit water standing luminous at its own
+  // brim, which is the night register's answer to a grass fringe. One
+  // draw, no stream consumed (the swell along it is direction-keyed
+  // noise), every vertex inside the wedge and far outside the koi band.
+  uplift.add(buildBrimGlow(def));
   group.add(uplift);
 
   // The doorway: a violet-silver gauze hung NARROW — two planes only,
@@ -238,6 +263,87 @@ export function buildMoonlitLagoonFlora(def: WingDef): WingFlora {
       veil.update(dt, reducedMotion);
     },
   };
+}
+
+/**
+ * The brim glow (edges-fix #7): one arc of soft additive silver hugging
+ * the far crest, peak alpha on the rim line itself, dissolved upward
+ * into the water band and downward into the crater wall — plus a slow
+ * swell along its run so the brim breathes instead of ruling a line.
+ */
+function buildBrimGlow(def: WingDef): Mesh {
+  const columns = 28;
+  const r = 49.4;
+  /** Lift over the sampled crest → alpha; the rim row carries the peak. */
+  const rows: readonly (readonly [number, number])[] = [
+    [-1.1, 0],
+    [0.05, 0.5],
+    [1.3, 0.2],
+    [3.0, 0],
+  ];
+
+  const positions = new Float32Array((columns + 1) * rows.length * 3);
+  const colors = new Float32Array((columns + 1) * rows.length * 4);
+  const indices: number[] = [];
+  for (let c = 0; c <= columns; c++) {
+    const t = c / columns;
+    const half = wedgeHalfAt(def, r) - 0.012;
+    const theta = def.azimuth + (t * 2 - 1) * half;
+    const dx = Math.cos(theta);
+    const dz = Math.sin(theta);
+    // The crest the glow hugs: the highest ground across the rim band.
+    let crest = -Infinity;
+    for (const sample of [48.5, 50, 51.5]) {
+      crest = Math.max(crest, seabedHeight(dx * sample, dz * sample));
+    }
+    const swell =
+      fbm(t * 4 + 2, 0.37, { seed: SEEDS.wingMoonlitLagoon ^ 0xb70e, period: 3, octaves: 2 }) -
+      0.5;
+    // The cut ends dissolve into the walls, never onto them.
+    const endEase = smooth01(t / 0.12) * smooth01((1 - t) / 0.12);
+    for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+      const [lift, alpha] = rows[rowIndex]!;
+      const vertex = c * rows.length + rowIndex;
+      positions[vertex * 3] = dx * r;
+      positions[vertex * 3 + 1] = crest + lift * (0.9 + swell * 0.5);
+      positions[vertex * 3 + 2] = dz * r;
+      colors[vertex * 4] = 1;
+      colors[vertex * 4 + 1] = 1;
+      colors[vertex * 4 + 2] = 1;
+      colors[vertex * 4 + 3] = alpha * (0.85 + swell * 0.5) * endEase;
+    }
+    if (c > 0) {
+      for (let rowIndex = 0; rowIndex < rows.length - 1; rowIndex++) {
+        const a = (c - 1) * rows.length + rowIndex;
+        const b = c * rows.length + rowIndex;
+        indices.push(a, a + 1, b, a + 1, b + 1, b);
+      }
+    }
+  }
+
+  const geometry = new BufferGeometry();
+  geometry.setAttribute("position", new BufferAttribute(positions, 3));
+  geometry.setAttribute("color", new BufferAttribute(colors, 4));
+  geometry.setIndex(indices);
+  geometry.computeBoundingSphere();
+
+  const mesh = new Mesh(
+    geometry,
+    new MeshBasicMaterial({
+      color: 0xbfd0f2,
+      vertexColors: true,
+      transparent: true,
+      blending: AdditiveBlending,
+      depthWrite: false,
+      side: DoubleSide,
+      fog: false,
+    }),
+  );
+  mesh.name = "moonlit-brim-glow";
+  mesh.renderOrder = 1;
+  mesh.castShadow = false;
+  mesh.receiveShadow = false;
+  return mesh;
 }
 
 /** Water-worn: low gentle noise, because the lagoon is where nothing is rough. */
@@ -374,7 +480,7 @@ function buildMotes(def: WingDef): Motes {
 function buildMoonPool(def: WingDef): Mesh {
   const x = Math.cos(def.azimuth) * MOON_POOL.r;
   const z = Math.sin(def.azimuth) * MOON_POOL.r;
-  const geometry = new RingGeometry(0, MOON_POOL.radius, 40, 5);
+  const geometry = new RingGeometry(0, POOL_GLOW_RADIUS, 40, 5);
   geometry.rotateX(-Math.PI / 2);
   const position = geometry.attributes.position;
   if (position) {
@@ -383,7 +489,7 @@ function buildMoonPool(def: WingDef): Mesh {
       const localX = position.getX(i);
       const localZ = position.getZ(i);
       position.setY(i, seabedHeight(x + localX, z + localZ) + 0.06);
-      const edge = 1 - smooth01((Math.hypot(localX, localZ) / MOON_POOL.radius - 0.35) / 0.65);
+      const edge = 1 - smooth01((Math.hypot(localX, localZ) / POOL_GLOW_RADIUS - 0.35) / 0.65);
       fade[i * 3] = edge;
       fade[i * 3 + 1] = edge;
       fade[i * 3 + 2] = edge;
@@ -401,7 +507,7 @@ function buildMoonPool(def: WingDef): Mesh {
       color: 0xaebfe8,
       vertexColors: true,
       transparent: true,
-      opacity: MOON_POOL.opacity,
+      opacity: POOL_GLOW_OPACITY,
       blending: AdditiveBlending,
       depthWrite: false,
       fog: false,
