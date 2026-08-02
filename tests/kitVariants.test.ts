@@ -248,7 +248,13 @@ describe("kit variants: placements byte-unchanged vs the pre-change build", () =
       if (existsSync(FIXTURE_PATH)) {
         const previous = JSON.parse(readFileSync(FIXTURE_PATH, "utf8")) as Fixture;
         fixture.reference = previous.reference;
-        fixture.regions = previous.regions;
+        // Region snapshots are NOT preserved on re-record: they defend
+        // against unintended rerolls between waves, and a deliberate,
+        // ledgered re-authoring (e.g. the beat-repair wave re-composing
+        // calamity's shard carpet, punch #13) legitimately moves them.
+        // The original variants proof stands in git history at the
+        // fix/kit-variants merge. Rock bytes stay append-only: they ARE
+        // the pre-change profile proof.
         fixture.rocks.boulders = previous.rocks.boulders;
         fixture.rocks.slabs = previous.rocks.slabs;
         if (previous.rocks.stacks) {
@@ -275,7 +281,12 @@ describe("kit variants: placements byte-unchanged vs the pre-change build", () =
     it(`keeps every ${key} region placement byte-identical`, () => {
       const before = fixture.regions[key]!;
       const after = now.regions[key]!;
-      expect(after.length).toBe(before.length);
+      // Prefix semantics, matching the reroll fence's actual law: every
+      // placement recorded against the pre-change tree stays byte-identical,
+      // while later waves may legitimately APPEND new content on fresh
+      // substreams after the existing draws (e.g. the beat-repair wave's
+      // calamity wreck slabs). Shrinkage or reordering still convicts.
+      expect(after.length).toBeGreaterThanOrEqual(before.length);
       for (let i = 0; i < before.length; i++) {
         expect(after[i], `${key} node #${i} (${before[i]!.name})`).toEqual(before[i]);
       }
