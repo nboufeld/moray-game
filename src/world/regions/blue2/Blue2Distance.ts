@@ -92,6 +92,13 @@ interface GateRank {
    *  the ranks carry DIFFERENT fin stations — the r1 ranks shared one
    *  profile and read as two parallel glass slabs from the crossing. */
   readonly fins: readonly (readonly [number, number, number])[];
+  /** Half-angle of this rank's opening over the reserved corridor.
+   *  Round 3: PER RANK — with one shared gap the two jambs stood 13 m
+   *  apart on the same bearing, and from inside the notch they
+   *  projected as two parallel glass blades along the frame's top
+   *  edge. The far rank now opens wider and stands deeper, so the two
+   *  inner edges diverge on screen instead of doubling. */
+  readonly gapHalf: number;
 }
 
 const GATE_RANKS: readonly GateRank[] = [
@@ -100,6 +107,7 @@ const GATE_RANKS: readonly GateRank[] = [
     crest: 6.4,
     ink: new Color(0.52, 0.44, 0.66),
     fade: 0.1,
+    gapHalf: 0.09,
     fins: [
       [0.07, 1.0, 0.075],
       [0.4, 0.66, 0.1],
@@ -107,10 +115,11 @@ const GATE_RANKS: readonly GateRank[] = [
     ],
   },
   {
-    radius: 192,
-    crest: 4.8,
+    radius: 206,
+    crest: 4.6,
     ink: new Color(0.8, 0.68, 0.84),
     fade: 0.42,
+    gapHalf: 0.17,
     fins: [
       [0.2, 1.0, 0.09],
       [0.55, 0.6, 0.12],
@@ -118,8 +127,6 @@ const GATE_RANKS: readonly GateRank[] = [
     ],
   },
 ];
-/** Half-angle of the gate's opening over the reserved corridor. */
-const GATE_GAP_HALF = 0.09;
 /** The gate arcs' outer reach off the outbound azimuth. */
 const GATE_SPAN = 0.44;
 /** The fins' feet, buried down the Worldwall's outer face. */
@@ -234,12 +241,12 @@ function gateFins(rank: GateRank, noiseSeed: number): BufferGeometry {
 
   for (let i = 0; i <= count; i++) {
     const off = -GATE_SPAN + (i / count) * GATE_SPAN * 2;
-    if (Math.abs(off) < GATE_GAP_HALF) {
+    if (Math.abs(off) < rank.gapHalf) {
       builder.gap();
       continue;
     }
     // s: 0 at the corridor's jamb, 1 at the rank's outer end.
-    const s = (Math.abs(off) - GATE_GAP_HALF) / (GATE_SPAN - GATE_GAP_HALF);
+    const s = (Math.abs(off) - rank.gapHalf) / (GATE_SPAN - rank.gapHalf);
     const theta = gapOut + off;
     const x = CENTER_X + Math.cos(theta) * rank.radius;
     const z = CENTER_Z + Math.sin(theta) * rank.radius;
@@ -274,8 +281,14 @@ function gateFins(rank: GateRank, noiseSeed: number): BufferGeometry {
       (GATE_FOOT_TINT[2] + GATE_CREST_TINT[2]) * 0.5 * (1 + runnel * 0.18),
     ];
     const end = inner * outer;
+    // Round 3: the jamb hangs over the Worldwall's fall at the notch,
+    // where its full-ink foot row terminated in a straight hard edge —
+    // the foot fades to zero across the first reach off the corridor
+    // and grounds again once the wall's own terrain covers it.
+    const footAlpha = endAlpha(end) * smoothstep01((s - 0.05) / 0.16);
     builder.column(x, z, GATE_FOOT, GATE_FOOT + Math.max(2, crest - GATE_FOOT) * (0.35 + 0.65 * end), {
       alpha: endAlpha(end),
+      footAlpha,
       tints: [GATE_FOOT_TINT, shoulder, GATE_CREST_TINT],
     });
   }

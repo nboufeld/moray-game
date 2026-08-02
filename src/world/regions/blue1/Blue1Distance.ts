@@ -661,17 +661,29 @@ function colossusCurtain(noiseSeed: number, gapOutward: number): BufferGeometry 
     const z = CENTER_Z + Math.sin(theta) * COLOSSUS_RADIUS;
 
     const masses = Math.max(
-      bell(s, 0.09, 0.06) * 12.6, // the crown's fore peak
-      bell(s, 0.19, 0.055) * 10.9, // the crown's aft peak (broken)
-      bell(s, 0.37, 0.09) * 9.6, // the shoulder
-      bell(s, 0.58, 0.16) * 6.8, // the long back
-      bell(s, 0.78, 0.07) * 5.0, // the knee
+      bell(s, 0.09, 0.05) * 13.4, // the crown's fore peak
+      bell(s, 0.19, 0.045) * 11.2, // the crown's aft peak (broken)
+      bell(s, 0.37, 0.08) * 9.6, // the shoulder
+      bell(s, 0.58, 0.15) * 6.8, // the long back
+      bell(s, 0.78, 0.06) * 5.0, // the knee
       bell(s, 0.92, 0.05) * 2.6, // the feet, trailing out
     );
+    // Round 3: the r2 figure was IN frame but read as one draped mass —
+    // adjacent bells combined by max leave shallow saddles, and a
+    // silhouette's legibility lives in its NOTCHES. Authored notches now
+    // carve the profile down between the masses: the neck behind the
+    // crown, the hollow behind the shoulder, the waist before the knee,
+    // the ankle. The eye gets a figure, not a curtain.
+    const notch = Math.max(
+      bell(s, 0.28, 0.045) * 10.5, // the neck
+      bell(s, 0.485, 0.05) * 6.2, // behind the shoulder
+      bell(s, 0.7, 0.045) * 5.0, // the waist
+      bell(s, 0.855, 0.04) * 3.4, // the ankle
+    );
     const rough =
-      (fbm(s * 3.1, 0.37, { seed: noiseSeed, period: 3, octaves: 2 }) - 0.5) * 1.6;
+      (fbm(s * 3.1, 0.37, { seed: noiseSeed, period: 3, octaves: 2 }) - 0.5) * 1.1;
     const end = smoothstep01(s / 0.05) * smoothstep01((1 - s) / 0.07);
-    const crest = base + (masses + rough) * end;
+    const crest = base + (Math.max(0, masses - notch) + rough) * end;
 
     // The figure's own value walk: the crown and shoulder catch a
     // little of the crest light, the underbody sinks toward the foot.

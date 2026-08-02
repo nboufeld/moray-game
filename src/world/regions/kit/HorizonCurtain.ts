@@ -62,6 +62,15 @@ export interface SoftRingColumnOptions {
   readonly alpha?: number;
   /** Per-row RGB tints, foot → shoulder → crest; default is the value grade. */
   readonly tints?: SoftRingTints;
+  /**
+   * Foot-row alpha override (conviction wave). The grammar grounds every
+   * curtain's foot at full ink because a ring's foot normally stands
+   * below the terrain line — but a curtain hanging over a drop (the
+   * Hornsgate's jambs over the Worldwall's fall, the doorway promise
+   * past the drop-off's lip) shows its foot row, and a full-ink foot is
+   * a hard horizontal terminus. Defaults to the column alpha.
+   */
+  readonly footAlpha?: number;
 }
 
 const DEFAULT_TINTS: SoftRingTints = [
@@ -93,9 +102,10 @@ export class SoftRingBuilder {
     const crest = top + height * CREST_LIFT;
     const alpha = options?.alpha ?? 1;
     const tints = options?.tints ?? DEFAULT_TINTS;
+    const footAlpha = Math.min(options?.footAlpha ?? alpha, alpha);
 
     this.positions.push(x, foot, z, x, shoulder, z, x, crest, z);
-    this.colors.push(...tints[0], alpha, ...tints[1], alpha, ...tints[2], 0);
+    this.colors.push(...tints[0], footAlpha, ...tints[1], alpha, ...tints[2], 0);
     if (this.run > 0) {
       const a = this.positions.length / 3 - 6;
       this.indices.push(a, a + 1, a + 3, a + 1, a + 4, a + 3);

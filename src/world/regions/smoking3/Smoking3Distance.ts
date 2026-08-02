@@ -192,10 +192,18 @@ export function buildSmoking3Distance(): { meshes: (Mesh | InstancedMesh)[] } {
       vertexColors: true,
     });
     cardMaterials.push({ material, fade: 0.36 });
+    // Round 3 (the r2 frame was byte-similar at the pose): the r2
+    // stations stood at radius 214–228 — INSIDE the region's 220 m
+    // disc, where the country's real floor runs at y ≈ 0 and a card
+    // whose foot is −26 is buried to its crown (the far lantern bands
+    // at 242–282 work precisely because they stand past the rim, over
+    // the fall). The towers now stand just past the rim, short of the
+    // first hill ring at 246, and their crowns rise to +14…+21 — above
+    // the kneeling hill line (~+4), dark against the dawn band's glow.
     const stations = [
-      { off: -0.3, radius: 214, height: 30, girth: 2.0 },
-      { off: -0.11, radius: 228, height: 22, girth: 1.6 },
-      { off: 0.12, radius: 220, height: 26, girth: 1.8 },
+      { off: -0.28, radius: 236, height: 44, girth: 2.4 },
+      { off: -0.1, radius: 244, height: 40, girth: 1.9 },
+      { off: 0.11, radius: 239, height: 47, girth: 2.15 },
     ] as const;
     const mesh = new InstancedMesh(lanternCardGeometry(), material, stations.length);
     mesh.name = "vigil-last-lanterns";

@@ -402,6 +402,35 @@ function bakeVesperPaint(geometry: PlaneGeometry, contacts: readonly ContactPatc
 /** Builds the five painted ground sheets. */
 export function buildGolden3Ground(contacts: readonly ContactPatch[]): Mesh[] {
   const material = createSandMaterial();
+  // Conviction wave (re-critique #14): "the lost-bearing sand keeps its
+  // dark hairline seams." Probed at the stand this wave (hide sweeps +
+  // per-channel material toggles): NOT the toon ramp (nulling the
+  // gradient map left them; softness 0.9 left them), not the wire, not
+  // the litter, not the paint — nulling the NORMAL MAP erased them and
+  // restoring it brought them back. The sand normal's domain-warped
+  // ripple bands (tuned as 70 cm grain read at a metre) modulate the
+  // toon terminator, and on the one surface smooth enough to expose it
+  // a single meandering trough draws a dark hairline for forty metres.
+  // The cure keeps the near grain and hands the distance back to the
+  // paint: the perturbed normal eases back to the geometry normal
+  // across 7–18 m of camera depth (the metre-scale read the map was
+  // tuned for is fully inside 7 m; the bowl's rising far slope puts
+  // the charged lines at 10–45 m, so the window must close by 18), on
+  // this region's instance only.
+  {
+    const farClip = material.onBeforeCompile;
+    material.onBeforeCompile = (shader, renderer) => {
+      farClip(shader, renderer);
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <normal_fragment_maps>",
+        `#include <normal_fragment_maps>
+#ifdef USE_FOG
+	normal = normalize( mix( normal, nonPerturbedNormal, smoothstep( 7.0, 18.0, vFogDepth ) ) );
+#endif`,
+      );
+    };
+    material.customProgramCacheKey = () => "far-clip-dissolve-118-156+dune-normal-fade";
+  }
   const meshes: Mesh[] = [];
 
   // Round 3: ONE disc sheet. The 2×2 tiling seamed twice — r1's abutting

@@ -368,6 +368,10 @@ interface PromisePlane {
 // fin country receding into the blue — and every rim dissolves to true
 // zero (endAlpha at the ends, troughs diving between the fins).
 const PROMISE_PLANES: readonly PromisePlane[] = [
+  // Round 3: the r2 front pair read as balanced teeth — the left fin
+  // now clearly OWNS the rank (taller, broader) and the right fin
+  // drops to a low shoulder pushed further out; asymmetry authored,
+  // not left to the noise term.
   {
     depth: 13,
     halfWidth: 10.5,
@@ -376,8 +380,8 @@ const PROMISE_PLANES: readonly PromisePlane[] = [
     opacity: 0.9,
     fade: 0.12,
     fins: [
-      [-0.27, 1.0, 0.13],
-      [0.2, 0.62, 0.1],
+      [-0.27, 1.0, 0.155],
+      [0.24, 0.48, 0.085],
     ],
   },
   {
@@ -455,8 +459,13 @@ function promisePlane(plane: PromisePlane, azimuth: number, seed: number): Buffe
       (PROMISE_FOOT_TINT[1] + PROMISE_CREST_TINT[1]) * 0.5 * (1 + runnel * 0.26),
       (PROMISE_FOOT_TINT[2] + PROMISE_CREST_TINT[2]) * 0.5 * (1 + runnel * 0.2),
     ];
+    // Round 3: the planes stand past the drop-off's lip, so their
+    // full-ink foot rows drew a straight horizontal seam over the
+    // sill's sand — the feet now dissolve to zero and the fins melt
+    // downward into the deep instead of terminating.
     builder.column(x, z, plane.foot, top, {
       alpha: endAlpha(end),
+      footAlpha: 0,
       tints: [PROMISE_FOOT_TINT, shoulder, PROMISE_CREST_TINT],
     });
   }
