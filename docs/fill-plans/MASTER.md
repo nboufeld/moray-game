@@ -188,6 +188,14 @@ packages close (merge-verified).
   write the missing ledger), `connective-3` (remaining Tier A uplift:
   sandfall-dunes + ruins-terrace; the traveller-shoal network, verdant
   route first, then golden/pale/smoking/calamity; verdant pass polish).
+- **Field note (R0, world-complete): the sweep-floor bug stands as-is.**
+  The First Sea proved `region-sweep.mjs` floors cameras from
+  `def.terrainTarget` while the composed surface can ride 4–11 m higher on
+  weight-feather bands, so a pinned pose can bury its camera (blue-3's 09).
+  The fix (`max(terrainTarget, seabedHeight)`) would re-roll every region's
+  pinned sweep stream AFTER all sixteen regions verified against the
+  current floors — so the orchestrator rules it stays. Future sweeps in
+  NEW regions should adopt the max() floor from birth.
 - **Batch 4 — closure.** Tier B side-room uplift (one T1 statement + wall
   paint + standing flags: sargassum horizon band, kraken GLB spot-check);
   REGIONS.md budget/cadence text update (R1); program-wide random-pose
