@@ -84,6 +84,9 @@ export const FILL_SEEDS = {
   rayCrumbs: 0xf256,
   raySlabs: 0xf257,
   rayStraw: 0xf258,
+  // Beat-repair (#13): the march's composed wreckage — fresh stream,
+  // appended after every existing draw (the reroll fence).
+  marchWrecks: 0xf259,
 } as const;
 
 // ─── The registry gates ──────────────────────────────────────────────────────
