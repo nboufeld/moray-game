@@ -9,6 +9,7 @@ import { GARDENER_SPECIES_ID, buildGardener } from "./PaleGardener";
 import { buildPaleGround } from "./PaleGround";
 import { buildPaleLife } from "./PaleLife";
 import { buildPaleLight } from "./PaleLight";
+import { buildPaleRoads } from "./PaleRoads";
 import {
   CENTER_X,
   CENTER_Z,
@@ -238,6 +239,9 @@ export const PALE_1: RegionDef = {
     const distance = buildPaleDistance();
     // The Phase 3 fill tier (fresh substreams — nothing above re-rolls).
     const carpet = buildPaleCarpet(bones.treeSpots, bones.screeAnchors);
+    // ROADS-AND-AXES (critic #6): the mid-down serving, fresh substream,
+    // appended after every existing module (the reroll fence).
+    const roads = buildPaleRoads();
     const ground = buildPaleGround([...bones.contacts, ...bloom.contacts]);
 
     for (const mesh of [
@@ -250,12 +254,18 @@ export const PALE_1: RegionDef = {
       ...distance.meshes,
       ...carpet.groups,
       ...carpet.meshes,
+      ...roads.map((build) => build.group),
     ]) {
       group.add(mesh);
     }
     group.add(gardener.group);
 
-    const colliders = [...bones.colliders, ...bloom.colliders, ...buildSeals()];
+    const colliders = [
+      ...bones.colliders,
+      ...bloom.colliders,
+      ...buildSeals(),
+      ...roads.flatMap((build) => [...build.colliders]),
+    ];
 
     return {
       group,
@@ -268,6 +278,9 @@ export const PALE_1: RegionDef = {
         gardener.update(ctx.time, ctx.reducedMotion);
         // The carpets' sway is closed-form off simulated time (kit law 5).
         carpet.update(ctx.time * calm);
+        for (const build of roads) {
+          build.update(ctx.time * calm);
+        }
       },
     };
   },

@@ -8,6 +8,7 @@ import { buildCalamityForest } from "./CalamityForest";
 import { buildCalamityGround } from "./CalamityGround";
 import { buildCalamityLife } from "./CalamityLife";
 import { buildCalamityLight } from "./CalamityLight";
+import { buildCalamityRoads } from "./CalamityRoads";
 import { buildCalamityLitter } from "./CalamityLitter";
 import { buildCalamityRubble } from "./CalamityRubble";
 import { buildCalamitySeeps } from "./CalamitySeeps";
@@ -253,6 +254,9 @@ export const CALAMITY_1: RegionDef = {
     const curator = buildCurator();
     const light = buildCalamityLight();
     const distance = buildCalamityDistance();
+    // ROADS-AND-AXES (critic #2/#13): the march's reveal and cold blade,
+    // fresh substream, appended after every existing module (the fence).
+    const roads = buildCalamityRoads();
     const ground = buildCalamityGround([
       ...rubble.contacts,
       ...forest.contacts,
@@ -271,6 +275,7 @@ export const CALAMITY_1: RegionDef = {
       ...curator.meshes,
       ...light.meshes,
       ...distance.meshes,
+      ...roads.map((build) => build.group),
     ]) {
       group.add(mesh);
     }
@@ -281,6 +286,7 @@ export const CALAMITY_1: RegionDef = {
       ...seeps.colliders,
       ...curator.colliders,
       ...buildSeals(),
+      ...roads.flatMap((build) => [...build.colliders]),
     ];
 
     return {
@@ -296,6 +302,9 @@ export const CALAMITY_1: RegionDef = {
         litter.update(ctx.time * calm);
         fillLife.update(ctx.time * calm);
         light.update(ctx.time, ctx.reducedMotion);
+        for (const build of roads) {
+          build.update(ctx.time * calm);
+        }
       },
     };
   },
