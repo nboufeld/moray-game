@@ -14,6 +14,7 @@ import {
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { fbm } from "../../../rendering/ProceduralTexture";
 import { Random, SEEDS } from "../../../util/Random";
+import { regionSlot } from "../RegionSlots";
 import { smoothstep01 } from "./PaleShared";
 import { CENTER_X, CENTER_Z, PALE_SLOT } from "./PaleTerrain";
 
@@ -74,6 +75,33 @@ const GAP_OUT_HALF = 0.12;
 /** 0 on the white (gateway) side of the horizon, 1 on the far bloom side. */
 function healingAt(theta: number, gapAt: number): number {
   return smoothstep01((angleBetween(theta, gapAt) - 0.9) / 1.6);
+}
+
+/**
+ * R0.10 (journey-close): the Sunken Calamity's march runs down azimuth
+ * 4.59, and the perpendicular distance from our centre to that line is
+ * ≈ 293 m — 7 m outside the outermost radius. The rings ran tangent
+ * ALONG the march corridor, so once this region attaches naturally
+ * beside the spur (the region's own QA always forced a lone region and
+ * never saw it) the arcs stood in the swim-line as opaque `fog:false`
+ * sheets. Part the curtain over the corridor: the R4 cut, taken in
+ * world space against the spur's line rather than by our own azimuth.
+ */
+const SPUR = regionSlot("sunken-calamity-1");
+const SPUR_COS = Math.cos(SPUR.azimuth);
+const SPUR_SIN = Math.sin(SPUR.azimuth);
+/** Lateral clearance the painted distance keeps off the spur's swim-line. */
+const SPUR_CLEAR = 40;
+const SPUR_TAPER = 30;
+
+/** 0 on the spur's swim-line, easing to 1 past SPUR_CLEAR + SPUR_TAPER. */
+function spurEase(x: number, z: number): number {
+  const along = x * SPUR_COS + z * SPUR_SIN;
+  if (along < 100) {
+    return 1;
+  }
+  const lateral = Math.abs(z * SPUR_COS - x * SPUR_SIN);
+  return smoothstep01((lateral - SPUR_CLEAR) / SPUR_TAPER);
 }
 
 export function buildPaleDistance(): { meshes: (Mesh | InstancedMesh)[] } {
@@ -188,7 +216,9 @@ export function buildPaleDistance(): { meshes: (Mesh | InstancedMesh)[] } {
       const px = parked.elements[12]!;
       const pz = parked.elements[14]!;
       const cardTheta = Math.atan2(pz - CENTER_Z, px - CENTER_X);
-      if (angleBetween(cardTheta, gapOutAt) < GAP_OUT_HALF + 0.1) {
+      // R0.10: cards over the Calamity spur's corridor park with them —
+      // the outer bands reach within 11 m of the march's swim-line.
+      if (angleBetween(cardTheta, gapOutAt) < GAP_OUT_HALF + 0.1 || spurEase(px, pz) < 1) {
         parked.elements[13] = -500;
         mesh.setMatrixAt(i, parked);
       }
@@ -298,14 +328,20 @@ function reefRing(layer: ReefLayer, noiseSeed: number, gapAt: number): BufferGeo
       column = 0;
       continue;
     }
+    const x = CENTER_X + Math.cos(theta) * layer.radius;
+    const z = CENTER_Z + Math.sin(theta) * layer.radius;
+    const overSpur = spurEase(x, z);
+    if (overSpur === 0) {
+      column = 0;
+      continue;
+    }
     // A long ease: round 1's 0.14 rad cut rendered the arc ends as
     // rectangular stair-steps standing in open water.
     const end = Math.min(
       smoothstep01((off - GAP_HALF) / 0.4),
       smoothstep01((offOut - GAP_OUT_HALF) / 0.25),
+      overSpur,
     );
-    const x = CENTER_X + Math.cos(theta) * layer.radius;
-    const z = CENTER_Z + Math.sin(theta) * layer.radius;
 
     const t = i / SEGMENTS;
     const crest =
