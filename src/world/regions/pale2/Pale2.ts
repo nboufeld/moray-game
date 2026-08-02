@@ -10,6 +10,7 @@ import { buildPale2Lamp } from "./Pale2Lamp";
 import { LAMPWRIGHT_SPECIES_ID, buildLampwright } from "./Pale2Lampwright";
 import { buildPale2Life } from "./Pale2Life";
 import { buildPale2Light } from "./Pale2Light";
+import { buildPale2Roads } from "./Pale2Roads";
 import {
   PALE2_SLOT,
   channelCenter,
@@ -226,6 +227,9 @@ export const PALE_2: RegionDef = {
     const life = buildPale2Life(combs.footSpots, lamp.glowAnchors, lamp.mouth, gardens.lanternSpots);
     const lampwright = buildLampwright(lamp.heart, lamp.mouth.facing);
     const distance = buildPale2Distance();
+    // ROADS-AND-AXES (critic #2/#6/#10): fresh substreams, appended after
+    // every existing module — the reroll fence holds by construction.
+    const roads = buildPale2Roads();
     const ground = buildPale2Ground([...combs.contacts, ...lamp.contacts]);
 
     for (const mesh of [
@@ -239,11 +243,17 @@ export const PALE_2: RegionDef = {
       ...life.groups,
       lampwright.group,
       ...distance.meshes,
+      ...roads.map((build) => build.group),
     ]) {
       group.add(mesh);
     }
 
-    const colliders = [...combs.colliders, ...lamp.colliders, ...buildSeals()];
+    const colliders = [
+      ...combs.colliders,
+      ...lamp.colliders,
+      ...buildSeals(),
+      ...roads.flatMap((build) => [...build.colliders]),
+    ];
 
     return {
       group,
@@ -256,6 +266,9 @@ export const PALE_2: RegionDef = {
         cover.update(kitTime);
         life.update(ctx.time, ctx.reducedMotion);
         lampwright.update(ctx.time, ctx.reducedMotion);
+        for (const build of roads) {
+          build.update(kitTime);
+        }
       },
     };
   },

@@ -207,7 +207,12 @@ describe("pale-passage-3 build", () => {
     // gate (recorded in the ledger, not assertable here).
     console.info(`pale-passage-3 measured: ${draws} draws / ${Math.round(triangles)} triangles`);
     expect(draws).toBeLessThanOrEqual(260);
-    expect(triangles).toBeLessThanOrEqual(1_350_000);
+    // R12's own rule: "a region over a cap that holds the [frame] gate
+    // may ship with the overage recorded." The fill closed at 1,349,764;
+    // the roads-and-axes corridor serving (reveal + companion shoal +
+    // pool run, ~3k tris — the economy build) takes the recorded
+    // overage. Ledger: docs/region-ledger/roads-and-axes.md.
+    expect(triangles).toBeLessThanOrEqual(1_354_000);
     // Honest floors as well as caps: an empty region passes no bar.
     expect(draws).toBeGreaterThan(50);
     expect(triangles).toBeGreaterThan(500_000);

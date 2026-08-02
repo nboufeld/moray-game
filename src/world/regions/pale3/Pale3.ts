@@ -10,6 +10,7 @@ import { buildPale3Gardens } from "./Pale3Gardens";
 import { buildPale3Ground } from "./Pale3Ground";
 import { buildPale3Life } from "./Pale3Life";
 import { buildPale3Light } from "./Pale3Light";
+import { buildPale3Roads } from "./Pale3Roads";
 import {
   PALE3_SLOT,
   channelCenter,
@@ -234,6 +235,9 @@ export const PALE_3: RegionDef = {
     const life = buildPale3Life(fonts.footSpots, fonts.crownSpots, gardens.budSpots, dayspring.crest);
     const chorister = buildChorister(dayspring.crest.y);
     const distance = buildPale3Distance();
+    // ROADS-AND-AXES (critic #2/#6/#10, the JOURNEY-pale-09 fix): fresh
+    // substream, appended after every existing module (the reroll fence).
+    const roads = buildPale3Roads();
     const ground = buildPale3Ground([...fonts.contacts, ...dayspring.contacts]);
 
     for (const mesh of [
@@ -247,11 +251,17 @@ export const PALE_3: RegionDef = {
       ...life.groups,
       chorister.group,
       ...distance.meshes,
+      ...roads.map((build) => build.group),
     ]) {
       group.add(mesh);
     }
 
-    const colliders = [...fonts.colliders, ...dayspring.colliders, ...buildSeals()];
+    const colliders = [
+      ...fonts.colliders,
+      ...dayspring.colliders,
+      ...buildSeals(),
+      ...roads.flatMap((build) => [...build.colliders]),
+    ];
 
     return {
       group,
@@ -264,6 +274,9 @@ export const PALE_3: RegionDef = {
         cover.update(kitTime);
         life.update(ctx.time, ctx.reducedMotion);
         chorister.update(ctx.time, ctx.reducedMotion);
+        for (const build of roads) {
+          build.update(kitTime);
+        }
       },
     };
   },
