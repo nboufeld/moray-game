@@ -15,6 +15,12 @@ import {
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { fbm } from "../../../rendering/ProceduralTexture";
 import { Random, SEEDS } from "../../../util/Random";
+import {
+  SoftRingBuilder,
+  applyCurtainDissolve,
+  endAlpha,
+  softCurtainMaterial,
+} from "../kit/HorizonCurtain";
 import { LV_SEEDS, smoothstep01 } from "./Smoking3Shared";
 import { CENTER_X, CENTER_Z, SMOKING3_SLOT } from "./Smoking3Terrain";
 
@@ -99,17 +105,18 @@ export function buildSmoking3Distance(): { meshes: (Mesh | InstancedMesh)[] } {
   };
 
   for (const [index, layer] of LAYERS.entries()) {
-    const material = new MeshBasicMaterial({
+    // Critic F3 (the class fix): soft three-row curtain, dissolved
+    // crest, gap ends fading out, far-clip self-dissolve.
+    const material = softCurtainMaterial({
       color: new Color(0x80645e).lerp(new Color(0x80645e).multiply(INK), 1 - layer.fade),
-      fog: false,
-      side: DoubleSide,
-      toneMapped: true,
     });
+    applyCurtainDissolve(material, { cacheKey: "vigil-distance-dissolve" });
     const geometry = hillRing(layer, SEEDS.regionSmoking3 ^ (0xd500 + index * 131));
     const mesh = new Mesh(geometry, material);
     mesh.castShadow = false;
     mesh.receiveShadow = false;
     mesh.name = `vigil-distance-${index}`;
+    mesh.renderOrder = -(index + 3);
     if (index === 0) {
       mesh.onBeforeRender = (_renderer, scene) => followFog(scene);
     }
@@ -243,9 +250,7 @@ function lanternCardGeometry(): BufferGeometry {
  * hills kneel across the dawn sector so the light shows behind them.
  */
 function hillRing(layer: HillLayer, noiseSeed: number): BufferGeometry {
-  const positions: number[] = [];
-  const indices: number[] = [];
-  let column = 0;
+  const builder = new SoftRingBuilder();
 
   const gapAt = SMOKING3_SLOT.azimuth + Math.PI;
   const dawnAt = SMOKING3_SLOT.azimuth;
@@ -253,7 +258,7 @@ function hillRing(layer: HillLayer, noiseSeed: number): BufferGeometry {
     const theta = (i / SEGMENTS) * Math.PI * 2;
     const off = angleBetween(theta, gapAt);
     if (off < GAP_HALF) {
-      column = 0;
+      builder.gap();
       continue;
     }
     // A long taper into the gap, so the cut ends never read as towers.
@@ -279,19 +284,12 @@ function hillRing(layer: HillLayer, noiseSeed: number): BufferGeometry {
       (layer.hillBase + (raw * 1.4 + roll * 0.6) * layer.hillVary + tower * layer.hillBase * 0.7) *
       kneel;
 
-    positions.push(x, FOOT, z, x, FOOT + Math.max(1.4, hill - FOOT) * end + 0.2, z);
-    if (column > 0) {
-      const a = positions.length / 3 - 4;
-      indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
-    }
-    column++;
+    builder.column(x, z, FOOT, FOOT + Math.max(1.4, hill - FOOT) * end + 0.2, {
+      alpha: endAlpha(end),
+    });
   }
 
-  const geometry = new BufferGeometry();
-  geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
-  geometry.setIndex(indices);
-  geometry.computeBoundingSphere();
-  return geometry;
+  return builder.build();
 }
 
 /**

@@ -14,6 +14,12 @@ import {
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { fbm } from "../../../rendering/ProceduralTexture";
 import { Random, SEEDS } from "../../../util/Random";
+import {
+  SoftRingBuilder,
+  applyCurtainDissolve,
+  endAlpha,
+  softCurtainMaterial,
+} from "../kit/HorizonCurtain";
 import { smoothstep01 } from "./SmokingShared";
 import { CENTER_X, CENTER_Z, SMOKING_SLOT } from "./SmokingTerrain";
 
@@ -95,17 +101,18 @@ export function buildSmokingDistance(): { meshes: (Mesh | InstancedMesh)[] } {
   };
 
   for (const [index, layer] of LAYERS.entries()) {
-    const material = new MeshBasicMaterial({
+    // Critic F3 (the class fix): soft three-row curtain, dissolved
+    // crest, gap ends fading out, far-clip self-dissolve.
+    const material = softCurtainMaterial({
       color: new Color(0x8a6a58).lerp(new Color(0x8a6a58).multiply(INK), 1 - layer.fade),
-      fog: false,
-      side: DoubleSide,
-      toneMapped: true,
     });
+    applyCurtainDissolve(material, { cacheKey: "smoulder-distance-dissolve" });
     const geometry = ridgeRing(layer, SEEDS.regionSmoking1 ^ (0xd300 + index * 131));
     const mesh = new Mesh(geometry, material);
     mesh.castShadow = false;
     mesh.receiveShadow = false;
     mesh.name = `smoulder-distance-${index}`;
+    mesh.renderOrder = -(index + 3);
     if (index === 0) {
       mesh.onBeforeRender = (_renderer, scene) => followFog(scene);
     }
@@ -235,9 +242,7 @@ function chimneyCardGeometry(): BufferGeometry {
  * sink into the ground.
  */
 function ridgeRing(layer: RidgeLayer, noiseSeed: number): BufferGeometry {
-  const positions: number[] = [];
-  const indices: number[] = [];
-  let column = 0;
+  const builder = new SoftRingBuilder();
 
   const gapAt = SMOKING_SLOT.azimuth + Math.PI;
   const gapOutAt = SMOKING_SLOT.azimuth;
@@ -246,7 +251,7 @@ function ridgeRing(layer: RidgeLayer, noiseSeed: number): BufferGeometry {
     const off = angleBetween(theta, gapAt);
     const offOut = angleBetween(theta, gapOutAt);
     if (off < GAP_HALF || offOut < GAP_OUT_HALF) {
-      column = 0;
+      builder.gap();
       continue;
     }
     // A long taper: rounds 2–4's shorter ramps stood at the gap's edge
@@ -269,19 +274,12 @@ function ridgeRing(layer: RidgeLayer, noiseSeed: number): BufferGeometry {
     const stepped = (Math.floor(raw * 3) + smoothstep01((bench - 0.5) / 0.5)) / 3;
     const ridge = layer.ridgeBase + (stepped * 0.55 + raw * 0.45) * 2 * layer.ridgeVary;
 
-    positions.push(x, FOOT, z, x, FOOT + Math.max(1.4, ridge - FOOT) * end + 0.2, z);
-    if (column > 0) {
-      const a = positions.length / 3 - 4;
-      indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
-    }
-    column++;
+    builder.column(x, z, FOOT, FOOT + Math.max(1.4, ridge - FOOT) * end + 0.2, {
+      alpha: endAlpha(end),
+    });
   }
 
-  const geometry = new BufferGeometry();
-  geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
-  geometry.setIndex(indices);
-  geometry.computeBoundingSphere();
-  return geometry;
+  return builder.build();
 }
 
 function angleBetween(a: number, b: number): number {

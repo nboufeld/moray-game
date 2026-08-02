@@ -179,7 +179,20 @@ function liftDarkTint(color: number): Color {
  * out of the buffer together — see {@link weatherRock} — because turning the
  * material flag off on its own would have changed nothing.
  */
-export function createRockMaterial(color: number): MeshToonMaterial {
+export interface RockMaterialOptions {
+  /**
+   * Hard-geometry purge, stretch #11: how far the painted wash's HUE
+   * swing is calmed toward its own value, 0–1. The shared wash carries
+   * lavender, sage and ochre patches; under great-blue's cool register
+   * the ochre reads as orange mottling fighting the soft key (the
+   * gnomon and the mooring arch, `JOURNEY-great-blue-04/-08`). Calming
+   * desaturates only the SAMPLED WASH in-shader — value grain, the
+   * material tint and the vertex algae stay exactly as they were.
+   */
+  readonly washCalm?: number;
+}
+
+export function createRockMaterial(color: number, options?: RockMaterialOptions): MeshToonMaterial {
   shared ??= {
     map: buildColorTexture(SIZE, (u, v) => {
       // Half the swing it had, at the same mean, for the reason the sand's
@@ -197,6 +210,25 @@ export function createRockMaterial(color: number): MeshToonMaterial {
     // Algae tinting is baked per-vertex from the surface normal.
     vertexColors: true,
   });
+
+  const washCalm = options?.washCalm ?? 0;
+  if (washCalm > 0) {
+    const previous = material.onBeforeCompile;
+    material.onBeforeCompile = (shader, renderer) => {
+      previous?.call(material, shader, renderer);
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <map_fragment>",
+        `#ifdef USE_MAP
+         vec4 rockWashTexel = texture2D( map, vMapUv );
+         float rockWashValue = dot(rockWashTexel.rgb, vec3(0.2126, 0.7152, 0.0722));
+         rockWashTexel.rgb = mix(rockWashTexel.rgb, vec3(rockWashValue), ${washCalm.toFixed(2)});
+         diffuseColor *= rockWashTexel;
+         #endif`,
+      );
+    };
+    const baseKey = material.customProgramCacheKey.bind(material);
+    material.customProgramCacheKey = () => `${baseKey()}|rock-wash-calm-${washCalm.toFixed(2)}`;
+  }
 
   // The painted wash, when present. Albedo only: the strata, the cracks and the
   // Voronoi joints live in the procedural normal map, which is the rock's form

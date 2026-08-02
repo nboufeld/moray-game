@@ -95,8 +95,11 @@ export function buildBlue1Stones(): Blue1StonesBuild {
     const c = new Color(hex).lerp(new Color(0xc8dcee), lift);
     return c.getHex();
   };
-  const blueStone = createRockMaterial(liftStone(STONE_BLUE, 0.34));
-  const paleStone = createRockMaterial(liftStone(STONE_PALE, 0.44));
+  // Stretch #11 (critic NICE): the shared wash's ochre patches read as
+  // orange mottling on the Gnomon against this province's cool register
+  // — the hue swing is calmed; value grain and the blue tints stay.
+  const blueStone = createRockMaterial(liftStone(STONE_BLUE, 0.34), { washCalm: 0.6 });
+  const paleStone = createRockMaterial(liftStone(STONE_PALE, 0.44), { washCalm: 0.7 });
   // The gate keeps the reef's warmth: the last warm colour on the way out.
   const warmStone = createRockMaterial(0x9a8a72);
 

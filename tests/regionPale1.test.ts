@@ -172,7 +172,10 @@ describe("pale-passage-1 build", () => {
     // 120/250k caps are superseded; the measured numbers go in the
     // region ledger.
     expect(draws).toBeLessThanOrEqual(160);
-    expect(triangles).toBeLessThanOrEqual(450_000);
+    // Hard-geometry purge: the horizon rings' soft three-row grammar
+    // (crest dissolve — critic F3) costs ~0.8k tris over the old cap;
+    // recorded in docs/region-ledger/hard-geometry-fix.md.
+    expect(triangles).toBeLessThanOrEqual(455_000);
     // Honest floors as well as caps: an empty region passes no bar, and
     // a FILLED region must actually be filled.
     expect(draws).toBeGreaterThan(85);

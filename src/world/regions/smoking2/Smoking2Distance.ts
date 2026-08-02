@@ -14,6 +14,12 @@ import {
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { fbm } from "../../../rendering/ProceduralTexture";
 import { Random, SEEDS } from "../../../util/Random";
+import {
+  SoftRingBuilder,
+  applyCurtainDissolve,
+  endAlpha,
+  softCurtainMaterial,
+} from "../kit/HorizonCurtain";
 import { FC_SEEDS, smoothstep01 } from "./Smoking2Shared";
 import { CENTER_X, CENTER_Z, SMOKING2_SLOT } from "./Smoking2Terrain";
 
@@ -95,17 +101,21 @@ export function buildSmoking2Distance(): { meshes: (Mesh | InstancedMesh)[] } {
   };
 
   for (const [index, layer] of LAYERS.entries()) {
-    const material = new MeshBasicMaterial({
+    // Critic F3 (the class fix): the gallery walls KEEP their authored
+    // flat runs and notch cuts — that is this region's skyline — but
+    // the strip is now the kit's soft three-row grammar, so a notch is
+    // a painted gallery in fog rather than a paper rectangle, and the
+    // gap ends dissolve instead of running as slivers.
+    const material = softCurtainMaterial({
       color: new Color(0x86685a).lerp(new Color(0x86685a).multiply(INK), 1 - layer.fade),
-      fog: false,
-      side: DoubleSide,
-      toneMapped: true,
     });
+    applyCurtainDissolve(material, { cacheKey: "forge-distance-dissolve" });
     const geometry = wallRing(layer, SEEDS.regionSmoking2 ^ (0xd400 + index * 131));
     const mesh = new Mesh(geometry, material);
     mesh.castShadow = false;
     mesh.receiveShadow = false;
     mesh.name = `forge-distance-${index}`;
+    mesh.renderOrder = -(index + 3);
     if (index === 0) {
       mesh.onBeforeRender = (_renderer, scene) => followFog(scene);
     }
@@ -236,9 +246,7 @@ function finCardGeometry(): BufferGeometry {
  * whose cut ends sink into the ground.
  */
 function wallRing(layer: WallLayer, noiseSeed: number): BufferGeometry {
-  const positions: number[] = [];
-  const indices: number[] = [];
-  let column = 0;
+  const builder = new SoftRingBuilder();
 
   const gapAt = SMOKING2_SLOT.azimuth + Math.PI;
   const gapOutAt = SMOKING2_SLOT.azimuth;
@@ -247,7 +255,7 @@ function wallRing(layer: WallLayer, noiseSeed: number): BufferGeometry {
     const off = angleBetween(theta, gapAt);
     const offOut = angleBetween(theta, gapOutAt);
     if (off < GAP_HALF || offOut < GAP_OUT_HALF) {
-      column = 0;
+      builder.gap();
       continue;
     }
     // Long tapers into both gaps, so the cut ends never read as towers.
@@ -271,19 +279,12 @@ function wallRing(layer: WallLayer, noiseSeed: number): BufferGeometry {
     const wall =
       layer.wallBase + (stepped * 0.7 + raw * 0.3) * 2 * layer.wallVary - notch * layer.wallBase * 0.55;
 
-    positions.push(x, FOOT, z, x, FOOT + Math.max(1.4, wall - FOOT) * end + 0.2, z);
-    if (column > 0) {
-      const a = positions.length / 3 - 4;
-      indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
-    }
-    column++;
+    builder.column(x, z, FOOT, FOOT + Math.max(1.4, wall - FOOT) * end + 0.2, {
+      alpha: endAlpha(end),
+    });
   }
 
-  const geometry = new BufferGeometry();
-  geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
-  geometry.setIndex(indices);
-  geometry.computeBoundingSphere();
-  return geometry;
+  return builder.build();
 }
 
 function angleBetween(a: number, b: number): number {

@@ -15,6 +15,12 @@ import {
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { fbm } from "../../../rendering/ProceduralTexture";
 import { Random, SEEDS } from "../../../util/Random";
+import {
+  SoftRingBuilder,
+  applyCurtainDissolve,
+  endAlpha,
+  softCurtainMaterial,
+} from "../kit/HorizonCurtain";
 import { smoothstep01 } from "./Pale3Shared";
 import { CENTER_X, CENTER_Z, PALE3_SLOT } from "./Pale3Terrain";
 
@@ -103,18 +109,17 @@ export function buildPale3Distance(): { meshes: (Mesh | InstancedMesh)[] } {
   };
 
   for (const [index, layer] of LAYERS.entries()) {
-    const material = new MeshBasicMaterial({
-      color: new Color(0x9fc4c4),
-      fog: false,
-      side: DoubleSide,
-      toneMapped: true,
-      vertexColors: true,
-    });
+    // Critic F3 (the class fix): soft three-row curtain + far-clip
+    // self-dissolve — the pale-10 floating slab ribbons were these
+    // rings' min-height gap ends.
+    const material = softCurtainMaterial({ color: new Color(0x9fc4c4) });
+    applyCurtainDissolve(material, { cacheKey: "pale3-distance-dissolve" });
     const geometry = reefRing(layer, SEEDS.regionPale3 ^ (0xd210 + index * 131), inAt, outAt);
     const mesh = new Mesh(geometry, material);
     mesh.castShadow = false;
     mesh.receiveShadow = false;
     mesh.name = `pale3-distance-${index}`;
+    mesh.renderOrder = -(index + 3);
     if (index === 0) {
       mesh.onBeforeRender = (_renderer, scene) => followFog(scene);
     }
@@ -342,17 +347,14 @@ function reefRing(
   inAt: number,
   outAt: number,
 ): BufferGeometry {
-  const positions: number[] = [];
-  const colors: number[] = [];
-  const indices: number[] = [];
-  let column = 0;
+  const builder = new SoftRingBuilder();
 
   const ink = new Color();
   for (let i = 0; i <= SEGMENTS; i++) {
     const theta = (i / SEGMENTS) * Math.PI * 2;
     const inOff = angleBetween(theta, inAt);
     if (inOff < GAP_IN_HALF) {
-      column = 0;
+      builder.gap();
       continue;
     }
     // A long ease at the gap's arc ends (the stair-step lesson).
@@ -373,28 +375,26 @@ function reefRing(
         layer.crestVary *
         (1 - 0.5 * morning);
 
-    positions.push(x, FOOT, z, x, FOOT + Math.max(1.4, crest - FOOT) * end + 0.2, z);
-
     // Milk warming through gold into rose at the morning's heart,
     // blended toward the fog by the layer's fade.
     ink.copy(INK_MILK).lerp(INK_MORNING, morning);
     ink.lerp(INK_ROSE, Math.max(0, morning - 0.72) / 0.28);
     ink.lerp(new Color(1, 1, 1), layer.fade);
-    colors.push(ink.r, ink.g, ink.b, ink.r, ink.g, ink.b);
 
-    if (column > 0) {
-      const a = positions.length / 3 - 4;
-      indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
-    }
-    column++;
+    // Critic F3 (the class fix): soft three-row grammar — dissolved
+    // crest, gap ends fading out instead of running as slab ribbons
+    // (the pale-10 floating slabs were exactly these ends).
+    builder.column(x, z, FOOT, FOOT + Math.max(1.4, crest - FOOT) * end + 0.2, {
+      alpha: endAlpha(end),
+      tints: [
+        [ink.r * 0.92, ink.g * 0.92, ink.b * 0.92],
+        [ink.r, ink.g, ink.b],
+        [ink.r * 1.06, ink.g * 1.06, ink.b * 1.06],
+      ],
+    });
   }
 
-  const geometry = new BufferGeometry();
-  geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
-  geometry.setAttribute("color", new BufferAttribute(new Float32Array(colors), 3));
-  geometry.setIndex(indices);
-  geometry.computeBoundingSphere();
-  return geometry;
+  return builder.build();
 }
 
 function angleBetween(a: number, b: number): number {

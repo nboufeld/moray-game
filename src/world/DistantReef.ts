@@ -1,17 +1,17 @@
 import {
-  BufferAttribute,
   BufferGeometry,
   Color,
-  DoubleSide,
   FogExp2,
   Group,
   Mesh,
   MeshBasicMaterial,
   type Scene,
+  type WebGLProgramParametersWithUniforms,
 } from "three";
 import { fbm } from "../rendering/ProceduralTexture";
 import { Random, SEEDS } from "../util/Random";
 import { REGION_SLOTS } from "./regions/RegionSlots";
+import { SoftRingBuilder, endAlpha, softCurtainMaterial } from "./regions/kit/HorizonCurtain";
 
 /**
  * The painted distance: receding silhouette layers beyond the rim (W-L9).
@@ -40,9 +40,27 @@ import { REGION_SLOTS } from "./regions/RegionSlots";
  * `CoralField`'s sway uses, and for the same reason: nothing owns an update
  * call into this module and nothing needs to.
  *
+ * ## The critic's wave (hard-geometry purge, C4)
+ *
+ * Ten of ten Tier-B wings showed a flat-polygon backdrop read, and every one
+ * traced to THESE rings: from inside a wing (or at its doorway) the nearest
+ * ring stands 5–40 m past the rim as an unfogged flat cut-out in the bowl's
+ * own teal — the moonlit "moon pool" polygon, the wreck-meadow diagonal seam,
+ * the current-run ghost pyramid, the ruins-terrace sky triangles. Two class
+ * moves fix the family without costing the bowl its skyline:
+ *
+ * - **Soft grammar** (kit `HorizonCurtain`): three rows, RGBA, the crest
+ *   dissolving to alpha 0 — no razor tops, no hard peak triangles.
+ * - **The camera-following parting**: when the camera stands out in the wing
+ *   belt (r ≳ 19 m — every wing interior and doorway stand, never the bowl's
+ *   heart), the ring sector AHEAD of it eases down like the gateway partings,
+ *   so no doorway or rim notch ever frames a cut-out. The painted backdrop —
+ *   which every wing mood already fades correctly — shows instead. From the
+ *   bowl the skyline is untouched.
+ *
  * ## What it costs
  *
- * Three meshes, three draw calls, ~1.5k triangles between them, no textures,
+ * Three meshes, three draw calls, ~2.2k triangles between them, no textures,
  * no shadows in either direction, `MeshBasicMaterial` throughout (a silhouette
  * is a mark, not a shaded surface — the same argument as the cave mouths).
  * Everything is seeded from `SEEDS.distantReef` and built from pure geometry,
@@ -86,7 +104,7 @@ const INK = new Color(0.66, 0.72, 0.9);
 // Wave 8 opened six gateway doorways through the rim, and these rings stood
 // straight across all of them: through every opened end wall the "country
 // beyond" rendered as a flat fog-coloured plane at 52 m — the fill program's
-// "flat cyan cut-out", the worst seam in the game. So the skyline now PARTS
+// "flat cyan cut-out", the worst seam in the game. So the skyline PARTS
 // over each gateway's sight cone, the same gesture MASTER R4 legislates for
 // distance rings over passes: within the cone the curtain's whole column
 // eases down to its buried foot, and the doorway shows the water, the gate
@@ -112,6 +130,16 @@ const GAP_BLEND = 0.14;
 /** Cap so a far ring's parting can never swallow a neighbouring wing. */
 const GAP_HALF_MAX = 0.24;
 
+// ─── The camera-following parting (hard-geometry purge) ─────────────────────
+
+/** Camera radius across which the follow-parting arms: 0 in the bowl's
+ *  heart, 1 by the wing sills — every interior and doorway stand. */
+const FOLLOW_FROM = 19;
+const FOLLOW_SPAN = 6;
+/** The parted sector's half-angles: full cut inside, eased out by. */
+const FOLLOW_CONE_IN = 0.36;
+const FOLLOW_CONE_OUT = 0.64;
+
 function smoothstep01(t: number): number {
   const k = Math.min(1, Math.max(0, t));
   return k * k * (3 - 2 * k);
@@ -135,6 +163,7 @@ export class DistantReef {
 
   private readonly materials: MeshBasicMaterial[] = [];
   private readonly geometries: BufferGeometry[] = [];
+  private readonly partUniforms: { value: number }[][] = [];
   private lastFog = -1;
 
   constructor(seed: number = SEEDS.distantReef) {
@@ -142,25 +171,58 @@ export class DistantReef {
     const random = new Random(seed);
 
     for (const [index, layer] of LAYERS.entries()) {
-      const material = new MeshBasicMaterial({
+      const material = softCurtainMaterial({
         // A placeholder close to the shipped fog; corrected on first render.
         color: new Color(0x53b2bb).lerp(new Color(0x53b2bb).multiply(INK), 1 - layer.fade),
-        fog: false,
-        side: DoubleSide,
-        toneMapped: true,
       });
+      const uniforms = [{ value: 10 }, { value: 0 }];
+      material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
+        shader.uniforms.uPartAz = uniforms[0]!;
+        shader.uniforms.uPartK = uniforms[1]!;
+        shader.vertexShader = shader.vertexShader
+          .replace("#include <common>", "#include <common>\nvarying vec3 vRingWorld;")
+          .replace(
+            "#include <worldpos_vertex>",
+            "#include <worldpos_vertex>\nvRingWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;",
+          );
+        shader.fragmentShader = shader.fragmentShader
+          .replace(
+            "#include <common>",
+            "#include <common>\nvarying vec3 vRingWorld;\nuniform float uPartAz;\nuniform float uPartK;",
+          )
+          .replace(
+            "#include <color_fragment>",
+            `#include <color_fragment>
+             // The camera-following parting: the sector ahead of a camera
+             // standing in the wing belt eases open, so no doorway or rim
+             // notch ever frames this ring as a flat cut-out.
+             float ringTheta = atan(vRingWorld.z, vRingWorld.x);
+             float ringDelta = abs(atan(sin(ringTheta - uPartAz), cos(ringTheta - uPartAz)));
+             diffuseColor.a *= 1.0 - uPartK * (1.0 - smoothstep(${FOLLOW_CONE_IN.toFixed(2)}, ${FOLLOW_CONE_OUT.toFixed(2)}, ringDelta));`,
+          );
+      };
+      material.customProgramCacheKey = () => "distant-reef-follow-parting";
       const geometry = skylineRing(layer, random, seed + index * 131);
       const mesh = new Mesh(geometry, material);
       mesh.castShadow = false;
       mesh.receiveShadow = false;
+      mesh.renderOrder = -(index + 3);
       if (index === 0) {
-        mesh.onBeforeRender = (_renderer, scene) => {
+        mesh.onBeforeRender = (_renderer, scene, camera) => {
           this.followFog(scene);
+          const cameraR = Math.hypot(camera.position.x, camera.position.z);
+          const azimuth = Math.atan2(camera.position.z, camera.position.x);
+          const strength = smoothstep01((cameraR - FOLLOW_FROM) / FOLLOW_SPAN);
+          for (const [az, k] of this.partUniforms) {
+            az!.value = azimuth;
+            k!.value = strength;
+          }
         };
       }
       this.group.add(mesh);
       this.materials.push(material);
       this.geometries.push(geometry);
+      this.partUniforms.push(uniforms);
     }
   }
 
@@ -201,13 +263,15 @@ export class DistantReef {
 }
 
 /**
- * One ring: a vertical curtain whose top edge is the layer's skyline.
+ * One ring: a soft curtain whose top edge is the layer's skyline.
  *
  * The profile is fbm over azimuth — periodic by construction, since the noise
  * lattice wraps on its integer period and one full turn is exactly one period
  * — with a handful of taller pinnacle spikes lifted out of it at seeded
  * azimuths, because a ridge line with no verticals reads as a wall and this
- * reef's own skyline is sea stacks.
+ * reef's own skyline is sea stacks. The spikes' tips ride the soft grammar's
+ * crest dissolve, so a stack is a fading mark in the water, never a hard
+ * teal triangle over a wing's rim.
  */
 function skylineRing(layer: SkylineLayer, random: Random, noiseSeed: number): BufferGeometry {
   const peaks: { at: number; height: number; halfWidth: number }[] = [];
@@ -219,8 +283,7 @@ function skylineRing(layer: SkylineLayer, random: Random, noiseSeed: number): Bu
     });
   }
 
-  const positions = new Float32Array((SEGMENTS + 1) * 2 * 3);
-  const indices: number[] = [];
+  const builder = new SoftRingBuilder();
 
   for (let i = 0; i <= SEGMENTS; i++) {
     const theta = (i / SEGMENTS) * Math.PI * 2;
@@ -242,28 +305,15 @@ function skylineRing(layer: SkylineLayer, random: Random, noiseSeed: number): Bu
 
     const x = Math.cos(theta) * layer.radius;
     const z = Math.sin(theta) * layer.radius;
-    const base = i * 6;
     // The parting: inside a gateway's sight cone the column collapses onto
     // its own buried foot, below every doorway sill.
     const keep = gatewayKeep(theta, layer.radius);
-    positions[base] = x;
-    positions[base + 1] = -FOOT;
-    positions[base + 2] = z;
-    positions[base + 3] = x;
-    positions[base + 4] = -FOOT + keep * (Math.max(1.2, ridge + spike) + FOOT);
-    positions[base + 5] = z;
-
-    if (i < SEGMENTS) {
-      const a = i * 2;
-      indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
-    }
+    builder.column(x, z, -FOOT, -FOOT + keep * (Math.max(1.2, ridge + spike) + FOOT), {
+      alpha: endAlpha(keep),
+    });
   }
 
-  const geometry = new BufferGeometry();
-  geometry.setAttribute("position", new BufferAttribute(positions, 3));
-  geometry.setIndex(indices);
-  geometry.computeBoundingSphere();
-  return geometry;
+  return builder.build();
 }
 
 /** Shortest angular distance between two azimuths, in [0, π]. */

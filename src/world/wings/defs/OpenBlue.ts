@@ -1,3 +1,5 @@
+import { fbm } from "../../../rendering/ProceduralTexture";
+import { SEEDS } from "../../../util/Random";
 import type { WingDef } from "../WingTypes";
 
 /**
@@ -39,11 +41,33 @@ export const OPEN_BLUE: WingDef = {
   moodDescent: 8,
   // The floor tells the drop: pale warm sand at the lip, falling to a deep
   // blue-green as the ground lets go — the vertigo is painted on the sand.
-  paint: (_x, _z, y, blend) => {
+  //
+  // Hard-geometry purge (critic #1, the wing-door frame): a diver at
+  // floor level faces the end wall from arm's length, and the deep wash
+  // alone rendered it as a solid featureless blue wall edge-to-edge —
+  // the province's identity beat read as a card. The deep face now
+  // carries painted structure: a broad mottle and slow strata bands,
+  // strongest exactly where the deep wash is strongest, so the wall
+  // reads as painted rock under deep water instead of poster board.
+  paint: (x, z, y, blend) => {
     const k = blend * blend * (3 - 2 * blend);
     const t = Math.min(1, Math.max(0, (-y - 3) / 9));
     const d = t * t * (3 - 2 * t);
-    return [1 + (0.04 - 0.3 * d) * k, 1 + (0.01 - 0.07 * d) * k, 1 + (-0.02 + 0.08 * d) * k];
+    const mottle =
+      (fbm(x * 0.11, z * 0.11 + y * 0.17, {
+        seed: SEEDS.wingOpenBlue ^ 0x3d1c,
+        period: 6,
+        octaves: 2,
+      }) -
+        0.5) *
+      2;
+    const strata = Math.sin(y * 1.3 + mottle * 1.6);
+    const relief = d * (mottle * 0.09 + strata * 0.06);
+    return [
+      (1 + (0.04 - 0.3 * d) * k) * (1 + relief * k),
+      (1 + (0.01 - 0.07 * d) * k) * (1 + relief * 0.85 * k),
+      (1 + (-0.02 + 0.08 * d) * k) * (1 + relief * 0.6 * k),
+    ];
   },
   ceilingAtGate: 12,
   ceilingInside: 11,
