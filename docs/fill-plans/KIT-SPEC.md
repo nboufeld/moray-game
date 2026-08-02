@@ -98,8 +98,17 @@ export const KIT_SWEEP_SALT = 0x5a4d_5eed;
 - Paint: per-instance value jitter ±8%; tip toward `palette.tip`, root
   toward `shade`; card bend authored so the ramp rolls a band across it
   (the W-N2 cup lesson). Budget note: 3,000 cards ≈ 12k tris.
-- Demo: three palettes side by side, one raked. Consumers: all seven
-  regions, wings, vales.
+- **Per-instance silhouette forms (critic punch #9/C2).** The "card",
+  "tuft" and "blade" profiles each carry three same-topology forms —
+  the original plus two siblings — baked as vertex deltas on the one
+  instanced geometry and selected in the vertex shader by a pure hash
+  of the call seed and instance index (fresh XOR substream, zero
+  stream draws). Placements stay byte-identical (the kit-variants
+  fixture asserts it); draws and triangle counts are UNCHANGED (still
+  1 draw; 4/12/48 tris); bounds inflate by the largest form delta.
+- Demo: three palettes side by side, one raked; `carpetFieldTuftForms`
+  and `carpetFieldBladeForms` photograph the form mixes. Consumers: all
+  seven regions, wings, vales.
 
 ### 2.2 `groundLitter` — `kit/GroundLitter.ts`
 
