@@ -15,6 +15,7 @@ import { buildVerdantRoads } from "../src/world/regions/verdant1/VerdantRoads";
 import { buildPaleRoads } from "../src/world/regions/pale1/PaleRoads";
 import { buildCalamityRoads } from "../src/world/regions/calamity1/CalamityRoads";
 import { spokeOf as blue2SpokeOf } from "../src/world/regions/blue2/Blue2Terrain";
+import { spokeOf as blue3SpokeOf } from "../src/world/regions/blue3/Blue3Terrain";
 import { spokeOf as calamitySpokeOf } from "../src/world/regions/calamity1/CalamityTerrain";
 
 /**
@@ -133,6 +134,23 @@ describe("roads-and-axes: the protected-stillness registry (MASTER §1.2)", () =
         );
         expect(u, "reveal inside the legal window").toBeGreaterThanOrEqual(668);
         expect(u, "reveal clear of the hush").toBeLessThan(700);
+      }
+    });
+  });
+
+  it("keeps the blue-3 keel ribs inside the Worldwall→hush sliver", () => {
+    // The First Sea's registry: nothing below u 1178 (Worldwall band),
+    // nothing inside the Morning Shelf Hush (1186–1236). The reveal
+    // grows backward from u 1185, so every vertex must land between.
+    const [corridor] = buildBlue3Roads();
+    corridor!.group.traverse((node) => {
+      if (node instanceof Mesh && node.name.startsWith("road-reveal")) {
+        const position = node.geometry.attributes.position!;
+        for (let i = 0; i < position.count; i += 7) {
+          const { u } = blue3SpokeOf(position.getX(i), position.getZ(i));
+          expect(u, `rib vertex ${i}`).toBeGreaterThanOrEqual(1176.5);
+          expect(u, `rib vertex ${i}`).toBeLessThan(1186);
+        }
       }
     });
   });

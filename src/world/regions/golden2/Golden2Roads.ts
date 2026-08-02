@@ -50,11 +50,13 @@ export function buildGolden2Roads(): RoadDressingBuild[] {
     seed: CORRIDOR_SEED,
     frame: corridorFrame,
     reveal: {
+      // Round 2: grown — at 1.15 the pair vanished among the Gilded
+      // Shore's own rim stacks; at 1.4 it owns the road's mid-ground.
       kind: "leaning-pair",
       u: 692,
       v: 8,
       gap: 6,
-      scale: 1.15,
+      scale: 1.4,
       color: CAPROCK_STONE,
     },
     corridorShoal: {

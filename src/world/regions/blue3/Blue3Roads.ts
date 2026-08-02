@@ -13,9 +13,13 @@ import { BLUE3_SLOT, blue3TerrainTarget, worldOf } from "./Blue3Terrain";
  * the Daymark's blade. The serving lives PAST the hush, where the
  * arrival beat looks:
  *
- * - ONE reveal — a drowned keel's rib set (u 1244, large): the
- *   daybreak keel's kin, standing where the wall-crossing pose lands,
- *   C5's anchoring silhouette for the last crossing.
+ * - ONE reveal — a drowned keel's rib set: the daybreak keel's kin,
+ *   C5's anchoring silhouette for the last crossing. Round 2: moved
+ *   from u 1244 into the registry's ONE legal sliver between the
+ *   Worldwall band (< 1178) and the hush (1186–1236) — anchored at
+ *   u 1185 and grown BACKWARD (turn π) so every rib stands in
+ *   u ≈ 1178–1185; at ~39 m from the crossing pose it reads through
+ *   the fog where the r1 stand at 98 m was a ghost.
  * - The companion shoal is the region's EXISTING buoy-fry commute
  *   (Blue3Life, u 1252–1340 on a 220 s loop) — the road past the sill
  *   is already one file's; a second would break the saturation check.
@@ -50,11 +54,12 @@ export function buildBlue3Roads(): RoadDressingBuild[] {
     frame: corridorFrame,
     reveal: {
       kind: "ribs",
-      u: 1244,
-      v: 12,
+      u: 1185,
+      v: 9,
       gap: 7.5,
-      scale: 1.7,
+      scale: 1.4,
       color: 0xa8aac4,
+      turn: Math.PI,
     },
     lights: [
       {

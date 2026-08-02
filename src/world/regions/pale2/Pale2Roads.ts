@@ -130,7 +130,9 @@ export function buildPale2Roads(): RoadDressingBuild[] {
         radiusV: 12,
         lift: 5.5,
         count: 12,
-        fish: PEARL_FISH,
+        // Round 2: pearl-on-milk was invisible from 20 m above; a step
+        // larger, exactly the traveller network's r2 lesson.
+        fish: { ...PEARL_FISH, scale: 0.92 },
         periodSec: 160,
         braid: { lateral: 0.28, vertical: 0.18 },
       },
@@ -143,9 +145,10 @@ export function buildPale2Roads(): RoadDressingBuild[] {
           [1014, -70],
         ],
         width: 5,
-        count: 150,
+        count: 190,
         palette: BONE_PALETTE,
         shapeSet: "gravel",
+        size: [0.08, 0.26],
         twoTone: true,
         grade: 0.5,
         gate: rests,
