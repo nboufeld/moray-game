@@ -753,6 +753,52 @@ export function buildGolden3Cover(): Golden3CoverBuild {
     warmMaterials(stand, bed.warm, 0.6);
   }
 
+  // ═══ BEAT-REPAIR (#14) — dune-face stragglers. The critic's
+  // lost-bearing frame stared across an off-spine dune FACE: the basin
+  // wire favours hollows and stone lees, so the faces held almost
+  // nothing standing in the first 35 m. A sparse, slightly taller
+  // wire-grass walks the open faces and outer flanks — quiet detail in
+  // the ledger's own vocabulary, never a lawn. The registered rests and
+  // the calm zones (the Still Mirror and its pans, the spring, the
+  // Night Well) stay untouched; fresh stream, appended after every
+  // existing draw (the reroll fence). ═══
+  const duneWire = keep(
+    buildCarpetField({
+      seed: SEED ^ G3_SEEDS.duneWire,
+      palette: { base: 0xd6be74, tip: 0xf2e2a2, shade: 0xa28c6c },
+      area: discArea(),
+      gate: (x, z) => {
+        const { u, v } = spokeOf(x, z);
+        const country = u >= 1322 ? 1 : combeShoulder(u, v);
+        if (country <= 0) {
+          return 0;
+        }
+        const rc = Math.hypot(x - CENTER_X, z - CENTER_Z);
+        const face = 1 - smoothstep01(-basinSwell(x, z) / 1.2);
+        const flank = smoothstep01((rc - 105) / 45) * (1 - smoothstep01((rc - 208) / 10));
+        return (
+          golden3Weight(x, z) *
+          restFree(x, z) *
+          lensFree(x, z) *
+          processionFree(x, z) *
+          candleFree(u, v) *
+          (1 - zoneCalm(u, v)) *
+          country *
+          (0.25 + 0.75 * face) *
+          flank
+        );
+      },
+      ground: seabedHeight,
+      count: 1500,
+      profile: "blade",
+      size: [0.5, 0.95],
+      swayAmp: 0.05,
+      sunGlow: true,
+      looseShare: 0.55,
+    }),
+  );
+  warmMaterials(duneWire, 0xa08a48, 0.6);
+
   return {
     groups,
     update(timeSec: number): void {

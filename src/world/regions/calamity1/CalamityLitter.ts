@@ -7,6 +7,7 @@ import {
   type Group,
 } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { fbm } from "../../../rendering/ProceduralTexture";
 import { SEEDS } from "../../../util/Random";
 import { seabedHeight } from "../../Seabed";
 import { buildBushBank } from "../kit/BushBank";
@@ -123,6 +124,21 @@ function discAreaAt(u: number, v: number, radius: number): KitArea {
 
 // ─── The gates ───────────────────────────────────────────────────────────────
 
+/**
+ * Beat-repair (#13): the drift bands. The critique's verdict on the
+ * mid-march was "confetti, not composed wreckage" — a uniform sprinkle
+ * of same-sized chips. Debris a blast surge drops does not sprinkle: it
+ * collects in DRIFTS. One seeded band field clusters the march's shard
+ * carpet and seats the new wreck slabs in the same lanes, so the two
+ * families read as one event. Gate-only change: the candidate stream's
+ * draws are untouched (fixed draws per attempt is the kit's contract).
+ */
+function marchDrift(u: number, off: number): number {
+  return smoothstep01(
+    (fbm(u * 0.045, off * 0.11, { seed: SEED ^ 0x00d7, period: 6, octaves: 2 }) - 0.44) / 0.18,
+  );
+}
+
 /** Shards carpet the march floor and its bank feet, off the swim line. */
 const marchShardGate: GateFn = (x, z) => {
   const { u, v } = spokeOf(x, z);
@@ -139,7 +155,12 @@ const marchShardGate: GateFn = (x, z) => {
   const inBand = 1 - smoothstep01((off - (tongueHalfWidth(u) - 8)) / 8);
   // Densest on the floor and lower bank; the crests keep their scorch.
   const lowGround = 0.5 + 0.5 * (1 - smoothstep01((off - swimHalf(u) - 6) / 8));
-  return seamFade * inBand * lowGround * mileThin(u, v) * restFree(x, z) * calamityWeight(x, z);
+  // #13: clustered into drifts — a floor keeps the road from going bare,
+  // but the mass of the carpet now lies in lanes.
+  const drift = 0.22 + 0.78 * marchDrift(u, off);
+  return (
+    seamFade * inBand * lowGround * drift * mileThin(u, v) * restFree(x, z) * calamityWeight(x, z)
+  );
 };
 
 /** The Shatterfield: the pavement's ten thousand stones, densest here. */
@@ -309,16 +330,21 @@ export function buildCalamityLitter(): CalamityLitterBuild {
   // Round 2: the tones cooled off salmon toward ash-bone — under the
   // entry light the round-1 carpet read as wood chips (the Kelp Sea's
   // lesson again: paint for the region's light).
+  // Beat-repair (#13): 1900 → 1300 and the dust floor raised (0.14 →
+  // 0.22 m — the sub-chip sparkle WAS the confetti read), the accent
+  // pulled a step toward the base so the two tones read as one rubble,
+  // and the gate drift-clustered above. The count freed funds the wreck
+  // slabs appended at the end of this build.
   keep(
     buildGroundLitter({
       seed: SEED ^ FILL_SEEDS.shardMarch,
-      palette: { base: 0xa0a29c, accent: 0xb2b6b0, shade: 0x767388 },
+      palette: { base: 0xa0a29c, accent: 0xa9aba3, shade: 0x767388 },
       area: marchArea(56, 536, 46),
       gate: marchShardGate,
       ground: seabedHeight,
-      count: 1900,
+      count: 1300,
       shapeSet: "shard",
-      size: [0.14, 0.45],
+      size: [0.22, 0.5],
       rake: rakeFromWound,
       twoTone: true,
     }),
@@ -688,6 +714,43 @@ export function buildCalamityLitter(): CalamityLitterBuild {
       size: [0.7, 1.15],
       rake: { from: [wound.x, wound.z], strength: 0.9, jitter: 0.12 },
     }),
+  );
+
+  // ═══ BEAT-REPAIR (#13) — the march's wreck slabs. The critique read
+  // the mid-march scatter as confetti: many small same-sized chips,
+  // nothing composed. The blast-rake discipline extends up in SCALE:
+  // fewer, larger pavement pieces — knee-high slabs a frame can hang
+  // on — seated INSIDE the same drift lanes the chip carpet now keeps
+  // to, long axes raked off the Wound like everything else it threw.
+  // Fresh stream, appended after every existing draw. ═══
+  keep(
+    buildGroundLitter({
+      seed: SEED ^ FILL_SEEDS.marchWrecks,
+      palette: { base: 0xaaa79b, accent: 0x9a9aa8, shade: 0x6f6a80 },
+      area: marchArea(78, 500, 44),
+      gate: (x, z) => {
+        const { u, v } = spokeOf(x, z);
+        if (u < 74 || u > 505) {
+          return 0;
+        }
+        const off = channelDistance(u, v);
+        if (off < 2.4) {
+          return 0; // slabs keep an extra step off the swim line
+        }
+        const inBand = 1 - smoothstep01((off - (tongueHalfWidth(u) - 8)) / 8);
+        const drift = marchDrift(u, off);
+        return (
+          inBand * drift * drift * mileThin(u, v) * restFree(x, z) * calamityWeight(x, z)
+        );
+      },
+      ground: seabedHeight,
+      count: 96,
+      shapeSet: "shard",
+      size: [0.55, 1.2],
+      rake: { from: [wound.x, wound.z], strength: 0.92, jitter: 0.08 },
+      twoTone: true,
+    }),
+    shardGroups,
   );
 
   return {

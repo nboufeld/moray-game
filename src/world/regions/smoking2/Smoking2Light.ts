@@ -22,11 +22,14 @@ import type { KitBuild } from "../kit/KitTypes";
 import { FC_SEEDS, smoothstep01 } from "./Smoking2Shared";
 import {
   ANVIL,
+  COMBS,
   HEARTH,
   NIGHT_DOOR,
   RESTS,
+  SMOKING2_SLOT,
   saddleCenter,
   washCenter,
+  washHalf,
   worldOf,
 } from "./Smoking2Terrain";
 
@@ -173,6 +176,7 @@ export function buildSmoking2Light(): Smoking2LightBuild {
   }
 
   meshes.push(buildEmberPools());
+  meshes.push(buildWallLicks());
   meshes.push(buildLadlePool());
 
   // ─── The heat-shimmer columns ─────────────────────────────────────────────
@@ -356,6 +360,110 @@ function buildEmberPools(): Mesh {
   });
   const mesh = new Mesh(merged, material);
   mesh.name = "forge-ember-pools";
+  mesh.renderOrder = 1;
+  return mesh;
+}
+
+/**
+ * BEAT-REPAIR (#4) — the ember licks: the seams' light lapping the wall
+ * feet where the Emberwash runs under them. The critique's anvil-pose
+ * finding was proved (by probe) to be a FOG matter at 30–60 m: this
+ * region's haze saturates surface paint at the court's own width, and
+ * the only marks that carry there are the fog:false additive lights —
+ * the ember pools already read in that exact frame. So the walls' heat
+ * becomes LIGHT where it matters: low gradient cards standing against
+ * the wash-facing wall feet (and around the Anvil's skirt), ember at
+ * the floor dying by two metres up, faded at both ends. One merged
+ * draw; fresh stream (FC_SEEDS.wallLicks) appended after all existing
+ * draws — the reroll fence holds.
+ */
+function buildWallLicks(): Mesh {
+  const random = new Random(SEED ^ FC_SEEDS.wallLicks);
+  const parts: BufferGeometry[] = [];
+
+  const lick = (
+    x: number,
+    z: number,
+    yaw: number,
+    width: number,
+    height: number,
+    strength: number,
+  ): void => {
+    const card = new PlaneGeometry(width, height, 6, 3);
+    const position = card.attributes.position!;
+    const colors = new Float32Array(position.count * 3);
+    for (let i = 0; i < position.count; i++) {
+      const acrossT = position.getX(i) / width + 0.5;
+      const upT = position.getY(i) / height + 0.5;
+      const ends = smoothstep01(acrossT / 0.3) * smoothstep01((1 - acrossT) / 0.3);
+      const fall = 1 - smoothstep01((upT - 0.12) / 0.8);
+      const heat = ends * fall * strength;
+      colors[i * 3] = heat;
+      colors[i * 3 + 1] = heat * 0.52;
+      colors[i * 3 + 2] = heat * 0.26;
+    }
+    card.setAttribute("color", new BufferAttribute(colors, 3));
+    card.rotateY(yaw);
+    const floor = seabedHeight(x, z);
+    card.translate(x, floor + height * 0.42, z);
+    parts.push(card);
+  };
+
+  // The comb feet along the wash: a lick on every face the road passes.
+  for (const comb of COMBS) {
+    const yaw = SMOKING2_SLOT.azimuth + comb.heading;
+    const ax = Math.cos(comb.heading);
+    const az = Math.sin(comb.heading);
+    const stations = Math.max(2, Math.round(comb.halfLength / 7));
+    for (let s = 0; s < stations; s++) {
+      const t = stations === 1 ? 0 : (s / (stations - 1) - 0.5) * 1.4;
+      const u = comb.u + ax * t * comb.halfLength;
+      const v = comb.v + az * t * comb.halfLength;
+      const washD = Math.abs(v - washCenter(u));
+      const jitter = random.range(0.7, 1.25);
+      if (washD > washHalf(u) + 8) {
+        continue;
+      }
+      const toward = Math.sign(washCenter(u) - comb.v) || 1;
+      const at = worldOf(u, v + toward * (comb.thickness * 0.5 + 0.5));
+      const near = 1 - smoothstep01((washD - washHalf(u) - 2) / 6);
+      lick(at.x, at.z, yaw, random.range(4.5, 7), random.range(1.5, 2.4), (0.3 + 0.3 * near) * jitter);
+    }
+  }
+
+  // The Anvil's skirt: the heart wears its heat at the floor line too.
+  const anvilAt = worldOf(ANVIL.u, ANVIL.v);
+  for (let i = 0; i < 3; i++) {
+    const around = (i / 3) * Math.PI * 2 + random.range(0, 0.8);
+    lick(
+      anvilAt.x + Math.cos(around) * 8.6,
+      anvilAt.z + Math.sin(around) * 8.6,
+      around + Math.PI / 2,
+      random.range(5, 8),
+      random.range(1.8, 2.6),
+      0.55,
+    );
+  }
+
+  const merged = mergeGeometries(parts, false);
+  for (const part of parts) {
+    part.dispose();
+  }
+  if (!merged) {
+    throw new Error("forge wall licks could not be merged");
+  }
+  merged.computeBoundingSphere();
+  const material = new MeshBasicMaterial({
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.5,
+    blending: AdditiveBlending,
+    depthWrite: false,
+    fog: false,
+    side: DoubleSide,
+  });
+  const mesh = new Mesh(merged, material);
+  mesh.name = "forge-wall-licks";
   mesh.renderOrder = 1;
   return mesh;
 }

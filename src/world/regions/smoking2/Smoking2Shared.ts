@@ -123,6 +123,9 @@ export const FC_SEEDS = {
   emberPools: 0x2151,
   shimmer: 0x2152,
   gateVeil: 0x2153,
+  // Beat-repair (#4): the ember licks at the wash-facing wall feet —
+  // fresh stream, appended after every existing draw.
+  wallLicks: 0x2154,
   distance: 0x2160,
 } as const;
 

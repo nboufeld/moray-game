@@ -63,10 +63,17 @@ export function buildGolden2Light(): Golden2LightBuild {
     }
     return { polyline, width: 18 };
   })();
+  // Beat-repair (#12, the critic's noon-bell finding): the seep dapple
+  // read as a TILED-TEXTURE PATCH on the plain behind the towers — at a
+  // 90 m grazing view the 12 m repeat lined its cells into rows (probed
+  // by show/hide bisect: hiding the dapple sheets erased the patch).
+  // Larger tiles kill the visible repeat while the gardens keep their
+  // pooled light up close; opacity comes down a step so the sheet stops
+  // repainting the mid-distance ground brighter than its own fog.
   const seepAt = worldOf(972, 72);
-  for (const [seed, area, opacity] of [
-    [G2_SEEDS.dappleCourt, roadDapple, 0.07],
-    [G2_SEEDS.dappleSeep, { center: [seepAt.x, seepAt.z], radius: 34 }, 0.09],
+  for (const [seed, area, opacity, tileMetres] of [
+    [G2_SEEDS.dappleCourt, roadDapple, 0.055, 22],
+    [G2_SEEDS.dappleSeep, { center: [seepAt.x, seepAt.z], radius: 34 }, 0.06, 26],
   ] as const) {
     const dapple = buildDappleSheet({
       seed: SEED ^ seed,
@@ -74,7 +81,7 @@ export function buildGolden2Light(): Golden2LightBuild {
       ground: seabedHeight,
       area: area as KitArea,
       opacity,
-      tileMetres: 12,
+      tileMetres,
     });
     groups.push(dapple.group);
     updaters.push((timeSec) => dapple.update(timeSec));

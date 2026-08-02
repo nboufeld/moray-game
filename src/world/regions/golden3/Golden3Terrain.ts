@@ -433,7 +433,22 @@ export function golden3TerrainTarget(x: number, z: number): number {
   // weight feather ends — except along the pass corridor, which crosses
   // the near rim and must not fade.
   const fade = 1 - smoothstep01((rc - 172) / 38) * (1 - passGate(u, v));
-  return h * fade;
+
+  // Beat-repair (#14): the rampart's toe takes a wrinkle. The critic's
+  // lost-bearing hairline was probed to a toon-ramp iso-light contour —
+  // and it lives here because this fade is a 38 m smoothstep: a face
+  // smooth by construction hands the ramp one long clean line to draw.
+  // Gentle fbm scallops (±0.8 m, ~16 m grain) break the iso-line into
+  // wind-worked toe country — the comb-wander cure, applied to the
+  // wall's foot. Gated off the pass corridor and gone by the rim seal.
+  const toe =
+    smoothstep01((rc - 148) / 24) *
+    (1 - smoothstep01((rc - 204) / 12)) *
+    (1 - passGate(u, v));
+  const wrinkle =
+    (fbm(x * 0.061, z * 0.061, { seed: SEED ^ G3_SEEDS.terrainToe, period: 7, octaves: 2 }) - 0.5) *
+    1.6;
+  return h * fade + toe * wrinkle;
 }
 
 // ─── The ceiling ────────────────────────────────────────────────────────────

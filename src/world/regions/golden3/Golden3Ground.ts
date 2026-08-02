@@ -148,6 +148,44 @@ function bakeVesperPaint(geometry: PlaneGeometry, contacts: readonly ContactPatc
     const inCountry = smoothstep01((u - COMBE_TO + 12) / 26);
 
     if (inCountry > 0) {
+      // Beat-repair (#14): the off-spine dune faces. The critic's
+      // lost-bearing frame was a full-frame smooth dune whose only
+      // drawing was the toon ramp's own step — a dark hairline contour
+      // kinking along the grid (probed: nulling the gradient map erased
+      // the lines). The dune takes the region's quiet detail instead:
+      // wind-ripple bands at two scales and a soft violet lean in the
+      // troughs, loud enough that no iso-light band survives as a naked
+      // line. The pans, garden, door and combe paint all land AFTER and
+      // override, so the ripples live only where the ground was bare.
+      const rippleWander =
+        (fbm(x * 0.021, z * 0.021, { seed: SEED ^ G3_SEEDS.paintRipple, period: 7, octaves: 2 }) -
+          0.5) *
+        9;
+      const rippleWide = Math.sin(u * 0.72 + v * 0.31 + rippleWander);
+      const rippleFine = Math.sin(u * 1.9 + v * 0.85 + rippleWander * 2.3);
+      // r3-beat read: ±0.07 was still whisper-quiet next to the ramp
+      // step — the amplitudes go up a step, and the rampart's FOOT BAND
+      // (rc 140–200, where the bowl eases into the wall and the toon
+      // contour drew its longest lines) takes an extra soft mottle.
+      // Final amplitude, measured not guessed: a pixel-diff of the r5
+      // capture showed ±0.11 in vColor survives to ~3% on screen (sand
+      // wash × toon ramp × tone curve compress ~4×) — ±0.18 lands the
+      // gentle ~8% read the register wants.
+      const rippleAmp = (rippleWide * 0.18 + rippleFine * 0.09) * inCountry;
+      value += rippleAmp;
+      const footBand =
+        smoothstep01((rc - 138) / 22) * (1 - smoothstep01((rc - 198) / 14)) * inCountry;
+      if (footBand > 0) {
+        const mottle =
+          fbm(x * 0.055, z * 0.055, { seed: SEED ^ (G3_SEEDS.paintRipple + 1), period: 8, octaves: 2 }) -
+          0.5;
+        value += mottle * 0.3 * footBand;
+      }
+      // Troughs lean violet — the evening's own shade, never a grey.
+      const trough = Math.max(0, -rippleWide) * inCountry;
+      r -= trough * 0.09;
+      g -= trough * 0.11;
+      b += trough * 0.09;
       // The flats' story: salt crust spreading pale over the amber,
       // strongest near the pans, and the Procession's long violet
       // shadows — the evening's whole value structure.
@@ -322,10 +360,19 @@ function bakeVesperPaint(geometry: PlaneGeometry, contacts: readonly ContactPatc
       // The runnels lean violet in their shade (red over green, held).
       // Round 3: contrast raised again — through 60+ m of fog the r2
       // wall still ironed flat; the drawing must overshoot to survive.
-      r += (0.56 - r) * rampart * runnel * 0.5;
-      g += (0.44 - g) * rampart * runnel * 0.5;
-      b += (0.92 - b) * rampart * runnel * 0.4;
-      value += rampart * (height * 0.2 + strata * 0.3 - runnel * 0.2);
+      // Beat-repair (#14): the journey's evening-horizon proved 60 m of
+      // optimism short — the terminus frame closes on the wall's
+      // MID-BAND and it read as one beige value. Runnel weight up
+      // again, a BROAD fold family joins it (~90 m period — the width a
+      // 100 m read actually resolves), and height strata deepened.
+      const broad = 0.5 + 0.5 * Math.sin(theta * 13 + Math.sin(theta * 5) * 1.6);
+      r += (0.56 - r) * rampart * runnel * 0.68;
+      g += (0.44 - g) * rampart * runnel * 0.68;
+      b += (0.92 - b) * rampart * runnel * 0.52;
+      r += (0.72 - r) * rampart * broad * 0.3;
+      g += (0.58 - g) * rampart * broad * 0.3;
+      b += (0.84 - b) * rampart * broad * 0.24;
+      value += rampart * (height * 0.2 + strata * 0.48 - runnel * 0.28 - broad * 0.14);
     }
 
     // Contact shade under everything that stands on the ground.
