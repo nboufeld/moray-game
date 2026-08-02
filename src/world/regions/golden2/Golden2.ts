@@ -8,6 +8,7 @@ import { buildGolden2Ground } from "./Golden2Ground";
 import { buildGolden2Life } from "./Golden2Life";
 import { buildGolden2Light } from "./Golden2Light";
 import { NAUTILUS_SPECIES_ID, buildNautilus } from "./Golden2Nautilus";
+import { buildGolden2Roads } from "./Golden2Roads";
 import { buildGolden2Rocks } from "./Golden2Rocks";
 import { buildSeeps } from "./Golden2Seeps";
 import { buildWindows } from "./Golden2Windows";
@@ -279,6 +280,9 @@ export const GOLDEN_2: RegionDef = {
     const light = buildGolden2Light();
     const distance = buildGolden2Distance();
     const cover = buildGolden2Cover(windows.finFeet);
+    // ROADS-AND-AXES (critic #2/#6/#10): fresh substreams, appended after
+    // every existing module — the reroll fence holds by construction.
+    const roads = buildGolden2Roads();
     const ground = buildGolden2Ground([
       ...rocks.contacts,
       ...carillon.contacts,
@@ -296,6 +300,7 @@ export const GOLDEN_2: RegionDef = {
       ...light.groups,
       ...distance.meshes,
       ...cover.groups,
+      ...roads.map((build) => build.group),
     ]) {
       group.add(child);
     }
@@ -305,6 +310,7 @@ export const GOLDEN_2: RegionDef = {
       ...carillon.colliders,
       ...windows.colliders,
       ...buildSeals(),
+      ...roads.flatMap((build) => [...build.colliders]),
     ];
 
     return {
@@ -320,6 +326,9 @@ export const GOLDEN_2: RegionDef = {
         seeps.update(ctx.time * calm);
         cover.update(ctx.time * calm);
         light.update(ctx.time * calm);
+        for (const build of roads) {
+          build.update(ctx.time * calm);
+        }
         void dt;
       },
     };
